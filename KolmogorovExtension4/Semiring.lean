@@ -472,11 +472,11 @@ theorem disjoint_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ :
   rw [this] at hsn 
   exact hC.empty_not_mem_indexedDiff₀ _ _ _ hsn
 
-theorem PairwiseDisjoint_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
+theorem pairwiseDisjoint_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
     PairwiseDisjoint (↑(univ : Finset (Fin J.card))) (hC.indexedDiff₀ J hJ) := fun _ _ _ _ hnm =>
   hC.disjoint_indexedDiff₀ J hJ hnm
 
-theorem PairwiseDisjoint_indexedDiff₀' (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
+theorem pairwiseDisjoint_indexedDiff₀' (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
     (n : Fin J.card) : PairwiseDisjoint ↑(hC.indexedDiff₀ J hJ n) (id : Set α → Set α) :=
   hC.pairwiseDisjoint_diff₀ _ _ _
 
@@ -489,7 +489,7 @@ variable [DecidableEq (Set α)]
 /-- The union of all sets in `indexedDiff₀`, as a `finset`. -/
 noncomputable def allDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
     Finset (Set α) :=
-  Finset.disjiUnion univ (hC.indexedDiff₀ J hJ) (hC.PairwiseDisjoint_indexedDiff₀ J hJ)
+  Finset.disjiUnion univ (hC.indexedDiff₀ J hJ) (hC.pairwiseDisjoint_indexedDiff₀ J hJ)
 
 theorem pairwiseDisjoint_allDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
     PairwiseDisjoint ↑(hC.allDiff₀ J hJ) (id : Set α → Set α) :=
@@ -501,7 +501,7 @@ theorem pairwiseDisjoint_allDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (
   obtain ⟨m, _, hvBm⟩ := hv
   by_cases hnm : n = m
   · rw [← hnm] at hvBm 
-    exact hC.PairwiseDisjoint_indexedDiff₀' _ _ n huBn hvBm huv
+    exact hC.pairwiseDisjoint_indexedDiff₀' _ _ n huBn hvBm huv
   · exact hC.disjoint_of_mem_indexedDiff₀ J hJ hnm huBn hvBm
 
 theorem allDiff₀_subset (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
