@@ -142,7 +142,7 @@ lemma l1 (s : Set α) (hs : Denumerable s) : (s ≃ (range (fun i => (Denumerabl
   obtain hD : Denumerable (range f) := Denumerable.mk' (id hr.symm)
   apply Denumerable.equiv₂
 
-lemma l2 (hs : Denumerable α) : (range (fun i => (Denumerable.ofNat α i))) = Set.univ := by
+lemma l2 [hs : Denumerable α] : (range (fun i => (Denumerable.ofNat α i))) = Set.univ := by
   let f := fun (i : ℕ) => (Denumerable.ofNat α i)
   change (range f) = Set.univ
   have hfS : Surjective f := by

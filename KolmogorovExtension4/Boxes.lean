@@ -159,7 +159,7 @@ theorem comap_eval_le_generateFrom_boxes_singleton [m : ∀ i, MeasurableSpace (
         ((fun t => box t {i}) '' univ.pi fun i => {s : Set (α i) | MeasurableSet s}) := by
   rw [MeasurableSpace.comap_eq_generateFrom]
   refine' MeasurableSpace.generateFrom_mono fun S => _
-  simp only [mem_setOf_eq, mem_image, mem_univ_pi, forall_exists_index, and_imp]
+  simp only [mem_set_of_eq, mem_image, mem_univ_pi, forall_exists_index, and_imp]
   intro t ht h
   classical
   refine' ⟨fun j => if hji : j = i then by convert t else univ, fun j => _, _⟩

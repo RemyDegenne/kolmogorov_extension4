@@ -206,20 +206,14 @@ theorem cont_at_empty_of_measure' (m : Measure α) [IsFiniteMeasure m] (s : ℕ 
 sets. -/
 theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : Set (Set α))
   (hS : Countable S) (hS2 : ∀ s ∈ S, MeasurableSet s) (hS3 : ⋂₀ S = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
-  ∃ (S' : Set (Set α)) (hS' : S'.Finite) (S'_sub : S' ⊆ S), m (⋂₀ S') < ε := by
+  ∃ (S' : Set (Set α)) (_ : S'.Finite) (_ : S' ⊆ S), m (⋂₀ S') < ε := by
   simp at hS 
   cases' (fintypeOrInfinite S) with hS1 hS1
   · use! S, hS1, (by rfl)
     rw [hS3, measure_empty]
     exact hε
-
---MeasureTheory.cont_at_empty_of_measure'.{u} {α : Type u} [inst✝ : MeasurableSpace α] (m : Measure α)
---  [inst✝¹ : IsFiniteMeasure m] (s : ℕ → Set α) (hs1 : ∀ (n : ℕ), MeasurableSet (s n)) (hs2 : Antitone s)
---  (hs3 : ⋂ (n : ℕ), s n = ∅) (ε : ℝ≥0∞) (a✝ : 0 < ε) : ∃ n, ↑↑m (s n) < ε
-
   · haveI hS' := @Denumerable.ofEncodableOfInfinite S (Set.Countable.toEncodable hS) hS1
-    let u n := Denumerable.ofNat S n
---    let s n := ⋂ m ≤ n, (u m : Set α)
+    let u n := ((Denumerable.ofNat S n) : Set α)
     let s n := (Set.Accumulate (fun m => ((u m)ᶜ : Set α)) n)ᶜ  
     have hs1 : ∀ n, MeasurableSet (s n) := by
       intro n
@@ -227,7 +221,7 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       apply MeasurableSet.iUnion
       intro b
       apply MeasurableSet.iUnion
-      intro hb
+      intro _
       simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, MeasurableSet.compl_iff]
       apply hS2 ↑(Denumerable.ofNat (↑S) b)
       simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, Subtype.coe_prop]
@@ -254,19 +248,21 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
     have hS' : Fintype S' := by 
       classical 
       exact {m : ℕ | m ≤ n}.fintypeImage u
-    have S'_sub : (S' : Set (Set α)) ⊆ S := by
-      sorry
-      --rw [← image_univ]
-      --exact image_subset u (Set.subset_univ _)
-    have h0 : ⋂₀ (S' : Set (Set α)) = s n := by 
-      simp only [sInter_image, mem_setOf_eq] 
+    have SN : S = u '' univ :=  by
+      rw [Set.image_univ]
+      apply Denumerable.l4.symm
+    have S'_sub : S' ⊆ S := by
+      rw [SN]
+      simp only [image_univ, image_subset_iff, preimage_range, subset_univ]
+    have h0 : (⋂₀ S') = s n := by 
+      simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, sInter_image, mem_setOf_eq]
+      rw [Set.accumulate_def]
+      simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, compl_iUnion, compl_compl]
     use! S', hS', S'_sub
     rw [h0]
     exact hn 
 
 end MeasureTheory
-
-  
 
 end MeasureTheory
 
