@@ -153,10 +153,10 @@ lemma l2 (hs : Denumerable α) : (range (fun i => (Denumerable.ofNat α i))) = S
   simp only [decode_eq_ofNat, Option.some.injEq, image_univ]
   
 
-lemma l3 (s : Set α) (hs : Denumerable s) : ((range (fun i => (Denumerable.ofNat s i)))) = Set.univ := by
+lemma l3 {s : Set α} [hs : Denumerable s] : ((range (fun i => (Denumerable.ofNat s i)))) = Set.univ := by
   apply l2
 
-lemma l3a (s : Set β) (f : α → s) : ((range (fun x => f x)) : Set β) = Subtype.val '' (range f) := by
+lemma l3a {s : Set β} (f : α → s) : ((range (fun x => f x)) : Set β) = Subtype.val '' (range f) := by
   ext y
   refine' ⟨fun h => _, fun h => _⟩
   · simp only [Set.mem_image, Set.mem_range, exists_exists_eq_and]
@@ -168,14 +168,14 @@ lemma l3a (s : Set β) (f : α → s) : ((range (fun x => f x)) : Set β) = Subt
     cases' h with z hz
     use z
 
-lemma l4 (s : Set α) (hs : Denumerable s) : ((range (fun i => (Denumerable.ofNat s i))) : Set α) = s := by
+lemma l4 {s : Set α} [hs : Denumerable s] : ((range (fun i => (Denumerable.ofNat s i))) : Set α) = s := by
   conv_rhs
   => conv => {rw [← Subtype.coe_image_univ s]}
   have h : ((range (fun i => (Denumerable.ofNat s i))) : Set α) = Subtype.val '' (range (fun i => (Denumerable.ofNat s i))) := by
-    refine' l3a s (fun i => (Denumerable.ofNat s i))
+    refine' l3a (fun i => (Denumerable.ofNat s i))
   rw [h]
   apply congrArg (Set.image Subtype.val)
-  exact l3 s hs
+  exact l3
 
 end Denumerable
 

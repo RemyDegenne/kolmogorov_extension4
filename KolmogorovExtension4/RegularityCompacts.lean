@@ -2,6 +2,7 @@ import Mathlib.Topology.MetricSpace.Polish
 import Mathlib.Topology.MetricSpace.Metrizable
 import Mathlib.MeasureTheory.Measure.Regular
 import Mathlib.Logic.Denumerable
+import KolmogorovExtension4.AuxLemmas
 
 --#align_import regularity_compacts
 
@@ -244,7 +245,7 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       rw [← Iff.symm compl_univ_iff, ←hS3]
       rw [← Set.sInter_range]
       have hr : (range (fun i => ↑(Denumerable.ofNat (↑S) i)) : Set (Set α)) = S
-      · sorry
+      · exact Denumerable.l4 
       rw [hr]
     obtain ha := cont_at_empty_of_measure' m s hs1 hs2 hs3
     specialize ha ε hε
@@ -254,30 +255,16 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       classical 
       exact {m : ℕ | m ≤ n}.fintypeImage u
     have S'_sub : (S' : Set (Set α)) ⊆ S := by
-      
-      rw [hS, ← image_univ]
-      exact image_subset u (Set.subset_univ _)
-    have h0 : ⋂₀ S' = s n := by 
+      sorry
+      --rw [← image_univ]
+      --exact image_subset u (Set.subset_univ _)
+    have h0 : ⋂₀ (S' : Set (Set α)) = s n := by 
       simp only [sInter_image, mem_setOf_eq] 
     use! S', hS', S'_sub
     rw [h0]
     exact hn 
 
 end MeasureTheory
-
-example (hA : Denumerable α) : Equiv α (range (fun i => (Denumerable.ofNat α i))) := by
---  let h : Encodeable.encode := fun i => (Denumerable.ofNat α i)
---  apply Encodable.equivRangeEncode
-  
-
-  refine ⟨fun x => ?_, fun _ => (mem_univ x) ⟩ 
-  simp
-  use hA.decode_inv
-
-  apply?
-  refine Iff.mpr range_iff_surjective ?_
-  refine Iff.mpr surjective_iff_surjOn_univ ?_
-  apply?
 
   
 
