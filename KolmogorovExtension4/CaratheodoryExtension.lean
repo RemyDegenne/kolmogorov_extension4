@@ -16,8 +16,7 @@ variable {α : Type _} {C : Set (Set α)}
 theorem ofFunction_eq_iInf_mem (s : Set α) (m : Set α → ℝ≥0∞) (m_empty : m ∅ = 0)
     (m_top : ∀ (s) (_ : s ∉ C), m s = ∞) :
     OuterMeasure.ofFunction m m_empty s =
-      ⨅ (f : ℕ → Set α) (_hf : ∀ i, f i ∈ C) (_ : s ⊆ ⋃ i, f i), ∑' i, m (f i) :=
-  by
+      ⨅ (f : ℕ → Set α) (_hf : ∀ i, f i ∈ C) (_ : s ⊆ ⋃ i, f i), ∑' i, m (f i) := by
   rw [OuterMeasure.ofFunction_apply]
   refine' le_antisymm _ _
   · refine' le_iInf fun f => le_iInf fun _ => le_iInf fun h => _
@@ -97,11 +96,9 @@ theorem inducedOuterMeasure_eq_of_add_of_subadditive (hC : SetSemiring C)
         m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i))
     {s : Set α} (hs : s ∈ C) : inducedOuterMeasure m hC.empty_mem m_empty s = m s hs :=
   (OuterMeasure.ofFunction_eq_of_add_of_subadditive hC (extend m) _ (extend_sUnion_eq_sum m m_add)
-        (extend_sum_le m m_sigma_subadd) (fun _ hs => extend_eq_top m hs) hs).trans
+      (extend_sum_le m m_sigma_subadd) (fun _ hs => extend_eq_top m hs) hs).trans
     (extend_eq m hs)
 
-/- ./././Mathport/Syntax/Translate/Expr.lean:107:6: warning: expanding binder group (i n) -/
-/- ./././Mathport/Syntax/Translate/Basic.lean:635:2: warning: expanding binder collection (s «expr ∉ » C) -/
 theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → ℝ≥0∞) (m_empty : m ∅ = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -110,8 +107,7 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
       ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
         m (⋃ i, f i) ≤ ∑' i, m (f i))
     (m_top : ∀ (s) (_ : s ∉ C), m s = ∞) {s : Set α} (hs : s ∈ C) :
-    OuterMeasure.IsCaratheodory (OuterMeasure.ofFunction m m_empty) s :=
-  by
+    OuterMeasure.IsCaratheodory (OuterMeasure.ofFunction m m_empty) s := by
   rw [OuterMeasure.isCaratheodory_iff_le']
   intro t
   conv_rhs => rw [ofFunction_eq_iInf_mem _ _ m_empty m_top]
@@ -225,36 +221,42 @@ theorem caratheodory_semiring_extension (hC : SetSemiring C) (m : ∀ s : Set α
 
 noncomputable def Measure.ofAddSubaddCaratheodory (hC : SetSemiring C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞) (m_empty : m ∅ hC.empty_mem = 0)
+    (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
+    (m_sigma_subadd : ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
+      m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i)) :
+    @Measure α (inducedOuterMeasure m hC.empty_mem m_empty).caratheodory := by
+  letI : MeasurableSpace α := (inducedOuterMeasure m hC.empty_mem m_empty).caratheodory
+  exact { inducedOuterMeasure m hC.empty_mem m_empty with
+    m_iUnion := fun f hf hd => OuterMeasure.iUnion_eq_of_caratheodory _ hf hd
+    trimmed := by
+      refine' le_antisymm (le_inducedOuterMeasure.mpr fun s hs => _) (OuterMeasure.le_trim _)
+      · exact hC.empty_mem
+      · exact m_empty 
+      have hs_meas : MeasurableSet[(inducedOuterMeasure m hC.empty_mem m_empty).caratheodory] s := by
+        show (inducedOuterMeasure m hC.empty_mem m_empty).IsCaratheodory s
+        exact caratheodory_semiring_extension hC m m_empty m_add m_sigma_subadd hs
+      rw [OuterMeasure.trim_eq _ hs_meas,
+        inducedOuterMeasure_eq_of_add_of_subadditive hC m m_empty m_add m_sigma_subadd hs] }
+
+theorem Measure.ofAddSubaddCaratheodory_eq_inducedOuterMeasure (hC : SetSemiring C)
+    (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
+    (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
-      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
         (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
     (m_sigma_subadd :
       ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
-        m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i)) :
-    @Measure α (inducedOuterMeasure m hC.empty_mem m_empty).caratheodory :=
-  { inducedOuterMeasure m hC.empty_mem
-      m_empty with
-    m_iUnion := fun f hf hd => OuterMeasure.iUnion_eq_of_caratheodory _ hf hd
-    trimmed := by
-      letI : MeasurableSpace α := (induced_outer_measure m hC.empty_mem m_empty).caratheodory
-      show
-        @outer_measure.trim _ (induced_outer_measure m hC.empty_mem m_empty).caratheodory
-            (induced_outer_measure m hC.empty_mem m_empty) =
-          induced_outer_measure m hC.empty_mem m_empty
-      refine' le_antisymm (le_induced_outer_measure.mpr fun s hs => _) (outer_measure.le_trim _)
-      have hs_meas :
-        measurable_set[(induced_outer_measure m hC.empty_mem m_empty).caratheodory] s :=
-        by
-        show (induced_outer_measure m hC.empty_mem m_empty).IsCaratheodory s
-        exact caratheodory_semiring_extension hC m m_empty m_add m_sigma_subadd hs
-      rw [outer_measure.trim_eq _ hs_meas,
-        induced_outer_measure_eq_of_add_of_subadditive hC m m_empty m_add m_sigma_subadd hs]
-      exact le_rfl }
+        m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i))
+    (s : Set α) :
+    Measure.ofAddSubaddCaratheodory hC m m_empty m_add m_sigma_subadd s
+      = inducedOuterMeasure m hC.empty_mem m_empty s := by
+  rfl
 
 theorem Measure.ofAddSubaddCaratheodory_eq (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
-      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
         (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
     (m_sigma_subadd :
       ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
@@ -291,24 +293,25 @@ theorem isCaratheodory_iUnion {m : OuterMeasure α} {s : ℕ → Set α}
 theorem isCaratheodory_generateFrom (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
-      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
         (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
     (m_sigma_subadd :
       ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
         m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i))
     (s : Set α) (hs : MeasurableSet[MeasurableSpace.generateFrom C] s) :
     (inducedOuterMeasure m hC.empty_mem m_empty).IsCaratheodory s := by
-  refine' MeasurableSpace.generateFrom_induction _ C _ _ _ _ hs
+  apply MeasurableSpace.generateFrom_induction
   · exact fun _ => caratheodory_semiring_extension hC m m_empty m_add m_sigma_subadd
   · exact OuterMeasure.isCaratheodory_empty _
   · exact fun _ => OuterMeasure.isCaratheodory_compl _
   · exact fun _ hf => isCaratheodory_iUnion hf
+  · exact hs
 
 noncomputable def Measure.ofAddSubadd [mα : MeasurableSpace α] (hC : SetSemiring C)
     (hC_gen : MeasurableSpace.generateFrom C = mα) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
-      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
         (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
     (m_sigma_subadd :
       ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
@@ -321,22 +324,21 @@ theorem Measure.ofAddSubadd_eq [mα : MeasurableSpace α] (hC : SetSemiring C)
     (hC_gen : MeasurableSpace.generateFrom C = mα) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
-      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
         (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
     (m_sigma_subadd :
       ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
         m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i))
     {s : Set α} (hs : s ∈ C) :
-    Measure.ofAddSubadd hC hC_gen m m_empty m_add m_sigma_subadd s = m s hs :=
-  by
-  rw [Measure.ofAddSubadd, trim_measurable_set_eq]
-  · exact Measure.ofAddSubadd_caratheodory_eq hC m m_empty m_add m_sigma_subadd hs
+    Measure.ofAddSubadd hC hC_gen m m_empty m_add m_sigma_subadd s = m s hs := by
+  rw [Measure.ofAddSubadd, trim_measurableSet_eq]
+  · exact Measure.ofAddSubaddCaratheodory_eq hC m m_empty m_add m_sigma_subadd hs
   · rw [← hC_gen]; exact MeasurableSpace.measurableSet_generateFrom hs
 
 noncomputable def Measure.ofAddContent [mα : MeasurableSpace α] (hC : SetSemiring C)
     (hC_gen : MeasurableSpace.generateFrom C = mα) (m : AddContent C)
     (m_sigma_subadd :
-      ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
+      ∀ ⦃f : ℕ → Set α⦄ (_hf : ∀ i, f i ∈ C) (_hf_Union : (⋃ i, f i) ∈ C),
         m (⋃ i, f i) ≤ ∑' i, m (f i)) :
     Measure α :=
   Measure.ofAddSubadd hC hC_gen (fun s _ => m s) addContent_empty
@@ -350,7 +352,7 @@ noncomputable def Measure.ofAddContent [mα : MeasurableSpace α] (hC : SetSemir
 theorem Measure.ofAddContent_eq [mα : MeasurableSpace α] (hC : SetSemiring C)
     (hC_gen : MeasurableSpace.generateFrom C = mα) (m : AddContent C)
     (m_sigma_subadd :
-      ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
+      ∀ ⦃f : ℕ → Set α⦄ (_hf : ∀ i, f i ∈ C) (_hf_Union : (⋃ i, f i) ∈ C),
         m (⋃ i, f i) ≤ ∑' i, m (f i))
     {s : Set α} (hs : s ∈ C) : Measure.ofAddContent hC hC_gen m m_sigma_subadd s = m s :=
   Measure.ofAddSubadd_eq _ _ _ _ _ _ hs
