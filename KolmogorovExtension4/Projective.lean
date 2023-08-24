@@ -23,7 +23,7 @@ def IsProjectiveLimit [∀ i, MeasurableSpace (α i)] (μ : Measure (∀ i, α i
 variable [∀ i, MeasurableSpace (α i)] {P : ∀ J : Finset ι, Measure (∀ j : J, α j)}
 
 -- todo: rename
-theorem kolmogorov_fun_congr_aux1 [h_nonempty : Nonempty (∀ i, α i)]
+theorem kolmogorovFun_congr_aux1 [h_nonempty : Nonempty (∀ i, α i)]
     (hP : IsProjectiveMeasureFamily P) {I J : Finset ι} {S : Set (∀ i : I, α i)}
     {T : Set (∀ i : J, α i)} (hT : MeasurableSet T) (h_eq : cylinder I S = cylinder J T)
     (hJI : J ⊆ I) : P I S = P J T := by
@@ -35,7 +35,7 @@ theorem kolmogorov_fun_congr_aux1 [h_nonempty : Nonempty (∀ i, α i)]
   apply measurable_pi_apply
 
 -- todo: rename
-theorem kolmogorov_fun_congr_aux2 [h_nonempty : Nonempty (∀ i, α i)]
+theorem kolmogorovFun_congr_aux2 [h_nonempty : Nonempty (∀ i, α i)]
     (hP : IsProjectiveMeasureFamily P) {I J : Finset ι} {S : Set (∀ i : I, α i)}
     {T : Set (∀ i : J, α i)} (hS : MeasurableSet S) (hT : MeasurableSet T)
     (h_eq : cylinder I S = cylinder J T) : P I S = P J T := by
@@ -49,10 +49,10 @@ theorem kolmogorov_fun_congr_aux2 [h_nonempty : Nonempty (∀ i, α i)]
   constructor
   · have h_eq_union : cylinder I S = cylinder (I ∪ J) U := by
       rw [← inter_cylinder, h_eq, inter_self]
-    exact kolmogorov_fun_congr_aux1 hP hS h_eq_union.symm (Finset.subset_union_left _ _)
+    exact kolmogorovFun_congr_aux1 hP hS h_eq_union.symm (Finset.subset_union_left _ _)
   · have h_eq_union : cylinder J T = cylinder (I ∪ J) U := by
       rw [← inter_cylinder, h_eq, inter_self]
-    exact kolmogorov_fun_congr_aux1 hP hT h_eq_union.symm (Finset.subset_union_right _ _)
+    exact kolmogorovFun_congr_aux1 hP hT h_eq_union.symm (Finset.subset_union_right _ _)
 
 theorem IsProjectiveMeasureFamily.measure_univ_eq_of_subset (hP : IsProjectiveMeasureFamily P)
     (I J : Finset ι) (hJI : J ⊆ I) : P I univ = P J univ := by
