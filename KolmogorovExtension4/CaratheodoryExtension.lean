@@ -100,12 +100,11 @@ theorem inducedOuterMeasure_eq_of_add_of_subadditive (hC : SetSemiring C)
     (extend_eq m hs)
 
 theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → ℝ≥0∞) (m_empty : m ∅ = 0)
-    (m_add :
-      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-        (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
-    (m_sigma_subadd :
-      ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
-        m (⋃ i, f i) ≤ ∑' i, m (f i))
+    (m_add : ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C)
+      (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
+    (m_sigma_subadd : ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
+      m (⋃ i, f i) ≤ ∑' i, m (f i))
     (m_top : ∀ (s) (_ : s ∉ C), m s = ∞) {s : Set α} (hs : s ∈ C) :
     OuterMeasure.IsCaratheodory (OuterMeasure.ofFunction m m_empty) s := by
   rw [OuterMeasure.isCaratheodory_iff_le']
@@ -113,13 +112,11 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
   conv_rhs => rw [ofFunction_eq_iInf_mem _ _ m_empty m_top]
   refine' le_iInf fun f => le_iInf fun hf => le_iInf fun hf_subset => _
   let A : ℕ → Finset (Set α) := fun i => hC.diffFinset (hC.inter_mem _ (hf i) _ hs) (hf i)
-  have h_diff_eq_sUnion : ∀ i, f i \ s = ⋃₀ A i :=
-    by
+  have h_diff_eq_sUnion : ∀ i, f i \ s = ⋃₀ A i := by
     intro i
-    simp_rw [A]
-    rw [← set_semiring.diff_eq_sUnion, Set.inter_comm, diff_inter_self_eq_diff]
-  have h_m_eq : ∀ i, m (f i) = m (f i ∩ s) + ∑ u in A i, m u :=
-    by
+    simp only
+    rw [← SetSemiring.diff_eq_sUnion, Set.inter_comm, diff_inter_self_eq_diff]
+  have h_m_eq : ∀ i, m (f i) = m (f i ∩ s) + ∑ u in A i, m u := by
     intro i
     rw [hC.eq_add_diffFinset_of_subset m m_add (hC.inter_mem _ (hf i) _ hs) (hf i)
         (inter_subset_left _ _)]
@@ -133,11 +130,8 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
   · let e : ℕ ≃ ℕ × ℕ := (Denumerable.eqv (ℕ × ℕ)).symm
     let g' : ℕ × ℕ → Set α := fun n =>
       if h : n.2 < (A n.1).card then (A n.1).ordered ⟨n.2, h⟩ else ∅
-    let g : ℕ → Set α := fun n => g' (e n)
-    have h_sum_sum : ∑' i, ∑ u in A i, m u = ∑' n, m (g n) :=
-      by
-      have h1 : ∀ i, ∑ u in A i, m u = ∑' n, m (g' ⟨i, n⟩) :=
-        by
+    have h_sum_sum : ∑' i, ∑ u in A i, m u = ∑' n, m (g' (e n)) := by
+      have h1 : ∀ i, ∑ u in A i, m u = ∑' n, m (g' ⟨i, n⟩) := by
         intro i
         rw [← sum_ordered]
         let e_fin_range : Fin (A i).card ≃ Finset.range (A i).card :=
@@ -151,10 +145,8 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
         · dsimp only
           intro j
           simp only [Equiv.symm_apply_apply]
-        have :
-          ∑' n, m (g' (i, n)) =
-            ∑' n : ((Finset.range (A i).card : Finset ℕ) : Set ℕ), m (g' (i, n)) :=
-          by
+        have : ∑' n, m (g' (i, n)) =
+            ∑' n : ((Finset.range (A i).card : Finset ℕ) : Set ℕ), m (g' (i, n)) := by
           rw [tsum_subtype ((Finset.range (A i).card : Finset ℕ) : Set ℕ) fun n => m (g' (i, n))]
           congr
           ext1 n
@@ -164,6 +156,7 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
           · have : ¬(i, n).snd < (A (i, n).fst).card := by
               change ¬n < (A i).card
               simpa only [coe_range, Set.mem_Iio] using h_lt
+            simp only at h_lt this
             simp only [h_lt, mem_setOf_eq, if_false, this, not_false_iff, dif_neg, m_empty]
         rw [this]
         rw [Finset.tsum_subtype' (Finset.range (A i).card) fun n => m (g' (i, n))]
@@ -172,29 +165,28 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
         congr
         ext1 j
         classical
-        simp_rw [g']
+        simp only
         rw [dif_pos]
         swap
-        · exact finset.mem_range.mp j.2
+        · exact Finset.mem_range.mp j.2
         congr
       simp_rw [h1]
       rw [(_ : ∑' (i : ℕ) (n : ℕ), m (g' (i, n)) = ∑' n : ℕ × ℕ, m (g' n))]
       swap; · rw [ENNReal.tsum_prod']
-      simp_rw [g]
+      simp only
       rw [← @tsum_range _ _ _ _ _ _ e (fun n => m (g' n)) e.injective, Equiv.range_eq_univ,
         tsum_subtype (univ : Set (ℕ × ℕ)) fun n => m (g' n)]
       simp_rw [indicator_univ]
-    have h_Union : (⋃ i, g i) = (⋃ i, f i) \ s := by
+    have h_Union : (⋃ i, g' (e i)) = (⋃ i, f i) \ s := by
       rw [iUnion_diff]
-      simp_rw [g]
-      rw [← bUnion_range]
+      rw [← biUnion_range]
       simp_rw [Equiv.range_eq_univ]
-      simp only [Union_true, g']
-      rw [Union_dite]
-      simp only [Union_empty, Set.union_empty]
+      simp only [Set.mem_univ, iUnion_true]
+      rw [iUnion_dite]
+      simp only [iUnion_empty, Set.union_empty]
       simp_rw [h_diff_eq_sUnion]
       ext1 x
-      simp_rw [← Union_ordered, mem_Union]
+      simp_rw [← iUnion_ordered, mem_iUnion]
       simp only [Prod.exists]
       constructor
       · rintro ⟨a, b, h, h_mem⟩
