@@ -266,8 +266,8 @@ def allProj {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ cylinders α) :
   ⋃ n, Js (hs n)
 
 theorem subset_allProj {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ cylinders α) (n : ℕ) :
-    ↑(Js (hs n)) ⊆ allProj hs := by
-  exact subset_iUnion _ n
+    ↑(Js (hs n)) ⊆ allProj hs :=
+  subset_iUnion (fun i ↦ (Js (hs i) : Set ι)) n
 
 theorem exists_nat_proj {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ cylinders α) (i : ι)
     (hi : i ∈ allProj hs) : ∃ n : ℕ, i ∈ Js (hs n) := by
