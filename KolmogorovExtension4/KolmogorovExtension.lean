@@ -23,87 +23,118 @@ theorem continuous_cast {α β : Type _} [tα : TopologicalSpace α] [tβ : Topo
   rw [← heq_iff_eq]
   exact ht.symm
 
+def projCompl (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (x : (i : ι) → α i) :
+    (j : { k // k ≠ i }) → α j := fun j ↦ x j
+
+lemma continuous_projCompl {i : ι} : Continuous (projCompl α i) :=
+  continuous_pi fun _ ↦ continuous_apply _
+
+def X (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
+    Set ((j : { k // k ≠ i }) → α j) := projCompl α i '' s
+
+lemma projCompl_mem (hx : x ∈ s) : projCompl α i x ∈ X α i s := by
+  simp only [ne_eq, projCompl, X, mem_image]
+  exact ⟨x, hx, rfl⟩
+
+instance : TopologicalSpace (X α i s) := by rw [X]; infer_instance
+
+lemma compactSpace_X (hs_compact : IsCompact s) : CompactSpace (X α i s) := by
+  refine' isCompact_iff_compactSpace.mp _
+  refine' IsCompact.image hs_compact _
+  exact continuous_pi fun j => continuous_apply _
+
+def XY (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
+    Set ((j : ι) → α j) :=
+  {x | projCompl α i x ∈ projCompl α i '' s}
+
+lemma subset_xy : s ⊆ XY α i s := fun x hx => ⟨x, hx, rfl⟩
+
+lemma mem_xy_of_mem (hx : x ∈ s) : x ∈ XY α i s := subset_xy hx 
+
+def fromXProd (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j))
+    [DecidableEq ι] :
+    X α i s × α i → ∀ j, α j :=
+  fun p j =>
+    if h : j = i then by refine' cast _ p.2; rw [h] else (↑(p.1) : ∀ j : { k // k ≠ i }, α j) ⟨j, h⟩
+
+lemma fromXProd_same (p : X α i s × α i) [DecidableEq ι] :
+    fromXProd α i s p i = p.2 := by
+  simp only [fromXProd, ne_eq, cast_eq, dite_true]
+
+lemma projCompl_fromXProd (p : X α i s × α i) [DecidableEq ι] :
+    projCompl α i (fromXProd α i s p) = p.1 := by
+  ext1 j
+  have : (j : ι) ≠ i := j.2
+  simp only [fromXProd, projCompl]
+  rw [dif_neg this]
+
+lemma continuous_fromXProd [DecidableEq ι] : Continuous (fromXProd α i s) := by
+  refine' continuous_pi fun j => _
+  simp only [fromXProd]
+  split_ifs with h
+  · refine' (continuous_cast _ _).comp continuous_snd
+    rw [h]
+  · exact (Continuous.comp (continuous_apply _) continuous_subtype_val).comp continuous_fst
+
+lemma fromXProd_mem_XY (p : X α i s × α i) [DecidableEq ι] :
+    fromXProd α i s p ∈ XY α i s := by
+  simp only [XY, mem_image, mem_setOf_eq]
+  obtain ⟨y, hy_mem_s, hy_eq⟩ := p.1.2
+  exact ⟨y, hy_mem_s, hy_eq.trans (projCompl_fromXProd _).symm⟩
+
+lemma fromXProd_projCompl (x : XY α i s) [DecidableEq ι] :
+    fromXProd α i s ⟨⟨projCompl α i x, x.2⟩, (x : ∀ j, α j) i⟩ = (x : ∀ j, α j) := by
+  ext1 j
+  simp only [fromXProd, projCompl, ne_eq, dite_eq_right_iff]
+  intro h
+  rw [← heq_iff_eq]
+  refine' HEq.trans (cast_heq (_ : α i = α j) _) _
+  rw [h]
+
+def XYEquiv (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) 
+    [DecidableEq ι] :
+    XY α i s ≃ₜ X α i s × α i :=
+{ toFun := fun x => ⟨⟨projCompl α i x, x.2⟩, (x : ∀ j, α j) i⟩
+  invFun := fun p => ⟨fromXProd α i s p, fromXProd_mem_XY p⟩
+  left_inv := fun x => by
+    ext j
+    simp only [ne_eq]
+    rw [fromXProd_projCompl]
+  right_inv := fun p => by
+    simp only [ne_eq]
+    ext x
+    · simp only
+      rw [projCompl_fromXProd]
+    · simp only
+      exact fromXProd_same _
+  continuous_toFun := by
+    refine' Continuous.prod_mk _ _
+    · exact Continuous.subtype_mk (continuous_projCompl.comp continuous_subtype_val) _
+    · exact (continuous_apply _).comp continuous_subtype_val
+  continuous_invFun := Continuous.subtype_mk continuous_fromXProd _}
+
+lemma snd_xyEquiv_preimage [DecidableEq ι] :
+    Prod.snd '' (XYEquiv α i s '' ((fun (x : XY α i s) ↦ (x : ∀ j, α j)) ⁻¹' s))
+      = (fun x : ∀ j, α j ↦ x i) '' s := by
+  ext1 x
+  simp only [ne_eq, XYEquiv, projCompl, Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk, mem_image,
+    mem_preimage, Subtype.exists, exists_and_left, Prod.exists, Prod.mk.injEq, exists_and_right,
+    exists_eq_right, Subtype.mk.injEq, exists_prop]
+  constructor
+  · rintro ⟨y, _, z, hz_mem, _, hzx⟩
+    exact ⟨z, hz_mem, hzx⟩
+  · rintro ⟨z, hz_mem, hzx⟩
+    exact ⟨projCompl α i z, projCompl_mem hz_mem, z, hz_mem, ⟨⟨mem_xy_of_mem hz_mem, rfl⟩, hzx⟩⟩
+
 theorem isClosed_proj (hs_compact : IsCompact s) (hs_closed : IsClosed s) (i : ι) :
     IsClosed ((fun x : ∀ j, α j => x i) '' s) := by
-  set πi : (∀ j, α j) → α i := fun x : ∀ j, α j => x i
-  set π : (∀ j, α j) → ∀ j : { k // k ≠ i }, α j := fun x (j : { k // k ≠ i }) => x j
-  have hπi_cont : Continuous πi := continuous_apply _
-  have hπ_cont : Continuous π := continuous_pi fun j => continuous_apply _
-  -- we want to use `is_closed_proj_of_is_compact`, which states that the projection from `X × Y`
-  -- to `Y` is a closed map when `X` is a compact space.
-  -- Here, `X = ↥(π '' s)` and `Y = α i`.
-  let X := ↥(π '' s)
-  have : CompactSpace X := by
-    refine' isCompact_iff_compactSpace.mp _
-    refine' IsCompact.image hs_compact _
-    exact continuous_pi fun j => continuous_apply _
+  let πi : (∀ j, α j) → α i := fun x : ∀ j, α j => x i
   classical
-  let XY : Set (∀ j, α j) := {x | π x ∈ π '' s}
-  let from_X_prod_Y : X × α i → ∀ j, α j := fun p j =>
-    if h : j = i then by refine' cast _ p.2; rw [h] else (p.1 : ∀ j : { k // k ≠ i }, α j) ⟨j, h⟩
-  have fXY_eq_of_ne :
-    ∀ (p j) (h : j ≠ i), from_X_prod_Y p j = (p.1 : ∀ j : { k // k ≠ i }, α j) ⟨j, h⟩ := by
-    intro p j h
-    simp only [h, not_false_iff, dif_neg]
-  have hπ_fXY : ∀ p, π (from_X_prod_Y p) = p.1 := by
-    intro p
-    ext1 j
-    simp only
-    have : (j : ι) ≠ i := j.2
-    rw [dif_neg this]
-  have hπi_fXY : ∀ p, πi (from_X_prod_Y p) = p.2 := by
-    intro p
-    simp only [ne_eq, cast_eq, dite_true]
-  have continuous_from_X_prod_Y : Continuous from_X_prod_Y := by
-    simp only
-    refine' continuous_pi fun j => _
-    split_ifs with h
-    · refine' (continuous_cast _ _).comp continuous_snd
-      rw [h]
-    · exact (Continuous.comp (continuous_apply _) continuous_subtype_val).comp continuous_fst
-  have h_mem : ∀ p, from_X_prod_Y p ∈ XY := by
-    intro p
-    simp only [mem_image, mem_setOf_eq]
-    obtain ⟨y, hy_mem_s, hy_eq⟩ := p.1.2
-    refine' ⟨y, hy_mem_s, hy_eq.trans _⟩
-    simp only [ne_eq]
-    rw [hπ_fXY]
-    rfl
-  let e : XY ≃ₜ X × α i :=
-    { toFun := fun x => ⟨⟨π x, x.2⟩, πi x⟩
-      invFun := fun p => ⟨from_X_prod_Y p, h_mem p⟩
-      left_inv := fun x => by
-        ext j
-        simp only [Subtype.coe_mk]
-        split_ifs with h
-        · rw [← heq_iff_eq]
-          refine' HEq.trans (cast_heq (_ : α i = α j) _) _
-          rw [h]
-        · congr
-      right_inv := fun p => by
-        simp only [Subtype.coe_mk]
-        ext
-        · refine' Subtype.ext _
-          rw [Subtype.coe_mk, hπ_fXY]
-        · rfl
-      continuous_toFun := by
-        refine' Continuous.prod_mk _ _
-        · exact Continuous.subtype_mk (hπ_cont.comp continuous_subtype_val) _
-        · exact hπi_cont.comp continuous_subtype_val
-      continuous_invFun := Continuous.subtype_mk continuous_from_X_prod_Y _ }
-  have hs_subset : s ⊆ XY := fun x hx => ⟨x, hx, rfl⟩
-  have h_image_eq : πi '' s = Prod.snd '' (e '' (coe ⁻¹' s)) :=
-    by
-    ext1 x
-    simp only [πi, mem_image, mem_set_of_eq, Subtype.coe_mk, Homeomorph.homeomorph_mk_coe,
-      Equiv.coe_fn_mk, mem_preimage, SetCoe.exists, exists_and_left, Prod.exists, Prod.mk.inj_iff,
-      exists_and_right, exists_eq_right, Subtype.mk_eq_mk, exists_prop, exists_exists_and_eq_and]
-    constructor
-    · rintro ⟨y, hy_mem, hy⟩
-      exact ⟨y, hy_mem, ⟨y, hy_mem, ⟨⟨⟨y, hy_mem, rfl⟩, rfl⟩, hy⟩⟩⟩
-    · rintro ⟨y, hy_mem, ⟨z, hz_mem, h⟩⟩
-      exact ⟨z, hz_mem, h.2⟩
+  have h_image_eq : πi '' s
+      = Prod.snd '' (XYEquiv α i s '' ((fun (x : XY α i s) ↦ (x : ∀ j, α j)) ⁻¹' s)) := by
+    exact snd_xyEquiv_preimage.symm
   rw [h_image_eq]
+  have : CompactSpace (X α i s) := compactSpace_X hs_compact
   refine' isClosedMap_snd_of_compactSpace _ _
   rw [Homeomorph.isClosed_image]
   exact IsClosed.preimage continuous_subtype_val hs_closed
