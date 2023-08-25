@@ -17,16 +17,14 @@ open scoped Topology Filter
 variable {ι : Type _} {α : ι → Type _} [∀ i, TopologicalSpace (α i)] {s : Set (∀ i, α i)}
 
 theorem continuous_cast {α β : Type _} [tα : TopologicalSpace α] [tβ : TopologicalSpace β]
-    (h : α = β) (ht : HEq tα tβ) : Continuous fun x : α => cast h x :=
-  by
+    (h : α = β) (ht : HEq tα tβ) : Continuous fun x : α => cast h x := by
   subst h
   convert continuous_id
   rw [← heq_iff_eq]
   exact ht.symm
 
 theorem isClosed_proj (hs_compact : IsCompact s) (hs_closed : IsClosed s) (i : ι) :
-    IsClosed ((fun x : ∀ j, α j => x i) '' s) :=
-  by
+    IsClosed ((fun x : ∀ j, α j => x i) '' s) := by
   set πi : (∀ j, α j) → α i := fun x : ∀ j, α j => x i
   set π : (∀ j, α j) → ∀ j : { k // k ≠ i }, α j := fun x (j : { k // k ≠ i }) => x j
   have hπi_cont : Continuous πi := continuous_apply _
@@ -300,8 +298,9 @@ theorem exists_compact
   by_cases hPA : P J A = 0
   · refine' ⟨∅, isCompact_empty, isClosed_empty, empty_subset _, _⟩
     rw [diff_empty, hPA]
-    exact zero_le _
-  obtain ⟨K, hKA, ⟨hK_compact, hK_closed⟩, h_lt⟩ := hP_inner J hA (P J A - ε) _
+    exact zero_le ε
+  have h : P J A - ε < P J A := ENNReal.sub_lt_self (measure_ne_top _ _) hPA hε.ne'
+  obtain ⟨K, hKA, ⟨hK_compact, hK_closed⟩, h_lt⟩ := hP_inner J hA (P J A - ε) h
   refine' ⟨K, hK_compact, hK_closed, hKA, _⟩
   rw [measure_diff hKA hK_closed.measurableSet (measure_ne_top (P J) _)]
   have h_le := h_lt.le
@@ -387,8 +386,11 @@ theorem preimage_cylCompact'_subset
 theorem isClosed_cylCompact'
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ cylinders α) (ε : ℝ≥0∞) (hε : 0 < ε) (n : ℕ) :
-    IsClosed (cylCompact' hP_inner hs ε hε n) :=
-  (isClosed_innerCompact hP_inner _ _ _ _ _).preimage (by continuity)
+    IsClosed (cylCompact' hP_inner hs ε hε n) := by
+  refine (isClosed_innerCompact hP_inner _ _ _ _ _).preimage ?_
+  rw [continuous_pi_iff]
+  intro i
+  apply continuous_apply
 
 section CylCompact
 
@@ -428,8 +430,11 @@ theorem preimage_cylCompact_subset
 theorem isClosed_cylCompact
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     (hs : ∀ n, s n ∈ cylinders α) (ε : ℝ≥0∞) (hε : 0 < ε) (n : ℕ) :
-    IsClosed (cylCompact hP_inner hs ε hε n) :=
-  (isClosed_innerCompact hP_inner _ _ _ _ _).preimage (by continuity)
+    IsClosed (cylCompact hP_inner hs ε hε n) := by
+  refine (isClosed_innerCompact hP_inner _ _ _ _ _).preimage ?_
+  rw [continuous_pi_iff]
+  intro i
+  apply continuous_apply
 
 theorem diff_eq_cylCompact
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
@@ -488,13 +493,13 @@ theorem diff_subset_c
               innerCompact hP_inner (Js (hs i)) (As (hs i)) (cylinders.measurableSet _)
                 (ε / 2 ^ (i + 2)) (ENNReal.div_pos_iff.mpr ⟨hε.ne', by norm_num⟩))) ⊆
       c hP_inner hs ε hε n := by
-  have hsn_eq_Inter : s n = ⋂ i ≤ n, s i :=
-    le_antisymm (le_iInf₂ fun i hi => hs_anti hi) (iInf₂_le _ le_rfl)
+  have hsn_eq_Inter : s n = ⋂ i ≤ n, s i := le_antisymm (le_iInf₂ fun i hi => hs_anti hi)
+    (iInf₂_le (κ := fun i ↦ i ≤ n) (f := fun i _ ↦ s i) n le_rfl)
   rw [hsn_eq_Inter]
   refine' (bInter_diff_bUnion_subset _ _ _).trans_eq _
   simp_rw [c]
   refine iInter_congr fun i ↦ ?_
-  refine iInter_congr fun h ↦ ?_
+  refine iInter_congr fun _ ↦ ?_
   exact diff_eq_cylCompact hP_inner hs (ε / 2 ^ (i + 2))
     (ENNReal.div_pos_iff.mpr ⟨hε.ne', by norm_num⟩) i
 
