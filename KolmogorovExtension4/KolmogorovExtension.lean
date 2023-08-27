@@ -8,139 +8,6 @@ open Set
 
 open scoped ENNReal BigOperators
 
-section isClosed_proj
-
-open Filter
-
-open scoped Topology Filter
-
-variable {ι : Type _} {α : ι → Type _} [∀ i, TopologicalSpace (α i)] {s : Set (∀ i, α i)}
-
-theorem continuous_cast {α β : Type _} [tα : TopologicalSpace α] [tβ : TopologicalSpace β]
-    (h : α = β) (ht : HEq tα tβ) : Continuous fun x : α => cast h x := by
-  subst h
-  convert continuous_id
-  rw [← heq_iff_eq]
-  exact ht.symm
-
-def projCompl (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (x : (i : ι) → α i) :
-    (j : { k // k ≠ i }) → α j := fun j ↦ x j
-
-lemma continuous_projCompl {i : ι} : Continuous (projCompl α i) :=
-  continuous_pi fun _ ↦ continuous_apply _
-
-def X (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
-    Set ((j : { k // k ≠ i }) → α j) := projCompl α i '' s
-
-lemma projCompl_mem (hx : x ∈ s) : projCompl α i x ∈ X α i s := by
-  simp only [ne_eq, projCompl, X, mem_image]
-  exact ⟨x, hx, rfl⟩
-
-instance : TopologicalSpace (X α i s) := by rw [X]; infer_instance
-
-lemma compactSpace_X (hs_compact : IsCompact s) : CompactSpace (X α i s) := by
-  refine' isCompact_iff_compactSpace.mp _
-  refine' IsCompact.image hs_compact _
-  exact continuous_pi fun j => continuous_apply _
-
-def XY (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
-    Set ((j : ι) → α j) :=
-  {x | projCompl α i x ∈ projCompl α i '' s}
-
-lemma subset_xy : s ⊆ XY α i s := fun x hx => ⟨x, hx, rfl⟩
-
-lemma mem_xy_of_mem (hx : x ∈ s) : x ∈ XY α i s := subset_xy hx 
-
-def fromXProd (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j))
-    [DecidableEq ι] :
-    X α i s × α i → ∀ j, α j :=
-  fun p j =>
-    if h : j = i then by refine' cast _ p.2; rw [h] else (↑(p.1) : ∀ j : { k // k ≠ i }, α j) ⟨j, h⟩
-
-lemma fromXProd_same (p : X α i s × α i) [DecidableEq ι] :
-    fromXProd α i s p i = p.2 := by
-  simp only [fromXProd, ne_eq, cast_eq, dite_true]
-
-lemma projCompl_fromXProd (p : X α i s × α i) [DecidableEq ι] :
-    projCompl α i (fromXProd α i s p) = p.1 := by
-  ext1 j
-  have : (j : ι) ≠ i := j.2
-  simp only [fromXProd, projCompl]
-  rw [dif_neg this]
-
-lemma continuous_fromXProd [DecidableEq ι] : Continuous (fromXProd α i s) := by
-  refine' continuous_pi fun j => _
-  simp only [fromXProd]
-  split_ifs with h
-  · refine' (continuous_cast _ _).comp continuous_snd
-    rw [h]
-  · exact (Continuous.comp (continuous_apply _) continuous_subtype_val).comp continuous_fst
-
-lemma fromXProd_mem_XY (p : X α i s × α i) [DecidableEq ι] :
-    fromXProd α i s p ∈ XY α i s := by
-  simp only [XY, mem_image, mem_setOf_eq]
-  obtain ⟨y, hy_mem_s, hy_eq⟩ := p.1.2
-  exact ⟨y, hy_mem_s, hy_eq.trans (projCompl_fromXProd _).symm⟩
-
-lemma fromXProd_projCompl (x : XY α i s) [DecidableEq ι] :
-    fromXProd α i s ⟨⟨projCompl α i x, x.2⟩, (x : ∀ j, α j) i⟩ = (x : ∀ j, α j) := by
-  ext1 j
-  simp only [fromXProd, projCompl, ne_eq, dite_eq_right_iff]
-  intro h
-  rw [← heq_iff_eq]
-  refine' HEq.trans (cast_heq (_ : α i = α j) _) _
-  rw [h]
-
-def XYEquiv (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) 
-    [DecidableEq ι] :
-    XY α i s ≃ₜ X α i s × α i :=
-{ toFun := fun x => ⟨⟨projCompl α i x, x.2⟩, (x : ∀ j, α j) i⟩
-  invFun := fun p => ⟨fromXProd α i s p, fromXProd_mem_XY p⟩
-  left_inv := fun x => by
-    ext j
-    simp only [ne_eq]
-    rw [fromXProd_projCompl]
-  right_inv := fun p => by
-    simp only [ne_eq]
-    ext x
-    · simp only
-      rw [projCompl_fromXProd]
-    · simp only
-      exact fromXProd_same _
-  continuous_toFun := by
-    refine' Continuous.prod_mk _ _
-    · exact Continuous.subtype_mk (continuous_projCompl.comp continuous_subtype_val) _
-    · exact (continuous_apply _).comp continuous_subtype_val
-  continuous_invFun := Continuous.subtype_mk continuous_fromXProd _}
-
-lemma snd_xyEquiv_preimage [DecidableEq ι] :
-    Prod.snd '' (XYEquiv α i s '' ((fun (x : XY α i s) ↦ (x : ∀ j, α j)) ⁻¹' s))
-      = (fun x : ∀ j, α j ↦ x i) '' s := by
-  ext1 x
-  simp only [ne_eq, XYEquiv, projCompl, Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk, mem_image,
-    mem_preimage, Subtype.exists, exists_and_left, Prod.exists, Prod.mk.injEq, exists_and_right,
-    exists_eq_right, Subtype.mk.injEq, exists_prop]
-  constructor
-  · rintro ⟨y, _, z, hz_mem, _, hzx⟩
-    exact ⟨z, hz_mem, hzx⟩
-  · rintro ⟨z, hz_mem, hzx⟩
-    exact ⟨projCompl α i z, projCompl_mem hz_mem, z, hz_mem, ⟨⟨mem_xy_of_mem hz_mem, rfl⟩, hzx⟩⟩
-
-theorem isClosed_proj (hs_compact : IsCompact s) (hs_closed : IsClosed s) (i : ι) :
-    IsClosed ((fun x : ∀ j, α j => x i) '' s) := by
-  let πi : (∀ j, α j) → α i := fun x : ∀ j, α j => x i
-  classical
-  have h_image_eq : πi '' s
-      = Prod.snd '' (XYEquiv α i s '' ((fun (x : XY α i s) ↦ (x : ∀ j, α j)) ⁻¹' s)) := by
-    exact snd_xyEquiv_preimage.symm
-  rw [h_image_eq]
-  have : CompactSpace (X α i s) := compactSpace_X hs_compact
-  refine' isClosedMap_snd_of_compactSpace _ _
-  rw [Homeomorph.isClosed_image]
-  exact IsClosed.preimage continuous_subtype_val hs_closed
-
-end isClosed_proj
-
 namespace MeasureTheory
 
 -- this is horrible
@@ -470,10 +337,8 @@ theorem isClosed_cylCompact
 theorem diff_eq_cylCompact
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     (hs : ∀ n, s n ∈ cylinders α) (ε : ℝ≥0∞) (hε : 0 < ε) (n : ℕ) :
-    s n \
-        cylinder (Js (hs n))
-          (As (hs n) \
-            innerCompact hP_inner (Js (hs n)) (As (hs n)) (cylinders.measurableSet _) ε hε) =
+    s n \ cylinder (Js (hs n))
+      (As (hs n) \ innerCompact hP_inner (Js (hs n)) (As (hs n)) (cylinders.measurableSet _) ε hε) =
       cylCompact hP_inner hs ε hε n := by
   ext1 x
   rw [mem_diff, cylCompact, mem_cylinder, mem_cylinder]
@@ -517,12 +382,9 @@ theorem c_subset
 theorem diff_subset_c
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     (hs : ∀ n, s n ∈ cylinders α) (hs_anti : Antitone s) (ε : ℝ≥0∞) (hε : 0 < ε) (n : ℕ) :
-    (s n \
-        ⋃ i ≤ n,
-          cylinder (Js (hs i))
-            (As (hs i) \
-              innerCompact hP_inner (Js (hs i)) (As (hs i)) (cylinders.measurableSet _)
-                (ε / 2 ^ (i + 2)) (ENNReal.div_pos_iff.mpr ⟨hε.ne', by norm_num⟩))) ⊆
+    (s n \ ⋃ i ≤ n, cylinder (Js (hs i))
+        (As (hs i) \ innerCompact hP_inner (Js (hs i)) (As (hs i)) (cylinders.measurableSet _)
+          (ε / 2 ^ (i + 2)) (ENNReal.div_pos_iff.mpr ⟨hε.ne', by norm_num⟩))) ⊆
       c hP_inner hs ε hε n := by
   have hsn_eq_Inter : s n = ⋂ i ≤ n, s i := le_antisymm (le_iInf₂ fun i hi => hs_anti hi)
     (iInf₂_le (κ := fun i ↦ i ≤ n) (f := fun i _ ↦ s i) n le_rfl)
@@ -597,10 +459,8 @@ def piInnerCompact
     (hs : ∀ n, s n ∈ cylinders α) (ε : ℝ≥0∞) (hε : 0 < ε)
     [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] : Set (∀ i : allProj hs, α i) :=
   {x : ∀ i : allProj hs, α i |
-    ∀ i,
-      x i ∈
-        (fun a : ∀ j : Js (hs (indexProj hs i)), α j => a ⟨i, mem_indexProj hs i⟩) ''
-          iC hP_inner hs ε hε i}
+    ∀ i, x i ∈ (fun a : ∀ j : Js (hs (indexProj hs i)), α j => a ⟨i, mem_indexProj hs i⟩) ''
+      iC hP_inner hs ε hε i}
 
 theorem isCompact_piInnerCompact
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
@@ -664,8 +524,7 @@ theorem iInter_c'_subset_piInnerCompact
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     (hs : ∀ n, s n ∈ cylinders α) (ε : ℝ≥0∞) (hε : 0 < ε)
     [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
-    (⋂ n, c' hP_inner hs ε hε n) ⊆ piInnerCompact hP_inner hs ε hε :=
-  by
+    (⋂ n, c' hP_inner hs ε hε n) ⊆ piInnerCompact hP_inner hs ε hε := by
   intro x hx
   rw [mem_iInter] at hx 
   rw [piInnerCompact]
@@ -673,8 +532,7 @@ theorem iInter_c'_subset_piInnerCompact
   intro i hi
   specialize hx (indexProj hs ⟨i, hi⟩)
   have hx' :=
-    c'_subset_cylCompact' hP_inner hs ε hε (indexProj hs ⟨i, hi⟩) (indexProj hs ⟨i, hi⟩) le_rfl
-      hx
+    c'_subset_cylCompact' hP_inner hs ε hε (indexProj hs ⟨i, hi⟩) (indexProj hs ⟨i, hi⟩) le_rfl hx
   rw [cylCompact', mem_preimage] at hx' 
   exact ⟨fun i : Js (hs (indexProj hs ⟨i, hi⟩)) => x ⟨i, subset_allProj hs _ i.2⟩, hx', rfl⟩
 
@@ -683,8 +541,8 @@ variable [Nonempty (∀ i, α i)]
 theorem kolContent_c (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     (hs : ∀ n, s n ∈ cylinders α) (hs_anti : Antitone s) {ε : ℝ≥0∞} (hε : 0 < ε)
-    (hs_ge : ∀ n, ε ≤ kolContent hP (s n)) (n : ℕ) : ε / 2 ≤ kolContent hP (c hP_inner hs ε hε n) :=
-  by
+    (hs_ge : ∀ n, ε ≤ kolContent hP (s n)) (n : ℕ) :
+    ε / 2 ≤ kolContent hP (c hP_inner hs ε hε n) := by
   have hε_ne_top : ε ≠ ∞ := by
     refine' ne_top_of_le_ne_top _ (hs_ge 0)
     rw [kolContent_eq hP (hs 0)]
@@ -692,8 +550,7 @@ theorem kolContent_c (hP : IsProjectiveMeasureFamily P)
   let J n := Js (hs n)
   let A n := As (hs n)
   have hA_meas : ∀ n, MeasurableSet (A n) := fun n => cylinders.measurableSet (hs n)
-  let K n :=
-    innerCompact hP_inner (J n) (A n) (cylinders.measurableSet _) (ε / 2 ^ (n + 2))
+  let K n := innerCompact hP_inner (J n) (A n) (cylinders.measurableSet _) (ε / 2 ^ (n + 2))
       (ENNReal.div_pos_iff.mpr ⟨hε.ne', by norm_num⟩)
   have hK_meas : ∀ n, MeasurableSet (K n) := fun n => measurableSet_innerCompact _ _ _ _ _ _
   have hC_diff : (s n \ ⋃ i ≤ n, cylinder (Js (hs i)) (A i \ K i)) ⊆ c hP_inner hs ε hε n :=
@@ -702,8 +559,7 @@ theorem kolContent_c (hP : IsProjectiveMeasureFamily P)
     cylinder_mem_cylinders _ _ ((hA_meas n).diff (hK_meas n))
   have hUnion_mem : (⋃ i ≤ n, cylinder (J i) (A i \ K i)) ∈ cylinders α :=
     iUnion_le_mem_cylinders hdiff_mem n
-  have hUnion_kol : kolContent hP (⋃ i ≤ n, cylinder (J i) (A i \ K i)) ≤ ε / 2 :=
-    by
+  have hUnion_kol : kolContent hP (⋃ i ≤ n, cylinder (J i) (A i \ K i)) ≤ ε / 2 := by
     refine' (kolContent_iUnion_le hP hdiff_mem n).trans _
     calc
       ∑ i in Finset.range (n + 1), kolContent hP (cylinder (J i) (A i \ K i)) =
@@ -747,10 +603,8 @@ theorem nonempty_c'_inter_piInnerCompact (hP : IsProjectiveMeasureFamily P)
     (hs : ∀ n, s n ∈ cylinders α) (hs_anti : Antitone s) {ε : ℝ≥0∞} (hε : 0 < ε)
     (hs_ge : ∀ n, ε ≤ kolContent hP (s n)) (n : ℕ)
     [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
-    (c' hP_inner hs ε hε n ∩ piInnerCompact hP_inner hs ε hε).Nonempty :=
-  by
-  have hεP : ∀ n, ε ≤ P (Js (hs n)) (As (hs n)) :=
-    by
+    (c' hP_inner hs ε hε n ∩ piInnerCompact hP_inner hs ε hε).Nonempty := by
+  have hεP : ∀ n, ε ≤ P (Js (hs n)) (As (hs n)) := by
     intro n
     convert hs_ge n
     rw [kolContent_congr hP (hs n) (cylinders.eq_cylinder (hs n)) (cylinders.measurableSet (hs n))]
@@ -765,29 +619,24 @@ theorem nonempty_c'_inter_piInnerCompact (hP : IsProjectiveMeasureFamily P)
     intro i hi
     simp only [cylCompact', mem_preimage]
     classical
-    have :
-      (fun j : Js (hs i) =>
+    have : (fun j : Js (hs i) =>
           ite (indexProj hs ⟨j, subset_allProj hs i j.2⟩ ≤ n) (y ⟨j, subset_allProj hs i j.2⟩)
             (x ⟨j, subset_allProj hs i j.2⟩)) =
-        fun j : Js (hs i) => y ⟨j, subset_allProj hs i j.2⟩ :=
-      by
+        fun j : Js (hs i) => y ⟨j, subset_allProj hs i j.2⟩ := by
       ext1 j
       rw [if_pos]
       refine' le_trans (le_of_eq _) ((indexProj_le hs i j).trans hi)
       congr
     rw [this]
-    change
-      y ∈
-        cylCompact' hP_inner hs (ε / 2 ^ (i + 2)) (ENNReal.div_pos_iff.mpr ⟨hε.ne', by norm_num⟩) i
+    change y ∈ cylCompact' hP_inner hs (ε / 2 ^ (i + 2))
+      (ENNReal.div_pos_iff.mpr ⟨hε.ne', by norm_num⟩) i
     exact c'_subset_cylCompact' hP_inner hs ε hε n i hi hy
   · simp only [piInnerCompact, mem_image, SetCoe.forall, mem_setOf_eq]
     intro i hi
     by_cases hi_le : indexProj hs ⟨i, hi⟩ ≤ n
     · let m := indexProj hs ⟨i, hi⟩
-      have hy' :
-        y ∈
-          cylCompact' hP_inner hs (ε / 2 ^ (m + 2)) (ENNReal.div_pos_iff.mpr ⟨hε.ne', by norm_num⟩)
-            m :=
+      have hy' : y ∈ cylCompact' hP_inner hs (ε / 2 ^ (m + 2))
+          (ENNReal.div_pos_iff.mpr ⟨hε.ne', by norm_num⟩) m :=
         c'_subset_cylCompact' hP_inner hs ε hε n m hi_le hy
       rw [cylCompact', mem_preimage] at hy' 
       refine' ⟨fun j => y ⟨j, subset_allProj hs _ j.2⟩, hy', _⟩
@@ -804,14 +653,12 @@ theorem nonempty_iInter_c' (hP : IsProjectiveMeasureFamily P)
     (hs : ∀ n, s n ∈ cylinders α) (hs_anti : Antitone s) {ε : ℝ≥0∞} (hε : 0 < ε)
     (hs_ge : ∀ n, ε ≤ kolContent hP (s n))
     [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
-    (⋂ i, c' hP_inner hs ε hε i).Nonempty :=
-  by
+    (⋂ i, c' hP_inner hs ε hε i).Nonempty := by
   suffices ((⋂ i, c' hP_inner hs ε hε i) ∩ piInnerCompact hP_inner hs ε hε).Nonempty by
     rwa [inter_eq_left_iff_subset.mpr (iInter_c'_subset_piInnerCompact hP_inner hs ε hε)] at this 
   rw [iInter_inter]
-  refine'
-    IsCompact.nonempty_iInter_of_sequence_nonempty_compact_closed
-      (fun i => c' hP_inner hs ε hε i ∩ piInnerCompact hP_inner hs ε hε) _ _ _ _
+  refine' IsCompact.nonempty_iInter_of_sequence_nonempty_compact_closed
+    (fun i => c' hP_inner hs ε hε i ∩ piInnerCompact hP_inner hs ε hε) _ _ _ _
   · intro i
     refine' inter_subset_inter _ subset_rfl
     simp_rw [c', Set.bInter_le_succ]
@@ -823,10 +670,8 @@ theorem nonempty_iInter_c' (hP : IsProjectiveMeasureFamily P)
 theorem continuous_at_empty_aux (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     (hs : ∀ n, s n ∈ cylinders α) (hs_anti : Antitone s) {ε : ℝ≥0∞} (hε : 0 < ε)
-    (hs_ge : ∀ n, ε ≤ kolContent hP (s n)) : (⋂ n, s n) ≠ ∅ :=
-  by
-  suffices (⋂ n, c hP_inner hs ε hε n).Nonempty
-    by
+    (hs_ge : ∀ n, ε ≤ kolContent hP (s n)) : (⋂ n, s n) ≠ ∅ := by
+  suffices (⋂ n, c hP_inner hs ε hε n).Nonempty by
     rw [nonempty_iff_ne_empty] at this 
     rw [Ne.def, ← subset_empty_iff] at this ⊢
     intro h
@@ -846,8 +691,7 @@ theorem continuous_at_empty_aux (hP : IsProjectiveMeasureFamily P)
 theorem continuous_at_empty_kolContent (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     (hs : ∀ n : ℕ, s n ∈ cylinders α) (hs_anti : Antitone s) (hs_Inter : (⋂ n : ℕ, s n) = ∅) :
-    Filter.Tendsto (fun n => kolContent hP (s n)) Filter.atTop (nhds 0) :=
-  by
+    Filter.Tendsto (fun n => kolContent hP (s n)) Filter.atTop (nhds 0) := by
   rw [ENNReal.tendsto_nhds_zero]
   intro ε hε
   by_contra h_freq_gt
@@ -872,8 +716,8 @@ variable [Nonempty (∀ i, α i)] [∀ i, TopologicalSpace (α i)] [∀ i, Opens
 theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α)
-    (h_disj : Pairwise (Disjoint on f)) : kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) :=
-  by
+    (h_disj : Pairwise (Disjoint on f)) : 
+    kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
   refine' countably_additive_addContent_of_todo setRing_cylinders _ _ _ hf hf_Union h_disj
   · exact fun hx => kolContent_ne_top _ hx
   · exact fun s hs => continuous_at_empty_kolContent hP hP_inner hs
@@ -903,8 +747,8 @@ variable [Nonempty (∀ i, α i)] [∀ i, TopologicalSpace (α i)] [∀ i, Borel
 
 theorem kolContent_sigma_additive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ → Set (∀ i, α i)⦄
     (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α)
-    (h_disj : Pairwise (Disjoint on f)) : kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) :=
-  by
+    (h_disj : Pairwise (Disjoint on f)) :
+    kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
   haveI : ∀ i, TopologicalSpace.SecondCountableTopology (α i) := fun i =>
     PolishSpace.secondCountableTopology
   refine' kolContent_sigma_additive_of_innerRegular hP _ hf hf_Union h_disj
@@ -912,8 +756,7 @@ theorem kolContent_sigma_additive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ 
 
 theorem kolContent_countably_subadditive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ → Set (∀ i, α i)⦄
     (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α) :
-    kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) :=
-  by
+    kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) := by
   haveI : ∀ i, TopologicalSpace.SecondCountableTopology (α i) := fun i =>
     PolishSpace.secondCountableTopology
   refine' kolContent_countably_subadditive_of_innerRegular hP _ hf hf_Union

@@ -16,19 +16,16 @@ This is not true in general in semirings, or without the hypothesis that `m` is 
 examples 7 and 8 in Halmos' book Measure Theory (1974), page 40. -/
 theorem countably_additive_of_todo (hC : SetRing C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (hm_ne_top : ∀ {s} (hs : s ∈ C), m s hs ≠ ∞)
-    (hm_add :
-      ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
-        Disjoint s t → m (s ∪ t) (hC.union_mem hs ht) = m s hs + m t ht)
-    (hm :
-      ∀ ⦃s : ℕ → Set α⦄ (hs : ∀ n, s n ∈ C),
-        Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n => m (s n) (hs n)) atTop (𝓝 0))
+    (hm_add : ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
+      Disjoint s t → m (s ∪ t) (hC.union_mem hs ht) = m s hs + m t ht)
+    (hm : ∀ ⦃s : ℕ → Set α⦄ (hs : ∀ n, s n ∈ C),
+      Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n => m (s n) (hs n)) atTop (𝓝 0))
     ⦃f : ℕ → Set α⦄ (h : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C) (h_disj : Pairwise (Disjoint on f)) :
     m (⋃ i, f i) hUf = ∑' i, m (f i) (h i) :=
   by
   -- extend the properties of `m` to `set.sdiff` and `set.accumulate`
-  have hm_diff :
-    ∀ {s t} (hs : s ∈ C) (ht : t ∈ C), t ⊆ s → m (s \ t) (hC.diff_mem hs ht) = m s hs - m t ht :=
-    by
+  have hm_diff : ∀ {s t} (hs : s ∈ C) (ht : t ∈ C), t ⊆ s →
+      m (s \ t) (hC.diff_mem hs ht) = m s hs - m t ht := by
     intro s t hs ht hst
     have h_union := hm_add ht (hC.diff_mem hs ht) disjoint_sdiff_self_right
     simp_rw [Set.union_diff_self, Set.union_eq_right_iff_subset.mpr hst] at h_union 
@@ -36,8 +33,7 @@ theorem countably_additive_of_todo (hC : SetRing C) (m : ∀ s : Set α, s ∈ C
   have hm_acc :
     ∀ (s : ℕ → Set α) (_ : Pairwise (Disjoint on s)) (h_meas : ∀ i, s i ∈ C) (n : ℕ),
       m (Set.Accumulate s n) (hC.accumulate_mem h_meas n) =
-        ∑ i in Finset.range (n + 1), m (s i) (h_meas i) :=
-    by
+        ∑ i in Finset.range (n + 1), m (s i) (h_meas i) := by
     intro s hs_disj hs_meas n
     simp_rw [Set.accumulate_def]
     induction' n with n hn
@@ -47,8 +43,7 @@ theorem countably_additive_of_todo (hC : SetRing C) (m : ∀ s : Set α, s ∈ C
     simp_rw [Set.bUnion_le_succ]
     rw [hm_add]
     exact Set.disjoint_accumulate hs_disj (Nat.lt_succ_self n)
-  have hm_mono : ∀ {s t} (hs : s ∈ C) (ht : t ∈ C), t ⊆ s → m t ht ≤ m s hs :=
-    by
+  have hm_mono : ∀ {s t} (hs : s ∈ C) (ht : t ∈ C), t ⊆ s → m t ht ≤ m s hs := by
     intro s t hs ht hst
     have h_union := hm_add ht (hC.diff_mem hs ht) disjoint_sdiff_self_right
     simp_rw [Set.union_diff_self, Set.union_eq_right_iff_subset.mpr hst] at h_union 
@@ -68,8 +63,7 @@ theorem countably_additive_of_todo (hC : SetRing C) (m : ∀ s : Set α, s ∈ C
     exact Set.inter_compl_self _
   have h_tendsto : Tendsto (fun n => m (s n) (hCs n)) atTop (𝓝 0) := hm hCs hs_anti hs_Inter
   have hmsn :
-    ∀ n, m (s n) (hCs n) = m (⋃ i, f i) hUf - ∑ i in Finset.range (n + 1), m (f i) (h i) :=
-    by
+      ∀ n, m (s n) (hCs n) = m (⋃ i, f i) hUf - ∑ i in Finset.range (n + 1), m (f i) (h i) := by
     intro n
     rw [hm_diff hUf (hC.accumulate_mem h n)]
     · congr
@@ -77,8 +71,7 @@ theorem countably_additive_of_todo (hC : SetRing C) (m : ∀ s : Set α, s ∈ C
     · exact Set.accumulate_subset_iUnion _ _
   simp_rw [hmsn] at h_tendsto 
   have h_tendsto' :
-    Tendsto (fun n => ∑ i in Finset.range n, m (f i) (h i)) atTop (𝓝 (m (⋃ i, f i) hUf)) :=
-    by
+    Tendsto (fun n => ∑ i in Finset.range n, m (f i) (h i)) atTop (𝓝 (m (⋃ i, f i) hUf)) := by
     refine' (Filter.tendsto_add_atTop_iff_nat 1).mp _
     rwa [ENNReal.tendsto_atTop_zero_const_sub_iff _ _ (hm_ne_top _)] at h_tendsto 
     intro n
@@ -88,9 +81,8 @@ theorem countably_additive_of_todo (hC : SetRing C) (m : ∀ s : Set α, s ∈ C
 
 theorem countably_additive_addContent_of_todo (hC : SetRing C) (m : AddContent C)
     (hm_ne_top : ∀ {s} (_ : s ∈ C), m s ≠ ∞)
-    (hm :
-      ∀ ⦃s : ℕ → Set α⦄ (_ : ∀ n, s n ∈ C),
-        Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n => m (s n)) atTop (𝓝 0))
+    (hm : ∀ ⦃s : ℕ → Set α⦄ (_ : ∀ n, s n ∈ C),
+      Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n => m (s n)) atTop (𝓝 0))
     ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C) (h_disj : Pairwise (Disjoint on f)) :
     m (⋃ i, f i) = ∑' i, m (f i) :=
   countably_additive_of_todo hC (fun s _ => m s) (fun hs => hm_ne_top hs)
@@ -123,8 +115,7 @@ theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
   swap
   · exact hsI
   have h_sUnion_mem : ⋃₀ ↑I ∈ C :=
-    haveI : ∀ J : Finset (Set α), ↑J ⊆ C → ⋃₀ ↑J ∈ C :=
-      by
+    haveI : ∀ J : Finset (Set α), ↑J ⊆ C → ⋃₀ ↑J ∈ C := by
       intro J
       induction' J using Finset.induction with s J _ h
       · simp only [Finset.coe_empty, Set.empty_subset, Set.sUnion_empty, forall_true_left, hC_empty]
@@ -142,12 +133,10 @@ theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
 theorem sUnion_eq_sum_of_union_eq_add' (hC_empty : ∅ ∈ C)
     (hC_union : ∀ {s t : Set α} (_ : s ∈ C) (_ : t ∈ C), s ∪ t ∈ C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞) (m_empty : m ∅ hC_empty = 0)
-    (m_add :
-      ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
-        Disjoint s t → m (s ∪ t) (hC_union hs ht) = m s hs + m t ht)
+    (m_add : ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
+      Disjoint s t → m (s ∪ t) (hC_union hs ht) = m s hs + m t ht)
     (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : Set.PairwiseDisjoint (I : Set (Set α)) id)
-    (h_mem : ⋃₀ ↑I ∈ C) : m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.property) :=
-  by
+    (h_mem : ⋃₀ ↑I ∈ C) : m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.property) := by
   have h :=
     sUnion_eq_sum_of_union_eq_add hC_empty (fun hs ht => hC_union hs ht) (extend m)
       (extend_empty hC_empty m_empty) ?_ I h_ss h_dis h_mem
