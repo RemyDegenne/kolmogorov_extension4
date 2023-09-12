@@ -181,6 +181,9 @@ end isClosed_proj
 
 end ProjectionMaps
 
+section boxes
+/-! TODO: this section is not used -/
+
 def box (t : (i : ι) → Set (α i)) (s : Finset ι) : Set ((i : ι) → α i) :=
   (s : Set ι).pi t
 
@@ -196,8 +199,6 @@ theorem measurableSet_box [∀ i, MeasurableSpace (α i)] (t : (i : ι) → Set 
     (h : ∀ i ∈ s, MeasurableSet (t i)) : MeasurableSet (box t s) :=
   MeasurableSet.pi (Finset.countable_toSet _) h
 
-/- ./././Mathport/Syntax/Translate/Basic.lean:635:2: warning: expanding binder collection (i «expr ∉ » s₁) -/
-/- ./././Mathport/Syntax/Translate/Basic.lean:635:2: warning: expanding binder collection (i «expr ∉ » s₂) -/
 theorem box_inter (t₁ t₂ : (i : ι) → Set (α i)) (s₁ s₂ : Finset ι)
     (ht₁ : ∀ (i) (_ : i ∉ s₁), t₁ i = univ) (ht₂ : ∀ (i) (_ : i ∉ s₂), t₂ i = univ)
     [DecidableEq ι] :
@@ -205,19 +206,19 @@ theorem box_inter (t₁ t₂ : (i : ι) → Set (α i)) (s₁ s₂ : Finset ι)
   ext1 f
   rw [mem_inter_iff]
   simp_rw [mem_box]
-  refine' ⟨fun h => ⟨fun i his₁ => _, fun i his₂ => _⟩, fun h i hi => _⟩
+  refine ⟨fun h => ⟨fun i his₁ => ?_, fun i his₂ => ?_⟩, fun h i hi => ?_⟩
   · exact inter_subset_left _ _ (h i (Finset.mem_union_left s₂ his₁))
   · exact inter_subset_right _ _ (h i (Finset.mem_union_right s₁ his₂))
   · rw [Finset.mem_union] at hi 
     cases' hi with hi hi
     · by_cases hi2 : i ∈ s₂
       · exact ⟨h.1 i hi, h.2 i hi2⟩
-      · refine' ⟨h.1 i hi, _⟩
+      · refine ⟨h.1 i hi, ?_⟩
         rw [ht₂ i hi2]
         exact mem_univ _
     · by_cases hi1 : i ∈ s₁
       · exact ⟨h.1 i hi1, h.2 i hi⟩
-      · refine' ⟨_, h.2 i hi⟩
+      · refine ⟨?_, h.2 i hi⟩
         rw [ht₁ i hi1]
         exact mem_univ _
 
@@ -232,28 +233,16 @@ theorem boxes_eq_iUnion_image (C : ∀ i, Set (Set (α i))) :
   simp only [mem_univ_pi, exists_prop, mem_setOf_eq]
   constructor <;> rintro ⟨s, t, ht, rfl⟩ <;> exact ⟨s, t, ht, rfl⟩
 
-/- ./././Mathport/Syntax/Translate/Basic.lean:635:2: warning: expanding binder collection (i «expr ∉ » s₁) -/
-/- ./././Mathport/Syntax/Translate/Basic.lean:635:2: warning: expanding binder collection (i «expr ∉ » s₂) -/
 theorem isPiSystem_boxes {C : ∀ i, Set (Set (α i))} (hC : ∀ i, IsPiSystem (C i))
     (hC_univ : ∀ i, univ ∈ C i) : IsPiSystem (boxes C) := by
   rintro S₁ ⟨s₁, t₁, h₁, rfl⟩ S₂ ⟨s₂, t₂, h₂, rfl⟩ hst_nonempty
   classical
   let t₁' := s₁.piecewise t₁ fun i => univ
   let t₂' := s₂.piecewise t₂ fun i => univ
-  have h1 : ∀ i ∈ s₁, t₁ i = t₁' i := by
-    intro i hi
-    symm
-    exact Finset.piecewise_eq_of_mem _ _ _ hi
-  have h1' : ∀ (i) (_ : i ∉ s₁), t₁' i = univ := by
-    intro i hi
-    exact Finset.piecewise_eq_of_not_mem _ _ _ hi
-  have h2 : ∀ i ∈ s₂, t₂ i = t₂' i := by
-    intro i hi
-    symm
-    exact Finset.piecewise_eq_of_mem _ _ _ hi
-  have h2' : ∀ (i) (_ : i ∉ s₂), t₂' i = univ := by
-    intro i hi
-    exact Finset.piecewise_eq_of_not_mem _ _ _ hi
+  have h1 : ∀ i ∈ s₁, t₁ i = t₁' i := fun i hi ↦ (Finset.piecewise_eq_of_mem _ _ _ hi).symm
+  have h1' : ∀ (i) (_ : i ∉ s₁), t₁' i = univ := fun i hi ↦ Finset.piecewise_eq_of_not_mem _ _ _ hi
+  have h2 : ∀ i ∈ s₂, t₂ i = t₂' i := fun i hi ↦ (Finset.piecewise_eq_of_mem _ _ _ hi).symm
+  have h2' : ∀ (i) (_ : i ∉ s₂), t₂' i = univ := fun i hi ↦ Finset.piecewise_eq_of_not_mem _ _ _ hi
   rw [box_congr _ h1, box_congr _ h2]
   refine' ⟨s₁ ∪ s₂, fun i => t₁' i ∩ t₂' i, _, _⟩
   · rw [mem_pi]
@@ -291,11 +280,11 @@ theorem comap_eval_le_generateFrom_boxes_singleton [m : ∀ i, MeasurableSpace (
       MeasurableSpace.generateFrom
         ((fun t => box t {i}) '' univ.pi fun i => {s : Set (α i) | MeasurableSet s}) := by
   rw [MeasurableSpace.comap_eq_generateFrom]
-  refine' MeasurableSpace.generateFrom_mono fun S => _
+  refine MeasurableSpace.generateFrom_mono fun S => ?_
   simp only [mem_setOf_eq, mem_image, mem_univ_pi, forall_exists_index, and_imp]
   intro t ht h
   classical
-  refine' ⟨fun j => if hji : j = i then by convert t else univ, fun j => _, _⟩
+  refine ⟨fun j => if hji : j = i then by convert t else univ, fun j => ?_, ?_⟩
   · by_cases hji : j = i
     · simp only [hji, eq_self_iff_true, eq_mpr_eq_cast, dif_pos]
       convert ht
@@ -311,7 +300,7 @@ variable {α}
 theorem generateFrom_boxes [∀ i, MeasurableSpace (α i)] :
     MeasurableSpace.generateFrom (boxes fun i => {s : Set (α i) | MeasurableSet s}) =
       @MeasurableSpace.pi ι α _ := by
-  refine' le_antisymm _ _
+  apply le_antisymm
   · rw [MeasurableSpace.generateFrom_le_iff]
     rintro S ⟨s, t, h, rfl⟩
     simp only [mem_univ_pi, mem_setOf_eq] at h 
@@ -323,6 +312,8 @@ theorem generateFrom_boxes [∀ i, MeasurableSpace (α i)] :
     exact subset_iUnion
       (fun s => (fun t : (i : ι) → Set (α i) => box t s) '' univ.pi fun i => setOf MeasurableSet)
       ({i} : Finset ι)
+
+end boxes
 
 def cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) : Set ((i : ι) → α i) :=
   (fun f : (i : ι) → α i => fun i : s => f i) ⁻¹' S
@@ -365,20 +356,20 @@ theorem inter_cylinder (s₁ s₂ : Finset ι) (S₁ : Set (∀ i : s₁, α i))
     cylinder s₁ S₁ ∩ cylinder s₂ S₂ =
       cylinder (s₁ ∪ s₂)
         ((fun f => fun j : s₁ => f ⟨j, Finset.mem_union_left s₂ j.prop⟩) ⁻¹' S₁ ∩
-          (fun f => fun j : s₂ => f ⟨j, Finset.mem_union_right s₁ j.prop⟩) ⁻¹' S₂) :=
-  by ext1 f; simp only [mem_inter_iff, mem_cylinder, mem_setOf_eq]; rfl
+          (fun f => fun j : s₂ => f ⟨j, Finset.mem_union_right s₁ j.prop⟩) ⁻¹' S₂) := by
+  ext1 f; simp only [mem_inter_iff, mem_cylinder, mem_setOf_eq]; rfl
 
 theorem union_cylinder (s₁ s₂ : Finset ι) (S₁ : Set (∀ i : s₁, α i)) (S₂ : Set (∀ i : s₂, α i))
     [DecidableEq ι] :
     cylinder s₁ S₁ ∪ cylinder s₂ S₂ =
       cylinder (s₁ ∪ s₂)
         ((fun f => fun j : s₁ => f ⟨j, Finset.mem_union_left s₂ j.prop⟩) ⁻¹' S₁ ∪
-          (fun f => fun j : s₂ => f ⟨j, Finset.mem_union_right s₁ j.prop⟩) ⁻¹' S₂) :=
-  by ext1 f; simp only [mem_union, mem_cylinder, mem_setOf_eq]; rfl
+          (fun f => fun j : s₂ => f ⟨j, Finset.mem_union_right s₁ j.prop⟩) ⁻¹' S₂) := by
+  ext1 f; simp only [mem_union, mem_cylinder, mem_setOf_eq]; rfl
 
 theorem compl_cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) :
-    (cylinder s S)ᶜ = cylinder s (Sᶜ) :=
-  by ext1 f; simp only [mem_compl_iff, mem_cylinder]
+    (cylinder s S)ᶜ = cylinder s (Sᶜ) := by
+  ext1 f; simp only [mem_compl_iff, mem_cylinder]
 
 theorem eq_of_cylinder_eq_of_subset [h_nonempty : Nonempty ((i : ι) → α i)] {I J : Finset ι}
     {S : Set (∀ i : I, α i)} {T : Set (∀ i : J, α i)} (h_eq : cylinder I S = cylinder J T)
@@ -417,7 +408,6 @@ variable [∀ i, MeasurableSpace (α i)]
 
 variable (α)
 
-/- ./././Mathport/Syntax/Translate/Expr.lean:107:6: warning: expanding binder group (s S) -/
 def cylinders : Set (Set ((i : ι) → α i)) :=
   ⋃ (s) (S) (_ : MeasurableSet S), {cylinder s S}
 
@@ -456,19 +446,16 @@ theorem inter_mem_cylinders {s t : Set (∀ i : ι, α i)} (hs : s ∈ cylinders
   obtain ⟨s₁, S₁, hS₁, rfl⟩ := hs
   obtain ⟨s₂, S₂, hS₂, rfl⟩ := ht
   classical
-  refine'
-    ⟨s₁ ∪ s₂,
-      (fun f => (fun i => f ⟨i, Finset.mem_union_left s₂ i.prop⟩ : ∀ i : s₁, α i)) ⁻¹' S₁ ∩
-        {f | (fun i => f ⟨i, Finset.mem_union_right s₁ i.prop⟩ : ∀ i : s₂, α i) ∈ S₂},
-      _, _⟩
+  refine ⟨s₁ ∪ s₂,
+    (fun f => (fun i => f ⟨i, Finset.mem_union_left s₂ i.prop⟩ : ∀ i : s₁, α i)) ⁻¹' S₁ ∩
+      {f | (fun i => f ⟨i, Finset.mem_union_right s₁ i.prop⟩ : ∀ i : s₂, α i) ∈ S₂}, ?_, ?_⟩
   · refine' MeasurableSet.inter _ _
-    · exact
-        measurableSet_preimage (measurable_proj₂' (s₁ ∪ s₂) s₁ (Finset.subset_union_left _ _)) hS₁
-    · exact
-        measurableSet_preimage (measurable_proj₂' (s₁ ∪ s₂) s₂ (Finset.subset_union_right _ _)) hS₂
+    · exact (measurable_proj₂' (s₁ ∪ s₂) s₁ (Finset.subset_union_left _ _)) hS₁
+    · exact (measurable_proj₂' (s₁ ∪ s₂) s₂ (Finset.subset_union_right _ _)) hS₂
   · exact inter_cylinder _ _ _ _
 
-theorem compl_mem_cylinders {s : Set (∀ i : ι, α i)} (hs : s ∈ cylinders α) : sᶜ ∈ cylinders α := by
+theorem compl_mem_cylinders {s : Set (∀ i : ι, α i)} (hs : s ∈ cylinders α) :
+    sᶜ ∈ cylinders α := by
   rw [mem_cylinders] at hs ⊢
   obtain ⟨s, S, hS, rfl⟩ := hs
   refine' ⟨s, Sᶜ, hS.compl, _⟩
@@ -505,31 +492,31 @@ theorem setRing_cylinders : MeasureTheory.SetRing (cylinders α) :=
 theorem setSemiringCylinders : MeasureTheory.SetSemiring (cylinders α) :=
   setField_cylinders.setSemiring
 
-theorem iUnion_le_mem_cylinders {s : ℕ → Set (∀ i : ι, α i)} (hs : ∀ n, s n ∈ cylinders α) (n : ℕ) :
+theorem iUnion_le_mem_cylinders {s : ℕ → Set (∀ i : ι, α i)} (hs : ∀ n, s n ∈ cylinders α)
+    (n : ℕ) :
     (⋃ i ≤ n, s i) ∈ cylinders α :=
   setField_cylinders.iUnion_le_mem hs n
 
-theorem iInter_le_mem_cylinders {s : ℕ → Set (∀ i : ι, α i)} (hs : ∀ n, s n ∈ cylinders α) (n : ℕ) :
+theorem iInter_le_mem_cylinders {s : ℕ → Set (∀ i : ι, α i)} (hs : ∀ n, s n ∈ cylinders α)
+    (n : ℕ) :
     (⋂ i ≤ n, s i) ∈ cylinders α :=
   setField_cylinders.iInter_le_mem hs n
 
-theorem generateFrom_cylinders : MeasurableSpace.generateFrom (cylinders α) = MeasurableSpace.pi :=
-  by
-  refine' le_antisymm _ _
+theorem generateFrom_cylinders :
+    MeasurableSpace.generateFrom (cylinders α) = MeasurableSpace.pi := by
+  apply le_antisymm
   · rw [MeasurableSpace.generateFrom_le_iff]
     rintro S hS
     obtain ⟨s, S, hSm, rfl⟩ := (mem_cylinders _).mp hS
     exact measurableSet_cylinder s S hSm
-  · refine' iSup_le fun i => _
-    refine' (comap_eval_le_generateFrom_boxes_singleton α i).trans _
-    refine' MeasurableSpace.generateFrom_mono _
-    intro x
+  · refine iSup_le fun i => ?_
+    refine (comap_eval_le_generateFrom_boxes_singleton α i).trans ?_
+    refine MeasurableSpace.generateFrom_mono (fun x ↦ ?_)
     simp only [mem_image, mem_univ_pi, mem_setOf_eq, mem_cylinders, exists_prop,
       forall_exists_index, and_imp]
     rintro t ht rfl
-    refine' ⟨{i}, _, _, _⟩
+    refine ⟨{i}, ?_, ?_, ?_⟩
     · exact {f | f ⟨i, Finset.mem_singleton_self i⟩ ∈ t i}
-    · refine' measurableSet_preimage _ (ht i)
-      exact measurable_pi_apply _
+    · exact (measurable_pi_apply _) (ht i)
     · ext1 x
       simp only [mem_box, Finset.mem_singleton, forall_eq, mem_cylinder, mem_setOf_eq]
