@@ -1,8 +1,6 @@
 import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
 import KolmogorovExtension4.Content
 
--- #align_import additive_of_continuous
-
 open Filter
 
 open scoped ENNReal Topology BigOperators
@@ -87,18 +85,6 @@ theorem countably_additive_addContent_of_todo (hC : SetRing C) (m : AddContent C
     m (⋃ i, f i) = ∑' i, m (f i) :=
   countably_additive_of_todo hC (fun s _ => m s) (fun hs => hm_ne_top hs)
     (addContent_union m hC) hm hf hUf h_disj
-
-/- 
-theorem countably_additive_addContent_of_todo (hC : SetRing C) (m : AddContent C)
-    (hm_ne_top : ∀ {s} (hs : s ∈ C), m s ≠ ∞)
-    (hm :
-      ∀ ⦃s : ℕ → Set α⦄ (hs : ∀ n, s n ∈ C),
-        Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n => m (s n)) atTop (𝓝 0))
-    ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C) (h_disj : Pairwise (Disjoint on f)) :
-    m (⋃ i, f i) = ∑' i, m (f i) := by
-    exact countably_additive_of_todo hC (fun s _ => m s) (fun hs => hm_ne_top hs)
-    (fun hs ht h_dis => addContent_union m hC hs ht h_dis) hm hf hUf h_disj
--/
 
 theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
     (hC_union : ∀ {s t : Set α} (_ : s ∈ C) (_ : t ∈ C), s ∪ t ∈ C) (m : Set α → ℝ≥0∞)
