@@ -609,7 +609,7 @@ cylinders.
 Let us state an important lemma on semi-rings: 
 
 \begin{lemma}\label{l1}
-  Let $\mathcal H$ be a semiring, $\mathcal I \subseteq_f \mathcal H$,
+  Let $\mathcal H$ be a semi-ring, $\mathcal I \subseteq_f \mathcal H$,
   $A \in \mathcal H$. Then, there is $\mathcal K \subseteq_f \mathcal
   H$ such that $\mathcal K$ contains pairwise disjoint sets and $A
   \setminus \bigcup_{I \in \mathcal I} I = \biguplus_{K\in \mathcal K}
@@ -618,7 +618,7 @@ Let us state an important lemma on semi-rings:
 
 \begin{proof}
   We proceed by induction on $\mathcal I$. If $\mathcal I$ is a
-  singleton, the assertion is true by the definition of a semiring. If
+  singleton, the assertion is true by the definition of a semi-ring. If
   it holds for some $\mathcal I$ (i.e.\ there is $\mathcal K
   \subseteq_f \mathcal H$ with $A \setminus \bigcup_{I \in \mathcal I}
   I = \biguplus_{K\in \mathcal K} K$), let us consider $\mathcal I' =
@@ -788,7 +788,7 @@ formally from $m(\emptyset) = m(\emptyset \cup \emptyset) = 2
 m(\emptyset)$\todo{not if m is infinite everywhere}. However, since \leanline{Finset}s are assumed to have
 distinct elements, we cannot have \leanline{∅} twice in \leanline{I}.
 
-For the concrete application we have in mind, we introduce a definition which uses a specific semiring, the measurable cylinders, based on a projective family of measures.
+For the concrete application we have in mind, we introduce a definition which uses a specific semi-ring, the measurable cylinders, based on a projective family of measures.
 That is the goal of the two definitions \leanline{kolmogorovFun} and \leanline{kolContent} below:
 
 \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
@@ -875,14 +875,14 @@ not show here.
 \noindent
 Although some material on outer measures was covered in {\tt mathlib}
 already, the classical extension theorem (extending a set function $m$
-on a semiring $\mathcal H$)) was not provided yet. In particular, this
+on a semi-ring $\mathcal H$)) was not provided yet. In particular, this
 result states that the outer measure coincides with $m$ on $\mathcal
 H$. All statements on equality of $\mu$ and $m$ present in {\tt
   mathlib} at the time of writing have too many requirements: they all require $m$ to be a $\sigma$-additive function defined on a $\sigma$-algebra.
 
 %The next result talks about an \leanline{induced_outer_measure} in
 %terms of {\tt mathlib}.
-The next result extends a set function on a semi-ring\todo{check that we are consistend with semiring vs semi-ring} to an outer measure.
+The next result extends a set function on a semi-ring to an outer measure.
 
 \begin{proposition}[Outer measure induced by a set function on a semi-ring] %\mbox{}
   Let \label{P:auss} $\mathcal H$ be a semi-ring and $m: \mathcal
@@ -926,7 +926,7 @@ H$ in the same special case. See also \cite[Theorem
   2.5]{Kallenberg2020}.
 
 \begin{theorem}[Carathéodory extension]\label{T:masseind}
-  Let $\mathcal H$ be a semiring and $m: \mathcal H\to\mathbb R_+$
+  Let $\mathcal H$ be a semi-ring and $m: \mathcal H\to\mathbb R_+$
   $\sigma$-finite and $\sigma$-additive. Furthermore, let $\mu$ be the
   induced outer measure from Proposition~\ref{P:auss} and $\mathcal F$
   the $\sigma$-algebra from Theorem~\ref{T:cara}. Then,
@@ -1045,7 +1045,7 @@ topological structure of the underlying space.
 
 \begin{proof}
   1.$\Leftrightarrow$2.\ was already shown in
-  Lemma~\ref{l:halbextRing}, since $\mathcal R$ is a semiring.
+  Lemma~\ref{l:halbextRing}, since $\mathcal R$ is a semi-ring.
 
   ~
 
