@@ -146,12 +146,13 @@ At first sight, it might be surprising that martingales, a certain class of stoc
 The main steps in our construction, which were previously missing in {\tt mathlib}, are (more mathematical details are below, and in standard textbooks on Probability Theory, e.g.\ \cite{Klenke2013, Kallenberg2020}):
 \begin{enumerate}
 \item a formalization of (the set-system of) semi-rings (see Definition~\ref{def:semi} below); 
-\item adding some main lemmas to measure theory, e.g.\ continuity of a measure at the emptyset\todo{for a measure, this is already in mathlib?} (see e.g.\ Lemma~\ref{l:halbextRing}, Proposition~\ref{P:stetigmass}, Lemma~\ref{l:stetigcompact} below);
+\item a definition of additive contents over semi-rings\todo{R: I added that point but we don't talk much about contents};
+%\item adding some main lemmas to measure theory, e.g.\ continuity of a measure at the emptyset\todo{for a measure, this is already in mathlib?} (see e.g.\ Lemma~\ref{l:halbextRing}, Proposition~\ref{P:stetigmass}, Lemma~\ref{l:stetigcompact} below);
 \item a proof that a single probability measure on a Polish space is inner regular with respect to compact sets (see Definition~\ref{def:innerreg}; in fact, we proved a slight generalization using pseudo-metric spaces, found in Lemma~\ref{L:relcoPol} below); 
 \item the classical Carathéodory extension theorem, providing us with a candidate for the measure which we want to construct (see Theorem~\ref{T:masseind}); 
 \item the Kolmogorov extension theorem, as based on the previous steps (See Theorem~\ref{T1}).
 \end{enumerate}
-The Kolmogorov extension theorem has been previously formalized in Isabelle/HOL \cite{Immler2012}. This formalization only works on Polish spaces (rather than on spaces where every finite measure is inner regular with respect to compact sets, see below), and only in the case where all $\alpha_i$'s are identical\todo{Lean has dependent types, Isabelle doesn't}. However, type theory as the basis of the formalization, as well as several mathematical concepts (e.g.\ projective families of measures or the continuity of a measure in the emptyset) are the same in both formalisations in these two interactive theorem provers.
+The Kolmogorov extension theorem has been previously formalized in Isabelle/HOL \cite{Immler2012}. This formalization only works on Polish spaces (rather than on spaces where every finite measure is inner regular with respect to compact sets, see below), and only in the case where all $\alpha_i$'s are identical\todo{Lean has dependent types, Isabelle doesn't}. However, type theory as the basis of the formalization, as well as several mathematical concepts (e.g.\ projective families of measures or the continuity of a measure in the emptyset) are the same in both formalisations\todo{no, the type theory is not the same} in these two interactive theorem provers.
 
 
 
@@ -169,7 +170,11 @@ For the former, this follows from some general principles of Markov processes (e
 \cite[Theorem~4.23]{Kallenberg2020}.
 
 \noindent
-{\em Theorem of Ionescu-Tulcea and related results:} While Kolmogorov's extension Theorem gives a result for arbitrary $\iota$, but requires some properties of the family $(\alpha_t)_{t\in\iota}$, the Theorem of Ionescu-Tulcea \cite[Theorem 8.24]{Kallenberg2020} can only deal with countable $\iota$, but has no restrictions on $(\alpha_t)_{t\in\iota}$. The proof of the latter, however, uses transition kernels (and an inductive construction of a content, which can be extended to a measure) rather than projective families. However, continuity of a measure at $\emptyset$\todo{already in mathlib} is used as well and a formalization would complement our work. In addition, using the Theorem of Ionescu-Tulcea one can define infinitely many independent random variables (arbitrary $\iota$) on a joint probability space \cite[Theorem 8.24]{Kallenberg2020} without requirements on $(\alpha_t)_{t\in\iota}$. All of these results can be used in order to construct countably many independent random variables, which are frequently used in concrete constructions in probability theory. Examples are (one direction of) the Borel-Cantelli-Lemma \cite[Theorem 4.28]{Kallenberg2020}, Kolmogorov's 0-1-law \cite[Theorem 4.13]{Kallenberg2020}, random walks \cite[Chapter 12]{Kallenberg2020}, branching processes  \cite[Chapter 13]{Kallenberg2020}, and percolation  \cite[Chapter 2.4]{Klenke2013}, to name just a few. While the first two are already formalized in \leanline{mathlib}, it is only clear due to the Kolmorov extension theorem (or the Theorem of Ionesu-Tulcea) that infinitely many independent random variables can indeed be defined on a joint probability space. In this sense, our contribution is also important for giving more sense to already formalised parts of \leanline{mathlib}.
+{\em Theorem of Ionescu-Tulcea and related results:}
+While Kolmogorov's extension Theorem gives a result for arbitrary $\iota$, but requires some properties of the family $(\alpha_t)_{t\in\iota}$, the Theorem of Ionescu-Tulcea \cite[Theorem 8.24]{Kallenberg2020} can only deal with countable $\iota$, but has no restrictions on $(\alpha_t)_{t\in\iota}$. The proof of the latter, however, uses transition kernels (and an inductive construction of a content, which can be extended to a measure) rather than projective families.
+However, the structure of the argument is similar and could use some of our results, like the proof of $\sigma$-additivity from continuity at the empty set (see Lemma~\ref{P:stetigmass}).
+A formalization would complement our work. In addition, using the Theorem of Ionescu-Tulcea one can define infinitely many independent random variables (arbitrary $\iota$) on a joint probability space \cite[Theorem 8.24]{Kallenberg2020} without requirements on $(\alpha_t)_{t\in\iota}$.
+All of these results can be used in order to construct countably many independent random variables, which are frequently used in concrete constructions in probability theory. Examples are (one direction of) the Borel-Cantelli-Lemma \cite[Theorem 4.28]{Kallenberg2020}, Kolmogorov's 0-1-law \cite[Theorem 4.13]{Kallenberg2020}, random walks \cite[Chapter 12]{Kallenberg2020}, branching processes  \cite[Chapter 13]{Kallenberg2020}, and percolation  \cite[Chapter 2.4]{Klenke2013}, to name just a few. While the first two are already formalized in \leanline{mathlib}, it is only clear due to the Kolmorov extension theorem (or the Theorem of Ionesu-Tulcea) that infinitely many independent random variables can indeed be defined on a joint probability space. In this sense, our contribution is also important for giving more sense to already formalised parts of \leanline{mathlib}.
 
 \section{Formalization of the Daniell-Kolmogorov extension}
 We start by stating the exact result. We are going to formulate the main result in a modern fashion, as e.g.\ found in Theorem 2.2 of \cite{rao1971projective}, Theorem 7.7.1 of Volume~2 of \cite{bogachev2007measure}, Theorem 15.26 of \cite{guide2006infinite}, or \cite{border1998expository}. Note that these formulations split general assumptions on the underlying space(s) (e.g.\ a metric property) from the property which is needed in the proof (inner regularity with respect to compact sets). Other -- highly readable -- references such as \cite{Billingsley1995} state the extension theorem only in special cases such as $\alpha_t = \mathbb R$ for all $t$. 
@@ -309,19 +314,21 @@ $\sigma$-algebra, which we introduce next.
     (i.e.\ monotonicity) and \leanline{∀ (s : ℕ → Set α), measureOf (⋃ (i : ℕ), s i) ≤ ∑' (i : ℕ), measureOf (s i)} (which we call
     $\sigma$-subadditivity). \\ Note that an outer measure is defined
     on $2^\alpha$, whereas a measure is only defined on a subset (the
-    $\sigma$-algebra of measurable sets). More precisely\todo{I don't understand why all these details are here. We never use MeasureSpace}: A
-    \leanline{MeasureSpace α} extends a \leanline{MeasurableSpace α}
-    by a \leanline{Measure α} (which is usually called
-    \leanline{volume}). For the measure, we have: \leanline{structure MeasureTheory.Measure α [MeasurableSpace α] extends MeasureTheory.OuterMeasure}.
-    Here $\sigma$-additivity of a
-    \leanline{Measure α} reads
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  m_iUnion : ∀ ⦃f : ℕ → Set α⦄,
-    (∀ (i : ℕ), MeasurableSet (f i)) →
-    Pairwise (Disjoint on f) →
-    ↑toOuterMeasure (⋃ (i : ℕ), f i) =
-    ∑' (i : ℕ), ↑toOuterMeasure (f i)
-\end{minted}    
+    $\sigma$-algebra of measurable sets).
+  \item A measure defined on a type \leanline{α} on which we have a \leanline{MeasurableSpace α} is denoted by the type \leanline{MeasureTheory.Measure α}
+    %More precisely\todo{I don't understand why all these details are here. We never use MeasureSpace}: A
+    %\leanline{MeasureSpace α} extends a \leanline{MeasurableSpace α}
+    %by a \leanline{Measure α} (which is usually called
+    %\leanline{volume}). For the measure, we have: \leanline{structure MeasureTheory.Measure α [MeasurableSpace α] extends MeasureTheory.OuterMeasure}.
+    %Here $\sigma$-additivity of a
+    %\leanline{Measure α} reads
+%\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+%  m_iUnion : ∀ ⦃f : ℕ → Set α⦄,
+%    (∀ (i : ℕ), MeasurableSet (f i)) →
+%    Pairwise (Disjoint on f) →
+%    ↑toOuterMeasure (⋃ (i : ℕ), f i) =
+%    ∑' (i : ℕ), ↑toOuterMeasure (f i)
+%\end{minted}    
   \end{enumerate}
 \end{remark}
 
@@ -358,10 +365,12 @@ $\sigma$-algebra, which we introduce next.
     measurable spaces. Some $f : \alpha \to \beta$ is called
     measurable (with respect to $\mathcal F$ and $\mathcal G$) if
     $f^{-1} \mathcal G \subseteq \mathcal F$. In \leanline{mathlib},
-    see \leanline{Measurable} and note that this notion usually comes
-    with some \leanline{m : Measure α} and $f$ is almost everywhere
-    measurable (\leanline{AEMeasurable}) if it coincices with some
-    \leanline{Measurable g}, \leanline{m}-almost everywhere\todo{do we need aemeasurable? could it be omitted for simplicity?}.\\ In this
+    see \leanline{Measurable}.
+    %and note that this notion usually comes
+    %with some \leanline{m : Measure α} and $f$ is almost everywhere
+    %measurable (\leanline{AEMeasurable}) if it coincices with some
+    %\leanline{Measurable g}, \leanline{m}-almost everywhere\todo{do we need aemeasurable? could it be omitted for simplicity?}.
+    \\ In this
     case, if $\mu$ is a measure on $\mathcal F$, the measure $\nu:
     \mathcal G \to [0, \infty], \nu(B) := \mu (f^{-1}(B))$ is called
     the image (or push-forward) measure of $\mu$ under $f$. We write
@@ -375,9 +384,9 @@ particular, the product is taken over a set of arbitrary
 cardinality. The next definition covers the important concept of a
 projective family of measures. In short, we define measures on
 any finite subset of indices in a consistent way. Finite
-sets (of some type \leanline{ι}) are formalized with \leanline{Finset ι}. Such a \leanline{Finset} is defined as a \leanline{Multiset} (a
-quotient type of the \leanline{List}-type with respect to permutations
-of the list) together with a proof that it contains no duplicates\todo{remove this implementation detail?}.
+sets (of some type \leanline{ι}) are formalized with \leanline{Finset ι}. % Such a \leanline{Finset} is defined as a \leanline{Multiset} (a
+%quotient type of the \leanline{List}-type with respect to permutations
+%of the list) together with a proof that it contains no duplicates\todo{remove this implementation detail?}.
 
 \begin{definition}[Projective family and projective limit] \mbox{}
   \begin{enumerate}
