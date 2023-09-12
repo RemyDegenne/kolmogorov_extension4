@@ -201,6 +201,10 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       @Denumerable.ofEncodableOfInfinite S (Set.Countable.toEncodable hS) hS1
     let e : S ≃ ℕ := Denumerable.eqv S
     let u n := ((e.symm n) : Set α)
+    have hu_range : range u = S := by
+      change range (Subtype.val ∘ e.symm) = S
+      rw [range_comp, Equiv.range_eq_univ]
+      simp only [image_univ, Subtype.range_coe_subtype, setOf_mem_eq]
     let s n := (Set.Accumulate (fun m => ((u m)ᶜ : Set α)) n)ᶜ  
     have hs1 : ∀ n, MeasurableSet (s n) := by
       intro n
@@ -214,16 +218,12 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       simp only [le_eq_subset, compl_subset_compl]
       apply Set.monotone_accumulate h12 
     have hs3 : ⋂ (n : ℕ), s n = ∅ := by 
-      simp only [*]
+      simp only
       rw [Iff.symm compl_univ_iff] 
       simp only [Denumerable.decode_eq_ofNat, Option.some.injEq,  compl_iInter, compl_compl]
       rw [Set.iUnion_accumulate, ← compl_iInter, ← Iff.symm compl_univ_iff, ←hS3,
         ← Set.sInter_range]
-      have hr : (range (fun i => ↑(e.symm i)) : Set (Set α)) = S
-      · change range (Subtype.val ∘ e.symm) = S
-        rw [range_comp, Equiv.range_eq_univ]
-        simp only [image_univ, Subtype.range_coe_subtype, setOf_mem_eq]
-      rw [hr]
+      rw [hu_range]
     obtain ha := cont_at_empty_of_measure' m s hs1 hs2 hs3
     specialize ha ε hε
     cases' ha with n hn
@@ -232,8 +232,7 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       classical 
       exact {m : ℕ | m ≤ n}.fintypeImage u
     have SN : S = u '' univ :=  by
-      rw [Set.image_univ]
-      apply Denumerable.l4.symm
+      rw [Set.image_univ, hu_range]
     have S'_sub : S' ⊆ S := by
       rw [SN]
       simp only [image_univ, image_subset_iff, preimage_range, subset_univ]
