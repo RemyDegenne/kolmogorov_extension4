@@ -114,7 +114,7 @@ end Equiv
 
 
 namespace Denumerable
-
+/-! TODO: this section is not used-/
 variable {α β : Type*} 
 
 open Function Set

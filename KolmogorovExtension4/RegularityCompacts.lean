@@ -199,7 +199,8 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
     exact hε
   · have hS' : Denumerable S :=
       @Denumerable.ofEncodableOfInfinite S (Set.Countable.toEncodable hS) hS1
-    let u n := ((Denumerable.ofNat S n) : Set α)
+    let e : S ≃ ℕ := Denumerable.eqv S
+    let u n := ((e.symm n) : Set α)
     let s n := (Set.Accumulate (fun m => ((u m)ᶜ : Set α)) n)ᶜ  
     have hs1 : ∀ n, MeasurableSet (s n) := by
       intro n
@@ -218,8 +219,10 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       simp only [Denumerable.decode_eq_ofNat, Option.some.injEq,  compl_iInter, compl_compl]
       rw [Set.iUnion_accumulate, ← compl_iInter, ← Iff.symm compl_univ_iff, ←hS3,
         ← Set.sInter_range]
-      have hr : (range (fun i => ↑(Denumerable.ofNat (↑S) i)) : Set (Set α)) = S
-      · exact Denumerable.l4 
+      have hr : (range (fun i => ↑(e.symm i)) : Set (Set α)) = S
+      · change range (Subtype.val ∘ e.symm) = S
+        rw [range_comp, Equiv.range_eq_univ]
+        simp only [image_univ, Subtype.range_coe_subtype, setOf_mem_eq]
       rw [hr]
     obtain ha := cont_at_empty_of_measure' m s hs1 hs2 hs3
     specialize ha ε hε
