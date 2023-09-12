@@ -131,8 +131,6 @@ align=left, itemsep=0pt, leftmargin=0pt, labelindent=0pt, listparindent=0pt, lab
 
 \todo[inline]{\leanline{∀ j : J, α j} or \leanline{(j : J) -> α j} ?}
 
-\todo[inline]{omit all noncomputable? Otherwise we need to explain what it means}
-
 \section{Introduction}
 One of the main building blocks of modern probability theory are stochastic processes, which are usually defined as any collection of random variables -- $(X_t)_{t\in \iota}$ with $X_t$ taking values in some $\alpha_t$ for all $t\in\iota$ -- defined on some joint probability space $(\Omega, \mathcal A, \mathbf P)$.  (As usual, we will refer to $\iota$ as the index set of times.) In order to study such processes, it is fundamental to talk about their joint distribution, i.e.\ a probability distribution on the product set $\prod_{t\in\iota} \alpha_t$. The usual approach to construct (the distribution of) a stochastic process works as follows: describe properties of the distribution of the stochastic process $P_J$ at some arbitrary but finite number of times $J = \{t_1,...,t_n\} \subseteq \iota$.
 The resulting family of probability measures $(P_J)_{J \subseteq \iota \text{ finite}}$ has to be {\em projective} in the sense that the projection of $P_J$ to $H\subseteq J$ has to be equal to $P_H$. In other words, when describing the distribution of the stochastic process at all times in $J$, and then forgetting all properties for times in $J\setminus H$, results in the description of properties at times in $H$. One may then ask if this already gives a complete description of the process for all times.
@@ -475,16 +473,15 @@ we first have to provide a formalization of all tools needed in the
 proof.
 
 \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  noncomputable def
-    projectiveLimitWithWeakestHypotheses
-    [∀ i, PseudoEMetricSpace (α i)]
-    [∀ i, BorelSpace (α i)]
-    [∀ i, SecondCountableTopology (α i)]
-    [∀ i, CompleteSpace (α i)] [∀ i, Nonempty (α i)]
-    (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
-    [∀ i, IsFiniteMeasure (P i)]
-    (hP : IsProjectiveMeasureFamily P) :
-    Measure (∀ i, α i)
+def projectiveLimitWithWeakestHypotheses
+  [∀ i, PseudoEMetricSpace (α i)]
+  [∀ i, BorelSpace (α i)]
+  [∀ i, SecondCountableTopology (α i)]
+  [∀ i, CompleteSpace (α i)] [∀ i, Nonempty (α i)]
+  (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
+  [∀ i, IsFiniteMeasure (P i)]
+  (hP : IsProjectiveMeasureFamily P) :
+  Measure (∀ i, α i)
 \end{minted}
 
 We note that we extend the standard assumption that all $\alpha_t$ are
@@ -646,10 +643,10 @@ an element from an $\exists$-statement. In addition, we do not allow
 $\emptyset \in \mathcal K$ without loss of generality\todo{that exclusion was useful for something. Find out what that is}:
 
 \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  noncomputable def diff₀ (hC : SetSemiring C)
+def diff₀ (hC : SetSemiring C)
     (hs : s ∈ C) (I : Finset (Set α)) (hI : ↑I ⊆ C)
     [DecidableEq (Set α)] : Finset (Set α) :=
-    (hC.exists_disjoint_finset_diff_eq hs I hI).choose \ {∅}
+  (hC.exists_disjoint_finset_diff_eq hs I hI).choose \ {∅}
 \end{minted}    
 
 Extending Lemma~\ref{l1}, we would like to write a finite union of
@@ -676,10 +673,10 @@ members of a semi-ring as a finite union of disjoint sets.
 The formalized version again gives rise to a definition:
 
 \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  noncomputable def indexedDiff₀ (hC : SetSemiring C)
+def indexedDiff₀ (hC : SetSemiring C)
     (J : Finset (Set α)) (hJ : ↑J ⊆ C)
     (n : Fin J.card) : Finset (Set α) :=
-    hC.diff₀ (ordered_mem' hJ n) (finsetLT J n)
+  hC.diff₀ (ordered_mem' hJ n) (finsetLT J n)
     (finsetLT_subset' J hJ n)
 \end{minted}
 
@@ -751,16 +748,16 @@ defines a set-function \leanline{tuFun} on \leanline{Set α}, whereas
 \leanline{extendContent} comes with \leanline{m : ∀ s : Set α, s ∈ C → ℝ≥0∞}. 
 
 \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  structure AddContent (C : Set (Set α)) where
-    toFun : Set α → ℝ≥0∞
-    empty' : toFun ∅ = 0
-    add' : ∀ (I : Finset (Set α))
-      (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint
-        (I : Set (Set α)) id)
-      (_h_mem : ⋃₀ ↑I ∈ C),
-      toFun (⋃₀ I) = ∑ u in I, toFun u
+structure AddContent (C : Set (Set α)) where
+  toFun : Set α → ℝ≥0∞
+  empty' : toFun ∅ = 0
+  add' : ∀ (I : Finset (Set α))
+    (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint
+      (I : Set (Set α)) id)
+    (_h_mem : ⋃₀ ↑I ∈ C),
+    toFun (⋃₀ I) = ∑ u in I, toFun u
 
-  noncomputable def extendContent
+def extendContent
     (hC : SetSemiring C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
@@ -783,16 +780,16 @@ For the concrete application we have in mind, we introduce a definition which us
 That is the goal of the two definitions \leanline{kolmogorovFun} and \leanline{kolContent} below:
 
 \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  noncomputable def kolmogorovFun
+def kolmogorovFun
     (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
     (s : Set (∀ i, α i))
     (hs : s ∈ cylinders α) : ℝ≥0∞ :=
-    P (cylinders.finset hs) (cylinders.set hs)
+  P (cylinders.finset hs) (cylinders.set hs)
 
-  noncomputable def kolContent
+def kolContent
     (hP : IsProjectiveMeasureFamily P) :
     AddContent (cylinders α) :=
-    extendContent setSemiringCylinders
+  extendContent setSemiringCylinders
     (kolmogorovFun P) (kolmogorovFun_empty hP)
     (kolmogorovFun_additive hP)
 \end{minted}
@@ -968,7 +965,7 @@ Here is a formalization of the measure resulting from
 Theorem~\ref{T:masseind}:
 
 \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  noncomputable def ofAddSubaddCaratheodory
+def ofAddSubaddCaratheodory
     (hC : SetSemiring C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
@@ -979,8 +976,8 @@ Theorem~\ref{T:masseind}:
     (m_sigma_subadd : ∀ ⦃f : ℕ → Set α⦄
       (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
       m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i)) :
-      @Measure α (inducedOuterMeasure m
-        hC.empty_mem m_empty).caratheodory
+    @Measure α (inducedOuterMeasure m
+      hC.empty_mem m_empty).caratheodory
 \end{minted}
 \todo{is this the right lemma? Do we have a similar one about contents?}
 
@@ -998,12 +995,12 @@ In the proof of Kolmogorov's extension theorem, we use a closely
 related definition\todo{should we present only this one and omit the lemma above?}:
 
 \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-noncomputable def Measure.ofAddContent
-  [mα : MeasurableSpace α] (hC : SetSemiring C)
-  (hC_gen : MeasurableSpace.generateFrom C = mα)
-  (m : AddContent C)
-  (m_sigma_subadd : ...) :
-  Measure α
+def Measure.ofAddContent
+    [mα : MeasurableSpace α] (hC : SetSemiring C)
+    (hC_gen : MeasurableSpace.generateFrom C = mα)
+    (m : AddContent C)
+    (m_sigma_subadd : ...) :
+    Measure α
 \end{minted}
 with \leanline{m_sigma_subadd} as above.
 
@@ -1437,12 +1434,11 @@ out all instances in the reformulation of the result and its proof
 (see below Theorem~\ref{T1} for a full formulation):
 
 \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-noncomputable def
-  projectiveLimitWithWeakestHypotheses
-  (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
-  (hP : IsProjectiveMeasureFamily P) :
-  Measure (∀ i, α i) :=
-    Measure.ofAddContent setSemiringCylinders
+def projectiveLimitWithWeakestHypotheses
+    (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
+    (hP : IsProjectiveMeasureFamily P) :
+    Measure (∀ i, α i) :=
+  Measure.ofAddContent setSemiringCylinders
     generateFrom_cylinders (kolContent hP)
     (kolContent_countably_subadditive_of_innerRegular hP
       fun J => innerRegular_isCompact_isClosed_
