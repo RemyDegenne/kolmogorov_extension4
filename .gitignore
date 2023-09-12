@@ -1,2 +1,11 @@
 /build
 /lake-packages/*
+
+Manuscript/proof_outline.aux
+Manuscript/proof_outline.bbl
+Manuscript/proof_outline.blg
+Manuscript/proof_outline.fdb_latexmk
+Manuscript/proof_outline.fls
+Manuscript/proof_outline.log
+Manuscript/proof_outline.out
+Manuscript/_minted-proof_outline/*
