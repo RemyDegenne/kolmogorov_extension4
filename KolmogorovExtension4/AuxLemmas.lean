@@ -119,46 +119,38 @@ variable {α β : Type*}
 
 open Function Set
 
-lemma l1 (s : Set α) (hs : Denumerable s) : (s ≃ (range (fun i => (Denumerable.ofNat s i)))) := by
+lemma Denumerable.ofNat_surjective [h : Denumerable α] :
+    Surjective (Denumerable.ofNat α) := by
+  intro x
+  use Encodable.encode x
+  simp only [decode_eq_ofNat, Option.some.injEq, ofNat_encode]
+
+lemma Denumerable.ofNat_injective [h : Denumerable α] :
+    Injective (Denumerable.ofNat α) := by
+  refine HasLeftInverse.injective ?_
+  use Encodable.encode
+  exact Denumerable.encode_ofNat
+
+lemma l1 (s : Set α) (hs : Denumerable s) :
+    s ≃ (range (fun i => (Denumerable.ofNat s i))) := by
   let f := fun (i : ℕ) => (Denumerable.ofNat s i)
-  change s ≃ range f
   haveI hr : ℕ ≃ (range f)  :=  by
-    have hf : Injective f :=  by
-      refine HasLeftInverse.injective ?_
-      use Encodable.encode
-      simp only [Denumerable.decode_eq_ofNat, Option.some.injEq]
-      exact Denumerable.encode_ofNat
+    have hf : Injective f := Denumerable.ofNat_injective
     exact Equiv.of_range_injective hf
   obtain hD : Denumerable (range f) := Denumerable.mk' (id hr.symm)
   apply Denumerable.equiv₂
 
-lemma l2 [hs : Denumerable α] : (range (fun i => (Denumerable.ofNat α i))) = Set.univ := by
+lemma Denumerable.range_coe_ofNat [hs : Denumerable α] :
+    range (fun i => (Denumerable.ofNat α i)) = Set.univ := by
   let f := fun (i : ℕ) => (Denumerable.ofNat α i)
-  change (range f) = Set.univ
-  have hfS : Surjective f := by
-    intro x
-    use Encodable.encode x
-    simp only [decode_eq_ofNat, Option.some.injEq, ofNat_encode]
+  have hfS : Surjective f := Denumerable.ofNat_surjective
   rw [← Set.image_univ_of_surjective hfS]
   simp only [decode_eq_ofNat, Option.some.injEq, image_univ]
-  
-
-lemma l3 {s : Set α} [hs : Denumerable s] :
-    ((range (fun i => (Denumerable.ofNat s i)))) = Set.univ := by
-  apply l2
 
 lemma l3a {s : Set β} (f : α → s) :
     ((range (fun x => f x)) : Set β) = Subtype.val '' (range f) := by
-  ext y
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · simp only [Set.mem_image, Set.mem_range, exists_exists_eq_and]
-    simp only [Set.mem_range] at h 
-    cases' h with z hz
-    use z
-  · simp only [Set.mem_range]
-    simp only [Set.mem_image, Set.mem_range, exists_exists_eq_and] at h 
-    cases' h with z hz
-    use z
+  rw [← range_comp]
+  rfl
 
 lemma l4 {s : Set α} [hs : Denumerable s] :
     ((range (fun i => (Denumerable.ofNat s i))) : Set α) = s := by
@@ -169,7 +161,7 @@ lemma l4 {s : Set α} [hs : Denumerable s] :
     l3a (fun i => (Denumerable.ofNat s i))
   rw [h]
   apply congrArg (Set.image Subtype.val)
-  exact l3
+  exact Denumerable.range_coe_ofNat
 
 end Denumerable
 

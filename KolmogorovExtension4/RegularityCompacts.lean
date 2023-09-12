@@ -17,20 +17,17 @@ variable {α : Type _}
 namespace Set
 
 -- actually not used anymore
-theorem monotone_iUnion (s : ℕ → Set α) (hs : Monotone s) (n : ℕ) : (⋃ m ≤ n, s m) = s n :=
-  by
-  refine' subset_antisymm _ _
+theorem monotone_iUnion {s : ℕ → Set α} (hs : Monotone s) (n : ℕ) : (⋃ m ≤ n, s m) = s n := by
+  apply subset_antisymm
   · exact iUnion_subset fun m => iUnion_subset fun hm => hs hm
   · exact subset_iUnion_of_subset n (subset_iUnion_of_subset le_rfl subset_rfl)
 
 -- actually not used anymore
-theorem antitone_iInter {s : ℕ → Set α} (n : ℕ) (hs : Antitone s) : (⋂ m ≤ n, s m) = s n :=
-  by
-  refine' subset_antisymm _ _
+theorem antitone_iInter {s : ℕ → Set α} (hs : Antitone s) (n : ℕ) : (⋂ m ≤ n, s m) = s n := by
+  apply subset_antisymm
   · exact iInter_subset_of_subset n (iInter_subset _ le_rfl)
   · exact subset_iInter fun i => subset_iInter fun hin => hs hin
 
-/- ./././Mathport/Syntax/Translate/Expr.lean:107:6: warning: expanding binder group (n m) -/
 theorem eq_iInter_iInter {s : ℕ → Set α} : (⋂ n, s n) = ⋂ (n : ℕ) (m : ℕ) (_ : m ≤ n), s m := by
   ext x; simp only [Set.mem_iInter]; exact ⟨fun h _ k _ => h k, fun h i => h i i le_rfl⟩
 
@@ -41,9 +38,8 @@ namespace Function
 /-- For some set s in the domain and S' in the codomain of f, assume S' ⊆ f '' s.
 Then, there is s' ⊆ s with S' = f '' s'. -/
 theorem subset_image {α β : Type _} {f : α → β} {s : Set α} {S' : Set β} (hS' : S' ⊆ f '' s) :
-    ∃ (s' : Set α) (_ : s' ⊆ s), f '' s' = S' :=
-  by
-  refine' ⟨f ⁻¹' S' ∩ s, Set.inter_subset_right _ _, _⟩
+    ∃ (s' : Set α) (_ : s' ⊆ s), f '' s' = S' := by
+  refine ⟨f ⁻¹' S' ∩ s, Set.inter_subset_right _ _, ?_⟩
   ext x
   simp only [mem_image, mem_inter_iff, mem_preimage]
   constructor
@@ -64,7 +60,7 @@ theorem subset_image_finset {α β : Type _} {f : α → β} {s : Set α} {S' : 
   have h : ∀ x ∈ S', ∃ y : α, y ∈ s ∧ f y = x := fun x hx => (mem_image f s _).1 (hS'1 hx)
   choose g hg using h
   let g' : S' → α := fun x => g x x.2
-  refine' ⟨(range g').toFinset, _, _⟩
+  refine ⟨(range g').toFinset, ?_, ?_⟩
   · intro x
     simp only [toFinset_range, Finset.univ_eq_attach, Finset.coe_image, mem_image, Finset.mem_coe, Finset.mem_attach,
       true_and, Subtype.exists, forall_exists_index]
@@ -78,15 +74,13 @@ theorem subset_image_finset {α β : Type _} {f : α → β} {s : Set α} {S' : 
       rwa [(hg x hx_mem).2]
     · intro h
       obtain ⟨y, _, rfl⟩ : x ∈ f '' s := hS'1 h
-      refine' ⟨g (f y) h, ⟨f y, h, rfl⟩, _⟩
-      exact (hg (f y) h).2
+      exact ⟨g (f y) h, ⟨f y, h, rfl⟩, (hg (f y) h).2⟩
 
 /-- Same as subset_image, but assuming that S' is finite.
 Then, s' can be chosen to be finite, too. -/
 theorem subset_image_fintype {α β : Type _} {f : α → β} {s : Set α} {S' : Set β}
     (hS'1 : S' ⊆ f '' s) (hS'2 : S'.Finite) :
-    ∃ (s' : Set α) (_ : s' ⊆ s) (_ : s'.Finite), f '' s' = S' :=
-  by
+    ∃ (s' : Set α) (_ : s' ⊆ s) (_ : s'.Finite), f '' s' = S' := by
   obtain ⟨s', hs', hfs'⟩ :=
     @subset_image_finset α β f s hS'2.toFinset (by rwa [Finite.coe_toFinset])
   refine' ⟨s', hs', Finset.finite_toSet s', _⟩
@@ -97,22 +91,21 @@ end Function
 namespace ENNReal
 
 theorem tendsto_atTop_zero_iff_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
-    Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n ≤ ε :=
-  by
+    Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n ≤ ε := by
   rw [ENNReal.tendsto_atTop_zero]
-  refine' ⟨fun h => fun ε hε => _, fun h => fun ε hε => _⟩
+  refine ⟨fun h => fun ε hε => ?_, fun h => fun ε hε => ?_⟩
   · obtain ⟨n, hn⟩ := h ε hε
     exact ⟨n, hn n le_rfl⟩
   · obtain ⟨n, hn⟩ := h ε hε
     exact ⟨n, fun m hm => (hf hm).trans hn⟩
 
 theorem tendsto_atTop_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
-    Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n < ε :=
-  by
+    Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n < ε := by
   rw [ENNReal.tendsto_atTop_zero_iff_of_antitone f hf]
   constructor <;> intro h ε hε
   have hε' : (min 1 (ε / 2)) > 0
-  · simp only [ge_iff_le, gt_iff_lt, lt_min_iff, zero_lt_one, div_pos_iff, ne_eq, and_true, true_and] 
+  · simp only [ge_iff_le, gt_iff_lt, lt_min_iff, zero_lt_one, div_pos_iff, ne_eq, and_true,
+      true_and] 
     intro g
     exact hε.ne g.symm
   · obtain ⟨n, hn⟩ := h (min 1 (ε / 2)) hε'
@@ -120,7 +113,7 @@ theorem tendsto_atTop_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
       by_cases hε_top : ε = ∞
       · rw [hε_top]
         exact (min_le_left _ _).trans_lt ENNReal.one_lt_top
-      refine' (min_le_right _ _).trans_lt _
+      refine (min_le_right _ _).trans_lt ?_
       rw [ENNReal.div_lt_iff (Or.inr hε.ne') (Or.inr hε_top)]
       conv_lhs => rw [← mul_one ε]
       rw [ENNReal.mul_lt_mul_left hε.ne' hε_top]
@@ -138,18 +131,12 @@ theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by
 
 /-- Given some x > 0, there is a sequence of positive reals summing to x. -/
 theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :
-    ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x :=
-  by
+    ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x := by
   use fun n : ℕ => x / 2 / 2 ^ n
   constructor
   · intro n
-    apply div_pos
-    · norm_cast
-      exact half_pos hx 
-    · norm_cast 
-      simp only [gt_iff_lt, pow_pos]
-  have h : ∑' n : ℕ, x / 2 / 2 ^ n = x :=
-    by
+    positivity
+  have h : ∑' n : ℕ, x / 2 / 2 ^ n = x := by
     rw [← NNReal.eq_iff, NNReal.coe_tsum]
     push_cast [(· ∘ ·), NNReal.coe_div]
     rw [tsum_geometric_two' (x : ℝ)]
@@ -163,10 +150,9 @@ theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :
 /-- Given some x > 0, there is a sequence of positive reals summing to something less than x.
 This is needed in several lemmas in measure theory. -/
 theorem exists_seq_pos_summable_lt (x : ℝ≥0) (hx : 0 < x) :
-    ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n < x :=
-  by
+    ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n < x := by
   cases' NNReal.exists_seq_pos_summable_eq (x / 2) (half_pos hx) with f hf
-  refine' ⟨f, hf.1, _, _⟩
+  refine ⟨f, hf.1, ?_, ?_⟩
   · rcases hf with ⟨_, hf2, _⟩
     exact hf2
   · rcases hf with ⟨_, _, hf3⟩
@@ -190,8 +176,7 @@ variable [MeasurableSpace α]
 /-- Some version of continuity of a measure in the emptyset using a decreasing sequence of sets. -/
 theorem cont_at_empty_of_measure (m : Measure α) [IsFiniteMeasure m] (s : ℕ → Set α)
     (hs1 : ∀ n, MeasurableSet (s n)) (hs2 : Antitone s) (hs3 : (⋂ n, s n) = ∅) :
-    Filter.Tendsto (fun n => m (s n)) Filter.atTop (𝓝 0) :=
-  by
+    Filter.Tendsto (fun n => m (s n)) Filter.atTop (𝓝 0) := by
   convert MeasureTheory.tendsto_measure_iInter hs1 hs2 _
   · rw [hs3]; exact measure_empty.symm
   · exact ⟨0, measure_ne_top m _⟩
@@ -207,21 +192,19 @@ sets. -/
 theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : Set (Set α))
   (hS : Countable S) (hS2 : ∀ s ∈ S, MeasurableSet s) (hS3 : ⋂₀ S = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
   ∃ (S' : Set (Set α)) (_ : S'.Finite) (_ : S' ⊆ S), m (⋂₀ S') < ε := by
-  simp at hS 
+  simp only [countable_coe_iff] at hS  
   cases' (fintypeOrInfinite S) with hS1 hS1
   · use! S, hS1, (by rfl)
     rw [hS3, measure_empty]
     exact hε
-  · haveI hS' := @Denumerable.ofEncodableOfInfinite S (Set.Countable.toEncodable hS) hS1
+  · have hS' : Denumerable S :=
+      @Denumerable.ofEncodableOfInfinite S (Set.Countable.toEncodable hS) hS1
     let u n := ((Denumerable.ofNat S n) : Set α)
     let s n := (Set.Accumulate (fun m => ((u m)ᶜ : Set α)) n)ᶜ  
     have hs1 : ∀ n, MeasurableSet (s n) := by
       intro n
       apply MeasurableSpace.measurableSet_compl
-      apply MeasurableSet.iUnion
-      intro b
-      apply MeasurableSet.iUnion
-      intro _
+      refine MeasurableSet.iUnion (fun b ↦ MeasurableSet.iUnion (fun _ ↦ ?_))
       simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, MeasurableSet.compl_iff]
       apply hS2 ↑(Denumerable.ofNat (↑S) b)
       simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, Subtype.coe_prop]
@@ -233,11 +216,8 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       simp only [*]
       rw [Iff.symm compl_univ_iff] 
       simp only [Denumerable.decode_eq_ofNat, Option.some.injEq,  compl_iInter, compl_compl]
-      rw [Set.iUnion_accumulate]
-      rw [← compl_iInter]
-      --apply Set.iUnion_eq_univ_iff.2
-      rw [← Iff.symm compl_univ_iff, ←hS3]
-      rw [← Set.sInter_range]
+      rw [Set.iUnion_accumulate, ← compl_iInter, ← Iff.symm compl_univ_iff, ←hS3,
+        ← Set.sInter_range]
       have hr : (range (fun i => ↑(Denumerable.ofNat (↑S) i)) : Set (Set α)) = S
       · exact Denumerable.l4 
       rw [hr]
@@ -447,9 +427,6 @@ theorem measure_Inter_iUnion_uniform_balls (ε : ℝ≥0) (m : Measure α) (s' :
 
 -- TODO: explain that this is a pseudo-polish space.
 
-example (l : Filter α) (t : ℕ → Set α) (h_basis: Filter.HasAntitoneBasis l t) : Filter.HasBasis l (fun _ => True) t := by
-  exact h_basis.toHasBasis 
-
 theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace α] [CompleteSpace α]
     [TopologicalSpace.SecondCountableTopology α] [(uniformity α).IsCountablyGenerated]
     [OpensMeasurableSpace α] (P : Measure α) [IsFiniteMeasure P] (ε : ℝ≥0) (hε : 0 < ε) :
@@ -469,7 +446,8 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
     (@uniformity_hasBasis_open_symmetric α _).exists_antitone_subbasis
     cases' (Set.countable_iff_exists_surjective (Dense.nonempty hsd)).1 hsc with f hf
     let f : ℕ → α → Set α := fun n x => UniformSpace.ball x (t n)
-    obtain h_univ : ∀ n, (⋃ x ∈ s, f n x) = univ := fun n => Dense.biUnion_uniformity_ball hsd (hto n).1
+    obtain h_univ : ∀ n, (⋃ x ∈ s, f n x) = univ :=
+      fun n => Dense.biUnion_uniformity_ball hsd (hto n).1
     have h3 : ∀ (n : ℕ) (ε : ℝ≥0∞) (_ : 0 < ε),
       ∃ (s' : Set α) (_ : s'.Finite) (_ : s' ⊆ s), P ((⋃ x ∈ s', f n x)ᶜ) < ε := by
       intro n ε hε
@@ -487,7 +465,8 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
       have h_inter_empty : ⋂₀ S = ∅ := by
         rw [← compl_compl ∅, compl_empty, ← h_univ n]
         simp only [sInter_image, compl_iUnion]
-      rcases continuous_at_emptyset_inter P S h_count h_mea h_inter_empty hε with ⟨S', S'1, S'2, S'3⟩
+      rcases continuous_at_emptyset_inter P S h_count h_mea h_inter_empty hε
+        with ⟨S', S'1, S'2, S'3⟩
       obtain hs' := Function.subset_image_fintype S'2 S'1
       rcases hs' with ⟨s', s'sub, s'fin, s'im⟩
       use s', s'fin, s'sub
@@ -506,7 +485,8 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
     suffices h_meas_balls : P ((UniformSpace.interUnionBalls (fun n => ↑(u n)) fun n => t n)ᶜ) < ε
     · simp only [coe_toFinset] at hP h_meas_balls ⊢
       exact h_meas_balls 
-    · refine' measure_Inter_iUnion_uniform_balls ε P (fun n => ↑(u n)) (fun n => t n) δ (fun n => _) hδ2 hδ3
+    · refine' measure_Inter_iUnion_uniform_balls ε P (fun n => ↑(u n)) (fun n => t n) δ
+        (fun n => _) hδ2 hδ3
       obtain h' := le_of_lt ((fun n => (s'bound n) (δ n) (hδ1' n)) n)
       have h1 : ∀ x, x ∈ s' n (δ n) ↔ x ∈ u n := by
         intro x
