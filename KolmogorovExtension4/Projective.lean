@@ -57,8 +57,7 @@ theorem kolmogorovFun_congr_aux2 [h_nonempty : Nonempty (∀ i, α i)]
 theorem IsProjectiveMeasureFamily.measure_univ_eq_of_subset (hP : IsProjectiveMeasureFamily P)
     (I J : Finset ι) (hJI : J ⊆ I) : P I univ = P J univ := by
   classical
-  have :
-    (univ : Set (∀ i : I, α i)) =
+  have : (univ : Set (∀ i : I, α i)) =
       (fun x : ∀ i : I, α i => fun i : J => x ⟨i, hJI i.2⟩) ⁻¹' (univ : Set (∀ i : J, α i)) :=
     by rw [preimage_univ]
   rw [this, ← Measure.map_apply _ MeasurableSet.univ]
@@ -79,7 +78,6 @@ theorem IsProjectiveLimit.measure_univ_eq {μ : Measure (∀ i, α i)} (hμ : Is
     (I : Finset ι) : μ univ = P I univ := by
   rw [← cylinder_univ I, hμ.measure_cylinder _ MeasurableSet.univ]
 
--- todo: nonempty ι ?
 theorem IsProjectiveLimit.measure_univ_unique [hι : Nonempty ι] {μ ν : Measure (∀ i, α i)}
     (hμ : IsProjectiveLimit μ P) (hν : IsProjectiveLimit ν P) : μ univ = ν univ := by
   rw [hμ.measure_univ_eq ({hι.some} : Finset ι), hν.measure_univ_eq ({hι.some} : Finset ι)]
@@ -92,12 +90,10 @@ theorem isFiniteMeasure_of_isProjectiveLimit [hι : Nonempty ι] {μ : Measure (
 
 theorem isProjectiveLimit_unique [hι : Nonempty ι] {μ ν : Measure (∀ i, α i)}
     [∀ i, IsFiniteMeasure (P i)] (hμ : IsProjectiveLimit μ P) (hν : IsProjectiveLimit ν P) :
-    μ = ν :=
-  by
+    μ = ν := by
   haveI : IsFiniteMeasure μ := isFiniteMeasure_of_isProjectiveLimit hμ
-  refine'
-    ext_of_generate_finite (cylinders α) generateFrom_cylinders.symm isPiSystem_cylinders
-      (fun s hs => _) (hμ.measure_univ_unique hν)
+  refine ext_of_generate_finite (cylinders α) generateFrom_cylinders.symm isPiSystem_cylinders
+    (fun s hs => ?_) (hμ.measure_univ_unique hν)
   obtain ⟨I, S, hS, rfl⟩ := (mem_cylinders _).mp hs
   rw [hμ.measure_cylinder _ hS, hν.measure_cylinder _ hS]
 
