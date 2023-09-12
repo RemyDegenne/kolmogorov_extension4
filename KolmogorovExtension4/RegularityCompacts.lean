@@ -190,8 +190,8 @@ theorem cont_at_empty_of_measure' (m : Measure α) [IsFiniteMeasure m] (s : ℕ 
 /-- Some version of continuity of a measure in the emptyset using the intersection along a set of
 sets. -/
 theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : Set (Set α))
-  (hS : Countable S) (hS2 : ∀ s ∈ S, MeasurableSet s) (hS3 : ⋂₀ S = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
-  ∃ (S' : Set (Set α)) (_ : S'.Finite) (_ : S' ⊆ S), m (⋂₀ S') < ε := by
+    (hS : Countable S) (hS2 : ∀ s ∈ S, MeasurableSet s) (hS3 : ⋂₀ S = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    ∃ (S' : Set (Set α)) (_ : S'.Finite) (_ : S' ⊆ S), m (⋂₀ S') < ε := by
   simp only [countable_coe_iff] at hS  
   cases' (fintypeOrInfinite S) with hS1 hS1
   · use! S, hS1, (by rfl)
@@ -205,42 +205,29 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       change range (Subtype.val ∘ e.symm) = S
       rw [range_comp, Equiv.range_eq_univ]
       simp only [image_univ, Subtype.range_coe_subtype, setOf_mem_eq]
+    have hu_meas : ∀ n, MeasurableSet (u n) := fun n ↦ hS2 _ (Subtype.coe_prop _)
     let s n := (Set.Accumulate (fun m => ((u m)ᶜ : Set α)) n)ᶜ  
     have hs1 : ∀ n, MeasurableSet (s n) := by
-      intro n
-      apply MeasurableSpace.measurableSet_compl
-      refine MeasurableSet.iUnion (fun b ↦ MeasurableSet.iUnion (fun _ ↦ ?_))
-      simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, MeasurableSet.compl_iff]
-      apply hS2 ↑(Denumerable.ofNat (↑S) b)
-      simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, Subtype.coe_prop]
+      refine fun n ↦ (MeasurableSet.iUnion (fun b ↦ MeasurableSet.iUnion (fun _ ↦ ?_))).compl
+      exact (hu_meas _).compl
     have hs2 : Antitone s := by
       intro n1 n2 h12
       simp only [le_eq_subset, compl_subset_compl]
       apply Set.monotone_accumulate h12 
-    have hs3 : ⋂ (n : ℕ), s n = ∅ := by 
-      simp only
-      rw [Iff.symm compl_univ_iff] 
-      simp only [Denumerable.decode_eq_ofNat, Option.some.injEq,  compl_iInter, compl_compl]
-      rw [Set.iUnion_accumulate, ← compl_iInter, ← Iff.symm compl_univ_iff, ←hS3,
-        ← Set.sInter_range]
-      rw [hu_range]
-    obtain ha := cont_at_empty_of_measure' m s hs1 hs2 hs3
-    specialize ha ε hε
-    cases' ha with n hn
+    have hs3 : ⋂ (n : ℕ), s n = ∅ := by
+      rw [Iff.symm compl_univ_iff]
+      simp only [compl_iInter, compl_compl]
+      rw [Set.iUnion_accumulate, ← compl_iInter, compl_univ_iff, ←hS3, ← Set.sInter_range, hu_range]
+    obtain ⟨n, hn⟩ : ∃ n, m (s n) < ε := cont_at_empty_of_measure' m s hs1 hs2 hs3 ε hε
     let S' := u '' {m : ℕ | m ≤ n}
-    have hS' : Fintype S' := by 
-      classical 
-      exact {m : ℕ | m ≤ n}.fintypeImage u
-    have SN : S = u '' univ :=  by
-      rw [Set.image_univ, hu_range]
     have S'_sub : S' ⊆ S := by
-      rw [SN]
-      simp only [image_univ, image_subset_iff, preimage_range, subset_univ]
+      rw [← hu_range]
+      exact image_subset_range _ _
     have h0 : (⋂₀ S') = s n := by 
       simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, sInter_image, mem_setOf_eq]
       rw [Set.accumulate_def]
       simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, compl_iUnion, compl_compl]
-    use! S', hS', S'_sub
+    use S', Set.Finite.image _ ⟨inferInstance⟩, S'_sub
     rw [h0]
     exact hn 
 
