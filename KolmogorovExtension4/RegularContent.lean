@@ -9,7 +9,7 @@ variable {α : Type*} {C R : Set (Set α)} {s : ℕ → Set α}
 
 -- `innerRegular` is defined only for a measure, hence we expand the definition to use it with a
 -- content
-lemma Tendsto_zero_of_regular_addContent [Nonempty α] (hR : SetRing R) (m : AddContent R)
+lemma tendsto_zero_of_regular_addContent [Nonempty α] (hR : SetRing R) (m : AddContent R)
     (hs : ∀ n, s n ∈ R) (hs_anti : Antitone s) (hs_Inter : (⋂ n, s n) = ∅)
     (hC : IsCompactFamily C) (hCR : C ⊆ R)
     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε) :
