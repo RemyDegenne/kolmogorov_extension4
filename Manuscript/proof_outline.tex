@@ -4,6 +4,7 @@
 \documentclass[sigplan,screen]{acmart}
 \usepackage[utf8x]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{ulem}
 %\usepackage{amsmath}
 
 \usepackage[textsize=tiny]{todonotes}
@@ -19,8 +20,9 @@
 %\setmonofont{FreeMono}
 \usepackage{xcolor, graphics}
 \definecolor{mygray}{rgb}{0.97,0.97,0.97}
-\newcommand{\leanline}{\mintinline[breaklines, breakafter=., breaklines]{Lean}}
-\newcommand{\leanlinem}[1]{\mintinline[breaklines, breakafter=., breaklines]{Lean}{#1}\textsuperscript{\textcolor{gray}{\tiny(m)}}}
+\definecolor{LightCyan}{rgb}{0.8784,1,1}
+\newcommand{\leanline}[1]{\mintinline[breaklines, breakafter=., breaklines]{Lean}{#1}}%\textsuperscript{\textcolor{gray}{\tiny(m)}}}
+\newcommand{\leanlinecolor}{\mintinline[breaklines, breakafter=., breaklines, bgcolor=LightCyan]{Lean}}
 %\usepackage{refcheck}
 
 % Definitions and packages for Lean code
@@ -124,15 +126,15 @@ align=left, itemsep=0pt, leftmargin=0pt, labelindent=0pt, listparindent=0pt, lab
 
 \maketitle
 
-\todo[inline]{Clearly differentiate refs to mathlib vs refs to new lemmas?}
+%\todo[inline]{Clearly differentiate refs to mathlib vs refs to new lemmas?}
 
 \todo[inline]{Mention a precise commit of Mathlib}
 
 \todo[inline]{write about sets or types?}
 
-\todo[inline]{\leanline{∀ j : J, α j} or \leanlinem{(j : J) -> α j} ?}
+\todo[inline]{\leanline{∀ j : J, α j} or \leanline{(j : J) -> α j} ?}
 
-\todo[inline]{explain leanlinem}
+%\todo[inline]{explain leanlinem}
 
 \section{Introduction}
 One of the main building blocks of modern probability theory are stochastic processes, which are usually defined as any collection of random variables -- $(X_t)_{t\in \iota}$ with $X_t$ taking values in some $\alpha_t$ for all $t\in\iota$ -- defined on some joint probability space $(\Omega, \mathcal A, \mathbf P)$.  (As usual, we will refer to $\iota$ as the index set of times.) In order to study such processes, it is fundamental to talk about their joint distribution, i.e.\ a probability distribution on the product set $\prod_{t\in\iota} \alpha_t$. The usual approach to construct (the distribution of) a stochastic process works as follows: describe properties of the distribution of the stochastic process $P_J$ at some arbitrary but finite number of times $J = \{t_1,...,t_n\} \subseteq \iota$.
@@ -144,20 +146,19 @@ The goal of our contribution is a formalization of the proof of that theorem in 
 %Subsequently, we aim to make a pull request for the publication of our code in \leanline{mathlib}.
 The Kolmogorov extension theorem is on the interface between measure theory and probability theory. Here, we rely on a decent amount of formalized mathematics in the measure-theory part of {\tt mathlib} (outer measures, above all), while not requiring any specific previous formalization of probability theory. (In fact, most of our results are formulated in terms of finite rather than probability measures.)
 
-At first sight, it might be surprising that martingales, a certain class of stochastic process, have already been formalized in Lean \cite{ying2023formalization}, although the Kolmogorov extension theorem (on the existence of stochastic processes) is only available by our contribution. Note, however, that a martingale $(X_t)_{t\in \iota}$ is defined as a family of random variables (satisfying some properties) on a fixed probability space $(\Omega, \mathcal F, \mathbf P)$, while the Kolmogorov extension theorem is on the construction of a probability (or finite) measure $\mathbf P$, on which we can define random variables (with certain properties). So, our work complements \cite{ying2023formalization} in the sense that probability spaces $(\Omega, \mathcal F, \mathbf P)$ on which you can define a martingale exist. However, we do not give any specific example for the construction of a specific instance of such a space\todo{could we give one?}.
+At first sight, it might be surprising that martingales, a certain class of stochastic process, have already been formalized in Lean \cite{ying2023formalization}, although the Kolmogorov extension theorem (on the existence of stochastic processes) is only available by our contribution. Note, however, that a martingale $(X_t)_{t\in \iota}$ is defined as a family of random variables (satisfying some properties) on a fixed probability space $(\Omega, \mathcal F, \mathbf P)$, while the Kolmogorov extension theorem is on the construction of a probability (or finite) measure $\mathbf P$, on which we can define random variables (with certain properties). So, our work complements \cite{ying2023formalization} in the sense that probability spaces $(\Omega, \mathcal F, \mathbf P)$ on which you can define a martingale exist. {\color{blue}As an application of our implementation, we construct a probability measure on an infinite product space where all coordinates are independent; see Section~\ref{ss:concl}.} % However, we do not give any specific example for the construction of a specific instance of such a space\todo{could we give one?}.
 
 The main steps in our construction, which were previously missing in {\tt mathlib}, are (more mathematical details are below, and in standard textbooks on Probability Theory, e.g.\ \cite{Klenke2013, Kallenberg2020}):
 \begin{enumerate}
-\item a formalization of (the set-system of) semi-rings (see Definition~\ref{def:semi} below); 
-\item a definition of additive contents over semi-rings\todo{R: I added that point but we don't talk much about contents};
+\item a formalization of (the set-system of) semi-rings (see
+  Definition~\ref{def:semi});
+\item {\color{blue}a definition of additive contents over semi-rings (see Definition~\ref{def:content});}
 %\item adding some main lemmas to measure theory, e.g.\ continuity of a measure at the emptyset\todo{for a measure, this is already in mathlib?} (see e.g.\ Lemma~\ref{l:halbextRing}, Proposition~\ref{P:stetigmass}, Lemma~\ref{l:stetigcompact} below);
 \item a proof that a single probability measure on a Polish space is inner regular with respect to compact sets (see Definition~\ref{def:innerreg}; in fact, we proved a slight generalization using pseudo-metric spaces, found in Lemma~\ref{L:relcoPol} below); 
 \item the classical Carathéodory extension theorem, providing us with a candidate for the measure which we want to construct (see Theorem~\ref{T:masseind}); 
 \item the Kolmogorov extension theorem, as based on the previous steps (See Theorem~\ref{T1}).
 \end{enumerate}
-The Kolmogorov extension theorem has been previously formalized in Isabelle/HOL \cite{Immler2012}. This formalization only works on Polish spaces (rather than on spaces where every finite measure is inner regular with respect to compact sets, see below), and only in the case where all $\alpha_i$'s are identical\todo{Lean has dependent types, Isabelle doesn't}. However, type theory as the basis of the formalization, as well as several mathematical concepts (e.g.\ projective families of measures or the continuity of a measure in the emptyset) are the same in both formalisations\todo{no, the type theory is not the same} in these two interactive theorem provers.
-
-
+The Kolmogorov extension theorem has been previously formalized in Isabelle/HOL \cite{Immler2012}. This formalization only works on Polish spaces (rather than on spaces where every finite measure is inner regular with respect to compact sets, see below), and only in the case where all $\alpha_i$'s are identical. In addition, {\color{blue}Isabelle works with simple type theory, while Lean is an implementation of dependent theory.} %However, type theory as the basis of the formalization, as well as several mathematical concepts (e.g.\ projective families of measures or the continuity of a measure in the emptyset) are the same in both formalisations\todo{no, the type theory is not the same} in these two interactive theorem provers.
 
 \subsubsection*{Possible future work}
 \sloppy Let us describe some future projects extending {\tt mathlib} which become possible by our contribution.
@@ -213,12 +214,14 @@ Before we can state the result, we begin with some mathematical notions. We star
   \end{enumerate}
 \end{definition}
 \todo{reorder that next remark? I'll make a proposal}
-\begin{remark}[Metric and topological spaces in {\tt mathlib}] \mbox{}
+\begin{remark}[Metric and topological spaces in {\tt mathlib}] \label{rem:uniform}\mbox{}
   \begin{enumerate}
-    \item \sloppy In \leanline{Lean}, we have the \leanlinem{class PseudoEMetricSpace (α : Type u) extends EDist}, where
-      \leanlinem{EDist} comes with an extended distance \leanline{edist: α → α → ℝ≥0∞}
-      (the notation \leanline{ℝ≥0∞} stands for $[0, \infty]$), and the extension to
-      \leanlinem{PseudoEMetricSpace} consists of the components,
+    \item \sloppy In \leanline{Lean}, we have the \leanline{class
+      PseudoEMetricSpace (α : Type u) extends EDist}, where
+      \leanline{EDist} comes with an extended distance
+      \leanline{edist: α → α → ℝ≥0∞} (the notation \leanline{ℝ≥0∞}
+      stands for $[0, \infty]$), and the extension to
+      \leanline{PseudoEMetricSpace} consists of the components,
       \leanline{edist_self}, \leanline{edist_comm},
       \leanline{edist_triangle} providing the properties of the
       pseudo-metric, and \leanline{toUniformSpace},
@@ -231,11 +234,13 @@ Before we can state the result, we begin with some mathematical notions. We star
       note that a uniform space with a countably generated uniformity
       filter is pseudometrizable, i.e.\ there exists a
       pseudo-metric-space structure that generates the same
-      uniformity; see \leanlinem{UniformSpace.pseudoMetrizableSpace},
+      uniformity; see \leanline{UniformSpace.pseudoMetrizableSpace},
       which formalizes a result stated in
       \cite{melikhov2011metrizable}.
-    \item \sloppy For topological spaces, we have \leanlinem{class TopologicalSpace(α : Type u) : Type u}, which comes with
-      \leanline{IsOpen : Prop}, \leanline{isOpen_univ : IsOpen Set.univ}, \leanline{isOpen_inter} and
+    \item \sloppy For topological spaces, we have \leanline{class
+      TopologicalSpace(α : Type u) : Type u}, which comes with
+      \leanline{IsOpen : Prop}, \leanline{isOpen_univ : IsOpen
+        Set.univ}, \leanline{isOpen_inter} and
       \leanline{isOpen_sUnion}, which are exactly the properties of a
       topological space described above.
     \item Any (extended pseudo-)metric on $\alpha$ defines a topology,
@@ -243,9 +248,9 @@ Before we can state the result, we begin with some mathematical notions. We star
       r(x,y)<\varepsilon\}: x \in \alpha, \varepsilon \in
       (0,\infty)\}$. Actually, in \leanline{mathlib}, as we have seen
       above, every extended pseudo-metric defines a uniform space, and
-      a uniform space is a \leanlinem{class UniformSpace(α : Type u)
+      a uniform space is a \leanline{class UniformSpace(α : Type u)
         extends TopologicalSpace , UniformSpace.Core} (where the
-      uniformity is defined in \leanlinem{UniformSpace.Core}), which
+      uniformity is defined in \leanline{UniformSpace.Core}), which
       connects the \leanline{uniformity} with the topology using
       \leanline{∀ (s : Set α), IsOpen s ↔ ∀ (x : α), x ∈ s → {p | p.fst = x → p.snd ∈ s} ∈ uniformity}. In particular, a
       uniform space defines a topological space, which can be used by
@@ -259,21 +264,21 @@ Before we can state the result, we begin with some mathematical notions. We star
     topology. For this reason, if $\mathcal H \subseteq 2^\alpha$, we
     define the topology $\mathcal O := \bigcap_{\mathcal F \supseteq
       \mathcal H \text{ topology}} \mathcal F$; see
-    \leanlinem{TopologicalSpace.generateFrom}. This is called the
+    \leanline{TopologicalSpace.generateFrom}. This is called the
     topology generated by $\mathcal H$. If $\mathcal H$ is closed
     under finite intersections, we call $\mathcal H$ a basis for
-    $\mathcal O$; see \leanlinem{TopologicalSpace.IsTopologicalBasis}.
+    $\mathcal O$; see \leanline{TopologicalSpace.IsTopologicalBasis}.
   \item \sloppy We call the topology (generated from an extended
     pseudo-metric) separable (see
-    \leanlinem{TopologicalSpace.SeparableSpace}) if there is a
+    \leanline{TopologicalSpace.SeparableSpace}) if there is a
     countable $s \subseteq \iota$ such that $\inf\{r(x,y) : y \in s\}
     = 0$ for all $x\in\alpha$. (More generally, a
-    \leanline{TopologicalSpace α} is a \leanlinem{SeparableSpace} iff
+    \leanline{TopologicalSpace α} is a \leanline{SeparableSpace} iff
     \leanline{∃ s, Set.Countable s ∧ Dense s}, where the latter means
     \leanline{∀ (x : α), x ∈ closure s}, i.e.\ the space equals its
     own closure.) \\ If there is a countable basis of the topology, it
     is separable; see
-    \leanlinem{TopologicalSpace.SecondCountableTopology.to_separableSpace}.
+    \leanline{TopologicalSpace.SecondCountableTopology.to_separableSpace}.
   \end{enumerate}
 \end{remark}
 
@@ -304,21 +309,21 @@ $\sigma$-algebra, which we introduce next.
 
 \begin{remark}[Measur(abl)e spaces in \leanline{mathlib}]
   \begin{enumerate}
-  \item \sloppy The \leanlinem{class MeasurableSpace α} is very similar
+  \item \sloppy The \leanline{class MeasurableSpace α} is very similar
     to a topological space in \leanline{mathlib}, since it comes with
     \leanline{MeasurableSet' : Set α → Prop},
     \leanline{measurableSet_empty : MeasurableSet' ∅},
     \leanline{measurableSet_compl : (s : Set α) → MeasurableSet' s → MeasurableSet' sᶜ}, and \leanline{measurableSet_iUnion},
     i.e.\ properties (i)-(iii) from Definition~\ref{def:sigma}.1.
   \item We are using outer measures in our construction. In
-    \leanline{mathlib}, this is \leanlinem{structure MeasureTheory.OuterMeasure α} which is a function
+    \leanline{mathlib}, this is \leanline{structure MeasureTheory.OuterMeasure α} which is a function
     \leanline{measureOf : Set α → ℝ≥0∞} such that \leanline{measureOf ∅ = 0} (i.e.\ the empty set has measure~$0$),
     \leanline{∀ {s₁ s₂ : Set α}, s₁ ⊆ s₂ → measureOf s₁ ≤ measureOf s₂}
     (i.e.\ monotonicity) and \leanline{∀ (s : ℕ → Set α), measureOf (⋃ (i : ℕ), s i) ≤ ∑' (i : ℕ), measureOf (s i)} (which we call
     $\sigma$-subadditivity). \\ Note that an outer measure is defined
     on $2^\alpha$, whereas a measure is only defined on a subset (the
     $\sigma$-algebra of measurable sets).
-  \item A measure defined on a type \leanline{α} on which we have a \leanline{MeasurableSpace α} is denoted by the type \leanlinem{MeasureTheory.Measure α}
+  \item A measure defined on a type \leanline{α} on which we have a \leanline{MeasurableSpace α} is denoted by the type \leanline{MeasureTheory.Measure α}
     %More precisely\todo{I don't understand why all these details are here. We never use MeasureSpace}: A
     %\leanline{MeasureSpace α} extends a \leanline{MeasurableSpace α}
     %by a \leanline{Measure α} (which is usually called
@@ -346,7 +351,7 @@ $\sigma$-algebra, which we introduce next.
     2^\alpha$, we define the $\sigma$-algebra $\sigma(\mathcal H) :=
     \bigcap_{\mathcal F \supseteq \mathcal H \text{ $\sigma$-algebra}}
     \mathcal F$. This is called the $\sigma$-algebra generated from
-    $\mathcal H$; see \leanlinem{MeasurableSpace.generateFrom}.  \\ In
+    $\mathcal H$; see \leanline{MeasurableSpace.generateFrom}.  \\ In
     particular, if $\mathcal O$ is a topology on $\alpha$, we call
     $\mathcal B := \sigma(\mathcal O)$ the Borel $\sigma$-algebra on
     $\alpha$. In \leanline{mathlib}, this is
@@ -368,7 +373,7 @@ $\sigma$-algebra, which we introduce next.
     measurable spaces. Some $f : \alpha \to \beta$ is called
     measurable (with respect to $\mathcal F$ and $\mathcal G$) if
     $f^{-1} \mathcal G \subseteq \mathcal F$. In \leanline{mathlib},
-    see \leanlinem{Measurable}.
+    see \leanline{Measurable}.
     %and note that this notion usually comes
     %with some \leanline{m : Measure α} and $f$ is almost everywhere
     %measurable (\leanline{AEMeasurable}) if it coincices with some
@@ -377,17 +382,20 @@ $\sigma$-algebra, which we introduce next.
     case, if $\mu$ is a measure on $\mathcal F$, the measure $\nu:
     \mathcal G \to [0, \infty], \nu(B) := \mu (f^{-1}(B))$ is called
     the image (or push-forward) measure of $\mu$ under $f$. We write
-    $\nu := f_\ast \mu$; see \leanlinem{MeasureTheory.Measure.map}.
+    $\nu := f_\ast \mu$; see \leanline{MeasureTheory.Measure.map}.
   \end{enumerate}
 \end{remark}
 
-We now come to our contribution%, which we will PR to mathlib
-: the extension theorem is on finite measures on product spaces\todo{I don't understand this sentence}. In
-particular, the product is taken over a set of arbitrary
-cardinality. The next definition covers the important concept of a
-projective family of measures. In short, we define measures on
-any finite subset of indices in a consistent way. Finite
-sets (of some type \leanline{ι}) are formalized with \leanlinem{Finset ι}. % Such a \leanline{Finset} is defined as a \leanline{Multiset} (a
+We now come to our contribution. 
+%which we will PR to mathlib :
+{\color{blue}The extension theorem is a statement about extending a
+  set-function on a product space to a (finite) measure, where the
+  product space can come with an arbitraty index set.}  The next
+definition covers the important concept of a projective family of
+measures. In short, we define measures on any finite subset of indices
+in a consistent way. Finite sets (of some type \leanline{ι}) are
+formalized with \leanline{Finset ι}. % Such a \leanline{Finset} is
+defined as a \leanline{Multiset} (a
 %quotient type of the \leanline{List}-type with respect to permutations
 %of the list) together with a proof that it contains no duplicates\todo{remove this implementation detail?}.
 
@@ -421,14 +429,18 @@ sets (of some type \leanline{ι}) are formalized with \leanlinem{Finset ι}. % S
   \end{enumerate}
 \end{definition}
 
-In the formalization, we use \leanline{variable {ι : Type _} {α : ι →
-    Type _} }, which fixes the index set $\iota$ and all spaces
+{\color{blue}In contrast to statements already part of
+  \leanline{mathlib}, in the sequel we \leanlinecolor{highlight}
+  definitions and statements which are part of our own code.} In the
+formalization of the above, we use \leanline{variable {ι : Type _} {α
+    : ι → Type _} }, which fixes the index set $\iota$ and all spaces
 $\alpha_t, t\in\iota$ as global variables. In addition, note that the
 projective property we use here works as long as we have a preorder
 (which is the subset relation on \leanline{Finset ι} below).
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def IsProjective [Preorder ι]
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def IsProjective
+    [Preorder ι]
     (P : ∀ j : ι, α j) (π : ∀ {i j : ι}, j ≤ i → α i → α j) : Prop :=
     ∀ (i j) (hji : j ≤ i), P j = π hji (P i)
 \end{minted}
@@ -439,7 +451,7 @@ With this, we can define the projetive family as follows. The typeclass inferenc
 \leanline{[Preorder (Finset ι)]} when \leanline{isProjective} is
 called.
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
   def IsProjectiveMeasureFamily
     [∀ i, MeasurableSpace (α i)]
     (P : ∀ J : Finset ι, Measure (∀ j : J, α j)) :
@@ -452,18 +464,19 @@ called.
 
 \noindent
 It is worth understanding the precise connection of
-\leanline{isProjective} and \leanline{isProjectiveMeasureFamily}. In
-the latter, the first variable of \leanline{isProjective} is the
-family \leanline{P} of finite measures for all finite subsets of
-\leanline{ι}. The second variable is the functions which maps two sets
-\leanline{I J : Finset ι} and a proof \leanline{hJI} of \leanline{J ⊆ I}
-together with \leanline{P I} (which is \leanline{μ} in the
-statement) to the image measure on \leanline{J}, which is
-\leanline{μ.map (fun x : ∀ i : I, α i => fun j => x ⟨j, hJI j.2⟩)}.
-The map defined by the \leanline{=>}-notation maps every
-$(x_i)_{i\in I}$ to a function of \leanline{j}, whose type is the
-subtype of \leanline{I}, consisting of a value and a proof of
-\leanline{J ⊆ I}. In other words, this is $(x_j)_{j\in J}$.
+\leanlinecolor{isProjective} and
+\leanlinecolor{isProjectiveMeasureFamily}. In the latter, the first
+variable of \leanlinecolor{isProjective} is the family \leanline{P} of
+finite measures for all finite subsets of \leanline{ι}. The second
+variable is the functions which maps two sets \leanline{I J : Finset
+  ι} and a proof \leanline{hJI} of \leanline{J ⊆ I} together with
+\leanline{P I} (which is \leanline{μ} in the statement) to the image
+measure on \leanline{J}, which is \leanline{μ.map (fun x : ∀ i : I, α
+  i => fun j => x ⟨j, hJI j.2⟩)}.  The map defined by the
+\leanline{=>}-notation maps every $(x_i)_{i\in I}$ to a function of
+\leanline{j}, whose type is the subtype of \leanline{I}, consisting of
+a value and a proof of \leanline{J ⊆ I}. In other words, this is
+$(x_j)_{j\in J}$.
 
 \noindent
 Now we are ready to formulate the Kolmogorov extension theorem:
@@ -484,7 +497,7 @@ limit). We give the formalized proof at the end of this section, since
 we first have to provide a formalization of all tools needed in the
 proof.
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 def projectiveLimitWithWeakestHypotheses
   [∀ i, PseudoEMetricSpace (α i)]
   [∀ i, BorelSpace (α i)]
@@ -501,7 +514,24 @@ separable, complete metric spaces (or Polish, i.e.\ separable and
 metrizable through a complete metric) to cover the case of extended
 pseude-metric spaces. Such spaces do not satisfy the frequently used
 Hausdorff (or t2) property, i.e.\ there can be $x\neq y$ such that all
-open balls around $x$ and $y$ overlap\todo{it would be nice to explain how the formalization led us to remove that hypothesis}.
+open balls around $x$ and $y$ overlap. {\color{blue}We note that this
+  generalization was only possible since underlying results in
+  \leanline{mathlib} were already provided on the same level of
+  generality: More precisely,
+  \leanline{isCompact_iff_totallyBounded_isComplete}, which shows that
+  a set $A \subseteq \alpha$ is compact iff it is complete and totally
+  bounded {\color{blue}(see note~\ref{note:tot})}, requires $\alpha$
+  to be a uniform space (recall that every metric space is uniform);
+  recall such spaces from Remark~\ref{rem:uniform}, and see
+  note~\ref{note:tot} for a definition of total boundedness. Since we
+  also require the underlying space(s) to be second countable (see
+  also in the proof of Lemma~\ref{L:relcoPol}), we have to make a
+  countabiliy assumption, which leads us to (extended) pseudo-metric
+  spaces by \leanline{UniformSpace.pseudoMetrizableSpace}; see also
+  Remark~\ref{rem:uniform} for some more details.}
+
+% \todo{it would be nice to explain how the formalization led us to
+% remove that hypothesis}.
 
 \subsection{Extending a set function}
 In the formulation of Theorem~\ref{T1}, we extend $P$, which is
@@ -533,7 +563,7 @@ Any ring is a semi-ring since $A\cap B = A \setminus (A \setminus B)$,
 i.e.\ every ring is a $\pi$-system.
 Using \leanline{variable {α : Type _} {s t : Set α}}, we define a semi-ring as follows:
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
   structure SetSemiring (C : Set (Set α)) : Prop where
     empty_mem : ∅ ∈ C
     inter_mem : ∀ (s) (_ : s ∈ C) (t) (_ : t ∈ C), s ∩ t ∈ C
@@ -546,7 +576,7 @@ Using \leanline{variable {α : Type _} {s t : Set α}}, we define a semi-ring as
 
 Let us remark that (i) \leanline{Lean} indicates a coercion by
 \leanline{↑}, which in this case is from \leanline{Finset} to
-\leanline{Set} and (ii) we have \leanlinem{PairwiseDisjoint (s : Set ι) (f : ι → α)}
+\leanline{Set} and (ii) we have \leanline{PairwiseDisjoint (s : Set ι) (f : ι → α)}
 iff the images of any distinct elements of \leanline{ι}
 under \leanline{f} are different. (Hence, if \leanline{f = id}, the
 usual definition of pairwise disjoint sets unfolds.)
@@ -559,36 +589,54 @@ We do not show the formalization of rings here.
 The import ring of sets in our formalization is the ring of measurable cylinders on a product space, which
 are defined as follows:
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) :
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def cylinder
+    (s : Finset ι) (S : Set (∀ i : s, α i)) :
     Set ((i : ι) → α i) :=
     (fun f : (i : ι) → α i => fun i : s => f i) ⁻¹' S
 \end{minted}
 
+\noindent
 In this definition, \leanline{s} is a finite subset of the index set
 \leanline{ι}, and for some $S$ in the finite product $\prod_{i \in s}
 \alpha_i$, consider the projection $\pi_s : \prod_{i \in \iota}
 \alpha_i \to \prod_{i \in s} \alpha_i$, and consider the preimage of
-$S$. (This is what the last line in previous definition gives.) From
-this, we can define the set of all measurable cylinders.
+$S$. (This is what the last line in previous definition gives.)  {\color{blue}Note,
+however, that \leanline{s} (comprising the potential coordinates where
+the cylinder deviates from the whole set) need not be unique. However,
+we have
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def cylinders : Set (Set ((i : ι) → α i)) :=
-    ⋃ (s) (S) (_ : MeasurableSet S), {cylinder s S}
+\begin{minted}[highlightlines={1}, framesep = 0pt, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+theorem mem_cylinders
+  (t : Set ((i : ι) → α i)) :
+  t ∈ cylinders α ↔
+  ∃ (s S : _) (_ : MeasurableSet S), t = cylinder s S
+\end{minted}
+By the exists-statement, from this result, we are able to choose a
+\leanline{Finset ι}, which can be used. This leads to the definition
+of \leanlinecolor{cylinders.finset}, which will be needed below.}
+
+From the definition of a \leanlinecolor{cylinder}, we can define the
+set of all measurable cylinders.
+
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def cylinders : Set (Set ((i : ι) → α i)) := ⋃ (s) (S) (_ :
+  MeasurableSet S), {cylinder s S}
 \end{minted}
 
 The set-system of cylinders is in fact a field, hence a ring and hence
 a semi-ring. This means we can prove the following:
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1-3}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
   theorem setField_cylinders : SetField (cylinders α) 
   theorem setRing_cylinders :  SetRing (cylinders α)
   theorem setSemiringCylinders : SetSemiring (cylinders α)   
 \end{minted}
 
 From the field/ring/semi-ring of cylinders, we have to define the
-generated $\sigma$-alebra. This uses the following\todo{one of those 2 is ours, the other is from mathlib. How do we show the difference?}:
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+generated $\sigma$-algebra. This uses the following:
+%\todo{one of those 2 is ours, the other is from mathlib. How do we show the  difference?}:
+\begin{minted}[highlightlines={1}, framesep = 0pt, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
   theorem generateFrom_cylinders :
     MeasurableSpace.generateFrom (cylinders α)
     = MeasurableSpace.pi 
@@ -639,7 +687,7 @@ Let us state an important lemma on semi-rings:
 The proof as well as its formalization is somewhat straight-forward,
 but requires induction over finite sets. 
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
   theorem exists_disjoint_finset_diff_eq
     (hC : SetSemiring C) (hs : s ∈ C)
     (I : Finset (Set α)) (hI : ↑I ⊆ C) :
@@ -650,11 +698,12 @@ but requires induction over finite sets.
 
 \noindent
 The existence-statement of the above lemma actually gives rise to a
-definition. Here, we use \leanlinem{Exists.choose} in order to extract
+definition. Here, we use \leanline{Exists.choose} in order to extract
 an element from an $\exists$-statement. In addition, we do not allow
-$\emptyset \in \mathcal K$ without loss of generality\todo{that exclusion was useful for something. Find out what that is}:
+$\emptyset \in \mathcal K$ without loss of generality\todo{that
+  exclusion was useful for something. Find out what that is}:
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 def diff₀ (hC : SetSemiring C)
     (hs : s ∈ C) (I : Finset (Set α)) (hI : ↑I ⊆ C)
     [DecidableEq (Set α)] : Finset (Set α) :=
@@ -684,7 +733,7 @@ members of a semi-ring as a finite union of disjoint sets.
 \noindent
 The formalized version again gives rise to a definition:
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 def indexedDiff₀ (hC : SetSemiring C)
     (J : Finset (Set α)) (hJ : ↑J ⊆ C)
     (n : Fin J.card) : Finset (Set α) :=
@@ -692,16 +741,17 @@ def indexedDiff₀ (hC : SetSemiring C)
     (finsetLT_subset' J hJ n)
 \end{minted}
 
-Here, recall that \leanlinem{Fin n} is the subtype of \leanline{Nat}
+Here, recall that \leanline{Fin n} is the subtype of \leanline{Nat}
 consisting of all numbers \leanline{<n}. In addition,
 \leanline{ordered_mem' (hJ : ↑J ⊆ C) (n : Fin (card J)) : ↑(ordered J)
   n ∈ C} gives a proof that the \leanline{n}th element of \leanline{J}
-is in \leanline{C}, \leanline{finsetLT (J : Finset (Set α)) (n : Fin (card J)) : Finset (Set α)}
-is the set consisting of the
+is in \leanline{C}, \leanline{finsetLT (J : Finset (Set α)) (n : Fin
+  (card J)) : Finset (Set α)} is the set consisting of the
 \leanline{n} sets in \leanline{J} numbered $0,...,n-1$, and
-\leanline{finsetLT_subset'} gives a proof that \leanline{↑(finsetLT J n) ⊆ C}.
-So, in terms of Lemma~\ref{l2}, this gives, for
-$n=1,...,m$, a construction for $\mathcal K_n \subseteq_f \mathcal H$. 
+\leanlinecolor{finsetLT_subset'} gives a proof that
+\leanline{↑(finsetLT J n) ⊆ C}.  So, in terms of Lemma~\ref{l2}, this
+gives, for $n=1,...,m$, a construction for $\mathcal K_n \subseteq_f
+\mathcal H$.
 
 \noindent
 \subsection{Carathéodory's extension theorem}
@@ -726,9 +776,10 @@ semi-open intervals generates the Borel $\sigma$-algebra on $\mathbb
 R$.) We will follow this abstract construction, and start by stating
 some basic concepts.
 
-\begin{definition}
-  For some set $\alpha$, let $\mathcal H \subseteq 2^\alpha$ and $m :
-  \mathcal H \to [0,\infty]$.
+\begin{definition}\label{def:content}
+  For some set $\alpha$, let $\mathcal H \subseteq 2^\alpha$
+  {\color{blue}and call any $m : \mathcal H \to [0,\infty]$ a
+    content.}
   \begin{enumerate}
   \item $m$ is called additive if for $\mathcal K \subseteq_f \mathcal
     H$ pariwise disjoint and $\bigcup_{K \in \mathcal K} K \in
@@ -747,7 +798,8 @@ some basic concepts.
   \item If $m(A) \leq m(B)$ for $A\subseteq B$ and $A,B\in\mathcal H$,
     we say that $m$ is monotone.
   \item If $\mathcal H$ is a $\sigma$-algebra and $m$ is
-    $\sigma$-additive, we call $m$ a measure\todo{need 0 at the empty set? Otherwise could be infinite everywhere}.
+    $\sigma$-additive {\color{blue} with $m(\emptyset) = 0$}, we call
+    $m$ a measure.
   \item If $\mathcal H = 2^\alpha$ and $m$ is monotone and
     $\sigma$-sub-additive with $m(\emptyset)=0$, we call $m$ an outer
     measure.
@@ -755,11 +807,13 @@ some basic concepts.
 \end{definition}
 
 \noindent
-For additive contents\todo{"content" not defined?}, we need two definitions. \leanline{AddContent}
-defines a set-function \leanline{toFun} on \leanline{Set α}, whereas
-\leanline{extendContent} comes with \leanline{m : ∀ s : Set α, s ∈ C → ℝ≥0∞}. 
+For additive contents, we need two
+definitions. \leanlinecolor{AddContent} defines a set-function
+\leanline{toFun} on \leanline{Set α}, whereas
+\leanlinecolor{extendContent} comes with \leanline{m : ∀ s : Set α, s
+  ∈ C → ℝ≥0∞}.
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1, 10}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 structure AddContent (C : Set (Set α)) where
   toFun : Set α → ℝ≥0∞
   empty' : toFun ∅ = 0
@@ -782,16 +836,19 @@ def extendContent
 \end{minted}
 
 \noindent
-In these formalizations, we introduced $m(\emptyset)=0$ as a separate
-hypothesis with \leanline{empty'}. Note that this also follows
-formally from $m(\emptyset) = m(\emptyset \cup \emptyset) = 2
-m(\emptyset)$\todo{not if m is infinite everywhere}. However, since \leanline{Finset}s are assumed to have
-distinct elements, we cannot have \leanline{∅} twice in \leanline{I}.
+\xout{In these formalizations, we introduced $m(\emptyset)=0$ as a
+  separate hypothesis with empty'. Note that this also follows
+  formally from $m(\emptyset) = m(\emptyset \cup \emptyset) = 2
+  m(\emptyset)$. However, since Finsets are assumed to have distinct
+  elements, we cannot have ∅ twice in I.}
 
-For the concrete application we have in mind, we introduce a definition which uses a specific semi-ring, the measurable cylinders, based on a projective family of measures.
-That is the goal of the two definitions \leanline{kolmogorovFun} and \leanline{kolContent} below:
+For the concrete application we have in mind, we introduce a
+definition which uses a specific semi-ring, the measurable cylinders,
+based on a projective family of measures.  That is the goal of the two
+definitions \leanlinecolor{kolmogorovFun} and
+\leanlinecolor{kolContent} below:
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1,7}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 def kolmogorovFun
     (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
     (s : Set (∀ i, α i))
@@ -806,19 +863,18 @@ def kolContent
     (kolmogorovFun_additive hP)
 \end{minted}
 
-\todo{cylinders.finset not defined?}
-
-Here, \leanline{kolmogorovFun_empty} and
-\leanline{kolmogorovFun_additive} give proofs for \leanline{m_empty}
-and \leanline{m_add} in \leanline{extendContent} as applied to a
-\leanline{kolmogorovFun}.
+Here, \leanlinecolor{kolmogorovFun_empty} and
+\leanlinecolor{kolmogorovFun_additive} give proofs for
+\leanline{m_empty} and \leanline{m_add} in
+\leanlinecolor{extendContent} as applied to a
+\leanlinecolor{kolmogorovFun}.
 
 \noindent
 From the next lemma, we will need monotonicity and sub-additivity, as
 well as $\sigma$-additive $\Rightarrow$ $\sigma$-sub-additive in the
-proof of the Carathéodory extension, Theorem~\ref{T:masseind}\todo{I don't understand this sentence}. The
-formalization of the next result comes in several lemmas, which we do
-not show here.
+proof of the Carathéodory extension,
+Theorem~\ref{T:masseind}. {\color{blue}We do not show any details
+  about its formalization here.}
 
 \begin{lemma}[Set-functions on semi-rings]\label{l:halbextRing}
   Let $\mathcal H$ be a semi-ring and $m: \mathcal H\to [0,\infty]$
@@ -896,8 +952,8 @@ The next result extends a set function on a semi-ring to an outer measure.
 
 \sloppy Let us now formulate the classical results by
 Carathéodory. The first leads to the definition of the measurable
-space \leanlinem{OuterMeasure.caratheodory}, covered in {\tt
-  mathlib}. See e.g.\ \cite[Theorem 2.1]{Kallenberg2020}
+space \leanline{OuterMeasure.caratheodory}, covered in
+\leanline{mathlib}. See e.g.\ \cite[Theorem 2.1]{Kallenberg2020}
 
 \begin{theorem}[\boldmath $\mu$-measurable sets are a
     $\sigma$-algebra]\label{T:cara} Let $\mu$ be an outer measure on
@@ -918,10 +974,11 @@ an additive content on a semi-ring, we have $\sigma(\mathcal H)
 \subseteq \mathcal F$. In particular, we then have defined a measure
 on $\sigma(\mathcal H)$. This result is not yet covered in {\tt
   mathlib}. However, for product spaces, in
-\leanlinem{MeasureTheory.Constructions.Pi}, there is
-\leanlinem{pi_caratheodory}, which shows that $\sigma(\mathcal H)
-\subseteq \mathcal F$ in a special case\todo{which special case?}. In addition, there is
-\leanlinem{pi_pi_aux}, which shows that $\mu$ extends $m$ on $\mathcal
+\leanline{MeasureTheory.Constructions.Pi}, there is
+\leanline{pi_caratheodory}, which shows that $\sigma(\mathcal H)
+\subseteq \mathcal F$ in {\color{blue} the construction of a product
+  measure for a finite index set}. In addition, there is
+\leanline{pi_pi_aux}, which shows that $\mu$ extends $m$ on $\mathcal
 H$ in the same special case. See also \cite[Theorem
   2.5]{Kallenberg2020}.
 
@@ -976,45 +1033,47 @@ H$ in the same special case. See also \cite[Theorem
 Here is a formalization of the measure resulting from
 Theorem~\ref{T:masseind}:
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-def ofAddSubaddCaratheodory
-    (hC : SetSemiring C)
-    (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
-    (m_empty : m ∅ hC.empty_mem = 0)
-    (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C)
-      (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-      (h_mem : ⋃₀ ↑I ∈ C),
-      m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
-    (m_sigma_subadd : ∀ ⦃f : ℕ → Set α⦄
-      (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
-      m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i)) :
-    @Measure α (inducedOuterMeasure m
-      hC.empty_mem m_empty).caratheodory
-\end{minted}
-\todo{is this the right lemma? Do we have a similar one about contents?}
+%% \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+%% def ofAddSubaddCaratheodory
+%%     (hC : SetSemiring C)
+%%     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
+%%     (m_empty : m ∅ hC.empty_mem = 0)
+%%     (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C)
+%%       (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+%%       (h_mem : ⋃₀ ↑I ∈ C),
+%%       m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
+%%     (m_sigma_subadd : ∀ ⦃f : ℕ → Set α⦄
+%%       (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
+%%       m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i)) :
+%%     @Measure α (inducedOuterMeasure m
+%%       hC.empty_mem m_empty).caratheodory
+%% \end{minted}
 
-\noindent
-Here, \leanlinem{MeasureTheory.OuterMeasure.caratheodory}\todo{used in dot notation... but we don't want to explain this} is already
-implemented and gives the assertion that $\mathcal F$ from
-Theorem~\ref{T:cara} is a $\sigma$-algebra. Note that
-\leanline{@Measure} is the same as \leanline{Measure}, but all
-variables have to be given explicitely. The second argument is a proof
-that measurable sets form a $\sigma$-algebra which cannot be inferred
-by the type class system of \leanline{Lean}.
 
-\noindent
-In the proof of Kolmogorov's extension theorem, we use a closely
-related definition\todo{should we present only this one and omit the lemma above?}:
+%% \noindent
+%% Here, \leanline{MeasureTheory.OuterMeasure.caratheodory}\todo{used in
+%%   dot notation... but we don't want to explain this} is already
+%% implemented and gives the assertion that $\mathcal F$ from
+%% Theorem~\ref{T:cara} is a $\sigma$-algebra. Note that
+%% \leanline{@Measure} is the same as \leanline{Measure}, but all
+%% variables have to be given explicitely. The second argument is a proof
+%% that measurable sets form a $\sigma$-algebra which cannot be inferred
+%% by the type class system of \leanline{Lean}.
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+%% \noindent
+%% In the proof of Kolmogorov's extension theorem, we use a closely
+%% related definition\todo{should we present only this one and omit the lemma above?}:
+
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 def Measure.ofAddContent
     [mα : MeasurableSpace α] (hC : SetSemiring C)
     (hC_gen : MeasurableSpace.generateFrom C = mα)
     (m : AddContent C)
-    (m_sigma_subadd : ...) :
+    (m_sigma_subadd : ∀ ⦃f : ℕ → Set α⦄
+      (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
+      m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i)) :
     Measure α
 \end{minted}
-with \leanline{m_sigma_subadd} as above.
 
 \subsection{$\sigma$-additivity of set functions}
 For the proof of Kolmogorov's extension Theorem, note that $P$ as
@@ -1089,8 +1148,9 @@ As an example, we give the formalization of $4.\Rightarrow 1.$:
 
 \todo[inline]{Rename the todo! And replace by the version about contents?}
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  theorem countably_additive_of_todo (hC : SetRing C)
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  theorem countably_additive_of_todo
+    (hC : SetRing C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (hm_ne_top : ∀ {s} (hs : s ∈ C), m s hs ≠ ∞)
     (hm_add : ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
@@ -1126,7 +1186,7 @@ space. We define inner (and outer) regularity of set functions.
 The above definition closely resembles its formalization in
 \leanline{mathlib}:
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
   def MeasureTheory.Measure.InnerRegular
     {α : Type u_1}  {_ : MeasurableSpace α}
     (μ : Measure α) (p q : Set α → Prop) :=
@@ -1144,7 +1204,14 @@ compact system, which is defined as follows:
   $\bigcap_{n=1}^N C_n = \emptyset$, we call $\mathcal C$ a {\em
     compact system}.
 \end{definition}
-\todo{no definition for this in the code for now}
+
+Here is the formalization:
+
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def IsCompactFamily (p : Set α → Prop) : Prop :=
+    ∀ C : ℕ → Set α, (∀ i, p (C i)) → ⋂ i, C i = ∅ →
+    ∃ (s : Finset ℕ), ⋂ i ∈ s, C i = ∅
+\end{minted}
 
 \begin{lemma}\label{l:stetigcompact}
   Let $\alpha$ be a topological space and $\mu$ be an additive set
@@ -1172,15 +1239,38 @@ compact system, which is defined as follows:
   This concludes the proof.
 \end{proof}
 
-\todo[inline]{Work on this, if time permits!}
+%% def closedCompactCylinders :
+%%   Set (Set ((i : ι) → α i)) :=
+%%   ⋃ (s) (S) (_ : IsClosed S) (_ : IsCompact S), {cylinder s S}
 
-In our formalization, we are less general and use a direct argument
-for a \leanline{kolContent}. More precisely, we show that a
-\leanline{kolContent}, which is based on a projective family which is
-inner regular with respect to compact and closed sets is
-$\sigma$-additive. 
+%%     theorem isCompactFamily_cylinders :
+%% IsCompactFamily (fun t ↦ t ∈ closedCompactCylinders α)
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+%% lemma AddContent.sigma_additive_of_regular [Nonempty α] (hR : SetRing R) (m : AddContent R)
+%%     (hm_ne_top : ∀ {s} (_ : s ∈ R), m s ≠ ∞)
+%%     (hC : IsCompactFamily C) (hCR : C ⊆ R)
+%%     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε)
+%%     ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ R) (hUf : (⋃ i, f i) ∈ R) (h_disj : Pairwise (Disjoint on f)) :
+%%     m (⋃ i, f i) = ∑' i, m (f i) 
+    
+%In our formalization, we are less general and use a direct argument
+%for a \leanlinecolor{kolContent}. More precisely, we show that a
+%\leanlinecolor{kolContent}, which is based on a projective family
+%which is inner regular with respect to compact and closed sets is
+%$\sigma$-additive.
+
+In order to apply this result and show the extension theorem, we need
+to show that
+%$\{\pi_J^{-1} C: C \in \prod_{j\in J} \alpha_j \text{ compact}\}$ as
+%  well as
+$\{\pi_J^{-1} C: C \in \prod_{j\in J} \alpha_j \text{ compact and
+  closed}\}$ is a compact systems. Note that compact sets are closed
+in Hausdorff spaces, but we do not have this property since we are
+working with pseudo-metric spaces. Since Lemma~\ref{l:stetigcompact}
+gives the $\sigma$-additivity of a \leanlinecolor{kolContent}, which
+is defined through the projective family \leanline{P}, we have:
+
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 theorem kolContent_sigma_additive_of_innerRegular
   (hP : IsProjectiveMeasureFamily P)
   (hP_inner : ∀ J,
@@ -1190,34 +1280,29 @@ theorem kolContent_sigma_additive_of_innerRegular
   (hf_Union : (⋃ i, f i) ∈ cylinders α)
   (h_disj : Pairwise (Disjoint on f)) :
   kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i)
-
-  theorem kolContent_countably_subadditive_of_innerRegular
-    (hP : IsProjectiveMeasureFamily P)
-    (hP_inner : ∀ J,
-      (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s)
-      MeasurableSet)
-    ⦃f : ℕ → Set (∀ i, α i)⦄
-    (hf : ∀ i, f i ∈ cylinders α)
-    (hf_Union : (⋃ i, f i) ∈ cylinders α) :
-    kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i)
 \end{minted}
 
-For using the more general version, we would need to show that
-$\{\pi_J^{-1} C: C \in \prod_{j\in J} \alpha_j \text{ compact}\}$ as
-well as $\{\pi_J^{-1} C: C \in \prod_{j\in J} \alpha_j \text{ compact
-  and closed}\}$ are compact systems. Note that compact sets are
-closed in Hausdorff spaces, but we do not have this property since we
-are working with pseudo-metric spaces. In addition, the assumption
-\leanline{hP_inner} from above translates directly to inner regularity
-of the \leanline{kolContent}, which is defined through the projective
-family \leanline{P}. Then, Lemma~\ref{l:stetigcompact} gives the same
-result as the formalization. Moreover, since the Carathéodory
-extension theorem requires $\sigma$-subadditivity (rather than
-$\sigma$-additivity), we can use
-\leanline{countably_subadditive_of_countably_additive} in order to
-show \leanline{kolContent_countably_subadditive_of_innerRegular},
-which shows that the assumptions of the last result also imply
-$\sigma$-subadditivity.
+Note that the assumption \leanline{hP_inner} from above translates
+directly to inner regularity of the \leanlinecolor{kolContent}, which
+is defined through the projective family \leanline{P}. Moreover, since
+the Carathéodory extension theorem requires $\sigma$-subadditivity
+(rather than $\sigma$-additivity), we can use
+\leanlinecolor{countably_subadditive_of_countably_additive} in order
+to show
+\leanlinecolor{kolContent_countably_subadditive_of_innerRegular}, and
+the assumptions of the last result also imply $\sigma$-subadditivity.
+
+%  theorem kolContent_countably_subadditive_of_innerRegular
+%    (hP : IsProjectiveMeasureFamily P)
+%    (hP_inner : ∀ J,
+%      (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s)
+%      MeasurableSet)
+%    ⦃f : ℕ → Set (∀ i, α i)⦄
+%    (hf : ∀ i, f i ∈ cylinders α)
+%    (hf_Union : (⋃ i, f i) ∈ cylinders α) :
+%    kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i)
+
+
 
 What remains to be done is to show conditions under which the
 projective family is inner regular with respect to compact (and
@@ -1226,12 +1311,12 @@ spaces. The following lemma provides the generalizations to extended
 pseudo-metric spaces:
 
 The next result is already implemented in \leanline{mathlib}: Use
-\leanlinem{Measure.InnerRegular.of_pseudoEMetricSpace} in order to show
+\leanline{Measure.InnerRegular.of_pseudoEMetricSpace} in order to show
 that every open set is inner regular with respect to closed sets, and
-\leanlinem{Measure.InnerRegular.measurableSet_of_open} to show that
+\leanline{Measure.InnerRegular.measurableSet_of_open} to show that
 every measurable set is inner regular with respect to closed sets.
-The claimed outer reularity is part of
-\leanlinem{MeasureTheory.Measure.InnerRegular.weaklyRegular_of_finite}.
+The claimed outer regularity is part of
+\leanline{MeasureTheory.Measure.InnerRegular.weaklyRegular_of_finite}.
 
 \begin{lemma}\label{l:pseude1}
   Let $r$ be an extended pseudo-metric on $\alpha$, and the topology
@@ -1300,7 +1385,7 @@ The claimed outer reularity is part of
 %process to get its \leanline{outer_regular} argument.
 
 In the next lemma, we will need that a closed subset of a compact set
-is compact. (See \leanlinem{isCompact_of_isClosed_subset}.) We describe
+is compact. (See \leanline{isCompact_of_isClosed_subset}.) We describe
 the formalization of the next lemma only in conjunction with
 Lemma~\ref{L:relcoPol}.
 
@@ -1335,8 +1420,11 @@ Lemma~\ref{L:relcoPol}.
 We apply this result by using that 1.\ is satisfied for complete and
 separable extended pseudo-metric spaces. Here, for the generalization
 to extended pseudo-metric spaces, we use that any subset of such a
-space is compact iff it is complete and totally bounded (see
-\leanlinem{isCompact_iff_totallyBounded_isComplete} in {\tt
+space is compact iff it is complete and totally
+bounded\footnote{\label{note:tot}A subset of a pseudo-metric space is
+  totally bounded iff, for all $\varepsilon>0$, it can be covered by
+  finitely many balls of radius $\epsilon$.} (see
+\leanline{isCompact_iff_totallyBounded_isComplete} in {\tt
   mathlib}). Since closed subsets of a complete space are complete,
 the closure of a totally bounded set is (still totally bounded, hence)
 compact. (This fact is used in the proof below.)
@@ -1368,10 +1456,11 @@ compact. (This fact is used in the proof below.)
     A := \bigcap_{n=1}^\infty \bigcup_{k=1}^{N_n}
     B_{\varepsilon_n}(x_k),
   \]
-  which by construction is totally bounded\todo{totally bounded not defined?} (for $r>0$ take $n$ such
+  which by construction is totally bounded (for $r>0$ take $n$ such
   that $\varepsilon_n < r$, such that $B_r(x_1),...,B_r(x_{N_n})$
-  cover $A$), and therefore has a compact closure as noted before the
-  lemma\todo{is it noted before the lemma? where?}. In addition, by $\sigma$-sub-additivity of $\mu$,
+  cover $A$), and therefore has a compact closure as noted
+  {\color{blue} in the lines directly preceding the lemma}. In
+  addition, by $\sigma$-sub-additivity of $\mu$,
   \begin{align*}
      \mu((\overline A)^c) & \leq \mu(A^c) = \mu\Big(
      \bigcup_{n=1}^\infty \Big(\Big(\bigcup_{k=1}^{N_n}
@@ -1387,7 +1476,7 @@ This the gives the desired result that a measure on a second
 countable, complete extended pseudo-metric space is inner regular with
 respect to closed compact sets.
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
   theorem innerRegular_isCompact_isClosed_
     measurableSet_of_complete_countable
     [PseudoEMetricSpace α] [CompleteSpace α]
@@ -1396,7 +1485,6 @@ respect to closed compact sets.
     P.InnerRegular (fun s => IsCompact s ∧ IsClosed s)
       MeasurableSet 
 \end{minted}
-
 
 %\begin{lemma}\label{l:totalBoundcompact}
 %  Let $E$ be a uniform topologocal space\footnote{This is more general
@@ -1445,7 +1533,7 @@ The formalization of this proof resembles these arguments. We leave
 out all instances in the reformulation of the result and its proof
 (see below Theorem~\ref{T1} for a full formulation):
 
-\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+\begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 def projectiveLimitWithWeakestHypotheses
     (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
     (hP : IsProjectiveMeasureFamily P) :
@@ -1456,20 +1544,46 @@ def projectiveLimitWithWeakestHypotheses
       fun J => innerRegular_isCompact_isClosed_
       measurableSet_of_complete_countable (P J))    
 \end{minted}
-Let us look closer at the formalized proof:
-\leanline{kolContent_countably_subadditive_of_innerRegular} has the
-same hypotheses as
-\leanline{kolContent_sigma_additive_of_innerRegular}, except
+\sloppy Let us look closer at the formalized proof:
+\leanlinecolor{kolContent_countably_subadditive_of_innerRegular} has
+the same hypotheses as
+\leanlinecolor{kolContent_sigma_additive_of_innerRegular}, except
 \leanline{h_disj}. So, the lemma in the last brackets shows
 $\sigma$-sub-additivity of the content $P$ from
-Theorem~\ref{T1}. Then, \leanline{generateFrom_cylinders} gives the \leanline{MeasurableSpace} on which we define the
-\leanline{addContent}.
+Theorem~\ref{T1}. Then, \leanlinecolor{generateFrom_cylinders} gives
+the \leanline{MeasurableSpace} on which we define the
+\leanlinecolor{addContent}.
 
 
 \section{Concluding thoughts}
-We will highlight some paths we imagine can be taken, leading to
-further extensions of \leanline{mathlib}, which build on our
-contribution.
+\label{ss:concl}
+{\color{blue} The usability of our contribution must be proved by an
+  example: Adding to our general theory, we have implemented the
+  example of an infinite product measure. (As an application of
+  \leanlinecolor{projectiveLimitWithWeakestHypotheses}, we have to use
+  complete and separable extended pseudo-metric spaces, but note that
+  an implementation of the Theorem by Ionescu and Tulcea would give
+  the same result without these prerequisites.) Here, we can build on
+  \leanline{Measure.pi}, which defines a finite product measure.
+  Using the same automatically inferred instances, we obtain:}
+  
+\begin{minted}[highlightlines={1,8}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def independentFamily
+    (P : ∀ i, Measure (α i))
+    [∀ i, IsProbabilityMeasure (P i)] : Measure (∀ i, α i)
+    := projectiveLimitWithWeakestHypotheses
+    (fun J : Finset ι => Measure.subset_pi P J)
+    (product_isProjective P)
+
+  def Measure.subset_pi
+    (P : ∀ i, Measure (α i)) (I : Finset ι) :
+    Measure ((i : I) → (α i)) :=
+    Measure.pi (fun (i : I) => (P (i : ι)))
+\end{minted}
+
+Moreover, we will highlight some paths we imagine can be taken,
+leading to further extensions of \leanline{mathlib}, which build on
+our contribution.
 
 {\em Using semi-rings in measure theory:} Frequently, the construction
 of measures on some $\sigma$-algebra $\mathcal F$ (on some space
@@ -1480,8 +1594,8 @@ set-function on a semi-ring by an outer measure, not previously
 implemented in mathlib. This could also be used to re-define Stieltjes
 measures (in particular Lebesgue measure) on $\mathbb R$, as well as
 product measures (on finite products). More precisely,
-e.g.\ \leanlinem{StieltjesFunction.outer_Ioc} and
-\leanlinem{MeasureTheory.constructions.pi.pi_pi_aux} are specific
+e.g.\ \leanline{StieltjesFunction.outer_Ioc} and
+\leanline{MeasureTheory.constructions.pi.pi_pi_aux} are specific
 examples of the more general statement, that the outer measure extends
 the set function a the semi-ring. (In the first case, it would be the
 semi-ring of half-open intervals, in the second case, it would be the
