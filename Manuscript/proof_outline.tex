@@ -1146,22 +1146,19 @@ topological structure of the underlying space.
 \noindent
 As an example, we give the formalization of $4.\Rightarrow 1.$:
 
-\todo[inline]{Rename the todo! And replace by the version about contents?}
+\todo[inline]{Rename the todo! \xout{And replace by the version about contents?}}
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  theorem countably_additive_of_todo
-    (hC : SetRing C)
-    (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
-    (hm_ne_top : ∀ {s} (hs : s ∈ C), m s hs ≠ ∞)
-    (hm_add : ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
-      Disjoint s t →
-      m (s ∪ t) (hC.union_mem hs ht) = m s hs + m t ht)
-    (hm : ∀ ⦃s : ℕ → Set α⦄ (hs : ∀ n, s n ∈ C),
-      Antitone s → (⋂ n, s n) = ∅ →
-      Tendsto (fun n => m (s n) (hs n)) atTop (nhds 0))
-      ⦃f : ℕ → Set α⦄ (h : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C)
-      (h_disj : Pairwise (Disjoint on f)) :
-    m (⋃ i, f i) hUf = ∑' i, m (f i) (h i)
+  theorem countably_additive_addContent_of_todo
+  (hC : SetRing C)
+  (m : AddContent C)
+  (hm_ne_top : ∀ {s} (_ : s ∈ C), m s ≠ ∞)
+  (hm : ∀ ⦃s : ℕ → Set α⦄ (_ : ∀ n, s n ∈ C),
+    Antitone s → (⋂ n, s n) = ∅ →
+    Tendsto (fun n => m (s n)) atTop (nhds 0))
+    ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C)
+    (h_disj : Pairwise (Disjoint on f)) :
+  m (⋃ i, f i) = ∑' i, m (f i) 
 \end{minted}
 
 \noindent
