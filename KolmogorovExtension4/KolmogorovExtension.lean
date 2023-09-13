@@ -108,7 +108,7 @@ theorem kolContent_diff (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylinders
 
 end KolFunDef
 
-section ContinuityAtEmpty
+section InnerRegular
 
 local notation "Js" => cylinders.finset
 
@@ -162,19 +162,7 @@ lemma innerRegular_kolContent [∀ i, Nonempty (α i)] (hP : IsProjectiveMeasure
       MeasurableSet.diff (cylinders.measurableSet hs) hK'_closed.measurableSet
     exact kolContent_congr hP (cylinder_mem_cylinders _ _ h_meas) rfl h_meas
 
-theorem continuous_at_empty_kolContent [∀ i, Nonempty (α i)] (hP : IsProjectiveMeasureFamily P)
-    (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
-    (hs : ∀ n : ℕ, s n ∈ cylinders α) (hs_anti : Antitone s) (hs_Inter : (⋂ n : ℕ, s n) = ∅) :
-    Filter.Tendsto (fun n => kolContent hP (s n)) Filter.atTop (nhds 0) := by
-  refine tendsto_zero_of_regular_addContent setRing_cylinders (kolContent hP) hs hs_anti hs_Inter
-    isCompactFamily_cylinders (fun t ht ↦ mem_cylinder_of_mem_closedCompactCylinders ht) ?_
-  intros t ht ε hε
-  convert innerRegular_kolContent hP hP_inner ht ε hε with u
-  refine ⟨fun h ↦ ⟨h.1, h.2.1, h.2.2⟩, fun h ↦ ?_⟩
-  obtain ⟨a, b, c⟩ := h
-  exact ⟨a, b, c⟩
-
-end ContinuityAtEmpty
+end InnerRegular
 
 section InnerRegularAssumption
 
@@ -186,9 +174,14 @@ theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamil
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α)
     (h_disj : Pairwise (Disjoint on f)) : 
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
-  refine' countably_additive_addContent_of_todo setRing_cylinders _ _ _ hf hf_Union h_disj
+  refine (kolContent hP).sigma_additive_of_regular setRing_cylinders ?_ isCompactFamily_cylinders
+    (fun t ht ↦ mem_cylinder_of_mem_closedCompactCylinders ht) ?_ hf hf_Union h_disj
   · exact fun hx => kolContent_ne_top _ hx
-  · exact fun s hs => continuous_at_empty_kolContent hP hP_inner hs
+  · intros t ht ε hε
+    convert innerRegular_kolContent hP hP_inner ht ε hε with u
+    refine ⟨fun h ↦ ⟨h.1, h.2.1, h.2.2⟩, fun h ↦ ?_⟩
+    obtain ⟨a, b, c⟩ := h
+    exact ⟨a, b, c⟩
 
 theorem kolContent_countably_subadditive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
