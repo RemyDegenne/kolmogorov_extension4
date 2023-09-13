@@ -315,6 +315,8 @@ theorem generateFrom_boxes [∀ i, MeasurableSpace (α i)] :
 
 end boxes
 
+section cylinder
+
 def cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) : Set ((i : ι) → α i) :=
   (fun f : (i : ι) → α i => fun i : s => f i) ⁻¹' S
 
@@ -371,6 +373,10 @@ theorem compl_cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) :
     (cylinder s S)ᶜ = cylinder s (Sᶜ) := by
   ext1 f; simp only [mem_compl_iff, mem_cylinder]
 
+theorem diff_cylinder_same (s : Finset ι) (S T : Set (∀ i : s, α i)) :
+    cylinder s S \ cylinder s T = cylinder s (S \ T) := by
+  ext1 f; simp only [mem_diff, mem_cylinder]
+
 theorem eq_of_cylinder_eq_of_subset [h_nonempty : Nonempty ((i : ι) → α i)] {I J : Finset ι}
     {S : Set (∀ i : I, α i)} {T : Set (∀ i : J, α i)} (h_eq : cylinder I S = cylinder J T)
     (hJI : J ⊆ I) :
@@ -403,6 +409,10 @@ theorem disjoint_cylinder_iff [Nonempty ((i : ι) → α i)] {s t : Finset ι} {
 theorem isClosed_cylinder [∀ i, TopologicalSpace (α i)] (I : Finset ι) (s : Set (∀ i : I, α i))
     (hs : IsClosed s) : IsClosed (cylinder I s) :=
   hs.preimage (continuous_proj _)
+
+end cylinder
+
+section cylinders
 
 variable [∀ i, MeasurableSpace (α i)]
 
@@ -520,3 +530,68 @@ theorem generateFrom_cylinders :
     · exact (measurable_pi_apply _) (ht i)
     · ext1 x
       simp only [mem_box, Finset.mem_singleton, forall_eq, mem_cylinder, mem_setOf_eq]
+
+end cylinders
+
+section closedCompactCylinders
+
+variable [∀ i, TopologicalSpace (α i)]
+
+variable (α)
+
+def closedCompactCylinders : Set (Set ((i : ι) → α i)) :=
+  ⋃ (s) (S) (_ : IsClosed S) (_ : IsCompact S), {cylinder s S}
+
+theorem empty_mem_closedCompactCylinders : ∅ ∈ closedCompactCylinders α := by
+  simp_rw [closedCompactCylinders, mem_iUnion, mem_singleton_iff]
+  exact ⟨∅, ∅, isClosed_empty, isCompact_empty, (cylinder_empty _).symm⟩
+
+variable {α}
+
+@[simp]
+theorem mem_closedCompactCylinders (t : Set ((i : ι) → α i)) :
+    t ∈ closedCompactCylinders α
+      ↔ ∃ (s S : _) (_ : IsClosed S) (_ : IsCompact S), t = cylinder s S := by
+  simp_rw [closedCompactCylinders, mem_iUnion, mem_singleton_iff]
+
+noncomputable def closedCompactCylinders.finset {t : Set ((i : ι) → α i)}
+    (ht : t ∈ closedCompactCylinders α) :
+    Finset ι :=
+  ((mem_closedCompactCylinders t).mp ht).choose
+
+def closedCompactCylinders.set {t : Set ((i : ι) → α i)} (ht : t ∈ closedCompactCylinders α) :
+    Set (∀ i : closedCompactCylinders.finset ht, α i) :=
+  ((mem_closedCompactCylinders t).mp ht).choose_spec.choose
+
+theorem closedCompactCylinders.isClosed {t : Set ((i : ι) → α i)}
+    (ht : t ∈ closedCompactCylinders α) :
+    IsClosed (closedCompactCylinders.set ht) :=
+  ((mem_closedCompactCylinders t).mp ht).choose_spec.choose_spec.choose
+
+theorem closedCompactCylinders.isCompact {t : Set ((i : ι) → α i)}
+    (ht : t ∈ closedCompactCylinders α) :
+    IsCompact (closedCompactCylinders.set ht) :=
+  ((mem_closedCompactCylinders t).mp ht).choose_spec.choose_spec.choose_spec.choose
+
+theorem closedCompactCylinders.eq_cylinder {t : Set ((i : ι) → α i)}
+    (ht : t ∈ closedCompactCylinders α) :
+    t = cylinder (closedCompactCylinders.finset ht) (closedCompactCylinders.set ht) :=
+  ((mem_closedCompactCylinders t).mp ht).choose_spec.choose_spec.choose_spec.choose_spec
+
+theorem cylinder_mem_closedCompactCylinders (s : Finset ι) (S : Set (∀ i : s, α i))
+    (hS_closed : IsClosed S) (hS_compact : IsCompact S) :
+    cylinder s S ∈ closedCompactCylinders α := by
+  rw [mem_closedCompactCylinders]
+  exact ⟨s, S, hS_closed, hS_compact, rfl⟩
+
+theorem mem_cylinder_of_mem_closedCompactCylinders [∀ i, MeasurableSpace (α i)]
+    [∀ i, TopologicalSpace.SecondCountableTopology (α i)] [∀ i, OpensMeasurableSpace (α i)]
+    {t : Set ((i : ι) → α i)}
+    (ht : t ∈ closedCompactCylinders α) :
+    t ∈ cylinders α := by
+  rw [mem_cylinders]
+  refine ⟨closedCompactCylinders.finset ht, closedCompactCylinders.set ht, ?_, ?_⟩
+  · exact (closedCompactCylinders.isClosed ht).measurableSet
+  · exact closedCompactCylinders.eq_cylinder ht
+
+end closedCompactCylinders

@@ -205,6 +205,35 @@ theorem exists_compact
   rw [tsub_le_iff_left] at h_le ⊢
   rwa [add_comm]
 
+lemma innerRegular_kolContent [∀ i, Nonempty (α i)] (hP : IsProjectiveMeasureFamily P)
+    (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
+    {s : Set (∀ i, α i)} (hs : s ∈ cylinders α) (ε : ℝ≥0∞) (hε : 0 < ε) :
+    ∃ (K : Set (∀ i, α i)) (_ : K ∈ closedCompactCylinders α),
+      K ⊆ s ∧ kolContent hP (s \ K) ≤ ε := by
+  obtain ⟨K', hK'_compact, hK'_closed, hK'_subset, hK'⟩ := exists_compact hP_inner
+    (Js hs) (As hs) (cylinders.measurableSet hs) ε hε
+  refine ⟨cylinder (Js hs) K', ?_, ?_, ?_⟩
+  · exact cylinder_mem_closedCompactCylinders _ _ hK'_closed hK'_compact
+  · conv_rhs => rw [cylinders.eq_cylinder hs]
+    simp_rw [cylinder]
+    rw [Function.Surjective.preimage_subset_preimage_iff]
+    · exact hK'_subset
+    · intro y
+      let x := (inferInstance : Nonempty (∀ i, α i)).some
+      classical
+      refine ⟨fun i ↦ if hi : i ∈ Js hs then y ⟨i, hi⟩ else x i, ?_⟩
+      ext1 i
+      simp only [Finset.coe_mem, dite_true]
+  · simp only
+    have : (s \ cylinder (Js hs) K') = (cylinder (Js hs) (As hs) \ cylinder (Js hs) K') := by
+      congr
+      exact cylinders.eq_cylinder hs
+    rw [this, diff_cylinder_same]
+    refine (le_of_eq ?_).trans hK'
+    have h_meas : MeasurableSet (As hs \ K') :=
+      MeasurableSet.diff (cylinders.measurableSet hs) hK'_closed.measurableSet
+    exact kolContent_congr hP (cylinder_mem_cylinders _ _ h_meas) rfl h_meas
+
 def innerCompact
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     (J : Finset ι) (A : Set (∀ i : J, α i)) (hA : MeasurableSet A) (ε : ℝ≥0∞) (hε : 0 < ε) :
