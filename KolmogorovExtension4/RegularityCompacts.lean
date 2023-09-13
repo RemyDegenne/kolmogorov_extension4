@@ -123,44 +123,6 @@ theorem tendsto_atTop_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
 
 end ENNReal
 
-namespace NNReal
-
-theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by 
-  rw [← bot_eq_zero, Ico_bot];
-  exact isOpen_Iio
-
-/-- Given some x > 0, there is a sequence of positive reals summing to x. -/
-theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :
-    ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x := by
-  use fun n : ℕ => x / 2 / 2 ^ n
-  constructor
-  · intro n
-    positivity
-  have h : ∑' n : ℕ, x / 2 / 2 ^ n = x := by
-    rw [← NNReal.eq_iff, NNReal.coe_tsum]
-    push_cast [(· ∘ ·), NNReal.coe_div]
-    rw [tsum_geometric_two' (x : ℝ)]
-  refine ⟨?_, h⟩
-  by_contra h1
-  obtain h2 := tsum_eq_zero_of_not_summable h1
-  rw [h] at h2 
-  apply hx.ne
-  rw [h2]
-
-/-- Given some x > 0, there is a sequence of positive reals summing to something less than x.
-This is needed in several lemmas in measure theory. -/
-theorem exists_seq_pos_summable_lt (x : ℝ≥0) (hx : 0 < x) :
-    ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n < x := by
-  cases' NNReal.exists_seq_pos_summable_eq (x / 2) (half_pos hx) with f hf
-  refine ⟨f, hf.1, ?_, ?_⟩
-  · rcases hf with ⟨_, hf2, _⟩
-    exact hf2
-  · rcases hf with ⟨_, _, hf3⟩
-    rw [hf3]
-    exact NNReal.half_lt_self (ne_of_gt hx)
-
-end NNReal
-
 end Misc
 
 universe u
