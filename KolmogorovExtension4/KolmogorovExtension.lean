@@ -1,4 +1,3 @@
-import KolmogorovExtension4.AdditiveOfContinuous
 import KolmogorovExtension4.CaratheodoryExtension
 import KolmogorovExtension4.Projective
 import KolmogorovExtension4.RegularityCompacts
