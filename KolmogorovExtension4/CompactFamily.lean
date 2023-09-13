@@ -285,7 +285,7 @@ def IsCompactFamily.support (hp : IsCompactFamily p) (hC : ∀ i, p (C i))
     Finset ℕ :=
   (hp C hC hC_empty).choose
 
-def IsCompactFamily.eq_bot (hp : IsCompactFamily p) (hC : ∀ i, p (C i))
+def IsCompactFamily.iInter_eq_empty (hp : IsCompactFamily p) (hC : ∀ i, p (C i))
     (hC_empty : ⋂ i, C i = ∅) :
     ⋂ i ∈ hp.support hC hC_empty, C i = ∅ :=
   (hp C hC hC_empty).choose_spec
