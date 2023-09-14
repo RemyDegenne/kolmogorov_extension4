@@ -70,7 +70,7 @@ lemma AddContent.sigma_additive_of_regular [Nonempty α] (hR : SetRing R) (m : A
     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε)
     ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ R) (hUf : (⋃ i, f i) ∈ R) (h_disj : Pairwise (Disjoint on f)) :
     m (⋃ i, f i) = ∑' i, m (f i) := by
-  refine countably_additive_addContent_of_todo hR m hm_ne_top ?_ hf hUf h_disj
+  refine sigma_additive_addContent_of_tendsto_zero hR m hm_ne_top ?_ hf hUf h_disj
   intro s hs hs_anti hs_iInter
   exact tendsto_zero_of_regular_addContent hR m hs hs_anti hs_iInter hC hCR h_reg
 

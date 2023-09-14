@@ -12,7 +12,7 @@ variable {α : Type _} {C : Set (Set α)}
 /-- In a ring of sets, continuity of an additive function at `∅` implies σ-additivity.
 This is not true in general in semirings, or without the hypothesis that `m` is finite. See the
 examples 7 and 8 in Halmos' book Measure Theory (1974), page 40. -/
-theorem countably_additive_of_todo (hC : SetRing C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
+theorem sigma_additive_of_tendsto_zero (hC : SetRing C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (hm_ne_top : ∀ {s} (hs : s ∈ C), m s hs ≠ ∞)
     (hm_add : ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
       Disjoint s t → m (s ∪ t) (hC.union_mem hs ht) = m s hs + m t ht)
@@ -77,13 +77,13 @@ theorem countably_additive_of_todo (hC : SetRing C) (m : ∀ s : Set α, s ∈ C
     exact hm_mono _ _ (Set.accumulate_subset_iUnion _ _)
   exact tendsto_nhds_unique h_tendsto' (ENNReal.tendsto_nat_tsum fun i => m (f i) (h i))
 
-theorem countably_additive_addContent_of_todo (hC : SetRing C) (m : AddContent C)
+theorem sigma_additive_addContent_of_tendsto_zero (hC : SetRing C) (m : AddContent C)
     (hm_ne_top : ∀ {s} (_ : s ∈ C), m s ≠ ∞)
     (hm : ∀ ⦃s : ℕ → Set α⦄ (_ : ∀ n, s n ∈ C),
       Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n => m (s n)) atTop (𝓝 0))
     ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C) (h_disj : Pairwise (Disjoint on f)) :
     m (⋃ i, f i) = ∑' i, m (f i) :=
-  countably_additive_of_todo hC (fun s _ => m s) (fun hs => hm_ne_top hs)
+  sigma_additive_of_tendsto_zero hC (fun s _ => m s) (fun hs => hm_ne_top hs)
     (addContent_union m hC) hm hf hUf h_disj
 
 theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)

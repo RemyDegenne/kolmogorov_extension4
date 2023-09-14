@@ -126,15 +126,11 @@ align=left, itemsep=0pt, leftmargin=0pt, labelindent=0pt, listparindent=0pt, lab
 
 \maketitle
 
-%\todo[inline]{Clearly differentiate refs to mathlib vs refs to new lemmas?}
-
 \todo[inline]{Mention a precise commit of Mathlib}
 
 \todo[inline]{write about sets or types?}
 
 \todo[inline]{\leanline{∀ j : J, α j} or \leanline{(j : J) -> α j} ?}
-
-%\todo[inline]{explain leanlinem}
 
 \section{Introduction}
 One of the main building blocks of modern probability theory are stochastic processes, which are usually defined as any collection of random variables -- $(X_t)_{t\in \iota}$ with $X_t$ taking values in some $\alpha_t$ for all $t\in\iota$ -- defined on some joint probability space $(\Omega, \mathcal A, \mathbf P)$.  (As usual, we will refer to $\iota$ as the index set of times.) In order to study such processes, it is fundamental to talk about their joint distribution, i.e.\ a probability distribution on the product set $\prod_{t\in\iota} \alpha_t$. The usual approach to construct (the distribution of) a stochastic process works as follows: describe properties of the distribution of the stochastic process $P_J$ at some arbitrary but finite number of times $J = \{t_1,...,t_n\} \subseteq \iota$.
@@ -146,19 +142,18 @@ The goal of our contribution is a formalization of the proof of that theorem in 
 %Subsequently, we aim to make a pull request for the publication of our code in \leanline{mathlib}.
 The Kolmogorov extension theorem is on the interface between measure theory and probability theory. Here, we rely on a decent amount of formalized mathematics in the measure-theory part of {\tt mathlib} (outer measures, above all), while not requiring any specific previous formalization of probability theory. (In fact, most of our results are formulated in terms of finite rather than probability measures.)
 
-At first sight, it might be surprising that martingales, a certain class of stochastic process, have already been formalized in Lean \cite{ying2023formalization}, although the Kolmogorov extension theorem (on the existence of stochastic processes) is only available by our contribution. Note, however, that a martingale $(X_t)_{t\in \iota}$ is defined as a family of random variables (satisfying some properties) on a fixed probability space $(\Omega, \mathcal F, \mathbf P)$, while the Kolmogorov extension theorem is on the construction of a probability (or finite) measure $\mathbf P$, on which we can define random variables (with certain properties). So, our work complements \cite{ying2023formalization} in the sense that probability spaces $(\Omega, \mathcal F, \mathbf P)$ on which you can define a martingale exist. {\color{blue}As an application of our implementation, we construct a probability measure on an infinite product space where all coordinates are independent; see Section~\ref{ss:concl}.} % However, we do not give any specific example for the construction of a specific instance of such a space\todo{could we give one?}.
+At first sight, it might be surprising that martingales, a certain class of stochastic process, have already been formalized in Lean \cite{ying2023formalization}, although the Kolmogorov extension theorem (on the existence of stochastic processes) is only available by our contribution. Note, however, that a martingale $(X_t)_{t\in \iota}$ is defined as a family of random variables (satisfying some properties) on a fixed probability space $(\Omega, \mathcal F, \mathbf P)$, while the Kolmogorov extension theorem is on the construction of a probability (or finite) measure $\mathbf P$, on which we can define random variables (with certain properties). So, our work complements \cite{ying2023formalization} in the sense that probability spaces $(\Omega, \mathcal F, \mathbf P)$ on which you can define a martingale exist. {\color{blue}As an application of our implementation, we construct a probability measure on an infinite product space where all coordinates are independent; see Section~\ref{ss:concl}.}
 
 The main steps in our construction, which were previously missing in {\tt mathlib}, are (more mathematical details are below, and in standard textbooks on Probability Theory, e.g.\ \cite{Klenke2013, Kallenberg2020}):
 \begin{enumerate}
 \item a formalization of (the set-system of) semi-rings (see
   Definition~\ref{def:semi});
 \item {\color{blue}a definition of additive contents over semi-rings (see Definition~\ref{def:content});}
-%\item adding some main lemmas to measure theory, e.g.\ continuity of a measure at the emptyset\todo{for a measure, this is already in mathlib?} (see e.g.\ Lemma~\ref{l:halbextRing}, Proposition~\ref{P:stetigmass}, Lemma~\ref{l:stetigcompact} below);
 \item a proof that a single probability measure on a Polish space is inner regular with respect to compact sets (see Definition~\ref{def:innerreg}; in fact, we proved a slight generalization using pseudo-metric spaces, found in Lemma~\ref{L:relcoPol} below); 
 \item the classical Carathéodory extension theorem, providing us with a candidate for the measure which we want to construct (see Theorem~\ref{T:masseind}); 
 \item the Kolmogorov extension theorem, as based on the previous steps (See Theorem~\ref{T1}).
 \end{enumerate}
-The Kolmogorov extension theorem has been previously formalized in Isabelle/HOL \cite{Immler2012}. This formalization only works on Polish spaces (rather than on spaces where every finite measure is inner regular with respect to compact sets, see below), and only in the case where all $\alpha_i$'s are identical. In addition, {\color{blue}Isabelle works with simple type theory, while Lean is an implementation of dependent theory.} %However, type theory as the basis of the formalization, as well as several mathematical concepts (e.g.\ projective families of measures or the continuity of a measure in the emptyset) are the same in both formalisations\todo{no, the type theory is not the same} in these two interactive theorem provers.
+The Kolmogorov extension theorem has been previously formalized in Isabelle/HOL \cite{Immler2012}. This formalization only works on Polish spaces (rather than on spaces where every finite measure is inner regular with respect to compact sets, see below), and only in the case where all $\alpha_i$'s are identical. In addition, {\color{blue}Isabelle works with simple type theory, while Lean is an implementation of dependent theory.} 
 
 \subsubsection*{Possible future work}
 \sloppy Let us describe some future projects extending {\tt mathlib} which become possible by our contribution.
@@ -530,9 +525,6 @@ open balls around $x$ and $y$ overlap. {\color{blue}We note that this
   spaces by \leanline{UniformSpace.pseudoMetrizableSpace}; see also
   Remark~\ref{rem:uniform} for some more details.}
 
-% \todo{it would be nice to explain how the formalization led us to
-% remove that hypothesis}.
-
 \subsection{Extending a set function}
 In the formulation of Theorem~\ref{T1}, we extend $P$, which is
 defined on a union of $\sigma$-algebras. However, unions of
@@ -635,7 +627,6 @@ a semi-ring. This means we can prove the following:
 
 From the field/ring/semi-ring of cylinders, we have to define the
 generated $\sigma$-algebra. This uses the following:
-%\todo{one of those 2 is ours, the other is from mathlib. How do we show the  difference?}:
 \begin{minted}[highlightlines={1}, framesep = 0pt, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
   theorem generateFrom_cylinders :
     MeasurableSpace.generateFrom (cylinders α)
@@ -700,8 +691,7 @@ but requires induction over finite sets.
 The existence-statement of the above lemma actually gives rise to a
 definition. Here, we use \leanline{Exists.choose} in order to extract
 an element from an $\exists$-statement. In addition, we do not allow
-$\emptyset \in \mathcal K$ without loss of generality\todo{that
-  exclusion was useful for something. Find out what that is}:
+$\emptyset \in \mathcal K$ without loss of generality:
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 def diff₀ (hC : SetSemiring C)
@@ -1146,10 +1136,8 @@ topological structure of the underlying space.
 \noindent
 As an example, we give the formalization of $4.\Rightarrow 1.$:
 
-\todo[inline]{Rename the todo! \xout{And replace by the version about contents?}}
-
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  theorem countably_additive_addContent_of_todo
+  theorem sigma_additive_addContent_of_tendsto_zero
   (hC : SetRing C)
   (m : AddContent C)
   (hm_ne_top : ∀ {s} (_ : s ∈ C), m s ≠ ∞)
