@@ -1272,12 +1272,12 @@ directly to inner regularity of the \leanlinecolor{kolContent}, which
 is defined through the projective family \leanline{P}. Moreover, since
 the Carathéodory extension theorem requires $\sigma$-subadditivity
 (rather than $\sigma$-additivity), we can use
-\leanlinecolor{countably_subadditive_of_countably_additive} in order
+\leanlinecolor{sigma_subadditive_of_sigma_additive} in order
 to show
-\leanlinecolor{kolContent_countably_subadditive_of_innerRegular}, and
+\leanlinecolor{kolContent_sigma_subadditive_of_innerRegular}, and
 the assumptions of the last result also imply $\sigma$-subadditivity.
 
-%  theorem kolContent_countably_subadditive_of_innerRegular
+%  theorem kolContent_sigma_subadditive_of_innerRegular
 %    (hP : IsProjectiveMeasureFamily P)
 %    (hP_inner : ∀ J,
 %      (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s)
@@ -1525,12 +1525,12 @@ def projectiveLimitWithWeakestHypotheses
     Measure (∀ i, α i) :=
   Measure.ofAddContent setSemiringCylinders
     generateFrom_cylinders (kolContent hP)
-    (kolContent_countably_subadditive_of_innerRegular hP
+    (kolContent_sigma_subadditive_of_innerRegular hP
       fun J => innerRegular_isCompact_isClosed_
       measurableSet_of_complete_countable (P J))    
 \end{minted}
 \sloppy Let us look closer at the formalized proof:
-\leanlinecolor{kolContent_countably_subadditive_of_innerRegular} has
+\leanlinecolor{kolContent_sigma_subadditive_of_innerRegular} has
 the same hypotheses as
 \leanlinecolor{kolContent_sigma_additive_of_innerRegular}, except
 \leanline{h_disj}. So, the lemma in the last brackets shows

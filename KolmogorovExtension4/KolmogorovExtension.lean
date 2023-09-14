@@ -182,11 +182,11 @@ theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamil
     obtain ⟨a, b, c⟩ := h
     exact ⟨a, b, c⟩
 
-theorem kolContent_countably_subadditive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
+theorem kolContent_sigma_subadditive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α) :
     kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) :=
-  (kolContent hP).countably_subadditive_of_countably_additive setRing_cylinders
+  (kolContent hP).sigma_subadditive_of_sigma_additive setRing_cylinders
     (kolContent_sigma_additive_of_innerRegular hP hP_inner) f hf hf_Union
 
 end InnerRegularAssumption
@@ -197,7 +197,7 @@ noncomputable def projectiveLimitWithWeakestHypotheses [∀ i, PseudoEMetricSpac
     [∀ i, CompleteSpace (α i)] [∀ i, Nonempty (α i)] (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
     [∀ i, IsFiniteMeasure (P i)] (hP : IsProjectiveMeasureFamily P) : Measure (∀ i, α i) :=
   Measure.ofAddContent setSemiringCylinders generateFrom_cylinders (kolContent hP)
-    (kolContent_countably_subadditive_of_innerRegular hP fun J =>
+    (kolContent_sigma_subadditive_of_innerRegular hP fun J =>
       innerRegular_isCompact_isClosed_measurableSet_of_complete_countable (P J))
 
 section Polish
@@ -214,19 +214,19 @@ theorem kolContent_sigma_additive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ 
   refine' kolContent_sigma_additive_of_innerRegular hP _ hf hf_Union h_disj
   exact fun J => PolishSpace.innerRegular_isCompact_measurableSet (P J)
 
-theorem kolContent_countably_subadditive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ → Set (∀ i, α i)⦄
+theorem kolContent_sigma_subadditive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ → Set (∀ i, α i)⦄
     (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α) :
     kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) := by
   haveI : ∀ i, TopologicalSpace.SecondCountableTopology (α i) := fun i =>
     PolishSpace.secondCountableTopology
-  refine' kolContent_countably_subadditive_of_innerRegular hP _ hf hf_Union
+  refine' kolContent_sigma_subadditive_of_innerRegular hP _ hf hf_Union
   exact fun J => PolishSpace.innerRegular_isCompact_measurableSet (P J)
 
 /-- Projective limit of a projective measure family. -/
 noncomputable def projectiveLimit (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
     [∀ i, IsFiniteMeasure (P i)] (hP : IsProjectiveMeasureFamily P) : Measure (∀ i, α i) :=
   Measure.ofAddContent setSemiringCylinders generateFrom_cylinders (kolContent hP)
-    (kolContent_countably_subadditive hP)
+    (kolContent_sigma_subadditive hP)
 
 /-- **Kolmogorov extension theorem**: for any projective measure family `P`, there exists a measure
 on `Π i, α i` which is the projective limit of `P`. That measure is given by

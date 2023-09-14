@@ -135,7 +135,7 @@ theorem le_sum_of_additive (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈
     monotone_of_additive hC m m_add (hC.inter_mem _ ht _ (h_ss hu)) (h_ss hu)
       (inter_subset_right _ _)
 
-theorem countably_additive_of_countably_subadditive (m_empty : m ∅ = 0)
+theorem sigma_additive_of_sigma_subadditive (m_empty : m ∅ = 0)
     (m_subadd : ∀ (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
       (_hf_disj : Pairwise (Disjoint on f)), m (⋃ i, f i) ≤ ∑' i, m (f i))
     (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
@@ -164,7 +164,7 @@ end Semiring
 
 section Ring
 
-theorem continuous_from_below_of_countably_additive (hC : SetRing C) (m : Set α → ℝ≥0∞)
+theorem continuous_from_below_of_sigma_additive (hC : SetRing C) (m : Set α → ℝ≥0∞)
     (m_empty : m ∅ = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -205,7 +205,7 @@ theorem continuous_from_below_of_countably_additive (hC : SetRing C) (m : Set α
   exact ENNReal.tendsto_nat_tsum _
 
 -- note that the `f i` are not disjoint
-theorem countably_subadditive_of_countably_additive (hC : SetRing C) (m : Set α → ℝ≥0∞)
+theorem sigma_subadditive_of_sigma_additive (hC : SetRing C) (m : Set α → ℝ≥0∞)
     (m_empty : m ∅ = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -217,7 +217,7 @@ theorem countably_subadditive_of_countably_additive (hC : SetRing C) (m : Set α
   classical
   have h_tendsto : Tendsto (fun n => m (partialSups f n)) atTop (𝓝 (m (⋃ i, f i))) := by
     rw [← iSup_eq_iUnion, ← iSup_partialSups_eq]
-    refine' continuous_from_below_of_countably_additive hC m m_empty m_add m_c_add (partialSups f)
+    refine' continuous_from_below_of_sigma_additive hC m m_empty m_add m_c_add (partialSups f)
       (monotone_partialSups f) (fun n => _) _
     · rw [partialSups_eq_biSup]
       simp_rw [iSup_eq_iUnion]
@@ -245,7 +245,7 @@ end TotalSetFunction
 
 section PartialSetFunction
 
-theorem countably_additive_of_countably_subadditive' (hC : SetSemiring C)
+theorem sigma_additive_of_sigma_subadditive' (hC : SetSemiring C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞) (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -255,7 +255,7 @@ theorem countably_additive_of_countably_subadditive' (hC : SetSemiring C)
     (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
     (hf_disj : Pairwise (Disjoint on f)) : m (⋃ i, f i) hf_Union = ∑' i, m (f i) (hf i) := by
   simp_rw [← extend_eq m] at m_add m_sigma_subadd ⊢
-  refine countably_additive_of_countably_subadditive hC (extend m) ?_
+  refine sigma_additive_of_sigma_subadditive hC (extend m) ?_
     (extend_empty hC.empty_mem m_empty)
     (fun _ h_ss h_mem _ => m_sigma_subadd h_ss h_mem) f hf hf_Union hf_disj
   intro I h_ss h_dis h_mem
@@ -263,7 +263,7 @@ theorem countably_additive_of_countably_subadditive' (hC : SetSemiring C)
   simp only [univ_eq_attach]
   exact sum_attach
 
-theorem countably_subadditive_of_countably_additive' (hC : SetRing C)
+theorem sigma_subadditive_of_sigma_additive' (hC : SetRing C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞) (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -273,7 +273,7 @@ theorem countably_subadditive_of_countably_additive' (hC : SetRing C)
     (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C) :
     m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i) := by
   simp_rw [← extend_eq m] at m_add m_c_add ⊢
-  refine countably_subadditive_of_countably_additive hC (extend m)
+  refine sigma_subadditive_of_sigma_additive hC (extend m)
     (extend_empty hC.empty_mem m_empty) ?_ m_c_add f hf hf_Union
   intro I h_ss h_dis h_mem
   rw [m_add I h_ss h_dis h_mem]
@@ -400,13 +400,13 @@ theorem addContent_diff (m : AddContent C) (hC : SetRing C) (hs : s ∈ C) (ht :
   rw [tsub_eq_zero_of_le (m.mono hC.setSemiring (hC.inter_mem hs ht) ht (inter_subset_right _ _)),
     add_zero]
 
-theorem AddContent.countably_subadditive_of_countably_additive (hC : SetRing C) (m : AddContent C)
+theorem AddContent.sigma_subadditive_of_sigma_additive (hC : SetRing C) (m : AddContent C)
     (m_c_add :
       ∀ (f : ℕ → Set α) (_hf : ∀ i, f i ∈ C) (_hf_Union : (⋃ i, f i) ∈ C)
         (_hf_disj : Pairwise (Disjoint on f)), m (⋃ i, f i) = ∑' i, m (f i))
     (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C) :
     m (⋃ i, f i) ≤ ∑' i, m (f i) :=
-  MeasureTheory.countably_subadditive_of_countably_additive hC m addContent_empty m.add m_c_add f hf
+  MeasureTheory.sigma_subadditive_of_sigma_additive hC m addContent_empty m.add m_c_add f hf
     hf_Union
 
 section ExtendContent
