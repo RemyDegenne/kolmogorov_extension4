@@ -351,13 +351,13 @@ $\sigma$-algebra, which we introduce next.
     $\mathcal B := \sigma(\mathcal O)$ the Borel $\sigma$-algebra on
     $\alpha$. In \leanline{mathlib}, this is
 \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def borel (α : Type u) [TopologicalSpace α] :
+def borel (α : Type u) [TopologicalSpace α] :
     MeasurableSpace α :=
-    generateFrom { s : Set α | IsOpen s }
+  generateFrom { s : Set α | IsOpen s }
 \end{minted}
     In addition, \leanline{mathlib} provides a similar notion, which is
 \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  class OpensMeasurableSpace (α : Type*)
+class OpensMeasurableSpace (α : Type*)
     [TopologicalSpace α] [h : MeasurableSpace α] :
     Prop where borel_le : borel α ≤ h
 \end{minted}
@@ -434,8 +434,7 @@ projective property we use here works as long as we have a preorder
 (which is the subset relation on \leanline{Finset ι} below).
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def IsProjective
-    [Preorder ι]
+def IsProjective [Preorder ι]
     (P : ∀ j : ι, α j) (π : ∀ {i j : ι}, j ≤ i → α i → α j) : Prop :=
     ∀ (i j) (hji : j ≤ i), P j = π hji (P i)
 \end{minted}
@@ -447,11 +446,11 @@ With this, we can define the projetive family as follows. The typeclass inferenc
 called.
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def IsProjectiveMeasureFamily
+def IsProjectiveMeasureFamily
     [∀ i, MeasurableSpace (α i)]
     (P : ∀ J : Finset ι, Measure (∀ j : J, α j)) :
     Prop :=
-    IsProjective P (fun I _ hJI μ => μ.map
+  IsProjective P (fun I _ hJI μ => μ.map
     fun x : ∀ i : I, α i => fun j => x ⟨j, hJI j.2⟩ :
     ∀ (I J : Finset ι) (_ : J ⊆ I), Measure (∀ i : I, α i)
     → Measure (∀ j : J, α j))
@@ -494,14 +493,14 @@ proof.
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 def projectiveLimitWithWeakestHypotheses
-  [∀ i, PseudoEMetricSpace (α i)]
-  [∀ i, BorelSpace (α i)]
-  [∀ i, SecondCountableTopology (α i)]
-  [∀ i, CompleteSpace (α i)] [∀ i, Nonempty (α i)]
-  (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
-  [∀ i, IsFiniteMeasure (P i)]
-  (hP : IsProjectiveMeasureFamily P) :
-  Measure (∀ i, α i)
+    [∀ i, PseudoEMetricSpace (α i)]
+    [∀ i, BorelSpace (α i)]
+    [∀ i, SecondCountableTopology (α i)]
+    [∀ i, CompleteSpace (α i)] [∀ i, Nonempty (α i)]
+    (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
+    [∀ i, IsFiniteMeasure (P i)]
+    (hP : IsProjectiveMeasureFamily P) :
+    Measure (∀ i, α i)
 \end{minted}
 
 We note that we extend the standard assumption that all $\alpha_t$ are
@@ -556,14 +555,14 @@ i.e.\ every ring is a $\pi$-system.
 Using \leanline{variable {α : Type _} {s t : Set α}}, we define a semi-ring as follows:
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  structure SetSemiring (C : Set (Set α)) : Prop where
-    empty_mem : ∅ ∈ C
-    inter_mem : ∀ (s) (_ : s ∈ C) (t) (_ : t ∈ C), s ∩ t ∈ C
-    diff_eq_Union' :
-      ∀ (s) (_ : s ∈ C) (t) (_ : t ∈ C),
-      ∃ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C)
-      (_h_dis : PairwiseDisjoint (I : Set (Set α)) id),
-        t \ s = ⋃₀ I
+structure SetSemiring (C : Set (Set α)) : Prop where
+  empty_mem : ∅ ∈ C
+  inter_mem : ∀ (s) (_ : s ∈ C) (t) (_ : t ∈ C), s ∩ t ∈ C
+  diff_eq_Union' :
+    ∀ (s) (_ : s ∈ C) (t) (_ : t ∈ C),
+    ∃ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C)
+    (_h_dis : PairwiseDisjoint (I : Set (Set α)) id),
+      t \ s = ⋃₀ I
 \end{minted}
 
 Let us remark that (i) \leanline{Lean} indicates a coercion by
@@ -579,10 +578,10 @@ The important ring of sets in our formalization is the ring of measurable cylind
 A cylinder is defined as follows:
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def cylinder
+def cylinder
     (s : Finset ι) (S : Set (∀ i : s, α i)) :
     Set ((i : ι) → α i) :=
-    (fun f : (i : ι) → α i => fun i : s => f i) ⁻¹' S
+  (fun f : (i : ι) → α i => fun i : s => f i) ⁻¹' S
 \end{minted}
 
 \noindent
@@ -594,16 +593,16 @@ $S$ (This is what the last line in previous definition gives.).
 We can define \leanlinecolor{cylinders α}, the set of all measurable cylinders.
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def cylinders : Set (Set ((i : ι) → α i)) := ⋃ (s) (S) (_ :
-  MeasurableSet S), {cylinder s S}
+def cylinders : Set (Set ((i : ι) → α i)) :=
+  ⋃ (s) (S) (_ : MeasurableSet S), {cylinder s S}
 \end{minted}
 
 Membership of that set is characterized as follows:
 \begin{minted}[highlightlines={1}, framesep = 0pt, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 theorem mem_cylinders
-  (t : Set ((i : ι) → α i)) :
-  t ∈ cylinders α ↔
-  ∃ (s S : _) (_ : MeasurableSet S), t = cylinder s S
+    (t : Set ((i : ι) → α i)) :
+    t ∈ cylinders α ↔
+      ∃ (s S : _) (_ : MeasurableSet S), t = cylinder s S
 \end{minted}
 \noindent
 The finite set \leanline{s} of the potential coordinates where
@@ -616,22 +615,22 @@ The set-system of cylinders is in fact a field, hence a ring and
 a semi-ring. This means we can prove the following:
 
 \begin{minted}[highlightlines={1-3}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  theorem setField_cylinders : SetField (cylinders α) 
-  theorem setRing_cylinders :  SetRing (cylinders α)
-  theorem setSemiringCylinders : SetSemiring (cylinders α)   
+theorem setField_cylinders : SetField (cylinders α) 
+theorem setRing_cylinders :  SetRing (cylinders α)
+theorem setSemiringCylinders : SetSemiring (cylinders α)   
 \end{minted}
 
 From the field/ring/semi-ring of cylinders, we have to define the
 generated $\sigma$-algebra. This uses the following:
 \begin{minted}[highlightlines={1}, framesep = 0pt, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  theorem generateFrom_cylinders :
+theorem generateFrom_cylinders :
     MeasurableSpace.generateFrom (cylinders α)
     = MeasurableSpace.pi 
 
-  instance MeasurableSpace.pi
+instance MeasurableSpace.pi
     [m : ∀ a, MeasurableSpace (π a)] :
     MeasurableSpace (∀ a, π a) :=
-    iSup a, (m a).comap fun b => b a
+  iSup a, (m a).comap fun b => b a
 \end{minted}
 Here, \leanline{comap {β : Type} (f : α → β) (m : MeasurableSpace β)}
 is the measurable space consisting of pre-images of measurable subsets
@@ -675,7 +674,7 @@ The proof as well as its formalization is somewhat straight-forward,
 but requires induction over finite sets. 
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  theorem exists_disjoint_finset_diff_eq
+theorem exists_disjoint_finset_diff_eq
     (hC : SetSemiring C) (hs : s ∈ C)
     (I : Finset (Set α)) (hI : ↑I ⊆ C) :
     ∃ (J : Finset (Set α)) (_h_ss : ↑J ⊆ C)
@@ -1125,16 +1124,16 @@ topological structure of the underlying space.
 As an example, we give the formalization of $4.\Rightarrow 1.$:
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  theorem sigma_additive_addContent_of_tendsto_zero
-  (hC : SetRing C)
-  (m : AddContent C)
-  (hm_ne_top : ∀ {s} (_ : s ∈ C), m s ≠ ∞)
-  (hm : ∀ ⦃s : ℕ → Set α⦄ (_ : ∀ n, s n ∈ C),
-    Antitone s → (⋂ n, s n) = ∅ →
-    Tendsto (fun n => m (s n)) atTop (nhds 0))
-    ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C)
-    (h_disj : Pairwise (Disjoint on f)) :
-  m (⋃ i, f i) = ∑' i, m (f i) 
+theorem sigma_additive_addContent_of_tendsto_zero
+    (hC : SetRing C)
+    (m : AddContent C)
+    (hm_ne_top : ∀ {s} (_ : s ∈ C), m s ≠ ∞)
+    (hm : ∀ ⦃s : ℕ → Set α⦄ (_ : ∀ n, s n ∈ C),
+      Antitone s → (⋂ n, s n) = ∅ →
+      Tendsto (fun n => m (s n)) atTop (nhds 0))
+      ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C)
+      (h_disj : Pairwise (Disjoint on f)) :
+    m (⋃ i, f i) = ∑' i, m (f i) 
 \end{minted}
 
 \noindent
@@ -1160,10 +1159,10 @@ The above definition closely resembles its formalization in
 \leanline{mathlib}:
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def MeasureTheory.Measure.InnerRegular
+def MeasureTheory.Measure.InnerRegular
     {α : Type u_1}  {_ : MeasurableSpace α}
     (μ : Measure α) (p q : Set α → Prop) :=
-    ∀ ⦃U⦄, q U → ∀ r < μ U, ∃ K, K ⊆ U ∧ p K ∧ r < μ K
+  ∀ ⦃U⦄, q U → ∀ r < μ U, ∃ K, K ⊆ U ∧ p K ∧ r < μ K
 \end{minted}
 
 For the next result, recall that for compact sets $C_1, C_2,...$ with
@@ -1181,7 +1180,7 @@ compact system, which is defined as follows:
 Here is the formalization:
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def IsCompactSystem (p : Set α → Prop) : Prop :=
+def IsCompactSystem (p : Set α → Prop) : Prop :=
     ∀ C : ℕ → Set α, (∀ i, p (C i)) → ⋂ i, C i = ∅ →
     ∃ (s : Finset ℕ), ⋂ i ∈ s, C i = ∅
 \end{minted}
@@ -1245,14 +1244,14 @@ is defined through the projective family \leanline{P}, we have:
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 theorem kolContent_sigma_additive_of_innerRegular
-  (hP : IsProjectiveMeasureFamily P)
-  (hP_inner : ∀ J,
-    (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s)
-    MeasurableSet)
-  ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α)
-  (hf_Union : (⋃ i, f i) ∈ cylinders α)
-  (h_disj : Pairwise (Disjoint on f)) :
-  kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i)
+    (hP : IsProjectiveMeasureFamily P)
+    (hP_inner : ∀ J,
+      (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s)
+      MeasurableSet)
+    ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α)
+    (hf_Union : (⋃ i, f i) ∈ cylinders α)
+    (h_disj : Pairwise (Disjoint on f)) :
+    kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i)
 \end{minted}
 
 Note that the assumption \leanline{hP_inner} from above translates
@@ -1450,7 +1449,7 @@ countable, complete extended pseudo-metric space is inner regular with
 respect to closed compact sets.
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  theorem innerRegular_isCompact_isClosed_
+theorem innerRegular_isCompact_isClosed_
     measurableSet_of_complete_countable
     [PseudoEMetricSpace α] [CompleteSpace α]
     [SecondCountableTopology α]
@@ -1541,17 +1540,17 @@ the \leanline{MeasurableSpace} on which we define the
   Using the same automatically inferred instances, we obtain:}
   
 \begin{minted}[highlightlines={1,8}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def independentFamily
+def independentFamily
     (P : ∀ i, Measure (α i))
-    [∀ i, IsProbabilityMeasure (P i)] : Measure (∀ i, α i)
-    := projectiveLimitWithWeakestHypotheses
+    [∀ i, IsProbabilityMeasure (P i)] : Measure (∀ i, α i) :=
+  projectiveLimitWithWeakestHypotheses
     (fun J : Finset ι => Measure.subset_pi P J)
     (product_isProjective P)
 
-  def Measure.subset_pi
+def Measure.subset_pi
     (P : ∀ i, Measure (α i)) (I : Finset ι) :
     Measure ((i : I) → (α i)) :=
-    Measure.pi (fun (i : I) => (P (i : ι)))
+  Measure.pi (fun (i : I) => (P (i : ι)))
 \end{minted}
 
 Moreover, we will highlight some paths we imagine can be taken,
