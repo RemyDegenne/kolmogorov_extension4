@@ -93,7 +93,6 @@ theorem monotone_of_additive (hs : s ∈ C) (ht : t ∈ C) (hst : s ⊆ t) : m s
   · simp only [coe_singleton, pairwiseDisjoint_singleton]
   · simpa only [coe_singleton, sUnion_singleton]
 
-/- ./././Mathport/Syntax/Translate/Basic.lean:635:2: warning: expanding binder collection (t «expr ∉ » C) -/
 theorem monotone_of_additive_of_eq_top (m_top : ∀ (t) (_ : t ∉ C), m t = ∞) (hs : s ∈ C)
     (hst : s ⊆ t) : m s ≤ m t := by
   by_cases ht : t ∈ C
@@ -137,9 +136,8 @@ theorem le_sum_of_additive (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈
       (inter_subset_right _ _)
 
 theorem countably_additive_of_countably_subadditive (m_empty : m ∅ = 0)
-    (m_subadd :
-      ∀ (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
-        (_hf_disj : Pairwise (Disjoint on f)), m (⋃ i, f i) ≤ ∑' i, m (f i))
+    (m_subadd : ∀ (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
+      (_hf_disj : Pairwise (Disjoint on f)), m (⋃ i, f i) ≤ ∑' i, m (f i))
     (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
     (hf_disj : Pairwise (Disjoint on f)) : m (⋃ i, f i) = ∑' i, m (f i) := by
   refine' le_antisymm (m_subadd f hf hf_Union hf_disj) _
@@ -171,8 +169,7 @@ theorem continuous_from_below_of_countably_additive (hC : SetRing C) (m : Set α
     (m_add :
       ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
         (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
-    (m_c_add :
-      ∀ (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
+    (m_c_add : ∀ (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
         (_hf_disj : Pairwise (Disjoint on f)), m (⋃ i, f i) = ∑' i, m (f i))
     (f : ℕ → Set α) (hf_mono : Monotone f) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C) :
     Tendsto (fun n => m (f n)) atTop (𝓝 (m (⋃ i, f i))) := by
@@ -297,7 +294,7 @@ theorem monotone_of_additive' (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C 
 
 end PartialSetFunction
 
--- named `add_content` because there is already a measure_theory.content, and it satisfies a
+-- named `AddContent` because there is already a MeasureTheory.content, and it satisfies a
 -- stronger additivity property than the wikipedia content.
 /-- An additive content is a finitely additive set-function defined on a set of sets with value 0
 at the empty set. -/
@@ -414,6 +411,7 @@ theorem AddContent.countably_subadditive_of_countably_additive (hC : SetRing C) 
 
 section ExtendContent
 
+/-- Build an `AddContent` from an additive function defined on a semiring. -/
 noncomputable def extendContent (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
