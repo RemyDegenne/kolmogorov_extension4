@@ -148,7 +148,7 @@ The main steps in our construction, which were previously missing in {\tt mathli
 \begin{enumerate}
 \item a formalization of (the set-system of) semi-rings (see
   Definition~\ref{def:semi});
-\item {\color{blue}a definition of additive contents over semi-rings (see Definition~\ref{def:content});}
+\item a definition of additive contents over semi-rings (see Definition~\ref{def:content});
 \item a proof that a single probability measure on a Polish space is inner regular with respect to compact sets (see Definition~\ref{def:innerreg}; in fact, we proved a slight generalization using pseudo-metric spaces, found in Lemma~\ref{L:relcoPol} below); 
 \item the classical Carathéodory extension theorem, providing us with a candidate for the measure which we want to construct (see Theorem~\ref{T:masseind}); 
 \item the Kolmogorov extension theorem, as based on the previous steps (See Theorem~\ref{T1}).
@@ -382,10 +382,9 @@ class OpensMeasurableSpace (α : Type*)
 \end{remark}
 
 We now come to our contribution. 
-%which we will PR to mathlib :
-{\color{blue}The extension theorem is a statement about extending a
-  set-function on a product space to a (finite) measure, where the
-  product space can come with an arbitraty index set.}  The next
+The extension theorem is a statement about extending a
+set-function on a product space to a (finite) measure, where the
+product space can come with an arbitraty index set.  The next
 definition covers the important concept of a projective family of
 measures. In short, we define measures on any finite subset of indices
 in a consistent way. Finite sets (of some type \leanline{ι}) are
@@ -1431,7 +1430,7 @@ compact. (This fact is used in the proof below.)
   which by construction is totally bounded (for $r>0$ take $n$ such
   that $\varepsilon_n < r$, such that $B_r(x_1),...,B_r(x_{N_n})$
   cover $A$), and therefore has a compact closure as noted
-  {\color{blue} in the lines directly preceding the lemma}. In
+  in the lines directly preceding the lemma. In
   addition, by $\sigma$-sub-additivity of $\mu$,
   \begin{align*}
      \mu((\overline A)^c) & \leq \mu(A^c) = \mu\Big(
