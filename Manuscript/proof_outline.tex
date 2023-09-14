@@ -701,9 +701,8 @@ def diff₀ (hC : SetSemiring C)
 \end{minted}    
 
 Extending Lemma~\ref{l1}, we would like to write a finite union of
-members of a semi-ring as a finite union of disjoint sets.
+members of a semi-ring as a finite union of disjoint sets\todo{Is this section going into too much detail?}.
 
-\todo[inline]{Is this section going into too much detail?}
 
 \begin{lemma}\label{l2}
   Let $\mathcal H$ be a semi-ring and $A_1,...,A_m \in \mathcal
@@ -768,8 +767,8 @@ some basic concepts.
 
 \begin{definition}\label{def:content}
   For some set $\alpha$, let $\mathcal H \subseteq 2^\alpha$
-  {\color{blue}and call any $m : \mathcal H \to [0,\infty]$ a
-    content.}
+  and call any $m : \mathcal H \to [0,\infty]$ a
+    content.
   \begin{enumerate}
   \item $m$ is called additive if for $\mathcal K \subseteq_f \mathcal
     H$ pariwise disjoint and $\bigcup_{K \in \mathcal K} K \in
@@ -788,7 +787,7 @@ some basic concepts.
   \item If $m(A) \leq m(B)$ for $A\subseteq B$ and $A,B\in\mathcal H$,
     we say that $m$ is monotone.
   \item If $\mathcal H$ is a $\sigma$-algebra and $m$ is
-    $\sigma$-additive {\color{blue} with $m(\emptyset) = 0$}, we call
+    $\sigma$-additive with $m(\emptyset) = 0$, we call
     $m$ a measure.
   \item If $\mathcal H = 2^\alpha$ and $m$ is monotone and
     $\sigma$-sub-additive with $m(\emptyset)=0$, we call $m$ an outer
@@ -825,13 +824,6 @@ def extendContent
     AddContent C 
 \end{minted}
 
-\noindent
-\xout{In these formalizations, we introduced $m(\emptyset)=0$ as a
-  separate hypothesis with empty'. Note that this also follows
-  formally from $m(\emptyset) = m(\emptyset \cup \emptyset) = 2
-  m(\emptyset)$. However, since Finsets are assumed to have distinct
-  elements, we cannot have ∅ twice in I.}
-
 For the concrete application we have in mind, we introduce a
 definition which uses a specific semi-ring, the measurable cylinders,
 based on a projective family of measures.  That is the goal of the two
@@ -863,8 +855,8 @@ Here, \leanlinecolor{kolmogorovFun_empty} and
 From the next lemma, we will need monotonicity and sub-additivity, as
 well as $\sigma$-additive $\Rightarrow$ $\sigma$-sub-additive in the
 proof of the Carathéodory extension,
-Theorem~\ref{T:masseind}. {\color{blue}We do not show any details
-  about its formalization here.}
+Theorem~\ref{T:masseind}. We do not show any details
+  about its formalization here.
 
 \begin{lemma}[Set-functions on semi-rings]\label{l:halbextRing}
   Let $\mathcal H$ be a semi-ring and $m: \mathcal H\to [0,\infty]$
