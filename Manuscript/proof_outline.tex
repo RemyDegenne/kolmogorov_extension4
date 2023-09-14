@@ -575,11 +575,8 @@ usual definition of pairwise disjoint sets unfolds.)
 
 \noindent
 We do not show the formalization of rings here.
-%In our formalization, we also use the notion of a field $\mathcal H$,
-%which is a ring with $\alpha \in
-%\mathcal H$.
-The import ring of sets in our formalization is the ring of measurable cylinders on a product space, which
-are defined as follows:
+The important ring of sets in our formalization is the ring of measurable cylinders on a product space.
+A cylinder is defined as follows:
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
   def cylinder
@@ -593,30 +590,29 @@ In this definition, \leanline{s} is a finite subset of the index set
 \leanline{ι}, and for some $S$ in the finite product $\prod_{i \in s}
 \alpha_i$, consider the projection $\pi_s : \prod_{i \in \iota}
 \alpha_i \to \prod_{i \in s} \alpha_i$, and consider the preimage of
-$S$. (This is what the last line in previous definition gives.)  {\color{blue}Note,
-however, that \leanline{s} (comprising the potential coordinates where
-the cylinder deviates from the whole set) need not be unique. However,
-we have
-
-\begin{minted}[highlightlines={1}, framesep = 0pt, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-theorem mem_cylinders
-  (t : Set ((i : ι) → α i)) :
-  t ∈ cylinders α ↔
-  ∃ (s S : _) (_ : MeasurableSet S), t = cylinder s S
-\end{minted}
-By the exists-statement, from this result, we are able to choose a
-\leanline{Finset ι}, which can be used. This leads to the definition
-of \leanlinecolor{cylinders.finset}, which will be needed below.}
-
-From the definition of a \leanlinecolor{cylinder}, we can define the
-set of all measurable cylinders.
+$S$ (This is what the last line in previous definition gives.).
+We can define \leanlinecolor{cylinders α}, the set of all measurable cylinders.
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
   def cylinders : Set (Set ((i : ι) → α i)) := ⋃ (s) (S) (_ :
   MeasurableSet S), {cylinder s S}
 \end{minted}
 
-The set-system of cylinders is in fact a field, hence a ring and hence
+Membership of that set is characterized as follows:
+\begin{minted}[highlightlines={1}, framesep = 0pt, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+theorem mem_cylinders
+  (t : Set ((i : ι) → α i)) :
+  t ∈ cylinders α ↔
+  ∃ (s S : _) (_ : MeasurableSet S), t = cylinder s S
+\end{minted}
+\noindent
+The finite set \leanline{s} of the potential coordinates where
+the cylinder deviates from the whole set needs not be unique.
+From the exists-statement of \leanline{mem_cylinders}, we however choose an
+arbitrary such \leanline{Finset ι}, called \leanlinecolor{cylinders.finset}.
+
+
+The set-system of cylinders is in fact a field, hence a ring and
 a semi-ring. This means we can prove the following:
 
 \begin{minted}[highlightlines={1-3}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
