@@ -278,16 +278,16 @@ section definition
 
 variable {α : Type*} [CompleteLattice α] {p : Set α → Prop} {C : ℕ → Set α}
 
-def IsCompactFamily (p : Set α → Prop) : Prop :=
+def IsCompactSystem (p : Set α → Prop) : Prop :=
   ∀ C : ℕ → Set α, (∀ i, p (C i)) → ⋂ i, C i = ∅ → ∃ (s : Finset ℕ), ⋂ i ∈ s, C i = ∅
 
 noncomputable
-def IsCompactFamily.support (hp : IsCompactFamily p) (hC : ∀ i, p (C i))
+def IsCompactSystem.support (hp : IsCompactSystem p) (hC : ∀ i, p (C i))
     (hC_empty : ⋂ i, C i = ∅) :
     Finset ℕ :=
   (hp C hC hC_empty).choose
 
-def IsCompactFamily.iInter_eq_empty (hp : IsCompactFamily p) (hC : ∀ i, p (C i))
+def IsCompactSystem.iInter_eq_empty (hp : IsCompactSystem p) (hC : ∀ i, p (C i))
     (hC_empty : ⋂ i, C i = ∅) :
     ⋂ i ∈ hp.support hC hC_empty, C i = ∅ :=
   (hp C hC hC_empty).choose_spec
@@ -300,8 +300,8 @@ variable {α : ι → Type*} [∀ i, Nonempty (α i)] [∀ i, MeasurableSpace (�
   [∀ i, TopologicalSpace (α i)] [∀ i, TopologicalSpace.SecondCountableTopology (α i)]
   [∀ i, OpensMeasurableSpace (α i)]
 
-theorem isCompactFamily_cylinders :
-    IsCompactFamily (fun t ↦ t ∈ closedCompactCylinders α) := by
+theorem isCompactSystem_cylinders :
+    IsCompactSystem (fun t ↦ t ∈ closedCompactCylinders α) := by
   intro C hC hC_empty
   classical
   exact exists_finset_iInter_eq_empty hC hC_empty

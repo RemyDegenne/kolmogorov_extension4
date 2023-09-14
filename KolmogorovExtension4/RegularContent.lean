@@ -1,4 +1,4 @@
-import KolmogorovExtension4.CompactFamily
+import KolmogorovExtension4.CompactSystem
 import KolmogorovExtension4.AdditiveOfContinuous
 
 open scoped ENNReal BigOperators
@@ -11,7 +11,7 @@ variable {α : Type*} {C R : Set (Set α)} {s : ℕ → Set α}
 -- content
 lemma tendsto_zero_of_regular_addContent [Nonempty α] (hR : SetRing R) (m : AddContent R)
     (hs : ∀ n, s n ∈ R) (hs_anti : Antitone s) (hs_Inter : (⋂ n, s n) = ∅)
-    (hC : IsCompactFamily C) (hCR : C ⊆ R)
+    (hC : IsCompactSystem C) (hCR : C ⊆ R)
     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε) :
     Filter.Tendsto (fun n => m (s n)) Filter.atTop (nhds 0) := by
   rw [ENNReal.tendsto_nhds_zero]
@@ -66,7 +66,7 @@ lemma tendsto_zero_of_regular_addContent [Nonempty α] (hR : SetRing R) (m : Add
 
 lemma AddContent.sigma_additive_of_regular [Nonempty α] (hR : SetRing R) (m : AddContent R)
     (hm_ne_top : ∀ {s} (_ : s ∈ R), m s ≠ ∞)
-    (hC : IsCompactFamily C) (hCR : C ⊆ R)
+    (hC : IsCompactSystem C) (hCR : C ⊆ R)
     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε)
     ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ R) (hUf : (⋃ i, f i) ∈ R) (h_disj : Pairwise (Disjoint on f)) :
     m (⋃ i, f i) = ∑' i, m (f i) := by

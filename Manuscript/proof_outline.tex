@@ -1193,7 +1193,7 @@ compact system, which is defined as follows:
 Here is the formalization:
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-  def IsCompactFamily (p : Set α → Prop) : Prop :=
+  def IsCompactSystem (p : Set α → Prop) : Prop :=
     ∀ C : ℕ → Set α, (∀ i, p (C i)) → ⋂ i, C i = ∅ →
     ∃ (s : Finset ℕ), ⋂ i ∈ s, C i = ∅
 \end{minted}
@@ -1228,12 +1228,12 @@ Here is the formalization:
 %%   Set (Set ((i : ι) → α i)) :=
 %%   ⋃ (s) (S) (_ : IsClosed S) (_ : IsCompact S), {cylinder s S}
 
-%%     theorem isCompactFamily_cylinders :
-%% IsCompactFamily (fun t ↦ t ∈ closedCompactCylinders α)
+%%     theorem isCompactSystem_cylinders :
+%% IsCompactSystem (fun t ↦ t ∈ closedCompactCylinders α)
 
 %% lemma AddContent.sigma_additive_of_regular [Nonempty α] (hR : SetRing R) (m : AddContent R)
 %%     (hm_ne_top : ∀ {s} (_ : s ∈ R), m s ≠ ∞)
-%%     (hC : IsCompactFamily C) (hCR : C ⊆ R)
+%%     (hC : IsCompactSystem C) (hCR : C ⊆ R)
 %%     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε)
 %%     ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ R) (hUf : (⋃ i, f i) ∈ R) (h_disj : Pairwise (Disjoint on f)) :
 %%     m (⋃ i, f i) = ∑' i, m (f i) 
