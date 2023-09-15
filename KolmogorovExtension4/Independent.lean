@@ -95,7 +95,7 @@ theorem product_isProjective (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMe
 
 noncomputable def independentFamily [∀ i, PseudoEMetricSpace (α i)]
     [∀ i, BorelSpace (α i)] [∀ i, TopologicalSpace.SecondCountableTopology (α i)]
-    [∀ i, CompleteSpace (α i)] [Nonempty (∀ i, α i)] (P : ∀ i, Measure (α i))
+    [∀ i, CompleteSpace (α i)] [∀ i, Nonempty (α i)] (P : ∀ i, Measure (α i))
     [∀ i, IsProbabilityMeasure (P i)] : Measure (∀ i, α i) := projectiveLimitWithWeakestHypotheses (fun J : Finset ι => Measure.subset_pi P J) (product_isProjective P)
 
 end MeasureTheory
