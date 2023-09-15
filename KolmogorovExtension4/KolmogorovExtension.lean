@@ -173,7 +173,7 @@ theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamil
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α)
     (h_disj : Pairwise (Disjoint on f)) : 
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
-  refine (kolContent hP).sigma_additive_of_regular setRing_cylinders ?_ isCompactFamily_cylinders
+  refine (kolContent hP).sigma_additive_of_regular setRing_cylinders ?_ isCompactSystem_cylinders
     (fun t ht ↦ mem_cylinder_of_mem_closedCompactCylinders ht) ?_ hf hf_Union h_disj
   · exact fun hx => kolContent_ne_top _ hx
   · intros t ht ε hε
