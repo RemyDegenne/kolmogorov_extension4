@@ -417,13 +417,15 @@ defined as a \leanline{Multiset} (a
   \end{enumerate}
 \end{definition}
 
-{\color{blue}In contrast to statements already part of
-  \leanline{mathlib}, in the sequel we \leanlinecolor{highlight}
-  definitions and statements which are part of our own code.} In the
-formalization of the above, we use \leanline{variable {ι : Type _} {α
-    : ι → Type _} }, which fixes the index set $\iota$ and all spaces
-$\alpha_t, t\in\iota$ as global variables. In addition, note that the
-projective property we use here works as long as we have a preorder
+In contrast to statements already part of
+\leanline{mathlib}, in the sequel we \leanlinecolor{highlight}
+definitions and statements which are part of our own code. In the
+formalization of the above, we use \leanline{variable {ι : Type _} {α: ι → Type _}},
+which fixes the index set $\iota$ and all spaces
+$\alpha_t, t\in\iota$ as global variables.
+In Lean, the product space is then \leanline{∀ j : ι, α j} and the product over a finite set \leanline{J} is \leanline{∀ j : J, α j}.
+
+We formalize the projective property as follows. This definition is not specific to measures but works as long as we have a preorder
 (which is the subset relation on \leanline{Finset ι} below).
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
@@ -433,7 +435,7 @@ def IsProjective [Preorder ι]
 \end{minted}
 
 \noindent
-With this, we can define the projetive family as follows. The typeclass inference system of
+With this, we can define the projective family as follows. The typeclass inference system of
 \leanline{Lean} automatically uses the subset relation to generate
 \leanline{[Preorder (Finset ι)]} when \leanline{isProjective} is
 called.
