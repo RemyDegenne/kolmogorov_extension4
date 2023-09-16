@@ -126,8 +126,6 @@ align=left, itemsep=0pt, leftmargin=0pt, labelindent=0pt, listparindent=0pt, lab
 
 \maketitle
 
-\todo[inline]{\leanline{∀ j : J, α j} or \leanline{(j : J) -> α j} ? Explain somewhere that this is the mathlib notation for the product space}
-
 \section{Introduction}
 One of the main building blocks of modern probability theory are stochastic processes, which are usually defined as any collection of random variables -- $(X_t)_{t\in \iota}$ with $X_t$ taking values in some $\alpha_t$ for all $t\in\iota$ -- defined on some joint probability space $(\Omega, \mathcal A, \mathbf P)$.  (As usual, we will refer to $\iota$ as the index set of times.) In order to study such processes, it is fundamental to talk about their joint distribution, i.e.\ a probability distribution on the product set $\prod_{t\in\iota} \alpha_t$. The usual approach to construct (the distribution of) a stochastic process works as follows: describe properties of the distribution of the stochastic process $P_J$ at some arbitrary but finite number of times $J = \{t_1,...,t_n\} \subseteq \iota$.
 The resulting family of probability measures $(P_J)_{J \subseteq \iota \text{ finite}}$ has to be {\em projective} in the sense that the projection of $P_J$ to $H\subseteq J$ has to be equal to $P_H$. In other words, when describing the distribution of the stochastic process at all times in $J$, and then forgetting all properties for times in $J\setminus H$, results in the description of properties at times in $H$. One may then ask if this already gives a complete description of the process for all times.
