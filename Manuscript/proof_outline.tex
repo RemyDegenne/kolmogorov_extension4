@@ -542,7 +542,7 @@ e.g.\ \cite[Definition~1.9]{Klenke2013}.
 \noindent
 Any ring is a semi-ring since $A\cap B = A \setminus (A \setminus B)$,
 i.e.\ every ring is a $\pi$-system.
-Using \leanline{variable {α : Type _} {s t : Set α}}, we define a semi-ring as follows:
+We define a semi-ring on a type \leanline{α} as follows:
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 structure SetSemiring (C : Set (Set α)) : Prop where
@@ -939,8 +939,8 @@ on $\sigma(\mathcal H)$. This result is not yet covered in {\tt
   mathlib}. However, for product spaces, in
 \leanline{MeasureTheory.Constructions.Pi}, there is
 \leanline{pi_caratheodory}, which shows that $\sigma(\mathcal H)
-\subseteq \mathcal F$ in {\color{blue} the construction of a product
-  measure for a finite index set}. In addition, there is
+\subseteq \mathcal F$ in the construction of a product
+  measure for a finite index set. In addition, there is
 \leanline{pi_pi_aux}, which shows that $\mu$ extends $m$ on $\mathcal
 H$ in the same special case. See also \cite[Theorem
   2.5]{Kallenberg2020}.
