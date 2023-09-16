@@ -204,7 +204,7 @@ Before we can state the result, we begin with some mathematical notions. We star
 
 \begin{remark}[Metric and topological spaces in {\tt mathlib}] \label{rem:uniform}\mbox{}
   \begin{enumerate}
-    \item \sloppy \leanline{mathlib} provides the \leanline{class PseudoEMetricSpace (α : Type u)},
+    \item \sloppy \leanline{mathlib} provides the class \leanline{PseudoEMetricSpace α},
       which comes with an extended pseudo-distance
       \leanline{edist: α → α → ℝ≥0∞} (the notation \leanline{ℝ≥0∞}
       stands for $[0, \infty]$), and the properties
@@ -214,7 +214,7 @@ Before we can state the result, we begin with some mathematical notions. We star
       That class also comes with \leanline{toUniformSpace} and
       \leanline{uniformity_edist}, defining a uniform space from the
       extended pseudo-metric.
-    \item A uniform space (\leanline{class UniformSpace (α : Type u)}) does not come with a
+    \item A uniform space (\leanline{UniformSpace α}) does not come with a
       metric, but with a filter on $\alpha \times \alpha$, which
       describes which points in $\alpha$ are near. For example, the
       diagonal of $\alpha \times \alpha$ is a subset of all sets in
@@ -225,7 +225,7 @@ Before we can state the result, we begin with some mathematical notions. We star
       uniformity; see \leanline{UniformSpace.pseudoMetrizableSpace},
       which formalizes a result stated in
       \cite{melikhov2011metrizable}.
-    \item \sloppy A topological space is defined in \leanline{mathlib} as \leanline{class TopologicalSpace(α : Type u)},
+    \item \sloppy A topological space is defined in \leanline{mathlib} as \leanline{TopologicalSpace α},
       which comes with a predicate \leanline{IsOpen}, and properties \leanline{isOpen_univ : IsOpen Set.univ}, \leanline{isOpen_inter} and
       \leanline{isOpen_sUnion}, which are exactly the properties of a
       topological space described above.
@@ -296,14 +296,14 @@ $\sigma$-algebra, which we introduce next.
 
 \begin{remark}[Measur(abl)e spaces in \leanline{mathlib}]
   \begin{enumerate}
-  \item \sloppy The \leanline{class MeasurableSpace α} is very similar
+  \item \sloppy The class \leanline{MeasurableSpace α} is very similar
     to a topological space in \leanline{mathlib}, since it comes with
     \leanline{MeasurableSet' : Set α → Prop},
     \leanline{measurableSet_empty : MeasurableSet' ∅},
     \leanline{measurableSet_compl : (s : Set α) → MeasurableSet' s → MeasurableSet' sᶜ}, and \leanline{measurableSet_iUnion},
     i.e.\ properties (i)-(iii) from Definition~\ref{def:sigma}.1.
   \item We are using outer measures in our construction. In
-    \leanline{mathlib}, this is \leanline{structure MeasureTheory.OuterMeasure α} which is a function
+    \leanline{mathlib}, this is \leanline{MeasureTheory.OuterMeasure α} which is a structure with a function
     \leanline{measureOf : Set α → ℝ≥0∞} such that \leanline{measureOf ∅ = 0} (i.e.\ the empty set has measure~$0$),
     \leanline{∀ {s₁ s₂ : Set α}, s₁ ⊆ s₂ → measureOf s₁ ≤ measureOf s₂}
     (i.e.\ monotonicity) and \leanline{∀ (s : ℕ → Set α), measureOf (⋃ (i : ℕ), s i) ≤ ∑' (i : ℕ), measureOf (s i)} (which we call
