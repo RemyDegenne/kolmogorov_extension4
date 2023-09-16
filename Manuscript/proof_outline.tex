@@ -780,10 +780,10 @@ some basic concepts.
 \end{definition}
 
 \noindent
-For additive contents, we need two
-definitions. \leanlinecolor{AddContent} defines a set-function
-\leanline{toFun} on \leanline{Set α}, whereas
-\leanlinecolor{extendContent} comes with \leanline{m : ∀ s : Set α, s ∈ C → ℝ≥0∞}.
+For additive contents, we need two definitions.
+The structure \leanlinecolor{AddContent} defines
+an additive set-function \leanline{toFun} on \leanline{Set α}.
+The definition \leanlinecolor{extendContent} takes an additive function defined only on a semi-ring of sets, and extends it to an additive content on all sets by choosing the value infinity outside of the semi-ring. We use this because total functions are easier to use in subsequent code.
 
 \begin{minted}[highlightlines={1, 10}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 structure AddContent (C : Set (Set α)) where
