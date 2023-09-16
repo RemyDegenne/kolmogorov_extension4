@@ -501,21 +501,18 @@ separable, complete metric spaces (or Polish, i.e.\ separable and
 metrizable through a complete metric) to cover the case of extended
 pseude-metric spaces. Such spaces do not satisfy the frequently used
 Hausdorff (or t2) property, i.e.\ there can be $x\neq y$ such that all
-open balls around $x$ and $y$ overlap. {\color{blue}We note that this
-  generalization was only possible since underlying results in
+open balls around $x$ and $y$ overlap.
+  This generalization was only possible since underlying results in
   \leanline{mathlib} were already provided on the same level of
-  generality: More precisely,
-  \leanline{isCompact_iff_totallyBounded_isComplete}, which shows that
+  generality.
+  More precisely, \leanline{isCompact_iff_totallyBounded_isComplete}, which shows that
   a set $A \subseteq \alpha$ is compact iff it is complete and totally
-  bounded {\color{blue}(see note~\ref{note:tot})}, requires $\alpha$
-  to be a uniform space (recall that every metric space is uniform);
-  recall such spaces from Remark~\ref{rem:uniform}, and see
-  note~\ref{note:tot} for a definition of total boundedness. Since we
-  also require the underlying space(s) to be second countable (see
-  also in the proof of Lemma~\ref{L:relcoPol}), we have to make a
-  countabiliy assumption, which leads us to (extended) pseudo-metric
-  spaces by \leanline{UniformSpace.pseudoMetrizableSpace}; see also
-  Remark~\ref{rem:uniform} for some more details.}
+  bounded (see note~\ref{note:tot}), requires $\alpha$
+  to be a uniform space (Remark~\ref{rem:uniform}, recall that every metric space is uniform).
+  We also require the underlying space(s) to be second-countable (used in the proof of Lemma~\ref{L:relcoPol}).
+  A second-countable uniform space can be made into an (extended) pseudo-metric space
+  (\leanline{UniformSpace.pseudoMetrizableSpace}); see also
+  Remark~\ref{rem:uniform} for some more details.
 
 \subsection{Extending a set function}
 In the formulation of Theorem~\ref{T1}, we extend $P$, which is
