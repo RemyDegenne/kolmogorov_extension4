@@ -575,8 +575,8 @@ A cylinder is defined as follows:
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 def cylinder
     (s : Finset ι) (S : Set (∀ i : s, α i)) :
-    Set ((i : ι) → α i) :=
-  (fun f : (i : ι) → α i => fun i : s => f i) ⁻¹' S
+    Set (∀ i : ι, α i) :=
+  (fun (f : ∀ j : ι, α j) => fun i : s => f i) ⁻¹' S
 \end{minted}
 
 \noindent
@@ -588,14 +588,14 @@ $S$ (This is what the last line in previous definition gives.).
 We can define \leanlinecolor{cylinders α}, the set of all measurable cylinders.
 
 \begin{minted}[highlightlines={1}, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
-def cylinders : Set (Set ((i : ι) → α i)) :=
+def cylinders : Set (Set (∀ i : ι, α i)) :=
   ⋃ (s) (S) (_ : MeasurableSet S), {cylinder s S}
 \end{minted}
 
 Membership of that set is characterized as follows:
 \begin{minted}[highlightlines={1}, framesep = 0pt, mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
 theorem mem_cylinders
-    (t : Set ((i : ι) → α i)) :
+    (t : Set (∀ i : ι, α i)) :
     t ∈ cylinders α ↔
       ∃ (s S : _) (_ : MeasurableSet S), t = cylinder s S
 \end{minted}
@@ -1540,7 +1540,7 @@ def independentFamily
 
 def Measure.subset_pi
     (P : ∀ i, Measure (α i)) (I : Finset ι) :
-    Measure ((i : I) → (α i)) :=
+    Measure (∀ i : I, α i) :=
   Measure.pi (fun (i : I) => (P (i : ι)))
 \end{minted}
 
