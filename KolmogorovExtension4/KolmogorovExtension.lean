@@ -188,7 +188,7 @@ theorem kolContent_sigma_subadditive_of_innerRegular (hP : IsProjectiveMeasureFa
 
 end InnerRegularAssumption
 
-/-- TODO name. Remove this? -/
+/-- Projective limit of a projective measure family. -/
 noncomputable def projectiveLimitWithWeakestHypotheses [∀ i, PseudoEMetricSpace (α i)]
     [∀ i, BorelSpace (α i)] [∀ i, TopologicalSpace.SecondCountableTopology (α i)]
     [∀ i, CompleteSpace (α i)] [∀ i, Nonempty (α i)] (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
@@ -247,8 +247,7 @@ instance isProbabilityMeasure_projectiveLimit [hι : Nonempty ι]
     {P : ∀ J : Finset ι, Measure (∀ j : J, α j)} [∀ i, IsProbabilityMeasure (P i)]
     (hP : IsProjectiveMeasureFamily P) : IsProbabilityMeasure (projectiveLimit P hP) := by
   constructor
-  let I := ({hι.some} : Finset ι)
-  rw [← cylinder_univ I,
+  rw [← cylinder_univ ({hι.some} : Finset ι),
     (isProjectiveLimit_projectiveLimit hP).measure_cylinder _ MeasurableSet.univ]
   exact measure_univ
 
