@@ -4,8 +4,6 @@ import Mathlib.MeasureTheory.Measure.Regular
 import Mathlib.Logic.Denumerable
 import KolmogorovExtension4.AuxLemmas
 
---#align_import regularity_compacts
-
 open Set MeasureTheory
 
 open scoped ENNReal Topology BigOperators NNReal
@@ -48,9 +46,6 @@ theorem subset_image {α β : Type _} {f : α → β} {s : Set α} {S' : Set β}
   · intro h
     obtain ⟨y, hy_mem, rfl⟩ : x ∈ f '' s := hS' h
     exact ⟨y, ⟨h, hy_mem⟩, rfl⟩
-
-example (S : Set α) (a x : α) (h : x ∈ S) (h' : a = x) : (a ∈ S) := by
-  rwa [Set.mem_def, h'] at *
 
 /-- For some set s in the domain and a finset S' in the codomain of f, assume S' ⊆ f '' s.
 Then, there is a finset s' ⊆ s with S' = f '' s'. -/
@@ -198,11 +193,6 @@ end MeasureTheory
 end MeasureTheory
 
 section RelativelyCompact
-
--- A set is relatively compact iff its closure is compact
-example [TopologicalSpace α] (s t : Set α) (hs : IsCompact s) (ht : IsClosed t) :
-    IsCompact (s ∩ t) :=
-  IsCompact.inter_right hs ht
 
 theorem of_compact [TopologicalSpace α] [T2Space α] {s : Set α} (hs : IsCompact s) :
     IsCompact (closure s) := by rwa [IsClosed.closure_eq hs.isClosed] 
@@ -444,7 +434,6 @@ theorem innerRegular_isCompact_isClosed_isOpen_of_complete_countable [PseudoEMet
   (innerRegular_isCompact_isClosed_of_complete_countable P).trans
     (Measure.InnerRegular.of_pseudoEMetricSpace P)
 
-/-- TODO: this is the useful result for the Kolmogorov extension theorem. -/
 theorem innerRegular_isCompact_isClosed_measurableSet_of_complete_countable [PseudoEMetricSpace α]
     [CompleteSpace α] [TopologicalSpace.SecondCountableTopology α] [BorelSpace α] (P : Measure α)
     [IsFiniteMeasure P] : P.InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet := by

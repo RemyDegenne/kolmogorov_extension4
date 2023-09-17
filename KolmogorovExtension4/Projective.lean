@@ -1,4 +1,3 @@
-import Mathlib.MeasureTheory.Constructions.Pi
 import KolmogorovExtension4.Boxes
 
 open Set

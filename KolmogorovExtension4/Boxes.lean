@@ -1,7 +1,7 @@
 import Mathlib.MeasureTheory.Constructions.Pi
 import KolmogorovExtension4.Semiring
 
-/-! # π-systems generating `measurable_space.pi`
+/-! # π-systems generating `MeasurableSpace.pi`
 
 -/
 
@@ -182,7 +182,6 @@ end isClosed_proj
 end ProjectionMaps
 
 section boxes
-/-! TODO: this section is not used -/
 
 def box (t : (i : ι) → Set (α i)) (s : Finset ι) : Set ((i : ι) → α i) :=
   (s : Set ι).pi t

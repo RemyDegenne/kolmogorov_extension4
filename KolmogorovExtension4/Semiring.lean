@@ -181,9 +181,7 @@ section Diff₀
 
 /-- In a semiring of sets `C`, for all set `s ∈ C` and finite set of sets `I ⊆ C`, `diff₀` is a
 finite set of sets in `C` such that `s \ ⋃₀ I = ⋃₀ (hC.diff₀ hs I hI)`.
-`diffFinset` can be seen as a special case of `diff₀` where `I` is a singleton.
-
-todo: names -/
+`diffFinset` can be seen as a special case of `diff₀` where `I` is a singleton. -/
 noncomputable def diff₀ (hC : SetSemiring C) (hs : s ∈ C) (I : Finset (Set α)) (hI : ↑I ⊆ C)
     [DecidableEq (Set α)] : Finset (Set α) :=
   (hC.exists_disjoint_finset_diff_eq hs I hI).choose \ {∅}

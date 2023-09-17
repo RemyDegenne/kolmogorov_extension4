@@ -1,4 +1,3 @@
-import Mathlib.Data.Set.Pairwise.Basic
 import Mathlib.MeasureTheory.Measure.MeasureSpace
 import KolmogorovExtension4.Content
 
@@ -245,7 +244,6 @@ theorem Measure.ofAddSubaddCaratheodory_eq (hC : SetSemiring C) (m : ∀ s : Set
     Measure.ofAddSubaddCaratheodory hC m m_empty m_add m_sigma_subadd s = m s hs :=
   inducedOuterMeasure_eq_of_add_of_subadditive hC m m_empty m_add m_sigma_subadd hs
 
--- todo: use `partial_sups` everywhere instead of `⋃ i ≤ n, s i` ?
 theorem isCaratheodory_partialSups {m : OuterMeasure α} {s : ℕ → Set α}
     (h : ∀ i, m.IsCaratheodory (s i)) (i : ℕ) : m.IsCaratheodory (partialSups s i) := by
   induction' i with i hi

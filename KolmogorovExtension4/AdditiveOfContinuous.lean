@@ -1,4 +1,3 @@
-import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
 import KolmogorovExtension4.Content
 
 open Filter
@@ -19,8 +18,7 @@ theorem sigma_additive_of_tendsto_zero (hC : SetRing C) (m : ∀ s : Set α, s �
     (hm : ∀ ⦃s : ℕ → Set α⦄ (hs : ∀ n, s n ∈ C),
       Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n => m (s n) (hs n)) atTop (𝓝 0))
     ⦃f : ℕ → Set α⦄ (h : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C) (h_disj : Pairwise (Disjoint on f)) :
-    m (⋃ i, f i) hUf = ∑' i, m (f i) (h i) :=
-  by
+    m (⋃ i, f i) hUf = ∑' i, m (f i) (h i) := by
   -- extend the properties of `m` to `set.sdiff` and `set.accumulate`
   have hm_diff : ∀ {s t} (hs : s ∈ C) (ht : t ∈ C), t ⊆ s →
       m (s \ t) (hC.diff_mem hs ht) = m s hs - m t ht := by
