@@ -29,9 +29,8 @@ variable [Nonempty (∀ i, α i)]
 
 theorem kolmogorovFun_congr (hP : IsProjectiveMeasureFamily P) {s : Set (∀ i, α i)}
     (hs : s ∈ cylinders α) {I : Finset ι} {S : Set (∀ i : I, α i)} (hs_eq : s = cylinder I S)
-    (hS : MeasurableSet S) : kolmogorovFun P s hs = P I S := by
-  refine' kolmogorovFun_congr_aux2 hP (cylinders.measurableSet hs) hS _
-  exact (cylinders.eq_cylinder hs).symm.trans hs_eq
+    (hS : MeasurableSet S) : kolmogorovFun P s hs = P I S :=
+  hP.congr_cylinder (cylinders.measurableSet hs) hS ((cylinders.eq_cylinder hs).symm.trans hs_eq)
 
 theorem kolmogorovFun_empty (hP : IsProjectiveMeasureFamily P) :
     kolmogorovFun P ∅ (empty_mem_cylinders α) = 0 := by
