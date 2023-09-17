@@ -1,1 +1,1 @@
-def hello := "world"
+import KolmogorovExtension4.IndependentFamily
