@@ -2,10 +2,10 @@
 % lualatex --shell-escape proof_outline.tex
 
 % Anonymous paper:
-% \documentclass[sigplan,10pt,anonymous,review]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+\documentclass[sigplan,10pt,anonymous,review]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
 
 % Paper with authors:
-\documentclass[sigplan,10pt,review]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
+%\documentclass[sigplan,10pt,review]{acmart}\settopmatter{printfolios=true,printccs=false,printacmref=false}
 
 \usepackage[utf8x]{inputenc}
 \usepackage[T1]{fontenc}
@@ -126,8 +126,8 @@ align=left, itemsep=0pt, leftmargin=0pt, labelindent=0pt, listparindent=0pt, lab
   the semi-ring. A slight generalization of the classical Kolmogorov
   extension theorem allows us to construct the (distribution of) a
   stochastic process on a complete and separable pseudo-metric space
-  rather than a metric space. {\color{blue}As an example, we define a
-    product probability measure with arbitrary index set.}
+  rather than a metric space. As an example, we define a
+  product probability measure with arbitrary index set.
 \end{abstract}
 
 \maketitle
@@ -173,7 +173,7 @@ For the former, this follows from some general principles of Markov processes (e
 {\em Theorem of Ionescu-Tulcea and related results:}
 While Kolmogorov's extension Theorem gives a result for arbitrary $\iota$, but requires some properties of the family $(\alpha_t)_{t\in\iota}$, the Theorem of Ionescu-Tulcea \cite[Theorem 8.24]{Kallenberg2020} can only deal with countable $\iota$, but has no restrictions on $(\alpha_t)_{t\in\iota}$. The proof of the latter, however, uses transition kernels (and an inductive construction of a content, which can be extended to a measure) rather than projective families.
 However, the structure of the argument is similar and could use some of our results, like the proof of $\sigma$-additivity from continuity at the empty set (see Lemma~\ref{P:stetigmass}).
-A formalization would complement our work. In addition, using the Theorem of Ionescu-Tulcea one can define infinitely many independent random variables (arbitrary $\iota$) on a joint probability space \cite[Theorem 8.24]{Kallenberg2020} {\color{blue} with fewer requirements on $(\alpha_t)_{t\in\iota}$ than in the example given in Section~\ref{ss:concl}}.
+A formalization would complement our work. In addition, using the Theorem of Ionescu-Tulcea one can define infinitely many independent random variables (arbitrary $\iota$) on a joint probability space \cite[Theorem 8.24]{Kallenberg2020} with fewer requirements on $(\alpha_t)_{t\in\iota}$ than in the example given in Section~\ref{ss:concl}.
 All of these results can be used in order to construct countably many independent random variables, which are frequently used in concrete constructions in probability theory. Examples are (one direction of) the Borel-Cantelli-Lemma \cite[Theorem 4.28]{Kallenberg2020}, Kolmogorov's 0-1-law \cite[Theorem 4.13]{Kallenberg2020}, random walks \cite[Chapter 12]{Kallenberg2020}, branching processes  \cite[Chapter 13]{Kallenberg2020}, and percolation  \cite[Chapter 2.4]{Klenke2013}, to name just a few. While the first two are already formalized in \leanline{mathlib}, it is only clear due to the Kolmorov extension theorem (or the Theorem of Ionesu-Tulcea) that infinitely many independent random variables can indeed be defined on a joint probability space. In this sense, our contribution is also important for giving more sense to already formalised parts of \leanline{mathlib}.
 
 \section{Formalization of the Daniell-Kolmogorov extension}
@@ -430,9 +430,8 @@ are part of our own code. In the formalization of the above, we use
 \leanline{variable {ι : Type _} {α: ι → Type _}}, which fixes the
 index set $\iota$ and all spaces $\alpha_t, t\in\iota$ as global
 variables.  In Lean, the product space is then \leanline{∀ j : ι, α j}
-and the product over a finite set \leanline{J} is \leanline{∀ j : J, α
-  j}. {\color{blue} Note that \leanline{J} is a subtype of
-  \leanline{ι} in this formulation.}
+and the product over a finite subset \leanline{J} of \leanline{ι} is \leanline{∀ j : J, α
+  j}.
 
 We formalize the projective property as follows. This definition is not specific to measures but works as long as we have a preorder
 (which is the subset relation on \leanline{Finset ι} below).
@@ -470,11 +469,13 @@ variable is the functions which maps two sets \leanline{I J : Finset
   ι} and a proof \leanline{hJI} of \leanline{J ⊆ I} together with
 \leanline{P I} (which is \leanline{μ} in the statement) to the image
 measure on \leanline{J}, which is \leanline{μ.map (fun x : ∀ i : I, α
-  i => fun j => x ⟨j, hJI j.2⟩)}.  The map defined by the
-\leanline{=>}-notation maps every $(x_i)_{i\in I}$ to a function of
-\leanline{j}, whose type is the subtype {\color{blue}\leanline{j} of}
-\leanline{I}, consisting of a value and a proof of \leanline{J ⊆
-  I}. In other words, this is $(x_j)_{j\in J}$.
+  i => fun j => x ⟨j, hJI j.2⟩)}.  The function used in that image
+measure maps every $(x_i)_{i\in I}$ to $(x_i)_{i\in J}$.
+%map defined by the
+%\leanline{=>}-notation maps every $(x_i)_{i\in I}$ to a function of
+%\leanline{j}, whose type is the subtype {\color{blue}\leanline{j} of}
+%\leanline{I}, consisting of a value and a proof of \leanline{J ⊆
+%  I}. In other words, this is $(x_j)_{j\in J}$.
 
 \noindent
 Now we are ready to formulate the Kolmogorov extension theorem:
@@ -745,8 +746,8 @@ members of a semi-ring as a finite union of disjoint sets.
 \noindent
 \subsection{Carathéodory's extension theorem}
 Measures are set functions defined on a $\sigma$-algebra, satisfying
-some properties which we recall below. {\color{blue}Frequently,
-  constructively} defining such a measure on the full $\sigma$-algebra
+some properties which we recall below. Frequently,
+constructively defining such a measure on the full $\sigma$-algebra
 is not possible, but defining a set function on a semi-ring is
 possible. As an example, consider Lebesgue-measure on $\mathbb R$,
 with the Borel $\sigma$-algebra on $\mathbb R$, which is
@@ -760,8 +761,8 @@ measures from a set function $m$ on a (semi-)ring $\mathcal H$
 (e.g.\ the set of all semi-open intervals), it has been a fundamental
 insight of Carathéodory that one may start by defining a set function
 (outer measure) $\mu$ on $2^\alpha$, and then show $\mu$ extends $m$
-and defines a measure on {\color{blue}the $\sigma$-algebra of
-  measurable sets (see Theorem~\ref{T:cara} below), which contains}
+and defines a measure on the $\sigma$-algebra of
+  measurable sets (see Theorem~\ref{T:cara} below), which contains
 $\sigma(\mathcal H)$.
 %(Note that the set of semi-open intervals
 %generates the Borel $\sigma$-algebra on $\mathbb R$.)
@@ -1193,10 +1194,10 @@ def IsCompactSystem (p : Set α → Prop) : Prop :=
 \end{minted}
 
 \noindent
-{\color{blue} Such compact systems are important since they allow a
-  proof of $\sigma$-additivity of a content on a ring, which is the
-  missing piece for applying the Carathéodory Theorem in the proof of
-  the Kolmogorov extension theorem.}
+Such compact systems are important since they allow a
+proof of $\sigma$-additivity of a content on a ring, which is the
+missing piece for applying the Carathéodory Theorem in the proof of
+the Kolmogorov extension theorem.
 
 \begin{lemma}\label{l:stetigcompact}
   Let $\alpha$ be a topological space and $\mu$ be an additive set
@@ -1272,8 +1273,8 @@ directly to inner regularity of the \leanlinecolor{kolContent}, which
 is defined through the projective family \leanline{P}. Moreover, since
 the Carathéodory extension theorem requires $\sigma$-subadditivity
 (rather than $\sigma$-additivity), we can use
-\leanlinecolor{sigma_subadditive_of_sigma_additive} {\color{blue}(see
-  Lemma~\ref{P:stetigmass}, 1.$\Rightarrow$2.)} in order to show that
+\leanlinecolor{sigma_subadditive_of_sigma_additive} (see
+  Lemma~\ref{P:stetigmass}, 1.$\Rightarrow$2.) in order to show that
 the assumptions of the last result also imply $\sigma$-subadditivity;
 this gives
 \leanlinecolor{kolContent_sigma_subadditive_of_innerRegular}.
@@ -1372,9 +1373,9 @@ The claimed outer regularity is part of
 In the next lemma, we will need that a closed subset of a compact set
 is compact. (See \leanline{isCompact_of_isClosed_subset}.) We describe
 the formalization of the next lemma only in conjunction with
-Lemma~\ref{L:relcoPol}. {\color{blue} We omit the proof, since the
+Lemma~\ref{L:relcoPol}. We omit the proof, since the
   only interesting part is an application of inner regularity from
-  Lemma~\ref{l:pseude1}.}
+  Lemma~\ref{l:pseude1}.
 
 \begin{lemma}\label{l:tight}
   Let $r$ be an extended pseudo-metric on $\alpha$, and the topology
@@ -1446,20 +1447,18 @@ compact. (This fact is used in the proof below.)
   which by construction is totally bounded (for $r>0$ take $n$ such
   that $\varepsilon_n < r$, such that $B_r(x_1),...,B_r(x_{N_n})$
   cover $A$), and therefore has a compact closure as noted
-  in the lines directly preceding the lemma. In
-  addition, by $\sigma$-sub-additivity of $\mu$,
+  in the lines directly preceding the lemma. Finally, by $\sigma$-sub-additivity of $\mu$,
   \begin{align*}
      \mu((\overline A)^c) & \leq \mu(A^c) = \mu\Big(
      \bigcup_{n=1}^\infty \Big(\Big(\bigcup_{k=1}^{N_n}
      B_{\varepsilon_n}(x_k)\Big)^c\Big)\Big) \\ & \leq
      \sum_{n=1}^\infty \mu\Big( \Big(\bigcup_{k=1}^{N_n}
-     B_{\varepsilon_n}(x_k)\Big)^c\Big)< \varepsilon,
+     B_{\varepsilon_n}(x_k)\Big)^c\Big)< \varepsilon
+     \: .
   \end{align*}
- and we are done.
 \end{proof}
 
-Let us combine the last two results in one formalized result.  This
-the gives the desired statement that a measure on a second countable,
+Combining the last two results, we obtain the desired statement that a measure on a second countable,
 complete extended pseudo-metric space is inner regular with respect to
 closed compact sets.
 
@@ -1609,9 +1608,10 @@ compact $K$ such that $\sup_{m \in \mathcal M} m(K^c) <
 \varepsilon$). We treat here the special case of $\mathcal M$ being a
 singleton (hence is a compact set).
 
-\section*{Acknowledgements}
-{\color{blue}PP ist partly funded by the Vector foundation, grant {\em
-    LeanAI (P2022-0241)}}.
+%\section*{Acknowledgements}
+%PP ist partly funded by the Vector foundation, grant
+%{\em LeanAI (P2022-0241)}.
+%RD acknowledges the support of the French Ministry of Higher Education and Research and the Hauts-de-France region.
 
 
 \bibliographystyle{plain}
