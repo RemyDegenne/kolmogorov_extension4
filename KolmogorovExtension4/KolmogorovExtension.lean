@@ -51,12 +51,10 @@ theorem kolmogorovFun_union (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylin
     fun j : J => f ⟨j, Finset.mem_union_right I j.prop⟩) ⁻¹' T
   have hS' : MeasurableSet S' := by
     refine' measurableSet_preimage _ hS
-    rw [measurable_pi_iff]
-    exact fun j => measurable_pi_apply _
+    exact measurable_pi_lambda _ (fun j => measurable_pi_apply _)
   have hT' : MeasurableSet T' := by
     refine' measurableSet_preimage _ hT
-    rw [measurable_pi_iff]
-    exact fun j => measurable_pi_apply _
+    exact measurable_pi_lambda _ (fun j => measurable_pi_apply _)
   have h_eq1 : s = cylinder (I ∪ J) S' := by rw [hs_eq]; exact cylinder_eq_cylinder_union I S J
   have h_eq2 : t = cylinder (I ∪ J) T' := by rw [ht_eq]; exact cylinder_eq_cylinder_union J T I
   have h_eq3 : s ∪ t = cylinder (I ∪ J) (S' ∪ T') := by
