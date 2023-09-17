@@ -1,7 +1,4 @@
 import KolmogorovExtension4.KolmogorovExtension
-import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.MeasureTheory.Constructions.Pi
-import Mathlib.Probability.Independence.Basic
 
 open Set
 

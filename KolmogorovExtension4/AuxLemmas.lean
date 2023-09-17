@@ -1,5 +1,4 @@
 import Mathlib.MeasureTheory.Measure.OuterMeasure
-import Mathlib.Logic.Denumerable
 
 open Finset Set Filter
 
