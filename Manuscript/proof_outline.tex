@@ -161,7 +161,7 @@ The Kolmogorov extension theorem has been previously formalized in Isabelle/HOL 
 
 \noindent
 {\em Instances of stochastic processes:} An obvious application of Kolmogorov's extension theorem is the construction of basic stochastic processes like Markov chains \cite[Section~11]{Kallenberg2020}, the Poisson process \cite[Section~13]{Kallenberg2020} and Brownian motion \cite[Section~14]{Kallenberg2020}.
-Other Gaussian processes -- indexed by $[0, \infty)$ or $\mathbb R$ -- might as well be constructed the same way. In addition, fields like the Gaussien free field indexed by $\mathbb R^d$ \cite{sheffield2007gaussian} can also be given.
+Other Gaussian processes -- indexed by $[0, \infty)$ or $\mathbb R$ -- might as well be constructed the same way. In addition, fields like the Gaussian free field indexed by $\mathbb R^d$ \cite{sheffield2007gaussian} can also be given.
 For these tasks, we would have to define the finite-dimensional distributions (Poisson and normally distributed, respectively), and apply the extension theorem. This task requires the formalization of multi-dimensional Poisson and normal distributions, which -- in textbooks -- is usually done using characteristic functions. Since these are not yet part of {\tt mathlib}, we postpone this task to the future. 
 
 \noindent
@@ -174,7 +174,7 @@ For the former, this follows from some general principles of Markov processes (e
 While Kolmogorov's extension Theorem gives a result for arbitrary $\iota$, but requires some properties of the family $(\alpha_t)_{t\in\iota}$, the Theorem of Ionescu-Tulcea \cite[Theorem 8.24]{Kallenberg2020} can only deal with countable $\iota$, but has no restrictions on $(\alpha_t)_{t\in\iota}$. The proof of the latter, however, uses transition kernels (and an inductive construction of a content, which can be extended to a measure) rather than projective families.
 However, the structure of the argument is similar and could use some of our results, like the proof of $\sigma$-additivity from continuity at the empty set (see Lemma~\ref{P:stetigmass}).
 A formalization would complement our work. In addition, using the Theorem of Ionescu-Tulcea one can define infinitely many independent random variables (arbitrary $\iota$) on a joint probability space \cite[Theorem 8.24]{Kallenberg2020} with fewer requirements on $(\alpha_t)_{t\in\iota}$ than in the example given in Section~\ref{ss:concl}.
-All of these results can be used in order to construct countably many independent random variables, which are frequently used in concrete constructions in probability theory. Examples are (one direction of) the Borel-Cantelli-Lemma \cite[Theorem 4.28]{Kallenberg2020}, Kolmogorov's 0-1-law \cite[Theorem 4.13]{Kallenberg2020}, random walks \cite[Chapter 12]{Kallenberg2020}, branching processes  \cite[Chapter 13]{Kallenberg2020}, and percolation  \cite[Chapter 2.4]{Klenke2013}, to name just a few. While the first two are already formalized in \leanline{mathlib}, it is only clear due to the Kolmorov extension theorem (or the Theorem of Ionesu-Tulcea) that infinitely many independent random variables can indeed be defined on a joint probability space. In this sense, our contribution is also important for giving more sense to already formalised parts of \leanline{mathlib}.
+All of these results can be used in order to construct countably many independent random variables, which are frequently used in concrete constructions in probability theory. Examples are (one direction of) the Borel-Cantelli-Lemma \cite[Theorem 4.28]{Kallenberg2020}, Kolmogorov's 0-1-law \cite[Theorem 4.13]{Kallenberg2020}, random walks \cite[Chapter 12]{Kallenberg2020}, branching processes  \cite[Chapter 13]{Kallenberg2020}, and percolation  \cite[Chapter 2.4]{Klenke2013}, to name just a few. While the first two are already formalized in \leanline{mathlib}, it is only clear due to the Kolmogorov extension theorem (or the Theorem of Ionesu-Tulcea) that infinitely many independent random variables can indeed be defined on a joint probability space. In this sense, our contribution is also important for giving more sense to already formalized parts of \leanline{mathlib}.
 
 \section{Formalization of the Daniell-Kolmogorov extension}
 We start by stating the exact result. We are going to formulate the main result in a modern fashion, as e.g.\ found in Theorem 2.2 of \cite{rao1971projective}, Theorem 7.7.1 of Volume~2 of \cite{bogachev2007measure}, Theorem 15.26 of \cite{guide2006infinite}, or \cite{border1998expository}. Note that these formulations split general assumptions on the underlying space(s) (e.g.\ a metric property) from the property which is needed in the proof (inner regularity with respect to compact sets). Other -- highly readable -- references such as \cite{Billingsley1995} state the extension theorem only in special cases such as $\alpha_t = \mathbb R$ for all $t$. 
@@ -196,7 +196,7 @@ Before we can state the result, we begin with some mathematical notions. We star
       x_2,... \in \alpha$ is called Cauchy if for all $\varepsilon>0$
       there is $N\in\mathbb N$ such that $r(x_n, x_m) < \varepsilon$
       for all $m,n > N$. The (extended pseudo-) metric is called
-      complete if every Cauchy-sequency has a limit in
+      complete if every Cauchy-sequence has a limit in
       $\alpha$.
     \item Some\footnote{We denote by $2^\alpha$ the power set of
       $\alpha$, i.e.\ the set of all subsets of $\alpha$.} $\mathcal O
@@ -384,7 +384,7 @@ class OpensMeasurableSpace (α : Type*)
 We now come to our contribution. 
 The extension theorem is a statement about extending a
 set-function on a product space to a (finite) measure, where the
-product space can come with an arbitraty index set.  The next
+product space can come with an arbitrary index set.  The next
 definition covers the important concept of a projective family of
 measures. In short, we define measures on any finite subset of indices
 in a consistent way. Finite sets (of some type \leanline{ι}) are
@@ -512,7 +512,7 @@ def projectiveLimitWithWeakestHypotheses
 Note that we extend the standard assumption that all $\alpha_t$ are
 separable, complete metric spaces (or Polish, i.e.\ separable and
 metrizable through a complete metric) to cover the case of extended
-pseude-metric spaces. Such spaces do not satisfy the frequently used
+pseudo-metric spaces. Such spaces do not satisfy the frequently used
 Hausdorff (or t2) property, i.e.\ there can be $x\neq y$ such that all
 open balls around $x$ and $y$ overlap.  This generalization was only
 possible since underlying results in \leanline{mathlib} were already
@@ -775,11 +775,11 @@ basic concepts.
     content.
   \begin{enumerate}
   \item $m$ is called additive if for $\mathcal K \subseteq_f \mathcal
-    H$ pariwise disjoint and $\bigcup_{K \in \mathcal K} K \in
+    H$ pairwise disjoint and $\bigcup_{K \in \mathcal K} K \in
     \mathcal H$, we have $m \Big(\bigcup_{K \in \mathcal K} K \Big) =
     \sum_{K \in \mathcal K} m(K)$. If the same holds for\footnote {We
       write $A \subseteq_c B$ if $A$ is a countable subset of
-      $B$.}$\mathcal K \subseteq_c \mathcal H$ pariwise disjoint, we
+      $B$.}$\mathcal K \subseteq_c \mathcal H$ pairwise disjoint, we
     say that $m$ is $\sigma$-additive.
   \item The set-function $m$ is called sub-additive if for $\mathcal K
     \subseteq_f \mathcal H$ and $\bigcup_{K \in \mathcal K} K \in
@@ -1597,7 +1597,7 @@ semi-ring of half-open intervals, in the second case, it would be the
 semi-ring of cylinder sets on a product space.)
 
 \noindent
-{\em Prohorovs theorem:} The proof that a single finite measures on a
+{\em Prohorov's theorem:} The proof that a single finite measures on a
 Polish space is tight (i.e.\ inner regular with respect to compact
 sets) is a special case of Prohorov's theorem, which states that a set
 $\mathcal M$ of finite measures is relatively compact (in the weak
@@ -1608,10 +1608,11 @@ compact $K$ such that $\sup_{m \in \mathcal M} m(K^c) <
 \varepsilon$). We treat here the special case of $\mathcal M$ being a
 singleton (hence is a compact set).
 
-%\section*{Acknowledgements}
-%PP ist partly funded by the Vector foundation, grant
-%{\em LeanAI (P2022-0241)}.
-%RD acknowledges the support of the French Ministry of Higher Education and Research and the Hauts-de-France region.
+%\section*{Acknowledgements} We thank Johan Commelin, who helped PP to
+% get started with formalizing mathematics in Lean. PP ist partly
+% funded by the Vector foundation, grant {\em LeanAI (P2022-0241)}.
+% RD acknowledges the support of the French Ministry of Higher
+% Education and Research and the Hauts-de-France region.
 
 
 \bibliographystyle{plain}
