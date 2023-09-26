@@ -206,16 +206,12 @@ theorem kolContent_sigma_additive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ 
     (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α)
     (h_disj : Pairwise (Disjoint on f)) :
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
-  haveI : ∀ i, TopologicalSpace.SecondCountableTopology (α i) := fun i =>
-    PolishSpace.secondCountableTopology
   refine' kolContent_sigma_additive_of_innerRegular hP _ hf hf_Union h_disj
   exact fun J => PolishSpace.innerRegular_isCompact_measurableSet (P J)
 
 theorem kolContent_sigma_subadditive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ → Set (∀ i, α i)⦄
     (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α) :
     kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) := by
-  haveI : ∀ i, TopologicalSpace.SecondCountableTopology (α i) := fun i =>
-    PolishSpace.secondCountableTopology
   refine' kolContent_sigma_subadditive_of_innerRegular hP _ hf hf_Union
   exact fun J => PolishSpace.innerRegular_isCompact_measurableSet (P J)
 
