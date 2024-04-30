@@ -97,8 +97,8 @@ theorem tendsto_atTop_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
     Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n < ε := by
   rw [ENNReal.tendsto_atTop_zero_iff_of_antitone f hf]
   constructor <;> intro h ε hε
-  have hε' : (min 1 (ε / 2)) > 0
-  · simp only [ge_iff_le, gt_iff_lt, lt_min_iff, zero_lt_one, div_pos_iff, ne_eq, and_true,
+  have hε' : (min 1 (ε / 2)) > 0 := by
+    simp only [ge_iff_le, gt_iff_lt, lt_min_iff, zero_lt_one, div_pos_iff, ne_eq, and_true,
       true_and]
     simp only [two_ne_top, not_false_eq_true, and_true]
     intro g
@@ -151,7 +151,7 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
     ∃ (S' : Set (Set α)) (_ : S'.Finite) (_ : S' ⊆ S), m (⋂₀ S') < ε := by
   simp only [countable_coe_iff] at hS
   cases' (fintypeOrInfinite S) with hS1 hS1
-  · use! S, hS1, (by rfl)
+  · refine ⟨S, toFinite S, subset_rfl, ?_⟩
     rw [hS3, measure_empty]
     exact hε
   · have hS' : Denumerable S :=
@@ -169,11 +169,11 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       exact (hu_meas _).compl
     have hs2 : Antitone s := by
       intro n1 n2 h12
-      simp only [le_eq_subset, compl_subset_compl]
+      simp only [s, le_eq_subset, compl_subset_compl]
       apply Set.monotone_accumulate h12
     have hs3 : ⋂ (n : ℕ), s n = ∅ := by
       rw [Iff.symm compl_univ_iff]
-      simp only [compl_iInter, compl_compl]
+      simp only [s, compl_iInter, compl_compl]
       rw [Set.iUnion_accumulate, ← compl_iInter, compl_univ_iff, ←hS3, ← Set.sInter_range, hu_range]
     obtain ⟨n, hn⟩ : ∃ n, m (s n) < ε := cont_at_empty_of_measure' m s hs1 hs2 hs3 ε hε
     let S' := u '' {m : ℕ | m ≤ n}
@@ -181,10 +181,10 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       rw [← hu_range]
       exact image_subset_range _ _
     have h0 : (⋂₀ S') = s n := by
-      simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, sInter_image, mem_setOf_eq]
+      simp only [S', s, Denumerable.decode_eq_ofNat, Option.some.injEq, sInter_image, mem_setOf_eq]
       rw [Set.accumulate_def]
       simp only [Denumerable.decode_eq_ofNat, Option.some.injEq, compl_iUnion, compl_compl]
-    use S', Set.Finite.image _ ⟨inferInstance⟩, S'_sub
+    refine ⟨S', Set.Finite.image _ (toFinite _), S'_sub, ?_⟩
     rw [h0]
     exact hn
 
@@ -381,7 +381,7 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
         exact (hto n).2.1
       have h_inter_empty : ⋂₀ S = ∅ := by
         rw [← compl_compl ∅, compl_empty, ← h_univ n]
-        simp only [sInter_image, compl_iUnion]
+        simp only [S, sInter_image, compl_iUnion]
       rcases continuous_at_emptyset_inter P S h_count h_mea h_inter_empty hε
         with ⟨S', S'1, S'2, S'3⟩
       obtain hs' := Function.subset_image_fintype S'2 S'1
@@ -399,15 +399,15 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
       apply measure_mono
       rw [← Set.compl_subset_compl, compl_compl, compl_compl]
       exact subset_closure
-    suffices h_meas_balls : P ((UniformSpace.interUnionBalls (fun n => ↑(u n)) fun n => t n)ᶜ) < ε
-    · simp only [coe_toFinset] at hP h_meas_balls ⊢
+    suffices h_meas_balls : P ((UniformSpace.interUnionBalls (fun n ↦ ↑(u n)) fun n => t n)ᶜ) < ε by
+      simp only [A, coe_toFinset] at hP h_meas_balls ⊢
       exact h_meas_balls
     · refine measure_Inter_iUnion_uniform_balls ε P (fun n => ↑(u n)) (fun n => t n) δ
         (fun n => ?_) hδ2 hδ3
       obtain h' := le_of_lt ((fun n => (s'bound n) (δ n) (hδ1' n)) n)
       have h1 : ∀ x, x ∈ s' n (δ n) ↔ x ∈ u n := by
         intro x
-        simp only [Finite.mem_toFinset]
+        simp only [u, Finite.mem_toFinset]
       obtain h'' : ∀ n, Prod.swap ⁻¹' t n = t n := fun n => SymmetricRel.eq (hto n).2.2
       simp_rw [Finset.mem_coe, ← h1, h'']
       exact h'

@@ -341,7 +341,7 @@ theorem cylinder_eq_empty_iff [h_nonempty : Nonempty ((i : ι) → α i)] (s : F
     let f' : (i : ι) → α i := fun i => if hi : i ∈ s then f ⟨i, hi⟩ else h_nonempty.some i
     have hf' : f' ∈ cylinder s S := by
       rw [mem_cylinder]
-      simp only [Finset.coe_mem, dif_pos]
+      simp only [f', Finset.coe_mem, dif_pos]
       exact hf
     rw [h] at hf'
     exact not_mem_empty _ hf'

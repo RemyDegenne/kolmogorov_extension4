@@ -204,12 +204,12 @@ theorem nonempty_iInter_projCylinder_inter_piCylinderSet (hs : ∀ n, s n ∈ cl
         exact biInter_subset_of_mem hi_le
       rw [mem_projCylinder] at hy'
       refine' ⟨fun j => y ⟨j, subset_allProj hs _ j.2⟩, hy', _⟩
-      simp_rw [if_pos hi_le]
+      simp_rw [z, if_pos hi_le]
     · rw [mem_piCylinderSet] at hx
       specialize hx i
       obtain ⟨x', hx'_mem, hx'_eq⟩ := hx
-      refine' ⟨x', hx'_mem, _⟩
-      simp_rw [if_neg hi_le]
+      refine ⟨x', hx'_mem, ?_⟩
+      simp_rw [z, if_neg hi_le]
       exact hx'_eq
 
 theorem nonempty_iInter_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α)
@@ -228,8 +228,8 @@ theorem nonempty_iInter_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders
   have h_closed : ∀ n, IsClosed (⋂ i ≤ n, projCylinder hs i) :=
     fun n ↦ isClosed_biInter (fun i _ ↦ isClosed_projCylinder hs
       (fun n ↦ (closedCompactCylinders.isClosed (hs n))) i)
-  refine' IsCompact.nonempty_iInter_of_sequence_nonempty_compact_closed
-    (fun n => (⋂ i ≤ n, projCylinder hs i) ∩ piCylinderSet hs) _ _ _ _
+  refine IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed
+    (fun n => (⋂ i ≤ n, projCylinder hs i) ∩ piCylinderSet hs) ?_ ?_ ?_ ?_
   · intro i
     refine' inter_subset_inter _ subset_rfl
     simp_rw [Set.bInter_le_succ]

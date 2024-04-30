@@ -125,7 +125,7 @@ theorem le_sum_of_additive (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈
   rw [ht_eq]
   refine' (le_sum_of_additive_aux hC m m_add Jt _ _).trans _
   · intro s
-    simp only [coe_image, Set.mem_image, mem_coe, forall_exists_index, and_imp]
+    simp only [Jt, coe_image, Set.mem_image, mem_coe, forall_exists_index, and_imp]
     rintro u hu rfl
     exact hC.inter_mem _ ht _ (h_ss hu)
   · rwa [← ht_eq]

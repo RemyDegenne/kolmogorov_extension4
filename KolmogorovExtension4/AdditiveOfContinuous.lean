@@ -54,7 +54,7 @@ theorem sigma_additive_of_tendsto_zero (hC : SetRing C) (m : ∀ s : Set α, s �
     rw [Set.mem_diff] at hxj ⊢
     exact ⟨hxj.1, fun hxi => hxj.2 (Set.monotone_accumulate hij hxi)⟩
   have hs_Inter : (⋂ n, s n) = ∅ := by
-    simp_rw [Set.diff_eq]
+    simp_rw [s, Set.diff_eq]
     rw [Set.iInter_inter_distrib, Set.iInter_const, ← Set.compl_iUnion, Set.iUnion_accumulate]
     exact Set.inter_compl_self _
   have h_tendsto : Tendsto (fun n => m (s n) (hCs n)) atTop (𝓝 0) := hm hCs hs_anti hs_Inter

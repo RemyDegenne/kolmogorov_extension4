@@ -1,4 +1,4 @@
-import Mathlib.MeasureTheory.Measure.OuterMeasure
+import Mathlib.MeasureTheory.OuterMeasure.Basic
 
 open Finset Set Filter
 

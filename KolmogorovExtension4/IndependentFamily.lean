@@ -147,10 +147,10 @@ theorem Measure.subset_pi_eval_boxI' [DecidableEq ι] (I J : Finset ι) (hJI : J
   let f := fun i => P i (if i ∈ J then t i else (univ : Set (α i)))
   have h1 : ∀ (x : ι), x ∈ J → f x = g x := by
     intros x hx
-    simp only [dite_eq_ite, hx, ite_true]
+    simp only [f, dite_eq_ite, hx, ite_true]
   have h2 : ∀ (x : ι), ¬x ∈ J → f x = 1 := by
     intros x hx
-    simp only [dite_eq_ite, hx, ite_false, measure_univ]
+    simp only [f, dite_eq_ite, hx, ite_false, measure_univ]
   exact Finset.prod_mem_not_mem_of_eq_one_if_not_mem hJI h1 h2
 
 /-- A product of probability measures is a probability measure -/
@@ -177,7 +177,7 @@ theorem proj' (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)]
         (Measure.subset_pi P I) := by
   let C := (fun (i : ι) => {s : Set (α i) | MeasurableSet s})
   have hu : ∀ i, univ ∈ C i := by
-    simp only [mem_setOf_eq, MeasurableSet.univ, implies_true]
+    simp only [C, mem_setOf_eq, MeasurableSet.univ, implies_true]
   apply MeasureTheory.ext_of_generate_finite _ (generateFrom_boxesI J)
   · exact @isPiSystem_boxesI_of_measurable ι α _ J
   · intros s hs

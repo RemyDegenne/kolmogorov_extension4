@@ -26,9 +26,9 @@ lemma tendsto_zero_of_regular_addContent [Nonempty α] (hR : SetRing R) (m : Add
   have hS := hC.iInter_eq_empty ht_mem_C ht_empty
   have hS_nonempty : Finset.Nonempty S := by
     by_contra h
-    simp only [Finset.not_nonempty_iff_eq_empty] at h
-    simp only [h, Finset.not_mem_empty, Set.iInter_of_empty, Set.iInter_univ, Set.univ_eq_empty_iff,
-      not_isEmpty_of_nonempty] at hS 
+    simp only [S, Finset.not_nonempty_iff_eq_empty] at h
+    simp only [h, Finset.not_mem_empty, Set.iInter_of_empty, Set.iInter_univ,
+      Set.univ_eq_empty_iff, not_isEmpty_of_nonempty] at hS
   let N := Finset.max' S hS_nonempty
   have ht_empty' : ∀ n, N ≤ n → ⋂ i ≤ n, t i = ∅ := by
     intro n hn
