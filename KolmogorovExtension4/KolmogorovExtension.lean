@@ -45,16 +45,16 @@ theorem kolmogorovFun_union (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylin
   obtain ⟨I, S, hS, hs_eq⟩ := hs
   obtain ⟨J, T, hT, ht_eq⟩ := ht
   classical
-  let S' := (fun f : ∀ i : (I ∪ J : Finset ι), α i =>
-    fun j : I => f ⟨j, Finset.mem_union_left J j.prop⟩) ⁻¹' S
-  let T' := (fun f : ∀ i : (I ∪ J : Finset ι), α i =>
-    fun j : J => f ⟨j, Finset.mem_union_right I j.prop⟩) ⁻¹' T
+  let S' := (fun f : ∀ i : (I ∪ J : Finset ι), α i ↦
+    fun j : I ↦ f ⟨j, Finset.mem_union_left J j.prop⟩) ⁻¹' S
+  let T' := (fun f : ∀ i : (I ∪ J : Finset ι), α i ↦
+    fun j : J ↦ f ⟨j, Finset.mem_union_right I j.prop⟩) ⁻¹' T
   have hS' : MeasurableSet S' := by
-    refine' measurableSet_preimage _ hS
-    exact measurable_pi_lambda _ (fun j => measurable_pi_apply _)
+    refine measurableSet_preimage ?_ hS
+    exact measurable_pi_lambda _ (fun j ↦ measurable_pi_apply _)
   have hT' : MeasurableSet T' := by
-    refine' measurableSet_preimage _ hT
-    exact measurable_pi_lambda _ (fun j => measurable_pi_apply _)
+    refine measurableSet_preimage ?_ hT
+    exact measurable_pi_lambda _ (fun j ↦ measurable_pi_apply _)
   have h_eq1 : s = cylinder (I ∪ J) S' := by rw [hs_eq]; exact cylinder_eq_cylinder_union I S J
   have h_eq2 : t = cylinder (I ∪ J) T' := by rw [ht_eq]; exact cylinder_eq_cylinder_union J T I
   have h_eq3 : s ∪ t = cylinder (I ∪ J) (S' ∪ T') := by
@@ -67,7 +67,7 @@ theorem kolmogorovFun_additive (hP : IsProjectiveMeasureFamily P) (I : Finset (S
     (h_ss : ↑I ⊆ cylinders α) (h_dis : PairwiseDisjoint (I : Set (Set (∀ i, α i))) id)
     (h_mem : ⋃₀ ↑I ∈ cylinders α) :
     kolmogorovFun P (⋃₀ I) h_mem = ∑ u : I, kolmogorovFun P u (h_ss u.prop) := by
-  refine' sUnion_eq_sum_of_union_eq_add' _ _ _ _ _ I h_ss h_dis h_mem
+  refine sUnion_eq_sum_of_union_eq_add' ?_ ?_ _ ?_ ?_ I h_ss h_dis h_mem
   · exact empty_mem_cylinders α
   · exact union_mem_cylinders
   · exact kolmogorovFun_empty hP
@@ -114,23 +114,23 @@ variable [∀ i, TopologicalSpace (α i)] [∀ i, OpensMeasurableSpace (α i)]
   [∀ i, SecondCountableTopology (α i)] [∀ I, IsFiniteMeasure (P I)]
 
 theorem exists_compact
-    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
+    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
     (J : Finset ι) (A : Set (∀ i : J, α i)) (hA : MeasurableSet A) (ε : ℝ≥0∞) (hε : 0 < ε) :
     ∃ K, IsCompact K ∧ IsClosed K ∧ K ⊆ A ∧ P J (A \ K) ≤ ε := by
   by_cases hPA : P J A = 0
-  · refine' ⟨∅, isCompact_empty, isClosed_empty, empty_subset _, _⟩
+  · refine ⟨∅, isCompact_empty, isClosed_empty, empty_subset _, ?_⟩
     rw [diff_empty, hPA]
     exact zero_le ε
   have h : P J A - ε < P J A := ENNReal.sub_lt_self (measure_ne_top _ _) hPA hε.ne'
   obtain ⟨K, hKA, ⟨hK_compact, hK_closed⟩, h_lt⟩ := hP_inner J hA (P J A - ε) h
-  refine' ⟨K, hK_compact, hK_closed, hKA, _⟩
+  refine ⟨K, hK_compact, hK_closed, hKA, ?_⟩
   rw [measure_diff hKA hK_closed.measurableSet (measure_ne_top (P J) _)]
   have h_le := h_lt.le
   rw [tsub_le_iff_left] at h_le ⊢
   rwa [add_comm]
 
 lemma innerRegular_kolContent [∀ i, Nonempty (α i)] (hP : IsProjectiveMeasureFamily P)
-    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
+    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
     {s : Set (∀ i, α i)} (hs : s ∈ cylinders α) (ε : ℝ≥0∞) (hε : 0 < ε) :
     ∃ (K : Set (∀ i, α i)) (_ : K ∈ closedCompactCylinders α),
       K ⊆ s ∧ kolContent hP (s \ K) ≤ ε := by
@@ -166,13 +166,13 @@ variable [∀ i, Nonempty (α i)] [∀ i, TopologicalSpace (α i)] [∀ i, Opens
   [∀ i, SecondCountableTopology (α i)] [∀ I, IsFiniteMeasure (P I)]
 
 theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
-    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
+    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α)
     (h_disj : Pairwise (Disjoint on f)) :
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
   refine (kolContent hP).sigma_additive_of_regular setRing_cylinders ?_ isCompactSystem_cylinders
     (fun t ht ↦ mem_cylinder_of_mem_closedCompactCylinders ht) ?_ hf hf_Union h_disj
-  · exact fun hx => kolContent_ne_top _ hx
+  · exact fun hx ↦ kolContent_ne_top _ hx
   · intros t ht ε hε
     convert innerRegular_kolContent hP hP_inner ht ε hε with u
     refine ⟨fun h ↦ ⟨h.1, h.2.1, h.2.2⟩, fun h ↦ ?_⟩
@@ -180,7 +180,7 @@ theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamil
     exact ⟨a, b, c⟩
 
 theorem kolContent_sigma_subadditive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
-    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
+    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α) :
     kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) :=
   (kolContent hP).sigma_subadditive_of_sigma_additive setRing_cylinders
@@ -194,7 +194,7 @@ noncomputable def projectiveLimitWithWeakestHypotheses [∀ i, PseudoEMetricSpac
     [∀ i, CompleteSpace (α i)] [∀ i, Nonempty (α i)] (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
     [∀ i, IsFiniteMeasure (P i)] (hP : IsProjectiveMeasureFamily P) : Measure (∀ i, α i) :=
   Measure.ofAddContent setSemiringCylinders generateFrom_cylinders (kolContent hP)
-    (kolContent_sigma_subadditive_of_innerRegular hP fun J =>
+    (kolContent_sigma_subadditive_of_innerRegular hP fun J ↦
       innerRegular_isCompact_isClosed_measurableSet_of_complete_countable (P J))
 
 section Polish
@@ -206,14 +206,14 @@ theorem kolContent_sigma_additive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ 
     (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α)
     (h_disj : Pairwise (Disjoint on f)) :
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
-  refine' kolContent_sigma_additive_of_innerRegular hP _ hf hf_Union h_disj
-  exact fun J => PolishSpace.innerRegular_isCompact_measurableSet (P J)
+  refine kolContent_sigma_additive_of_innerRegular hP ?_ hf hf_Union h_disj
+  exact fun J ↦ PolishSpace.innerRegular_isCompact_measurableSet (P J)
 
 theorem kolContent_sigma_subadditive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ → Set (∀ i, α i)⦄
     (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α) :
     kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) := by
-  refine' kolContent_sigma_subadditive_of_innerRegular hP _ hf hf_Union
-  exact fun J => PolishSpace.innerRegular_isCompact_measurableSet (P J)
+  refine kolContent_sigma_subadditive_of_innerRegular hP ?_ hf hf_Union
+  exact fun J ↦ PolishSpace.innerRegular_isCompact_measurableSet (P J)
 
 /-- Projective limit of a projective measure family. -/
 noncomputable def projectiveLimit (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
@@ -231,7 +231,7 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
   ext1 s hs
   rw [Measure.map_apply _ hs]
   swap; · apply measurable_proj
-  have h_mem : (fun (x : ∀ i : ι, (fun i : ι => α i) i) (i : ↥J) => x ↑i) ⁻¹' s ∈ cylinders α := by
+  have h_mem : (fun (x : ∀ i : ι, (fun i : ι ↦ α i) i) (i : ↥J) ↦ x ↑i) ⁻¹' s ∈ cylinders α := by
     rw [mem_cylinders]; exact ⟨J, s, hs, rfl⟩
   rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr hP h_mem rfl hs]
 

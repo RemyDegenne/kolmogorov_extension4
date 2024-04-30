@@ -32,7 +32,7 @@ structure SetSemiring (C : Set (Set α)) : Prop where
 
 namespace SetSemiring
 
-theorem isPiSystem (hC : SetSemiring C) : IsPiSystem C := fun s hs t ht _ => hC.inter_mem s hs t ht
+theorem isPiSystem (hC : SetSemiring C) : IsPiSystem C := fun s hs t ht _ ↦ hC.inter_mem s hs t ht
 
 /-- In a semi-ring of sets `C`, for all `s, t ∈ C`, `t \ s` is equal to a disjoint union of finitely
 many sets in `C`. This definitions gives a finset of sets that satisfy that equality.
@@ -71,7 +71,7 @@ theorem not_mem_diffFinset (hC : SetSemiring C) (hs : s ∈ C) (ht : t ∈ C) [D
     have h := @disjoint_sdiff_self_right _ s t _
     specialize h le_rfl this
     simp only [Set.bot_eq_empty, Set.le_eq_subset, subset_empty_iff] at h
-    refine' hC.empty_not_mem_diffFinset hs ht _
+    refine hC.empty_not_mem_diffFinset hs ht ?_
     rwa [← h]
   rw [hC.diff_eq_sUnion hs ht]
   exact subset_sUnion_of_mem hs_mem
@@ -89,9 +89,9 @@ theorem disjoint_sUnion_diffFinset (hC : SetSemiring C) (hs : s ∈ C) (ht : t �
 theorem pairwiseDisjoint_insert (hC : SetSemiring C) (hs : s ∈ C) (ht : t ∈ C)
     [DecidableEq (Set α)] : (insert s (hC.diffFinset hs ht) : Set (Set α)).PairwiseDisjoint id := by
   have h := hC.diffFinset_disjoint hs ht
-  refine' PairwiseDisjoint.insert_of_not_mem h (hC.not_mem_diffFinset hs ht) fun u hu => _
+  refine PairwiseDisjoint.insert_of_not_mem h (hC.not_mem_diffFinset hs ht) fun u hu ↦ ?_
   simp_rw [id.def]
-  refine' Disjoint.mono_right _ (hC.disjoint_sUnion_diffFinset hs ht)
+  refine Disjoint.mono_right ?_ (hC.disjoint_sUnion_diffFinset hs ht)
   simp only [Set.le_eq_subset]
   exact subset_sUnion_of_mem hu
 
@@ -119,53 +119,53 @@ theorem exists_disjoint_finset_diff_eq (hC : SetSemiring C) (hs : s ∈ C) (I : 
       s \ ⋃₀ I = ⋃₀ J := by
   classical
   revert hI
-  refine' Finset.induction _ _ I
+  refine Finset.induction ?_ ?_ I
   · intro
     simp only [coe_empty, sUnion_empty, diff_empty, exists_prop]
-    refine' ⟨{s}, singleton_subset_set_iff.mpr hs, _⟩
+    refine ⟨{s}, singleton_subset_set_iff.mpr hs, ?_⟩
     simp only [coe_singleton, pairwiseDisjoint_singleton, sUnion_singleton, eq_self_iff_true,
       and_self_iff]
   intro t I' _ h h_insert_subset
   rw [coe_insert] at h_insert_subset
   have ht : t ∈ C := h_insert_subset (Set.mem_insert _ _)
   obtain ⟨J, h_ss, h_dis, h_eq⟩ := h ((Set.subset_insert _ _).trans h_insert_subset)
-  let Ju : ∀ u ∈ C, Finset (Set α) := fun u hu => hC.diffFinset ht hu
+  let Ju : ∀ u ∈ C, Finset (Set α) := fun u hu ↦ hC.diffFinset ht hu
   have hJu_subset : ∀ (u) (hu : u ∈ C), ↑(Ju u hu) ⊆ C := by
     intro u hu x hx
     exact hC.diffFinset_subset ht hu hx
-  have hJu_disj : ∀ (u) (hu : u ∈ C), (Ju u hu : Set (Set α)).PairwiseDisjoint id := fun u hu =>
+  have hJu_disj : ∀ (u) (hu : u ∈ C), (Ju u hu : Set (Set α)).PairwiseDisjoint id := fun u hu ↦
     hC.diffFinset_disjoint ht hu
-  have hJu_sUnion : ∀ (u) (hu : u ∈ C), ⋃₀ (Ju u hu : Set (Set α)) = u \ t := fun u hu =>
+  have hJu_sUnion : ∀ (u) (hu : u ∈ C), ⋃₀ (Ju u hu : Set (Set α)) = u \ t := fun u hu ↦
     (hC.diff_eq_sUnion ht hu).symm
   have hJu_disj' : ∀ (u) (hu : u ∈ C) (v) (hv : v ∈ C) (_h_dis : Disjoint u v),
       Disjoint (⋃₀ (Ju u hu : Set (Set α))) (⋃₀ ↑(Ju v hv)) :=by
     intro u hu v hv huv_disj
     rw [hJu_sUnion, hJu_sUnion]
     exact disjoint_of_subset (Set.diff_subset u t) (Set.diff_subset v t) huv_disj
-  let J' : Finset (Set α) := Finset.biUnion (Finset.univ : Finset J) fun u => Ju u (h_ss u.prop)
+  let J' : Finset (Set α) := Finset.biUnion (Finset.univ : Finset J) fun u ↦ Ju u (h_ss u.prop)
   have hJ'_subset : ↑J' ⊆ C := by
     intro u
     simp only [J', Subtype.coe_mk, univ_eq_attach, coe_biUnion, mem_coe, mem_attach, iUnion_true,
       mem_iUnion, Finset.exists_coe, exists₂_imp]
     intro v hv huvt
     exact hJu_subset v (h_ss hv) huvt
-  refine' ⟨J', hJ'_subset, _, _⟩
+  refine ⟨J', hJ'_subset, ?_, ?_⟩
   · rw [Finset.coe_biUnion]
-    refine' PairwiseDisjoint.biUnion _ _
+    refine PairwiseDisjoint.biUnion ?_ ?_
     · simp only [univ_eq_attach, mem_coe, id.def, iSup_eq_iUnion]
       simp_rw [PairwiseDisjoint, Set.Pairwise, Function.onFun]
       intro x _ y _ hxy
       have hxy_disj : Disjoint (x : Set α) y := by
         by_contra h_contra
-        refine' hxy _
-        refine' Subtype.ext _
+        refine hxy ?_
+        refine Subtype.ext ?_
         exact h_dis.elim x.prop y.prop h_contra
       convert hJu_disj' (x : Set α) (h_ss x.prop) y (h_ss y.prop) hxy_disj
       · rw [sUnion_eq_biUnion]
         congr
       · rw [sUnion_eq_biUnion]
         congr
-    · exact fun u _ => hJu_disj _ _
+    · exact fun u _ ↦ hJu_disj _ _
   · rw [coe_insert, sUnion_insert, Set.union_comm, ← Set.diff_diff, h_eq]
     simp_rw [sUnion_eq_biUnion, Set.iUnion_diff]
     simp only [J', Subtype.coe_mk, mem_coe, Finset.mem_biUnion, Finset.mem_univ, exists_true_left,
@@ -226,14 +226,14 @@ theorem disjoint_diff₀ (hC : SetSemiring C) (hs : s ∈ C) (I : Finset (Set α
   have h_disj : u ≤ ⊥ :=
     hC.disjoint_sUnion_diff₀ hs I hI (subset_sUnion_of_mem huI) (subset_sUnion_of_mem hu_diff₀)
   simp only [Set.bot_eq_empty, Set.le_eq_subset, subset_empty_iff] at h_disj
-  refine' hC.empty_not_mem_diff₀ hs I hI _
+  refine hC.empty_not_mem_diff₀ hs I hI ?_
   rwa [h_disj] at hu_diff₀
 
 theorem pairwiseDisjoint_union_diff₀ (hC : SetSemiring C) (hs : s ∈ C) (I : Finset (Set α))
     (hI : ↑I ⊆ C) (h_dis : PairwiseDisjoint (I : Set (Set α)) id) [DecidableEq (Set α)] :
     (I ∪ hC.diff₀ hs I hI : Set (Set α)).PairwiseDisjoint id := by
   rw [pairwiseDisjoint_union]
-  refine' ⟨h_dis, hC.pairwiseDisjoint_diff₀ hs I hI, fun u hu v hv _ => _⟩
+  refine ⟨h_dis, hC.pairwiseDisjoint_diff₀ hs I hI, fun u hu v hv _ ↦ ?_⟩
   simp_rw [id.def]
   exact disjoint_of_subset (subset_sUnion_of_mem hu) (subset_sUnion_of_mem hv)
     (hC.disjoint_sUnion_diff₀ hs I hI)
@@ -259,12 +259,12 @@ theorem Finset.mem_map_univ_asEmbedding {α β : Type _} [Fintype α] {p : β �
   rw [mem_map]
   simp only [Finset.mem_univ, Equiv.asEmbedding_apply, Function.comp_apply, exists_true_left,
     true_and]
-  refine' ⟨fun h => _, fun h => _⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨a, rfl⟩ := h
     exact (e a).prop
   · suffices ∃ a, e a = ⟨b, h⟩ by
       obtain ⟨a, ha⟩ := this
-      refine' ⟨a, _⟩
+      refine ⟨a, ?_⟩
       rw [ha]
     exact e.surjective _
 
@@ -296,8 +296,8 @@ theorem sum_ordered {β : Type _} [AddCommMonoid β] (J : Finset (Set α)) (m : 
   rw [sum_map]
 
 /-- The n first sets in `J.ordered`. -/
-noncomputable def finsetLT (J : Finset (Set α)) : Fin J.card → Finset (Set α) := fun n =>
-  (Finset.filter (fun j : Fin J.card => j < n) univ).map J.ordered
+noncomputable def finsetLT (J : Finset (Set α)) : Fin J.card → Finset (Set α) := fun n ↦
+  (Finset.filter (fun j : Fin J.card ↦ j < n) univ).map J.ordered
 
 theorem finsetLT_zero {J : Finset (Set α)} (hJ : 0 < J.card) : finsetLT J ⟨0, hJ⟩ = ∅ := by
   rw [finsetLT]
@@ -314,7 +314,7 @@ theorem finsetLT_mono (J : Finset (Set α)) : Monotone (finsetLT J) := by
   rintro ⟨i, hi, rfl⟩
   simp only [Finset.ordered, finsetLT, Equiv.asEmbedding_apply, Function.comp_apply, mem_map,
     mem_filter, Finset.mem_univ, true_and_iff, exists_prop]
-  refine' ⟨i, _, rfl⟩
+  refine ⟨i, ?_, rfl⟩
   rw [mem_filter] at hi
   exact hi.2.trans_le hnm
 
@@ -375,14 +375,14 @@ theorem empty_not_mem_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) 
 
 theorem subset_ordered_of_mem_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
     {n : Fin J.card} (h : s ∈ hC.indexedDiff₀ J hJ n) : s ⊆ J.ordered n := by
-  refine' Subset.trans _
+  refine Subset.trans ?_
     (hC.sUnion_diff₀_subset (ordered_mem' hJ n) (finsetLT J n) (finsetLT_subset' J hJ n))
   exact subset_sUnion_of_mem h
 
 theorem iUnion_sUnion_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
     (⋃ i, ⋃₀ (hC.indexedDiff₀ J hJ i : Set (Set α))) = ⋃₀ J := by
   rw [← iUnion_ordered]
-  refine' subset_antisymm (fun a => _) fun a => _
+  refine subset_antisymm (fun a ↦ ?_) fun a ↦ ?_
   · simp_rw [mem_iUnion, mem_sUnion]
     rintro ⟨i, t, ht, hat⟩
     exact ⟨i, subset_ordered_of_mem_indexedDiff₀ hC J hJ ht hat⟩
@@ -390,33 +390,33 @@ theorem iUnion_sUnion_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) 
     intro h
     have h' : ∃ (i : ℕ) (hi : i < J.card), a ∈ J.ordered ⟨i, hi⟩ := by
       obtain ⟨i, hai⟩ := h
-      refine' ⟨i.1, i.2, _⟩
+      refine ⟨i.1, i.2, ?_⟩
       convert hai
     classical
     let i : ℕ := Nat.find h'
     have hi : i < J.card := (Nat.find_spec h').choose
     have ha_mem_i : a ∈ J.ordered ⟨i, hi⟩ := (Nat.find_spec h').choose_spec
-    refine' ⟨⟨i, hi⟩, _⟩
+    refine ⟨⟨i, hi⟩, ?_⟩
     rw [sUnion_indexedDiff₀, Set.mem_diff]
-    refine' ⟨ha_mem_i, _⟩
+    refine ⟨ha_mem_i, ?_⟩
     rw [sUnion_finsetLT_eq_bUnion]
     simp only [mem_iUnion, exists_prop, not_exists, not_and]
     intro j hj_lt hj
     have hj_lt' : ↑j < i := by rwa [← Fin.eta j j.2, Fin.mk_lt_mk] at hj_lt
-    refine' (Nat.lt_find_iff h' j).mp hj_lt' j le_rfl ⟨hj_lt'.trans hi, _⟩
+    refine (Nat.lt_find_iff h' j).mp hj_lt' j le_rfl ⟨hj_lt'.trans hi, ?_⟩
     convert hj
 
 theorem disjoint_sUnion_finsetLT_of_mem_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α))
     (hJ : ↑J ⊆ C) {n : Fin J.card} (h : s ∈ hC.indexedDiff₀ J hJ n) :
     Disjoint s (⋃₀ finsetLT J n) := by
-  refine' Disjoint.mono_left (subset_sUnion_of_mem h : s ⊆ ⋃₀ ↑(hC.indexedDiff₀ J hJ n)) _
+  refine Disjoint.mono_left (subset_sUnion_of_mem h : s ⊆ ⋃₀ ↑(hC.indexedDiff₀ J hJ n)) ?_
   rw [SetSemiring.sUnion_indexedDiff₀ hC J hJ n, Set.disjoint_iff_inter_eq_empty, Set.inter_comm,
     inter_diff_self]
 
 theorem disjoint_ordered_of_mem_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
     {n m : Fin J.card} (h : s ∈ hC.indexedDiff₀ J hJ n) (hnm : m < n) :
     Disjoint s (J.ordered m) := by
-  refine' Disjoint.mono_right _ (hC.disjoint_sUnion_finsetLT_of_mem_indexedDiff₀ J hJ h)
+  refine Disjoint.mono_right ?_ (hC.disjoint_sUnion_finsetLT_of_mem_indexedDiff₀ J hJ h)
   exact subset_sUnion_of_mem (ordered_mem_finsetLT J hnm)
 
 theorem disjoint_of_mem_indexedDiff₀_of_lt (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
@@ -446,7 +446,7 @@ theorem disjoint_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ :
   exact hC.empty_not_mem_indexedDiff₀ _ _ _ hsn
 
 theorem pairwiseDisjoint_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
-    PairwiseDisjoint (↑(univ : Finset (Fin J.card))) (hC.indexedDiff₀ J hJ) := fun _ _ _ _ hnm =>
+    PairwiseDisjoint (↑(univ : Finset (Fin J.card))) (hC.indexedDiff₀ J hJ) := fun _ _ _ _ hnm ↦
   hC.disjoint_indexedDiff₀ J hJ hnm
 
 theorem pairwiseDisjoint_indexedDiff₀' (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
@@ -517,9 +517,9 @@ theorem inter_mem (hC : SetRing C) (hs : s ∈ C) (ht : t ∈ C) : s ∩ t ∈ C
 
 theorem setSemiring (hC : SetRing C) : SetSemiring C :=
   { empty_mem := hC.empty_mem
-    inter_mem := fun s hs t ht => hC.inter_mem hs ht
+    inter_mem := fun s hs t ht ↦ hC.inter_mem hs ht
     diff_eq_Union' := by
-      refine' fun s hs t ht => ⟨{t \ s}, _, _, _⟩
+      refine fun s hs t ht ↦ ⟨{t \ s}, ?_, ?_, ?_⟩
       · simp only [coe_singleton, Set.singleton_subset_iff]
         exact hC.diff_mem ht hs
       · simp only [coe_singleton, pairwiseDisjoint_singleton]

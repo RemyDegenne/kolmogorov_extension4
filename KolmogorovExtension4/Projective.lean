@@ -12,12 +12,12 @@ def IsProjective [Preorder ι] (P : ∀ j : ι, α j) (π : ∀ {i j : ι}, j �
 def IsProjectiveMeasureFamily [∀ i, MeasurableSpace (α i)]
     (P : ∀ J : Finset ι, Measure (∀ j : J, α j)) : Prop :=
   IsProjective P
-    (fun I _ hJI μ => μ.map fun x : ∀ i : I, α i => fun j => x ⟨j, hJI j.2⟩ :
+    (fun I _ hJI μ ↦ μ.map fun x : ∀ i : I, α i ↦ fun j ↦ x ⟨j, hJI j.2⟩ :
       ∀ (I J : Finset ι) (_ : J ⊆ I), Measure (∀ i : I, α i) → Measure (∀ j : J, α j))
 
 def IsProjectiveLimit [∀ i, MeasurableSpace (α i)] (μ : Measure (∀ i, α i))
     (P : ∀ J : Finset ι, Measure (∀ j : J, α j)) : Prop :=
-  ∀ I : Finset ι, (μ.map fun x : ∀ i, α i => fun i : I => x i) = P I
+  ∀ I : Finset ι, (μ.map fun x : ∀ i, α i ↦ fun i : I ↦ x i) = P I
 
 variable [∀ i, MeasurableSpace (α i)] {P : ∀ J : Finset ι, Measure (∀ j : J, α j)}
 
@@ -26,7 +26,7 @@ theorem IsProjectiveMeasureFamily.congr_cylinder_aux [h_nonempty : Nonempty (∀
     {T : Set (∀ i : J, α i)} (hT : MeasurableSet T) (h_eq : cylinder I S = cylinder J T)
     (hJI : J ⊆ I) :
     P I S = P J T := by
-  have : S = (fun f : ∀ i : I, α i => fun j : J => f ⟨j, hJI j.prop⟩) ⁻¹' T :=
+  have : S = (fun f : ∀ i : I, α i ↦ fun j : J ↦ f ⟨j, hJI j.prop⟩) ⁻¹' T :=
     eq_of_cylinder_eq_of_subset h_eq hJI
   rw [hP I J hJI, Measure.map_apply _ hT, this]
   rw [measurable_pi_iff]
@@ -41,8 +41,8 @@ theorem IsProjectiveMeasureFamily.congr_cylinder [h_nonempty : Nonempty (∀ i, 
   classical
   let U :=
     (fun f : ∀ i : (I ∪ J : Finset ι), α i
-        => fun j : I => f ⟨j, Finset.mem_union_left J j.prop⟩) ⁻¹' S ∩
-      (fun f => fun j : J => f ⟨j, Finset.mem_union_right I j.prop⟩) ⁻¹' T
+        ↦ fun j : I ↦ f ⟨j, Finset.mem_union_left J j.prop⟩) ⁻¹' S ∩
+      (fun f ↦ fun j : J ↦ f ⟨j, Finset.mem_union_right I j.prop⟩) ⁻¹' T
   suffices P (I ∪ J) U = P I S ∧ P (I ∪ J) U = P J T from this.1.symm.trans this.2
   constructor
   · have h_eq_union : cylinder I S = cylinder (I ∪ J) U := by
@@ -56,7 +56,7 @@ theorem IsProjectiveMeasureFamily.measure_univ_eq_of_subset (hP : IsProjectiveMe
     (I J : Finset ι) (hJI : J ⊆ I) : P I univ = P J univ := by
   classical
   have : (univ : Set (∀ i : I, α i)) =
-      (fun x : ∀ i : I, α i => fun i : J => x ⟨i, hJI i.2⟩) ⁻¹' (univ : Set (∀ i : J, α i)) :=
+      (fun x : ∀ i : I, α i ↦ fun i : J ↦ x ⟨i, hJI i.2⟩) ⁻¹' (univ : Set (∀ i : J, α i)) :=
     by rw [preimage_univ]
   rw [this, ← Measure.map_apply _ MeasurableSet.univ]
   · rw [hP I J hJI]
@@ -91,7 +91,7 @@ theorem isProjectiveLimit_unique [hι : Nonempty ι] {μ ν : Measure (∀ i, α
     μ = ν := by
   haveI : IsFiniteMeasure μ := isFiniteMeasure_of_isProjectiveLimit hμ
   refine ext_of_generate_finite (cylinders α) generateFrom_cylinders.symm isPiSystem_cylinders
-    (fun s hs => ?_) (hμ.measure_univ_unique hν)
+    (fun s hs ↦ ?_) (hμ.measure_univ_unique hν)
   obtain ⟨I, S, hS, rfl⟩ := (mem_cylinders _).mp hs
   rw [hμ.measure_cylinder _ hS, hν.measure_cylinder _ hS]
 

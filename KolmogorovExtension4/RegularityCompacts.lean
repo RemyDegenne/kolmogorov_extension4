@@ -16,17 +16,17 @@ namespace Set
 -- actually not used anymore
 theorem monotone_iUnion {s : ℕ → Set α} (hs : Monotone s) (n : ℕ) : (⋃ m ≤ n, s m) = s n := by
   apply subset_antisymm
-  · exact iUnion_subset fun m => iUnion_subset fun hm => hs hm
+  · exact iUnion_subset fun m ↦ iUnion_subset fun hm ↦ hs hm
   · exact subset_iUnion_of_subset n (subset_iUnion_of_subset le_rfl subset_rfl)
 
 -- actually not used anymore
 theorem antitone_iInter {s : ℕ → Set α} (hs : Antitone s) (n : ℕ) : (⋂ m ≤ n, s m) = s n := by
   apply subset_antisymm
   · exact iInter_subset_of_subset n (iInter_subset _ le_rfl)
-  · exact subset_iInter fun i => subset_iInter fun hin => hs hin
+  · exact subset_iInter fun i ↦ subset_iInter fun hin ↦ hs hin
 
 theorem eq_iInter_iInter {s : ℕ → Set α} : (⋂ n, s n) = ⋂ (n : ℕ) (m : ℕ) (_ : m ≤ n), s m := by
-  ext x; simp only [Set.mem_iInter]; exact ⟨fun h _ k _ => h k, fun h i => h i i le_rfl⟩
+  ext x; simp only [Set.mem_iInter]; exact ⟨fun h _ k _ ↦ h k, fun h i ↦ h i i le_rfl⟩
 
 end Set
 
@@ -51,9 +51,9 @@ Then, there is a finset s' ⊆ s with S' = f '' s'. -/
 theorem subset_image_finset {α β : Type _} {f : α → β} {s : Set α} {S' : Finset β}
     (hS'1 : ↑S' ⊆ f '' s) : ∃ (s' : Finset α) (_ : ↑s' ⊆ s), f '' s' = S' := by
   classical
-  have h : ∀ x ∈ S', ∃ y : α, y ∈ s ∧ f y = x := fun x hx => (mem_image f s _).1 (hS'1 hx)
+  have h : ∀ x ∈ S', ∃ y : α, y ∈ s ∧ f y = x := fun x hx ↦ (mem_image f s _).1 (hS'1 hx)
   choose g hg using h
-  let g' : S' → α := fun x => g x x.2
+  let g' : S' → α := fun x ↦ g x x.2
   refine ⟨(range g').toFinset, ?_, ?_⟩
   · intro x
     simp only [toFinset_range, Finset.univ_eq_attach, Finset.coe_image, mem_image, Finset.mem_coe, Finset.mem_attach,
@@ -87,11 +87,11 @@ namespace ENNReal
 theorem tendsto_atTop_zero_iff_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
     Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n ≤ ε := by
   rw [ENNReal.tendsto_atTop_zero]
-  refine ⟨fun h => fun ε hε => ?_, fun h => fun ε hε => ?_⟩
+  refine ⟨fun h ↦ fun ε hε ↦ ?_, fun h ↦ fun ε hε ↦ ?_⟩
   · obtain ⟨n, hn⟩ := h ε hε
     exact ⟨n, hn n le_rfl⟩
   · obtain ⟨n, hn⟩ := h ε hε
-    exact ⟨n, fun m hm => (hf hm).trans hn⟩
+    exact ⟨n, fun m hm ↦ (hf hm).trans hn⟩
 
 theorem tendsto_atTop_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
     Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n < ε := by
@@ -133,7 +133,7 @@ variable [MeasurableSpace α]
 /-- Some version of continuity of a measure in the emptyset using a decreasing sequence of sets. -/
 theorem cont_at_empty_of_measure (m : Measure α) [IsFiniteMeasure m] (s : ℕ → Set α)
     (hs1 : ∀ n, MeasurableSet (s n)) (hs2 : Antitone s) (hs3 : (⋂ n, s n) = ∅) :
-    Filter.Tendsto (fun n => m (s n)) Filter.atTop (𝓝 0) := by
+    Filter.Tendsto (fun n ↦ m (s n)) Filter.atTop (𝓝 0) := by
   convert MeasureTheory.tendsto_measure_iInter hs1 hs2 _
   · rw [hs3]; exact measure_empty.symm
   · exact ⟨0, measure_ne_top m _⟩
@@ -141,7 +141,7 @@ theorem cont_at_empty_of_measure (m : Measure α) [IsFiniteMeasure m] (s : ℕ �
 theorem cont_at_empty_of_measure' (m : Measure α) [IsFiniteMeasure m] (s : ℕ → Set α)
     (hs1 : ∀ n, MeasurableSet (s n)) (hs2 : Antitone s) (hs3 : (⋂ n, s n) = ∅) :
     ∀ ε, 0 < ε → ∃ n, m (s n) < ε :=
-  (ENNReal.tendsto_atTop_of_antitone (fun n => m (s n)) fun _ _ h12 => measure_mono (hs2 h12)).1
+  (ENNReal.tendsto_atTop_of_antitone (fun n ↦ m (s n)) fun _ _ h12 ↦ measure_mono (hs2 h12)).1
     (cont_at_empty_of_measure m s hs1 hs2 hs3)
 
 /-- Some version of continuity of a measure in the emptyset using the intersection along a set of
@@ -163,7 +163,7 @@ theorem continuous_at_emptyset_inter (m : Measure α) [IsFiniteMeasure m] (S : S
       rw [range_comp, Equiv.range_eq_univ]
       simp only [image_univ, Subtype.range_coe_subtype, setOf_mem_eq]
     have hu_meas : ∀ n, MeasurableSet (u n) := fun n ↦ hS2 _ (Subtype.coe_prop _)
-    let s n := (Set.Accumulate (fun m => ((u m)ᶜ : Set α)) n)ᶜ
+    let s n := (Set.Accumulate (fun m ↦ ((u m)ᶜ : Set α)) n)ᶜ
     have hs1 : ∀ n, MeasurableSet (s n) := by
       refine fun n ↦ (MeasurableSet.iUnion (fun b ↦ MeasurableSet.iUnion (fun _ ↦ ?_))).compl
       exact (hu_meas _).compl
@@ -208,10 +208,10 @@ def interUnionBalls (s' : ℕ → Set α) (V : ℕ → Set (α × α)) : Set α 
 
 theorem totallyBounded_interUnionBalls [UniformSpace α] {p : ℕ → Prop} {U : ℕ → Set (α × α)}
     (H : (uniformity α).HasBasis p U) (s' : ℕ → Finset α) :
-    TotallyBounded (interUnionBalls (fun n => ↑(s' n)) U) := by
+    TotallyBounded (interUnionBalls (fun n ↦ ↑(s' n)) U) := by
   rw [Filter.HasBasis.totallyBounded_iff H]
   intro i _
-  let A := interUnionBalls (fun n => (s' n : Set α)) U
+  let A := interUnionBalls (fun n ↦ (s' n : Set α)) U
   have hA2 : A ⊆ ⋃ (x : α) (_ : x ∈ s' i), UniformSpace.ball x (Prod.swap ⁻¹' U i) := by
     exact fun x hx ↦ Set.mem_iInter.1 hx i
   refine ⟨s' i, Finset.finite_toSet (s' i), ?_⟩
@@ -229,7 +229,7 @@ theorem totallyBounded_interUnionBalls [UniformSpace α] {p : ℕ → Prop} {U :
 /-- The construction of inter_union_balls is used to have a relatively compact set, as shown here.-/
 theorem isCompact_closure_interUnionBalls [UniformSpace α] {p : ℕ → Prop} {U : ℕ → Set (α × α)}
     (H : (uniformity α).HasBasis p U) [CompleteSpace α] (s' : ℕ → Finset α) :
-    IsCompact (closure (interUnionBalls (fun n => (s' n : Set α)) U)) := by
+    IsCompact (closure (interUnionBalls (fun n ↦ (s' n : Set α)) U)) := by
   rw [isCompact_iff_totallyBounded_isComplete]
   refine ⟨TotallyBounded.closure ?_, IsClosed.isComplete isClosed_closure⟩
   exact totallyBounded_interUnionBalls H s'
@@ -243,7 +243,7 @@ namespace MeasureTheory
 variable [MeasurableSpace α]
 
 theorem innerRegular_isCompact_is_rel_compact [TopologicalSpace α] (μ : Measure α)
-    (h : μ.InnerRegularWRT (fun s => IsCompact (closure s)) IsClosed) :
+    (h : μ.InnerRegularWRT (fun s ↦ IsCompact (closure s)) IsClosed) :
     μ.InnerRegularWRT IsCompact IsClosed := by
   intro A hA r hr
   rcases h hA r hr with ⟨K, ⟨hK1, hK2, hK3⟩⟩
@@ -251,7 +251,7 @@ theorem innerRegular_isCompact_is_rel_compact [TopologicalSpace α] (μ : Measur
 
 theorem innerRegular_isCompact_is_rel_compact_iff [TopologicalSpace α] [T2Space α] (μ : Measure α) :
     μ.InnerRegularWRT IsCompact IsClosed ↔ μ.InnerRegularWRT (IsCompact ∘ closure) IsClosed := by
-  refine ⟨fun h A hA r hr => ?_, innerRegular_isCompact_is_rel_compact μ⟩
+  refine ⟨fun h A hA r hr ↦ ?_, innerRegular_isCompact_is_rel_compact μ⟩
   rcases h hA r hr with ⟨K, ⟨hK1, hK2, hK3⟩⟩
   use closure K
   refine ⟨closure_minimal hK1 hA, ?_, ?_⟩
@@ -269,10 +269,10 @@ theorem innerRegular_of_univ [TopologicalSpace α] [OpensMeasurableSpace α] (μ
     · rw [IsClosed.closure_eq]
       exact hK'_relatively_compact.inter_right hA
       apply IsClosed.inter isClosed_closure hA
-    refine (measure_mono fun x => ?_).trans_lt hK'_lt
+    refine (measure_mono fun x ↦ ?_).trans_lt hK'_lt
     simp only [diff_inter_self_eq_diff, mem_diff, mem_compl_iff, and_imp, imp_self, imp_true_iff]
     rw [IsClosed.closure_eq (IsClosed.inter isClosed_closure hA)]
-    exact fun hA hK hK' => hK ⟨subset_closure hK', hA⟩
+    exact fun hA hK hK' ↦ hK ⟨subset_closure hK', hA⟩
   refine ⟨closure K, closure_minimal hKA hA, ?_, ?_⟩
   · simp only [closure_closure, Function.comp_apply]
     exact hK_relatively_compact
@@ -283,7 +283,7 @@ theorem innerRegular_of_univ [TopologicalSpace α] [OpensMeasurableSpace α] (μ
 theorem innerRegular_of_univ' [TopologicalSpace α] [OpensMeasurableSpace α] (μ : Measure α)
     (hμ : ∀ (ε : ℝ≥0) (hε : 0 < ε), ∃ (K : _) (_ : IsCompact (closure K)), μ (Kᶜ) < ε)
     [IsFiniteMeasure μ] : μ.InnerRegularWRT (IsCompact ∘ closure) IsClosed := by
-  refine innerRegular_of_univ μ fun ε hε => ?_
+  refine innerRegular_of_univ μ fun ε hε ↦ ?_
   by_cases h_top : ε = ∞
   · rw [h_top]
     exact ⟨∅, by rw [closure_empty]; exact isCompact_empty, measure_lt_top _ _⟩
@@ -294,14 +294,14 @@ theorem innerRegular_of_univ' [TopologicalSpace α] [OpensMeasurableSpace α] (�
 
 theorem innerRegular_isCompact_isClosed_of_univ [TopologicalSpace α] [OpensMeasurableSpace α]
     (μ : Measure α) (hμ : ∀ (ε : ℝ≥0∞) (hε : 0 < ε), ∃ K, IsCompact K ∧ IsClosed K ∧ μ (Kᶜ) < ε)
-    [IsFiniteMeasure μ] : μ.InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) IsClosed := by
+    [IsFiniteMeasure μ] : μ.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsClosed := by
   intro A hA r hr
   obtain ⟨K, hK_compact, hK_closed, hKA, h_lt⟩ :
       ∃ K, IsCompact K ∧ IsClosed K ∧ K ⊆ A ∧ μ (A \ K) < μ A - r := by
     obtain ⟨K', hK'_compact, hK'_closed, hK'_lt⟩ := hμ (μ A - r) (tsub_pos_of_lt hr)
     refine ⟨K' ∩ A, ?_, hK'_closed.inter hA, ⟨inter_subset_right _ _, ?_⟩⟩
     · exact hK'_compact.inter_right hA
-    · refine (measure_mono fun x => ?_).trans_lt hK'_lt
+    · refine (measure_mono fun x ↦ ?_).trans_lt hK'_lt
       simp only [diff_inter_self_eq_diff, mem_diff, mem_compl_iff, and_imp, imp_self, imp_true_iff]
   refine ⟨K, hKA, ⟨hK_compact, hK_closed⟩, ?_⟩
   rw [measure_diff hKA _ (measure_ne_top μ _)] at h_lt
@@ -310,8 +310,8 @@ theorem innerRegular_isCompact_isClosed_of_univ [TopologicalSpace α] [OpensMeas
 
 theorem innerRegular_isCompact_isClosed_of_univ' [TopologicalSpace α] [OpensMeasurableSpace α]
     (μ : Measure α) (hμ : ∀ (ε : ℝ≥0) (hε : 0 < ε), ∃ K, IsCompact K ∧ IsClosed K ∧ μ (Kᶜ) < ε)
-    [IsFiniteMeasure μ] : μ.InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) IsClosed := by
-  refine innerRegular_isCompact_isClosed_of_univ μ fun ε hε => ?_
+    [IsFiniteMeasure μ] : μ.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsClosed := by
+  refine innerRegular_isCompact_isClosed_of_univ μ fun ε hε ↦ ?_
   by_cases h_top : ε = ∞
   · rw [h_top]
     exact ⟨∅, isCompact_empty, isClosed_empty, measure_lt_top _ _⟩
@@ -325,7 +325,7 @@ theorem innerRegular_isCompact_isClosed_of_compactSpace [TopologicalSpace α] [C
     [OpensMeasurableSpace α] (P : Measure α) [IsFiniteMeasure P] :
     P.InnerRegularWRT (IsCompact ∘ closure) IsClosed := by
   refine innerRegular_of_univ' P ?_
-  refine fun ε hε => ⟨univ, by rw [closure_univ]; exact isCompact_univ, ?_⟩
+  refine fun ε hε ↦ ⟨univ, by rw [closure_univ]; exact isCompact_univ, ?_⟩
   simpa only [Set.compl_univ, MeasureTheory.measure_empty, ENNReal.coe_pos]
 
 theorem Inter_iUnion_uniform_balls_measure (m : Measure α) (s' : ℕ → Set α) (V : ℕ → Set (α × α)) :
@@ -342,7 +342,7 @@ theorem measure_Inter_iUnion_uniform_balls (ε : ℝ≥0) (m : Measure α) (s' :
   have hδ3' : (∑' n, δ n : ℝ≥0∞) < (ε : ℝ≥0∞) := by
     rw [← ENNReal.coe_tsum, ENNReal.coe_lt_coe]
     exacts [hδ3, hδ2]
-  exact lt_of_le_of_lt (ENNReal.tsum_le_tsum fun n => hδ1 n) hδ3'
+  exact lt_of_le_of_lt (ENNReal.tsum_le_tsum fun n ↦ hδ1 n) hδ3'
 
 theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace α] [CompleteSpace α]
     [SecondCountableTopology α] [(uniformity α).IsCountablyGenerated]
@@ -362,14 +362,14 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
       h_basis : (uniformity α).HasAntitoneBasis t⟩ :=
     (@uniformity_hasBasis_open_symmetric α _).exists_antitone_subbasis
     cases' (Set.countable_iff_exists_surjective (Dense.nonempty hsd)).1 hsc with f hf
-    let f : ℕ → α → Set α := fun n x => UniformSpace.ball x (t n)
+    let f : ℕ → α → Set α := fun n x ↦ UniformSpace.ball x (t n)
     obtain h_univ : ∀ n, (⋃ x ∈ s, f n x) = univ :=
-      fun n => Dense.biUnion_uniformity_ball hsd (hto n).1
+      fun n ↦ Dense.biUnion_uniformity_ball hsd (hto n).1
     have h3 : ∀ (n : ℕ) (ε : ℝ≥0∞) (_ : 0 < ε),
       ∃ (s' : Set α) (_ : s'.Finite) (_ : s' ⊆ s), P ((⋃ x ∈ s', f n x)ᶜ) < ε := by
       intro n ε hε
       simp_rw [compl_iUnion]
-      let S : Set (Set α) := (fun t => (f n t)ᶜ) '' s
+      let S : Set (Set α) := (fun t ↦ (f n t)ᶜ) '' s
       have h_count : Countable S := by
         simp only [countable_coe_iff]
         exact hsc.image _
@@ -391,24 +391,24 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
       simp only [← s'im, sInter_image]
     choose! s' s'fin _ s'bound using h3
     rcases NNReal.exists_seq_pos_summable_lt ε hε with ⟨δ, hδ1, hδ2, hδ3⟩
-    have hδ1' : ∀ n, 0 < (δ n : ℝ≥0∞) := fun n => ENNReal.coe_pos.2 (hδ1 n)
-    let u : ℕ → Finset α := fun n => (s'fin n (δ n) (hδ1' n)).toFinset
-    let A := UniformSpace.interUnionBalls (fun n => (u n : Set α)) (fun n => t n)
+    have hδ1' : ∀ n, 0 < (δ n : ℝ≥0∞) := fun n ↦ ENNReal.coe_pos.2 (hδ1 n)
+    let u : ℕ → Finset α := fun n ↦ (s'fin n (δ n) (hδ1' n)).toFinset
+    let A := UniformSpace.interUnionBalls (fun n ↦ (u n : Set α)) (fun n ↦ t n)
     refine ⟨A, UniformSpace.isCompact_closure_interUnionBalls h_basis.toHasBasis u, ?_⟩
     have hP : P (closure A)ᶜ ≤ P (Aᶜ) := by
       apply measure_mono
       rw [← Set.compl_subset_compl, compl_compl, compl_compl]
       exact subset_closure
-    suffices h_meas_balls : P ((UniformSpace.interUnionBalls (fun n ↦ ↑(u n)) fun n => t n)ᶜ) < ε by
+    suffices h_meas_balls : P ((UniformSpace.interUnionBalls (fun n ↦ ↑(u n)) fun n ↦ t n)ᶜ) < ε by
       simp only [A, coe_toFinset] at hP h_meas_balls ⊢
       exact h_meas_balls
-    · refine measure_Inter_iUnion_uniform_balls ε P (fun n => ↑(u n)) (fun n => t n) δ
-        (fun n => ?_) hδ2 hδ3
-      obtain h' := le_of_lt ((fun n => (s'bound n) (δ n) (hδ1' n)) n)
+    · refine measure_Inter_iUnion_uniform_balls ε P (fun n ↦ ↑(u n)) (fun n ↦ t n) δ
+        (fun n ↦ ?_) hδ2 hδ3
+      obtain h' := le_of_lt ((fun n ↦ (s'bound n) (δ n) (hδ1' n)) n)
       have h1 : ∀ x, x ∈ s' n (δ n) ↔ x ∈ u n := by
         intro x
         simp only [u, Finite.mem_toFinset]
-      obtain h'' : ∀ n, Prod.swap ⁻¹' t n = t n := fun n => SymmetricRel.eq (hto n).2.2
+      obtain h'' : ∀ n, Prod.swap ⁻¹' t n = t n := fun n ↦ SymmetricRel.eq (hto n).2.2
       simp_rw [Finset.mem_coe, ← h1, h'']
       exact h'
 
@@ -423,24 +423,24 @@ theorem exists_compact_measurable_set_measure_lt_of_complete_countable [UniformS
 theorem innerRegular_isCompact_isClosed_of_complete_countable [UniformSpace α] [CompleteSpace α]
     [SecondCountableTopology α] [(uniformity α).IsCountablyGenerated]
     [OpensMeasurableSpace α] (P : Measure α) [IsFiniteMeasure P] :
-    P.InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) IsClosed :=
+    P.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsClosed :=
   innerRegular_isCompact_isClosed_of_univ' P
     (exists_compact_measurable_set_measure_lt_of_complete_countable P)
 
 theorem innerRegular_isCompact_isClosed_isOpen_of_complete_countable [PseudoEMetricSpace α]
     [CompleteSpace α] [SecondCountableTopology α] [OpensMeasurableSpace α]
     (P : Measure α) [IsFiniteMeasure P] :
-    P.InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) IsOpen :=
+    P.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsOpen :=
   (innerRegular_isCompact_isClosed_of_complete_countable P).trans
     (Measure.InnerRegularWRT.of_pseudoMetrizableSpace P)
 
 theorem innerRegular_isCompact_isClosed_measurableSet_of_complete_countable [PseudoEMetricSpace α]
     [CompleteSpace α] [SecondCountableTopology α] [BorelSpace α] (P : Measure α)
-    [IsFiniteMeasure P] : P.InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) MeasurableSet := by
-  suffices P.InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) fun s => MeasurableSet s ∧ P s ≠ ∞ by
+    [IsFiniteMeasure P] : P.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet := by
+  suffices P.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) fun s ↦ MeasurableSet s ∧ P s ≠ ∞ by
     convert this
     simp only [eq_iff_iff, iff_self_and]
-    exact fun _ => measure_ne_top P _
+    exact fun _ ↦ measure_ne_top P _
   refine Measure.InnerRegularWRT.measurableSet_of_isOpen ?_ ?_
   · exact innerRegular_isCompact_isClosed_isOpen_of_complete_countable P
   · rintro s t ⟨hs_compact, hs_closed⟩ ht_open
@@ -457,7 +457,7 @@ instance weaklyRegular_of_polishSpace [TopologicalSpace α] [PolishSpace α] [Bo
 /-- On a Polish space, any finite measure is regular with respect to compact and closed sets. -/
 theorem PolishSpace.innerRegular_isCompact_measurableSet [TopologicalSpace α] [PolishSpace α]
     [BorelSpace α] (μ : Measure α) [IsFiniteMeasure μ] :
-    μ.InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) MeasurableSet := by
+    μ.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet := by
   letI := upgradePolishSpace α
   exact innerRegular_isCompact_isClosed_measurableSet_of_complete_countable μ
 

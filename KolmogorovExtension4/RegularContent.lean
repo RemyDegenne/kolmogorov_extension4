@@ -13,7 +13,7 @@ lemma tendsto_zero_of_regular_addContent [Nonempty α] (hR : SetRing R) (m : Add
     (hs : ∀ n, s n ∈ R) (hs_anti : Antitone s) (hs_Inter : (⋂ n, s n) = ∅)
     (hC : IsCompactSystem C) (hCR : C ⊆ R)
     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε) :
-    Filter.Tendsto (fun n => m (s n)) Filter.atTop (nhds 0) := by
+    Filter.Tendsto (fun n ↦ m (s n)) Filter.atTop (nhds 0) := by
   rw [ENNReal.tendsto_nhds_zero]
   intro ε hε
   obtain ⟨δ, hδ_pos, hδ_sum⟩ := ENNReal.exists_seq_pos_lt ε hε
@@ -40,7 +40,7 @@ lemma tendsto_zero_of_regular_addContent [Nonempty α] (hR : SetRing R) (m : Add
   refine ⟨N, fun n hn ↦ ?_⟩
   calc m (s n) = m (⋂ i ≤ n, s i) := by
         congr
-        exact le_antisymm (le_iInf₂ fun i hi => hs_anti hi)
+        exact le_antisymm (le_iInf₂ fun i hi ↦ hs_anti hi)
           (iInf₂_le (κ := fun i ↦ i ≤ n) (f := fun i _ ↦ s i) n le_rfl)
     _ = m ((⋂ i ≤ n, s i) \ (⋂ i ≤ n, t i)) := by
         suffices ⋂ i ≤ n, t i = ∅ by

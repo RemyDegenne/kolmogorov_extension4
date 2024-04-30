@@ -30,16 +30,16 @@ theorem exists_nat_proj {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ clo
 /-- The smallest `n` such that `i ∈ Js (hs n)`. That is, the first `n` such that `i` belongs to the
 finset defining the cylinder for `s n`. -/
 def indexProj {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ closedCompactCylinders α) (i : allProj hs)
-    [DecidablePred fun n => ↑i ∈ Js (hs n)] : ℕ :=
+    [DecidablePred fun n ↦ ↑i ∈ Js (hs n)] : ℕ :=
   Nat.find (exists_nat_proj hs i i.2)
 
 theorem mem_indexProj {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    (i : allProj hs) [DecidablePred fun n => ↑i ∈ Js (hs n)] :
+    (i : allProj hs) [DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
     (i : ι) ∈ Js (hs (indexProj hs i)) :=
   Nat.find_spec (exists_nat_proj hs i i.2)
 
 theorem indexProj_le {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ)
-    [∀ i, DecidablePred fun n => i ∈ Js (hs n)] (i : Js (hs n)) :
+    [∀ i, DecidablePred fun n ↦ i ∈ Js (hs n)] (i : Js (hs n)) :
     indexProj hs ⟨i, subset_allProj hs n i.2⟩ ≤ n :=
   Nat.find_le i.2
 
@@ -67,7 +67,7 @@ lemma mem_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ)
   simp only [projCylinder, mem_preimage]
 
 theorem preimage_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ) :
-    (fun (f : ∀ i, α i) (i : allProj hs) => f i) ⁻¹' (projCylinder hs n) = s n := by
+    (fun (f : ∀ i, α i) (i : allProj hs) ↦ f i) ⁻¹' (projCylinder hs n) = s n := by
   conv_rhs => rw [closedCompactCylinders.eq_cylinder (hs n)]
 
 lemma nonempty_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α)
@@ -103,36 +103,36 @@ end projCylinder
 section piCylinderSet
 
 def piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
+    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
     Set (∀ i : allProj hs, α i) :=
   {x : ∀ i : allProj hs, α i |
-    ∀ i, x i ∈ (fun a : ∀ j : Js (hs (indexProj hs i)), α j => a ⟨i, mem_indexProj hs i⟩) ''
+    ∀ i, x i ∈ (fun a : ∀ j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
       (As (hs (indexProj hs i)))}
 
 lemma mem_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] (x : ∀ i : allProj hs, α i) :
+    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] (x : ∀ i : allProj hs, α i) :
     x ∈ piCylinderSet hs ↔
-    ∀ i, x i ∈ (fun a : ∀ j : Js (hs (indexProj hs i)), α j => a ⟨i, mem_indexProj hs i⟩) ''
+    ∀ i, x i ∈ (fun a : ∀ j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
       (As (hs (indexProj hs i))) := by
   simp only [piCylinderSet, mem_image, Subtype.forall, mem_setOf_eq]
 
 theorem isCompact_piCylinderSet [∀ i, TopologicalSpace (α i)]
     (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
+    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
     IsCompact (piCylinderSet hs) :=
   isCompact_pi_infinite fun _ ↦
     (closedCompactCylinders.isCompact (hs _)).image (continuous_apply _)
 
 theorem piCylinderSet_eq_pi_univ (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
+    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
     piCylinderSet hs =
-      pi univ fun i =>
-        (fun a : ∀ j : Js (hs (indexProj hs i)), α j => a ⟨i, mem_indexProj hs i⟩) ''
+      pi univ fun i ↦
+        (fun a : ∀ j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
           (As (hs (indexProj hs i))) := by
   ext1 x; simp only [piCylinderSet, mem_univ_pi]; rfl
 
 theorem isClosed_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
+    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
     IsClosed (piCylinderSet hs) := by
   rw [piCylinderSet_eq_pi_univ]
   exact isClosed_set_pi fun i _ ↦
@@ -141,7 +141,7 @@ theorem isClosed_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
 
 theorem nonempty_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
     (hs_nonempty : ∀ i, (s i).Nonempty)
-    [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
+    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
     (piCylinderSet hs).Nonempty := by
   have hs_nonempty' : ∀ i, (As (hs i)).Nonempty := by
     intro i
@@ -151,15 +151,15 @@ theorem nonempty_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
   let b i := (hs_nonempty' (indexProj hs i)).some
   have hb_mem : ∀ i, b i ∈ As (hs (indexProj hs i)) :=
     fun i ↦ (hs_nonempty' (indexProj hs i)).choose_spec
-  let a : ∀ i : allProj hs, α i := fun i => b i ⟨i, mem_indexProj hs i⟩
-  refine' ⟨a, _⟩
+  let a : ∀ i : allProj hs, α i := fun i ↦ b i ⟨i, mem_indexProj hs i⟩
+  refine ⟨a, ?_⟩
   simp only [piCylinderSet, mem_image, SetCoe.forall, mem_setOf_eq]
-  exact fun j hj => ⟨b ⟨j, hj⟩, hb_mem _, rfl⟩
+  exact fun j hj ↦ ⟨b ⟨j, hj⟩, hb_mem _, rfl⟩
 
 end piCylinderSet
 
 theorem iInter_subset_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
+    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
     (⋂ n, projCylinder hs n) ⊆ piCylinderSet hs := by
   intro x hx
   rw [mem_iInter] at hx
@@ -167,28 +167,28 @@ theorem iInter_subset_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders 
   intro i
   specialize hx (indexProj hs i)
   rw [mem_projCylinder] at hx
-  exact ⟨fun i : Js (hs (indexProj hs i)) => x ⟨i, subset_allProj hs _ i.2⟩, hx, rfl⟩
+  exact ⟨fun i : Js (hs (indexProj hs i)) ↦ x ⟨i, subset_allProj hs _ i.2⟩, hx, rfl⟩
 
 theorem nonempty_iInter_projCylinder_inter_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
     (hs_nonempty : ∀ i, (s i).Nonempty)
     (h_nonempty : ∀ n, (⋂ i ≤ n, projCylinder hs i).Nonempty)
-    [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] (n : ℕ) :
+    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] (n : ℕ) :
     ((⋂ i ≤ n, projCylinder hs i) ∩ piCylinderSet hs).Nonempty := by
   obtain ⟨x, hx⟩ := nonempty_piCylinderSet hs hs_nonempty
   obtain ⟨y, hy⟩ := h_nonempty n
-  let z := fun i : allProj hs => if indexProj hs i ≤ n then y i else x i
-  refine' ⟨z, mem_inter _ _⟩
+  let z := fun i : allProj hs ↦ if indexProj hs i ≤ n then y i else x i
+  refine ⟨z, mem_inter ?_ ?_⟩
   · simp only [mem_iInter]
     intro i hi
     rw [mem_projCylinder]
     classical
-    have : (fun j : Js (hs i) =>
+    have : (fun j : Js (hs i) ↦
           ite (indexProj hs ⟨j, subset_allProj hs i j.2⟩ ≤ n) (y ⟨j, subset_allProj hs i j.2⟩)
             (x ⟨j, subset_allProj hs i j.2⟩)) =
-        fun j : Js (hs i) => y ⟨j, subset_allProj hs i j.2⟩ := by
+        fun j : Js (hs i) ↦ y ⟨j, subset_allProj hs i j.2⟩ := by
       ext1 j
       rw [if_pos]
-      refine' le_trans (le_of_eq _) ((indexProj_le hs i j).trans hi)
+      refine le_trans (le_of_eq ?_) ((indexProj_le hs i j).trans hi)
       congr
     rw [this]
     have hyi : y ∈ projCylinder hs i := by
@@ -203,7 +203,7 @@ theorem nonempty_iInter_projCylinder_inter_piCylinderSet (hs : ∀ n, s n ∈ cl
         suffices ⋂ j ≤ n, projCylinder hs j ⊆ projCylinder hs m by exact this hy
         exact biInter_subset_of_mem hi_le
       rw [mem_projCylinder] at hy'
-      refine' ⟨fun j => y ⟨j, subset_allProj hs _ j.2⟩, hy', _⟩
+      refine ⟨fun j ↦ y ⟨j, subset_allProj hs _ j.2⟩, hy', ?_⟩
       simp_rw [z, if_pos hi_le]
     · rw [mem_piCylinderSet] at hx
       specialize hx i
@@ -215,7 +215,7 @@ theorem nonempty_iInter_projCylinder_inter_piCylinderSet (hs : ∀ n, s n ∈ cl
 theorem nonempty_iInter_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α)
     (hs_nonempty : ∀ i, (s i).Nonempty)
     (h_nonempty : ∀ n, (⋂ i ≤ n, projCylinder hs i).Nonempty)
-    [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
+    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
     (⋂ i, projCylinder hs i).Nonempty := by
   suffices ((⋂ i, projCylinder hs i) ∩ piCylinderSet hs).Nonempty by
     rwa [inter_eq_left.mpr (iInter_subset_piCylinderSet hs)] at this
@@ -229,19 +229,17 @@ theorem nonempty_iInter_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders
     fun n ↦ isClosed_biInter (fun i _ ↦ isClosed_projCylinder hs
       (fun n ↦ (closedCompactCylinders.isClosed (hs n))) i)
   refine IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed
-    (fun n => (⋂ i ≤ n, projCylinder hs i) ∩ piCylinderSet hs) ?_ ?_ ?_ ?_
-  · intro i
-    refine' inter_subset_inter _ subset_rfl
+    (fun n ↦ (⋂ i ≤ n, projCylinder hs i) ∩ piCylinderSet hs) ?_ ?_ ?_ ?_
+  · refine fun i ↦ inter_subset_inter ?_ subset_rfl
     simp_rw [Set.bInter_le_succ]
     exact inter_subset_left _ _
-  · exact fun n => nonempty_iInter_projCylinder_inter_piCylinderSet hs hs_nonempty h_nonempty n
+  · exact fun n ↦ nonempty_iInter_projCylinder_inter_piCylinderSet hs hs_nonempty h_nonempty n
   · exact (isCompact_piCylinderSet hs).inter_left (h_closed _)
-  · exact fun n => IsClosed.inter (h_closed n) (isClosed_piCylinderSet hs)
-
+  · exact fun n ↦ IsClosed.inter (h_closed n) (isClosed_piCylinderSet hs)
 
 lemma exists_finset_iInter_projCylinder_eq_empty [∀ i, Nonempty (α i)]
     (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)]
+    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)]
     (h : ⋂ n, projCylinder hs n = ∅) :
     ∃ t : Finset ℕ, (⋂ i ∈ t, projCylinder hs i) = ∅ := by
   by_contra h_nonempty
@@ -259,7 +257,7 @@ lemma exists_finset_iInter_projCylinder_eq_empty [∀ i, Nonempty (α i)]
 
 lemma exists_finset_iInter_eq_empty [∀ i, Nonempty (α i)]
     (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)]
+    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)]
     (h : ⋂ n, s n = ∅) :
     ∃ t : Finset ℕ, (⋂ i ∈ t, s i) = ∅ := by
   have h' : ⋂ n, projCylinder hs n = ∅ := by

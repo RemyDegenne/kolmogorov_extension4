@@ -17,12 +17,12 @@ theorem ofFunction_eq_iInf_mem (s : Set α) (m : Set α → ℝ≥0∞) (m_empty
       ⨅ (f : ℕ → Set α) (_hf : ∀ i, f i ∈ C) (_ : s ⊆ ⋃ i, f i), ∑' i, m (f i) := by
   rw [OuterMeasure.ofFunction_apply]
   apply le_antisymm
-  · refine le_iInf fun f => le_iInf fun _ => le_iInf fun h => ?_
+  · refine le_iInf fun f ↦ le_iInf fun _ ↦ le_iInf fun h ↦ ?_
     refine iInf₂_le _ ?_
     exact h
   · simp_rw [le_iInf_iff]
     intro f hf_subset
-    refine' iInf_le_of_le f _
+    refine iInf_le_of_le f ?_
     by_cases hf : ∀ i, f i ∈ C
     · exact iInf_le_of_le hf (iInf_le_of_le hf_subset le_rfl)
     · simp only [hf, not_false_eq_true, iInf_neg, top_le_iff]
@@ -35,7 +35,7 @@ theorem inducedOuterMeasure_eq_iInf_mem (hC : ∅ ∈ C) (m : ∀ s : Set α, s 
     (m_empty : m ∅ hC = 0) (s : Set α) :
     inducedOuterMeasure m hC m_empty s =
       ⨅ (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (_ : s ⊆ ⋃ i, f i), ∑' i, m (f i) (hf i) := by
-  rw [inducedOuterMeasure, ofFunction_eq_iInf_mem s (extend m) _ fun s hs => extend_eq_top m hs]
+  rw [inducedOuterMeasure, ofFunction_eq_iInf_mem s (extend m) _ fun s hs ↦ extend_eq_top m hs]
   simp_rw [← extend_eq m]
 
 theorem OuterMeasure.ofFunction_eq_of_mono_of_subadditive (hC : SetSemiring C) (m : Set α → ℝ≥0∞)
@@ -45,19 +45,18 @@ theorem OuterMeasure.ofFunction_eq_of_mono_of_subadditive (hC : SetSemiring C) (
         m (⋃ i, f i) ≤ ∑' i, m (f i))
     (m_top : ∀ (s) (_ : s ∉ C), m s = ∞) {s : Set α} (hs : s ∈ C) :
     OuterMeasure.ofFunction m m_empty s = m s := by
-  refine' le_antisymm (OuterMeasure.ofFunction_le s) _
+  refine le_antisymm (OuterMeasure.ofFunction_le s) ?_
   rw [ofFunction_eq_iInf_mem s m m_empty m_top]
-  refine' le_iInf fun f => le_iInf fun hf => le_iInf fun hs_subset => _
+  refine le_iInf fun f ↦ le_iInf fun hf ↦ le_iInf fun hs_subset ↦ ?_
   calc
     m s = m (s ∩ ⋃ i, f i) := by rw [inter_eq_self_of_subset_left hs_subset]
     _ = m (⋃ i, s ∩ f i) := by rw [inter_iUnion]
     _ ≤ ∑' i, m (s ∩ f i) := by
-      refine' m_sigma_subadd (fun i => _) _
-      · exact hC.inter_mem _ hs _ (hf i)
-      · rwa [← inter_iUnion, inter_eq_self_of_subset_left hs_subset]
+      refine m_sigma_subadd (fun i ↦ hC.inter_mem _ hs _ (hf i)) ?_
+      rwa [← inter_iUnion, inter_eq_self_of_subset_left hs_subset]
     _ ≤ ∑' i, m (f i) :=
       by
-      refine' tsum_le_tsum (fun i => _) ENNReal.summable ENNReal.summable
+      refine tsum_le_tsum (fun i ↦ ?_) ENNReal.summable ENNReal.summable
       exact m_mono (hC.inter_mem _ hs _ (hf i)) (hf i) (Set.inter_subset_right _ _)
 
 theorem OuterMeasure.ofFunction_addContent_eq (hC : SetSemiring C) (m : AddContent C)
@@ -65,7 +64,7 @@ theorem OuterMeasure.ofFunction_addContent_eq (hC : SetSemiring C) (m : AddConte
       m (⋃ i, f i) ≤ ∑' i, m (f i))
     (m_top : ∀ (s) (_ : s ∉ C), m s = ∞) {s : Set α} (hs : s ∈ C) :
     OuterMeasure.ofFunction m addContent_empty s = m s :=
-  OuterMeasure.ofFunction_eq_of_mono_of_subadditive hC m addContent_empty (fun _ _ => m.mono hC)
+  OuterMeasure.ofFunction_eq_of_mono_of_subadditive hC m addContent_empty (fun _ _ ↦ m.mono hC)
     m_sigma_subadd m_top hs
 
 theorem OuterMeasure.ofFunction_eq_of_add_of_subadditive (hC : SetSemiring C) (m : Set α → ℝ≥0∞)
@@ -77,9 +76,9 @@ theorem OuterMeasure.ofFunction_eq_of_add_of_subadditive (hC : SetSemiring C) (m
       ∀ ⦃f : ℕ → Set α⦄ (_hf : ∀ i, f i ∈ C) (_hf_Union : (⋃ i, f i) ∈ C),
         m (⋃ i, f i) ≤ ∑' i, m (f i))
     (m_top : ∀ (s) (_ : s ∉ C), m s = ∞) {s : Set α} (hs : s ∈ C) :
-    OuterMeasure.ofFunction m m_empty s = m s := by
-  refine' OuterMeasure.ofFunction_eq_of_mono_of_subadditive hC m m_empty _ m_sigma_subadd m_top hs
-  exact fun t u ↦ monotone_of_additive hC m m_add
+    OuterMeasure.ofFunction m m_empty s = m s :=
+  OuterMeasure.ofFunction_eq_of_mono_of_subadditive hC m m_empty
+    (fun _ _ ↦ monotone_of_additive hC m m_add) m_sigma_subadd m_top hs
 
 theorem inducedOuterMeasure_eq_of_add_of_subadditive (hC : SetSemiring C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞) (m_empty : m ∅ hC.empty_mem = 0)
@@ -91,7 +90,7 @@ theorem inducedOuterMeasure_eq_of_add_of_subadditive (hC : SetSemiring C)
         m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i))
     {s : Set α} (hs : s ∈ C) : inducedOuterMeasure m hC.empty_mem m_empty s = m s hs :=
   (OuterMeasure.ofFunction_eq_of_add_of_subadditive hC (extend m) _ (extend_sUnion_eq_sum m m_add)
-      (extend_sum_le m m_sigma_subadd) (fun _ hs => extend_eq_top m hs) hs).trans
+      (extend_sum_le m m_sigma_subadd) (fun _ hs ↦ extend_eq_top m hs) hs).trans
     (extend_eq m hs)
 
 theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → ℝ≥0∞) (m_empty : m ∅ = 0)
@@ -103,8 +102,8 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
   rw [OuterMeasure.isCaratheodory_iff_le']
   intro t
   conv_rhs => rw [ofFunction_eq_iInf_mem _ _ m_empty m_top]
-  refine' le_iInf fun f => le_iInf fun hf => le_iInf fun hf_subset => _
-  let A : ℕ → Finset (Set α) := fun i => hC.diffFinset (hC.inter_mem _ (hf i) _ hs) (hf i)
+  refine le_iInf fun f ↦ le_iInf fun hf ↦ le_iInf fun hf_subset ↦ ?_
+  let A : ℕ → Finset (Set α) := fun i ↦ hC.diffFinset (hC.inter_mem _ (hf i) _ hs) (hf i)
   have h_diff_eq_sUnion : ∀ i, f i \ s = ⋃₀ A i := by
     intro i
     simp only [A]
@@ -115,24 +114,24 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
         (inter_subset_left _ _)]
   simp_rw [h_m_eq]
   rw [tsum_add ENNReal.summable ENNReal.summable]
-  refine' add_le_add _ _
-  · refine' iInf_le_of_le (fun i => f i ∩ s) _
-    refine' iInf_le_of_le _ le_rfl
+  refine add_le_add ?_ ?_
+  · refine iInf_le_of_le (fun i ↦ f i ∩ s) ?_
+    refine iInf_le_of_le ?_ le_rfl
     rw [← iUnion_inter]
     exact Set.inter_subset_inter_left _ hf_subset
   · let e : ℕ ≃ ℕ × ℕ := (Denumerable.eqv (ℕ × ℕ)).symm
-    let g' : ℕ × ℕ → Set α := fun n =>
+    let g' : ℕ × ℕ → Set α := fun n ↦
       if h : n.2 < (A n.1).card then (A n.1).ordered ⟨n.2, h⟩ else ∅
     have h_sum_sum : ∑' i, ∑ u in A i, m u = ∑' n, m (g' (e n)) := by
       have h1 : ∀ i, ∑ u in A i, m u = ∑' n, m (g' ⟨i, n⟩) := by
         intro i
         rw [← sum_ordered]
         let e_fin_range : Fin (A i).card ≃ Finset.range (A i).card :=
-          { toFun := fun j => ⟨j, Finset.mem_range.mpr j.2⟩
-            invFun := fun j => ⟨j, Finset.mem_range.mp j.2⟩
-            left_inv := fun j => by simp only [Subtype.coe_mk, Fin.eta]
-            right_inv := fun j => by simp only [Fin.val_mk, Subtype.coe_eta] }
-        rw [Fintype.sum_equiv e_fin_range (fun j => m (Finset.ordered (A i) j)) fun j =>
+          { toFun := fun j ↦ ⟨j, Finset.mem_range.mpr j.2⟩
+            invFun := fun j ↦ ⟨j, Finset.mem_range.mp j.2⟩
+            left_inv := fun j ↦ by simp only [Subtype.coe_mk, Fin.eta]
+            right_inv := fun j ↦ by simp only [Fin.val_mk, Subtype.coe_eta] }
+        rw [Fintype.sum_equiv e_fin_range (fun j ↦ m (Finset.ordered (A i) j)) fun j ↦
             m (Finset.ordered (A i) (e_fin_range.symm j))]
         swap
         · dsimp only [A]
@@ -140,7 +139,7 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
           simp only [Equiv.symm_apply_apply]
         have : ∑' n, m (g' (i, n)) =
             ∑' n : ((Finset.range (A i).card : Finset ℕ) : Set ℕ), m (g' (i, n)) := by
-          rw [tsum_subtype ((Finset.range (A i).card : Finset ℕ) : Set ℕ) fun n => m (g' (i, n))]
+          rw [tsum_subtype ((Finset.range (A i).card : Finset ℕ) : Set ℕ) fun n ↦ m (g' (i, n))]
           congr
           ext1 n
           simp only [Set.indicator_apply]
@@ -151,7 +150,7 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
               simpa only [coe_range, Set.mem_Iio] using h_lt
             simp only at h_lt this
             simp only [g', h_lt, mem_setOf_eq, if_false, this, not_false_iff, dif_neg, m_empty]
-        rw [this, Finset.tsum_subtype' (Finset.range (A i).card) fun n => m (g' (i, n))]
+        rw [this, Finset.tsum_subtype' (Finset.range (A i).card) fun n ↦ m (g' (i, n))]
         simp only [g']
         rw [← Finset.sum_coe_sort (Finset.range (A i).card)]
         congr
@@ -165,8 +164,8 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
       simp_rw [h1]
       rw [(_ : ∑' (i : ℕ) (n : ℕ), m (g' (i, n)) = ∑' n : ℕ × ℕ, m (g' n))]
       swap; · rw [ENNReal.tsum_prod']
-      rw [← tsum_range (fun n => m (g' n)) e.injective, Equiv.range_eq_univ,
-        tsum_subtype (univ : Set (ℕ × ℕ)) fun n => m (g' n)]
+      rw [← tsum_range (fun n ↦ m (g' n)) e.injective, Equiv.range_eq_univ,
+        tsum_subtype (univ : Set (ℕ × ℕ)) fun n ↦ m (g' n)]
       simp_rw [indicator_univ]
     have h_Union : (⋃ i, g' (e i)) = (⋃ i, f i) \ s := by
       rw [iUnion_diff, ← biUnion_range]
@@ -184,7 +183,7 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
       · rintro ⟨a, ⟨b, h⟩, h_mem⟩
         exact ⟨a, b, h, h_mem⟩
     rw [h_sum_sum]
-    refine' iInf_le_of_le _ (iInf_le_of_le _ le_rfl)
+    refine iInf_le_of_le _ (iInf_le_of_le ?_ le_rfl)
     rw [h_Union]
     exact diff_subset_diff hf_subset subset_rfl
 
@@ -196,7 +195,7 @@ theorem caratheodory_semiring_extension (hC : SetSemiring C) (m : ∀ s : Set α
     {s : Set α} (hs : s ∈ C) :
     (inducedOuterMeasure m hC.empty_mem m_empty).IsCaratheodory s :=
   caratheodory_semiring_extension' hC (extend m) _ (extend_sUnion_eq_sum m m_add)
-    (fun _ hs => extend_eq_top m hs) hs
+    (fun _ hs ↦ extend_eq_top m hs) hs
 
 noncomputable def Measure.ofAddSubaddCaratheodory (hC : SetSemiring C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞) (m_empty : m ∅ hC.empty_mem = 0)
@@ -207,7 +206,7 @@ noncomputable def Measure.ofAddSubaddCaratheodory (hC : SetSemiring C)
     @Measure α (inducedOuterMeasure m hC.empty_mem m_empty).caratheodory := by
   letI : MeasurableSpace α := (inducedOuterMeasure m hC.empty_mem m_empty).caratheodory
   exact { inducedOuterMeasure m hC.empty_mem m_empty with
-    m_iUnion := fun f hf hd => OuterMeasure.iUnion_eq_of_caratheodory _ hf hd
+    m_iUnion := fun f hf hd ↦ OuterMeasure.iUnion_eq_of_caratheodory _ hf hd
     trimmed := by
       refine le_antisymm (le_inducedOuterMeasure.mpr fun s hs ↦ ?_) (OuterMeasure.le_trim _)
       have hs_meas : MeasurableSet[(inducedOuterMeasure m hC.empty_mem m_empty).caratheodory] s := by
@@ -253,7 +252,7 @@ theorem isCaratheodory_disjointed {m : OuterMeasure α} {s : ℕ → Set α}
   induction' i with i _
   · rw [disjointed_zero]; exact h 0
   rw [disjointed_succ, diff_eq]
-  refine' m.isCaratheodory_inter (h (i + 1)) (m.isCaratheodory_compl _)
+  refine m.isCaratheodory_inter (h (i + 1)) (m.isCaratheodory_compl ?_)
   exact isCaratheodory_partialSups h i
 
 theorem isCaratheodory_iUnion {m : OuterMeasure α} {s : ℕ → Set α}
@@ -270,10 +269,10 @@ theorem isCaratheodory_generateFrom (hC : SetSemiring C) (m : ∀ s : Set α, s 
     (s : Set α) (hs : MeasurableSet[MeasurableSpace.generateFrom C] s) :
     (inducedOuterMeasure m hC.empty_mem m_empty).IsCaratheodory s := by
   apply MeasurableSpace.generateFrom_induction
-  · exact fun _ => caratheodory_semiring_extension hC m m_empty m_add
+  · exact fun _ ↦ caratheodory_semiring_extension hC m m_empty m_add
   · exact OuterMeasure.isCaratheodory_empty _
-  · exact fun _ => OuterMeasure.isCaratheodory_compl _
-  · exact fun _ hf => isCaratheodory_iUnion hf
+  · exact fun _ ↦ OuterMeasure.isCaratheodory_compl _
+  · exact fun _ hf ↦ isCaratheodory_iUnion hf
   · exact hs
 
 noncomputable def Measure.ofAddSubadd [mα : MeasurableSpace α] (hC : SetSemiring C)
@@ -309,7 +308,7 @@ noncomputable def Measure.ofAddContent [mα : MeasurableSpace α] (hC : SetSemir
       ∀ ⦃f : ℕ → Set α⦄ (_hf : ∀ i, f i ∈ C) (_hf_Union : (⋃ i, f i) ∈ C),
         m (⋃ i, f i) ≤ ∑' i, m (f i)) :
     Measure α :=
-  Measure.ofAddSubadd hC hC_gen (fun s _ => m s) addContent_empty
+  Measure.ofAddSubadd hC hC_gen (fun s _ ↦ m s) addContent_empty
     (fun I hI hI_disj hI_sUnion ↦ (m.add I hI hI_disj hI_sUnion).trans
       (by rw [Finset.sum_coe_sort]))
     m_sigma_subadd

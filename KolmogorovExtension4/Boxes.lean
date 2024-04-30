@@ -16,16 +16,16 @@ section Measurable
 
 variable [∀ i, MeasurableSpace (α i)]
 
-theorem measurable_proj (I : Set ι) : Measurable fun (f : (i : ι) → α i) (i : I) => f i := by
+theorem measurable_proj (I : Set ι) : Measurable fun (f : (i : ι) → α i) (i : I) ↦ f i := by
   rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
 
 theorem measurable_proj₂ (I J : Set ι) (hIJ : J ⊆ I) :
-    Measurable fun (f : (i : I) → α i) (i : J) => f ⟨i, hIJ i.prop⟩ := by
-  rw [measurable_pi_iff]; exact fun i => measurable_pi_apply _
+    Measurable fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ := by
+  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
 
 theorem measurable_proj₂' (I J : Finset ι) (hIJ : J ⊆ I) :
-    Measurable fun (f : (i : I) → α i) (i : J) => f ⟨i, hIJ i.prop⟩ := by
-  rw [measurable_pi_iff]; exact fun i => measurable_pi_apply _
+    Measurable fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ := by
+  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
 
 end Measurable
 
@@ -33,16 +33,16 @@ section Continuous
 
 variable [∀ i, TopologicalSpace (α i)]
 
-theorem continuous_proj (I : Set ι) : Continuous fun (f : (i : ι) → α i) (i : I) => f i :=
-  continuous_pi fun i : ↥I => by apply continuous_apply
+theorem continuous_proj (I : Set ι) : Continuous fun (f : (i : ι) → α i) (i : I) ↦ f i :=
+  continuous_pi fun i : ↥I ↦ by apply continuous_apply
 
 theorem continuous_proj₂ (I J : Set ι) (hIJ : J ⊆ I) :
-    Continuous fun (f : (i : I) → α i) (i : J) => f ⟨i, hIJ i.prop⟩ :=
-  continuous_pi fun i : ↥J => by apply continuous_apply
+    Continuous fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ :=
+  continuous_pi fun i : ↥J ↦ by apply continuous_apply
 
 theorem continuous_proj₂' (I J : Finset ι) (hIJ : J ⊆ I) :
-    Continuous fun (f : (i : I) → α i) (i : J) => f ⟨i, hIJ i.prop⟩ :=
-  continuous_pi fun i : ↥J => by apply continuous_apply
+    Continuous fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ :=
+  continuous_pi fun i : ↥J ↦ by apply continuous_apply
 
 end Continuous
 
@@ -55,7 +55,7 @@ open scoped Topology Filter
 variable {ι : Type _} {α : ι → Type _} [∀ i, TopologicalSpace (α i)] {s : Set (∀ i, α i)}
 
 theorem continuous_cast {α β : Type _} [tα : TopologicalSpace α] [tβ : TopologicalSpace β]
-    (h : α = β) (ht : HEq tα tβ) : Continuous fun x : α => cast h x := by
+    (h : α = β) (ht : HEq tα tβ) : Continuous fun x : α ↦ cast h x := by
   subst h
   convert continuous_id
   rw [← heq_iff_eq]
@@ -77,23 +77,23 @@ lemma projCompl_mem (hx : x ∈ s) : projCompl α i x ∈ X α i s := by
 instance : TopologicalSpace (X α i s) := by rw [X]; infer_instance
 
 lemma compactSpace_X (hs_compact : IsCompact s) : CompactSpace (X α i s) := by
-  refine' isCompact_iff_compactSpace.mp _
-  refine' IsCompact.image hs_compact _
-  exact continuous_pi fun j => continuous_apply _
+  refine isCompact_iff_compactSpace.mp ?_
+  refine IsCompact.image hs_compact ?_
+  exact continuous_pi fun j ↦ continuous_apply _
 
 def XY (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
     Set ((j : ι) → α j) :=
   {x | projCompl α i x ∈ projCompl α i '' s}
 
-lemma subset_xy : s ⊆ XY α i s := fun x hx => ⟨x, hx, rfl⟩
+lemma subset_xy : s ⊆ XY α i s := fun x hx ↦ ⟨x, hx, rfl⟩
 
 lemma mem_xy_of_mem (hx : x ∈ s) : x ∈ XY α i s := subset_xy hx
 
 def fromXProd (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j))
     [DecidableEq ι] :
     X α i s × α i → ∀ j, α j :=
-  fun p j =>
-    if h : j = i then by refine' cast _ p.2; rw [h] else (↑(p.1) : ∀ j : { k // k ≠ i }, α j) ⟨j, h⟩
+  fun p j ↦
+    if h : j = i then by refine cast ?_ p.2; rw [h] else (↑(p.1) : ∀ j : { k // k ≠ i }, α j) ⟨j, h⟩
 
 lemma fromXProd_same (p : X α i s × α i) [DecidableEq ι] :
     fromXProd α i s p i = p.2 := by
@@ -107,10 +107,10 @@ lemma projCompl_fromXProd (p : X α i s × α i) [DecidableEq ι] :
   rw [dif_neg this]
 
 lemma continuous_fromXProd [DecidableEq ι] : Continuous (fromXProd α i s) := by
-  refine' continuous_pi fun j => _
+  refine continuous_pi fun j ↦ ?_
   simp only [fromXProd]
   split_ifs with h
-  · refine' (continuous_cast _ _).comp continuous_snd
+  · refine (continuous_cast _ ?_).comp continuous_snd
     rw [h]
   · exact (Continuous.comp (continuous_apply _) continuous_subtype_val).comp continuous_fst
 
@@ -126,19 +126,19 @@ lemma fromXProd_projCompl (x : XY α i s) [DecidableEq ι] :
   simp only [fromXProd, projCompl, ne_eq, dite_eq_right_iff]
   intro h
   rw [← heq_iff_eq]
-  refine' HEq.trans (cast_heq (_ : α i = α j) _) _
+  refine HEq.trans (cast_heq (_ : α i = α j) _) ?_
   rw [h]
 
 def XYEquiv (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j))
     [DecidableEq ι] :
     XY α i s ≃ₜ X α i s × α i :=
-{ toFun := fun x => ⟨⟨projCompl α i x, x.2⟩, (x : ∀ j, α j) i⟩
-  invFun := fun p => ⟨fromXProd α i s p, fromXProd_mem_XY p⟩
-  left_inv := fun x => by
+{ toFun := fun x ↦ ⟨⟨projCompl α i x, x.2⟩, (x : ∀ j, α j) i⟩
+  invFun := fun p ↦ ⟨fromXProd α i s p, fromXProd_mem_XY p⟩
+  left_inv := fun x ↦ by
     ext j
     simp only [ne_eq]
     rw [fromXProd_projCompl]
-  right_inv := fun p => by
+  right_inv := fun p ↦ by
     simp only [ne_eq]
     ext x
     · simp only
@@ -146,7 +146,7 @@ def XYEquiv (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : 
     · simp only
       exact fromXProd_same _
   continuous_toFun := by
-    refine' Continuous.prod_mk _ _
+    refine Continuous.prod_mk ?_ ?_
     · exact Continuous.subtype_mk (continuous_projCompl.comp continuous_subtype_val) _
     · exact (continuous_apply _).comp continuous_subtype_val
   continuous_invFun := Continuous.subtype_mk continuous_fromXProd _}
@@ -165,15 +165,15 @@ lemma snd_xyEquiv_preimage [DecidableEq ι] :
     exact ⟨projCompl α i z, projCompl_mem hz_mem, z, hz_mem, ⟨⟨mem_xy_of_mem hz_mem, rfl⟩, hzx⟩⟩
 
 theorem isClosed_proj (hs_compact : IsCompact s) (hs_closed : IsClosed s) (i : ι) :
-    IsClosed ((fun x : ∀ j, α j => x i) '' s) := by
-  let πi : (∀ j, α j) → α i := fun x : ∀ j, α j => x i
+    IsClosed ((fun x : ∀ j, α j ↦ x i) '' s) := by
+  let πi : (∀ j, α j) → α i := fun x : ∀ j, α j ↦ x i
   classical
   have h_image_eq : πi '' s
       = Prod.snd '' (XYEquiv α i s '' ((fun (x : XY α i s) ↦ (x : ∀ j, α j)) ⁻¹' s)) := by
     exact snd_xyEquiv_preimage.symm
   rw [h_image_eq]
   have : CompactSpace (X α i s) := compactSpace_X hs_compact
-  refine' isClosedMap_snd_of_compactSpace _ _
+  refine isClosedMap_snd_of_compactSpace _ ?_
   rw [Homeomorph.isClosed_image]
   exact IsClosed.preimage continuous_subtype_val hs_closed
 
@@ -201,11 +201,11 @@ theorem measurableSet_box [∀ i, MeasurableSpace (α i)] (t : (i : ι) → Set 
 theorem box_inter (t₁ t₂ : (i : ι) → Set (α i)) (s₁ s₂ : Finset ι)
     (ht₁ : ∀ (i) (_ : i ∉ s₁), t₁ i = univ) (ht₂ : ∀ (i) (_ : i ∉ s₂), t₂ i = univ)
     [DecidableEq ι] :
-    box (fun i => t₁ i ∩ t₂ i) (s₁ ∪ s₂) = box t₁ s₁ ∩ box t₂ s₂ := by
+    box (fun i ↦ t₁ i ∩ t₂ i) (s₁ ∪ s₂) = box t₁ s₁ ∩ box t₂ s₂ := by
   ext1 f
   rw [mem_inter_iff]
   simp_rw [mem_box]
-  refine ⟨fun h => ⟨fun i his₁ => ?_, fun i his₂ => ?_⟩, fun h i hi => ?_⟩
+  refine ⟨fun h ↦ ⟨fun i his₁ ↦ ?_, fun i his₂ ↦ ?_⟩, fun h i hi ↦ ?_⟩
   · exact inter_subset_left _ _ (h i (Finset.mem_union_left s₂ his₁))
   · exact inter_subset_right _ _ (h i (Finset.mem_union_right s₁ his₂))
   · rw [Finset.mem_union] at hi
@@ -225,7 +225,7 @@ def boxes (C : (i : ι) → Set (Set (α i))) : Set (Set ((i : ι) → α i)) :=
   {S | ∃ s : Finset ι, ∃ t ∈ univ.pi C, S = box t s}
 
 theorem boxes_eq_iUnion_image (C : ∀ i, Set (Set (α i))) :
-    boxes C = ⋃ s : Finset ι, (fun t => box t s) '' univ.pi C := by
+    boxes C = ⋃ s : Finset ι, (fun t ↦ box t s) '' univ.pi C := by
   ext1 f
   rw [boxes, mem_iUnion]
   simp_rw [mem_image]
@@ -236,21 +236,21 @@ theorem isPiSystem_boxes {C : ∀ i, Set (Set (α i))} (hC : ∀ i, IsPiSystem (
     (hC_univ : ∀ i, univ ∈ C i) : IsPiSystem (boxes C) := by
   rintro S₁ ⟨s₁, t₁, h₁, rfl⟩ S₂ ⟨s₂, t₂, h₂, rfl⟩ hst_nonempty
   classical
-  let t₁' := s₁.piecewise t₁ fun i => univ
-  let t₂' := s₂.piecewise t₂ fun i => univ
+  let t₁' := s₁.piecewise t₁ fun i ↦ univ
+  let t₂' := s₂.piecewise t₂ fun i ↦ univ
   have h1 : ∀ i ∈ s₁, t₁ i = t₁' i := fun i hi ↦ (Finset.piecewise_eq_of_mem _ _ _ hi).symm
   have h1' : ∀ (i) (_ : i ∉ s₁), t₁' i = univ := fun i hi ↦ Finset.piecewise_eq_of_not_mem _ _ _ hi
   have h2 : ∀ i ∈ s₂, t₂ i = t₂' i := fun i hi ↦ (Finset.piecewise_eq_of_mem _ _ _ hi).symm
   have h2' : ∀ (i) (_ : i ∉ s₂), t₂' i = univ := fun i hi ↦ Finset.piecewise_eq_of_not_mem _ _ _ hi
   rw [box_congr _ h1, box_congr _ h2]
-  refine' ⟨s₁ ∪ s₂, fun i => t₁' i ∩ t₂' i, _, _⟩
+  refine ⟨s₁ ∪ s₂, fun i ↦ t₁' i ∩ t₂' i, ?_, ?_⟩
   · rw [mem_pi]
     intro i _
     have : (t₁' i ∩ t₂' i).Nonempty := by
       obtain ⟨f, hf⟩ := hst_nonempty
       rw [box_congr _ h1, box_congr _ h2] at hf
       rw [mem_inter_iff, mem_box, mem_box] at hf
-      refine' ⟨f i, ⟨_, _⟩⟩
+      refine ⟨f i, ⟨?_, ?_⟩⟩
       · by_cases hi₁ : i ∈ s₁
         · exact hf.1 i hi₁
         · rw [h1' i hi₁]
@@ -259,7 +259,7 @@ theorem isPiSystem_boxes {C : ∀ i, Set (Set (α i))} (hC : ∀ i, IsPiSystem (
         · exact hf.2 i hi₂
         · rw [h2' i hi₂]
           exact mem_univ _
-    refine' hC i _ _ _ _ this
+    refine hC i _ ?_ _ ?_ this
     · by_cases hi₁ : i ∈ s₁
       · rw [← h1 i hi₁]
         exact h₁ i (mem_univ _)
@@ -275,15 +275,15 @@ theorem isPiSystem_boxes {C : ∀ i, Set (Set (α i))} (hC : ∀ i, IsPiSystem (
 variable (α)
 
 theorem comap_eval_le_generateFrom_boxes_singleton [m : ∀ i, MeasurableSpace (α i)] (i : ι) :
-    MeasurableSpace.comap (fun f : (i : ι) → α i => f i) (m i) ≤
+    MeasurableSpace.comap (fun f : (i : ι) → α i ↦ f i) (m i) ≤
       MeasurableSpace.generateFrom
-        ((fun t => box t {i}) '' univ.pi fun i => {s : Set (α i) | MeasurableSet s}) := by
+        ((fun t ↦ box t {i}) '' univ.pi fun i ↦ {s : Set (α i) | MeasurableSet s}) := by
   rw [MeasurableSpace.comap_eq_generateFrom]
-  refine MeasurableSpace.generateFrom_mono fun S => ?_
+  refine MeasurableSpace.generateFrom_mono fun S ↦ ?_
   simp only [mem_setOf_eq, mem_image, mem_univ_pi, forall_exists_index, and_imp]
   intro t ht h
   classical
-  refine ⟨fun j => if hji : j = i then by convert t else univ, fun j => ?_, ?_⟩
+  refine ⟨fun j ↦ if hji : j = i then by convert t else univ, fun j ↦ ?_, ?_⟩
   · by_cases hji : j = i
     · simp only [hji, eq_self_iff_true, eq_mpr_eq_cast, dif_pos]
       convert ht
@@ -297,19 +297,19 @@ theorem comap_eval_le_generateFrom_boxes_singleton [m : ∀ i, MeasurableSpace (
 variable {α}
 
 theorem generateFrom_boxes [∀ i, MeasurableSpace (α i)] :
-    MeasurableSpace.generateFrom (boxes fun i => {s : Set (α i) | MeasurableSet s}) =
+    MeasurableSpace.generateFrom (boxes fun i ↦ {s : Set (α i) | MeasurableSet s}) =
       @MeasurableSpace.pi ι α _ := by
   apply le_antisymm
   · rw [MeasurableSpace.generateFrom_le_iff]
     rintro S ⟨s, t, h, rfl⟩
     simp only [mem_univ_pi, mem_setOf_eq] at h
-    exact measurableSet_box t s fun i _ => h i
-  · refine' iSup_le fun i => _
-    refine' (comap_eval_le_generateFrom_boxes_singleton α i).trans _
-    refine' MeasurableSpace.generateFrom_mono _
+    exact measurableSet_box t s fun i _ ↦ h i
+  · refine iSup_le fun i ↦ ?_
+    refine (comap_eval_le_generateFrom_boxes_singleton α i).trans ?_
+    refine MeasurableSpace.generateFrom_mono ?_
     rw [boxes_eq_iUnion_image]
     exact subset_iUnion
-      (fun s => (fun t : (i : ι) → Set (α i) => box t s) '' univ.pi fun i => setOf MeasurableSet)
+      (fun s ↦ (fun t : (i : ι) → Set (α i) ↦ box t s) '' univ.pi fun i ↦ setOf MeasurableSet)
       ({i} : Finset ι)
 
 end boxes
@@ -317,11 +317,11 @@ end boxes
 section cylinder
 
 def cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) : Set ((i : ι) → α i) :=
-  (fun f : (i : ι) → α i => fun i : s => f i) ⁻¹' S
+  (fun f : (i : ι) → α i ↦ fun i : s ↦ f i) ⁻¹' S
 
 @[simp]
 theorem mem_cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) (f : (i : ι) → α i) :
-    f ∈ cylinder s S ↔ (fun i : s => f i) ∈ S :=
+    f ∈ cylinder s S ↔ (fun i : s ↦ f i) ∈ S :=
   mem_preimage
 
 theorem cylinder_empty (s : Finset ι) : cylinder s (∅ : Set (∀ i : s, α i)) = ∅ := by
@@ -332,13 +332,13 @@ theorem cylinder_univ (s : Finset ι) : cylinder s (univ : Set (∀ i : s, α i)
 
 theorem cylinder_eq_empty_iff [h_nonempty : Nonempty ((i : ι) → α i)] (s : Finset ι)
     (S : Set (∀ i : s, α i)) : cylinder s S = ∅ ↔ S = ∅ := by
-  refine' ⟨fun h => _, fun h => _⟩
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · by_contra hS
     rw [← Ne.def, ← nonempty_iff_ne_empty] at hS
     let f := hS.some
     have hf : f ∈ S := hS.choose_spec
     classical
-    let f' : (i : ι) → α i := fun i => if hi : i ∈ s then f ⟨i, hi⟩ else h_nonempty.some i
+    let f' : (i : ι) → α i := fun i ↦ if hi : i ∈ s then f ⟨i, hi⟩ else h_nonempty.some i
     have hf' : f' ∈ cylinder s S := by
       rw [mem_cylinder]
       simp only [f', Finset.coe_mem, dif_pos]
@@ -356,16 +356,16 @@ theorem inter_cylinder (s₁ s₂ : Finset ι) (S₁ : Set (∀ i : s₁, α i))
     [DecidableEq ι] :
     cylinder s₁ S₁ ∩ cylinder s₂ S₂ =
       cylinder (s₁ ∪ s₂)
-        ((fun f => fun j : s₁ => f ⟨j, Finset.mem_union_left s₂ j.prop⟩) ⁻¹' S₁ ∩
-          (fun f => fun j : s₂ => f ⟨j, Finset.mem_union_right s₁ j.prop⟩) ⁻¹' S₂) := by
+        ((fun f ↦ fun j : s₁ ↦ f ⟨j, Finset.mem_union_left s₂ j.prop⟩) ⁻¹' S₁ ∩
+          (fun f ↦ fun j : s₂ ↦ f ⟨j, Finset.mem_union_right s₁ j.prop⟩) ⁻¹' S₂) := by
   ext1 f; simp only [mem_inter_iff, mem_cylinder, mem_setOf_eq]; rfl
 
 theorem union_cylinder (s₁ s₂ : Finset ι) (S₁ : Set (∀ i : s₁, α i)) (S₂ : Set (∀ i : s₂, α i))
     [DecidableEq ι] :
     cylinder s₁ S₁ ∪ cylinder s₂ S₂ =
       cylinder (s₁ ∪ s₂)
-        ((fun f => fun j : s₁ => f ⟨j, Finset.mem_union_left s₂ j.prop⟩) ⁻¹' S₁ ∪
-          (fun f => fun j : s₂ => f ⟨j, Finset.mem_union_right s₁ j.prop⟩) ⁻¹' S₂) := by
+        ((fun f ↦ fun j : s₁ ↦ f ⟨j, Finset.mem_union_left s₂ j.prop⟩) ⁻¹' S₁ ∪
+          (fun f ↦ fun j : s₂ ↦ f ⟨j, Finset.mem_union_right s₁ j.prop⟩) ⁻¹' S₂) := by
   ext1 f; simp only [mem_union, mem_cylinder, mem_setOf_eq]; rfl
 
 theorem compl_cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) :
@@ -379,13 +379,13 @@ theorem diff_cylinder_same (s : Finset ι) (S T : Set (∀ i : s, α i)) :
 theorem eq_of_cylinder_eq_of_subset [h_nonempty : Nonempty ((i : ι) → α i)] {I J : Finset ι}
     {S : Set (∀ i : I, α i)} {T : Set (∀ i : J, α i)} (h_eq : cylinder I S = cylinder J T)
     (hJI : J ⊆ I) :
-    S = (fun f : ∀ i : I, α i => fun j : J => f ⟨j, hJI j.prop⟩) ⁻¹' T := by
+    S = (fun f : ∀ i : I, α i ↦ fun j : J ↦ f ⟨j, hJI j.prop⟩) ⁻¹' T := by
   rw [Set.ext_iff] at h_eq
   simp only [mem_cylinder] at h_eq
   ext1 f
   simp only [mem_preimage]
   classical
-  specialize h_eq fun i => if hi : i ∈ I then f ⟨i, hi⟩ else h_nonempty.some i
+  specialize h_eq fun i ↦ if hi : i ∈ I then f ⟨i, hi⟩ else h_nonempty.some i
   have h_mem : ∀ j : J, ↑j ∈ I := fun j ↦ hJI j.prop
   simp only [Finset.coe_mem, dite_true, h_mem] at h_eq
   exact h_eq
@@ -393,7 +393,7 @@ theorem eq_of_cylinder_eq_of_subset [h_nonempty : Nonempty ((i : ι) → α i)] 
 theorem cylinder_eq_cylinder_union [DecidableEq ι] (I : Finset ι) (S : Set (∀ i : I, α i))
     (J : Finset ι) :
     cylinder I S =
-      cylinder (I ∪ J) ((fun f => fun j : I => f ⟨j, Finset.mem_union_left J j.prop⟩) ⁻¹' S) := by
+      cylinder (I ∪ J) ((fun f ↦ fun j : I ↦ f ⟨j, Finset.mem_union_left J j.prop⟩) ⁻¹' S) := by
   ext1 f; simp only [mem_cylinder, mem_preimage]
 
 theorem disjoint_cylinder_iff [Nonempty ((i : ι) → α i)] {s t : Finset ι} {S : Set (∀ i : s, α i)}
@@ -401,8 +401,8 @@ theorem disjoint_cylinder_iff [Nonempty ((i : ι) → α i)] {s t : Finset ι} {
     Disjoint (cylinder s S) (cylinder t T) ↔
       Disjoint
         ((fun f : ∀ i : (s ∪ t : Finset ι), α i
-          => fun j : s => f ⟨j, Finset.mem_union_left t j.prop⟩) ⁻¹' S)
-        ((fun f => fun j : t => f ⟨j, Finset.mem_union_right s j.prop⟩) ⁻¹' T) := by
+          ↦ fun j : s ↦ f ⟨j, Finset.mem_union_left t j.prop⟩) ⁻¹' S)
+        ((fun f ↦ fun j : t ↦ f ⟨j, Finset.mem_union_right s j.prop⟩) ⁻¹' T) := by
   simp_rw [Set.disjoint_iff, subset_empty_iff, inter_cylinder, cylinder_eq_empty_iff]
 
 theorem isClosed_cylinder [∀ i, TopologicalSpace (α i)] (I : Finset ι) (s : Set (∀ i : I, α i))
@@ -456,9 +456,9 @@ theorem inter_mem_cylinders {s t : Set (∀ i : ι, α i)} (hs : s ∈ cylinders
   obtain ⟨s₂, S₂, hS₂, rfl⟩ := ht
   classical
   refine ⟨s₁ ∪ s₂,
-    (fun f => (fun i => f ⟨i, Finset.mem_union_left s₂ i.prop⟩ : ∀ i : s₁, α i)) ⁻¹' S₁ ∩
-      {f | (fun i => f ⟨i, Finset.mem_union_right s₁ i.prop⟩ : ∀ i : s₂, α i) ∈ S₂}, ?_, ?_⟩
-  · refine' MeasurableSet.inter _ _
+    (fun f ↦ (fun i ↦ f ⟨i, Finset.mem_union_left s₂ i.prop⟩ : ∀ i : s₁, α i)) ⁻¹' S₁ ∩
+      {f | (fun i ↦ f ⟨i, Finset.mem_union_right s₁ i.prop⟩ : ∀ i : s₂, α i) ∈ S₂}, ?_, ?_⟩
+  · refine MeasurableSet.inter ?_ ?_
     · exact (measurable_proj₂' (s₁ ∪ s₂) s₁ (Finset.subset_union_left _ _)) hS₁
     · exact (measurable_proj₂' (s₁ ∪ s₂) s₂ (Finset.subset_union_right _ _)) hS₂
   · exact inter_cylinder _ _ _ _
@@ -467,7 +467,7 @@ theorem compl_mem_cylinders {s : Set (∀ i : ι, α i)} (hs : s ∈ cylinders �
     sᶜ ∈ cylinders α := by
   rw [mem_cylinders] at hs ⊢
   obtain ⟨s, S, hS, rfl⟩ := hs
-  refine' ⟨s, Sᶜ, hS.compl, _⟩
+  refine ⟨s, Sᶜ, hS.compl, ?_⟩
   rw [compl_cylinder]
 
 variable (α)
@@ -486,7 +486,7 @@ theorem diff_mem_cylinders {s t : Set (∀ i : ι, α i)} (hs : s ∈ cylinders 
     (ht : t ∈ cylinders α) : s \ t ∈ cylinders α := by
   rw [diff_eq_compl_inter]; exact inter_mem_cylinders (compl_mem_cylinders ht) hs
 
-theorem isPiSystem_cylinders : IsPiSystem (cylinders α) := fun _ hS _ hT _ =>
+theorem isPiSystem_cylinders : IsPiSystem (cylinders α) := fun _ hS _ hT _ ↦
   inter_mem_cylinders hS hT
 
 theorem setField_cylinders : SetField (cylinders α) :=
@@ -518,7 +518,7 @@ theorem generateFrom_cylinders :
     rintro S hS
     obtain ⟨s, S, hSm, rfl⟩ := (mem_cylinders _).mp hS
     exact measurableSet_cylinder s S hSm
-  · refine iSup_le fun i => ?_
+  · refine iSup_le fun i ↦ ?_
     refine (comap_eval_le_generateFrom_boxes_singleton α i).trans ?_
     refine MeasurableSpace.generateFrom_mono (fun x ↦ ?_)
     simp only [mem_image, mem_univ_pi, mem_setOf_eq, mem_cylinders, exists_prop,

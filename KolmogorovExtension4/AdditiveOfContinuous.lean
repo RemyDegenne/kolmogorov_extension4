@@ -16,7 +16,7 @@ theorem sigma_additive_of_tendsto_zero (hC : SetRing C) (m : ∀ s : Set α, s �
     (hm_add : ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
       Disjoint s t → m (s ∪ t) (hC.union_mem hs ht) = m s hs + m t ht)
     (hm : ∀ ⦃s : ℕ → Set α⦄ (hs : ∀ n, s n ∈ C),
-      Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n => m (s n) (hs n)) atTop (𝓝 0))
+      Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n ↦ m (s n) (hs n)) atTop (𝓝 0))
     ⦃f : ℕ → Set α⦄ (h : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C) (h_disj : Pairwise (Disjoint on f)) :
     m (⋃ i, f i) hUf = ∑' i, m (f i) (h i) := by
   -- extend the properties of `m` to `set.sdiff` and `set.accumulate`
@@ -47,17 +47,17 @@ theorem sigma_additive_of_tendsto_zero (hC : SetRing C) (m : ∀ s : Set α, s �
     exact le_add_right le_rfl
   -- main proof: we use the continuity of `m` at `∅` on the sequence
   -- `n ↦ (⋃ i, f i) \ (set.accumulate f n)`
-  let s : ℕ → Set α := fun n => (⋃ i, f i) \ Set.Accumulate f n
-  have hCs : ∀ n, s n ∈ C := fun n => hC.diff_mem hUf (hC.accumulate_mem h n)
+  let s : ℕ → Set α := fun n ↦ (⋃ i, f i) \ Set.Accumulate f n
+  have hCs : ∀ n, s n ∈ C := fun n ↦ hC.diff_mem hUf (hC.accumulate_mem h n)
   have hs_anti : Antitone s := by
     intro i j hij x hxj
     rw [Set.mem_diff] at hxj ⊢
-    exact ⟨hxj.1, fun hxi => hxj.2 (Set.monotone_accumulate hij hxi)⟩
+    exact ⟨hxj.1, fun hxi ↦ hxj.2 (Set.monotone_accumulate hij hxi)⟩
   have hs_Inter : (⋂ n, s n) = ∅ := by
     simp_rw [s, Set.diff_eq]
     rw [Set.iInter_inter_distrib, Set.iInter_const, ← Set.compl_iUnion, Set.iUnion_accumulate]
     exact Set.inter_compl_self _
-  have h_tendsto : Tendsto (fun n => m (s n) (hCs n)) atTop (𝓝 0) := hm hCs hs_anti hs_Inter
+  have h_tendsto : Tendsto (fun n ↦ m (s n) (hCs n)) atTop (𝓝 0) := hm hCs hs_anti hs_Inter
   have hmsn :
       ∀ n, m (s n) (hCs n) = m (⋃ i, f i) hUf - ∑ i in Finset.range (n + 1), m (f i) (h i) := by
     intro n
@@ -67,21 +67,21 @@ theorem sigma_additive_of_tendsto_zero (hC : SetRing C) (m : ∀ s : Set α, s �
     · exact Set.accumulate_subset_iUnion _
   simp_rw [hmsn] at h_tendsto
   have h_tendsto' :
-    Tendsto (fun n => ∑ i in Finset.range n, m (f i) (h i)) atTop (𝓝 (m (⋃ i, f i) hUf)) := by
-    refine' (Filter.tendsto_add_atTop_iff_nat 1).mp _
+    Tendsto (fun n ↦ ∑ i in Finset.range n, m (f i) (h i)) atTop (𝓝 (m (⋃ i, f i) hUf)) := by
+    refine (Filter.tendsto_add_atTop_iff_nat 1).mp ?_
     rwa [ENNReal.tendsto_atTop_zero_const_sub_iff _ _ (hm_ne_top _)] at h_tendsto
     intro n
     rw [← hm_acc _ h_disj]
     exact hm_mono _ _ (Set.accumulate_subset_iUnion _)
-  exact tendsto_nhds_unique h_tendsto' (ENNReal.tendsto_nat_tsum fun i => m (f i) (h i))
+  exact tendsto_nhds_unique h_tendsto' (ENNReal.tendsto_nat_tsum fun i ↦ m (f i) (h i))
 
 theorem sigma_additive_addContent_of_tendsto_zero (hC : SetRing C) (m : AddContent C)
     (hm_ne_top : ∀ {s} (_ : s ∈ C), m s ≠ ∞)
     (hm : ∀ ⦃s : ℕ → Set α⦄ (_ : ∀ n, s n ∈ C),
-      Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n => m (s n)) atTop (𝓝 0))
+      Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n ↦ m (s n)) atTop (𝓝 0))
     ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C) (h_disj : Pairwise (Disjoint on f)) :
     m (⋃ i, f i) = ∑' i, m (f i) :=
-  sigma_additive_of_tendsto_zero hC (fun s _ => m s) (fun hs => hm_ne_top hs)
+  sigma_additive_of_tendsto_zero hC (fun s _ ↦ m s) (fun hs ↦ hm_ne_top hs)
     (addContent_union m hC) hm hf hUf h_disj
 
 theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
@@ -122,10 +122,10 @@ theorem sUnion_eq_sum_of_union_eq_add' (hC_empty : ∅ ∈ C)
     (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : Set.PairwiseDisjoint (I : Set (Set α)) id)
     (h_mem : ⋃₀ ↑I ∈ C) : m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.property) := by
   have h :=
-    sUnion_eq_sum_of_union_eq_add hC_empty (fun hs ht => hC_union hs ht) (extend m)
+    sUnion_eq_sum_of_union_eq_add hC_empty (fun hs ht ↦ hC_union hs ht) (extend m)
       (extend_empty hC_empty m_empty) ?_ I h_ss h_dis h_mem
   · rw [extend_eq m h_mem] at h
-    refine' h.trans _
+    refine h.trans ?_
     simp_rw [← extend_eq m, Finset.univ_eq_attach]
     exact (Finset.sum_attach _ _).symm
   · simp_rw [← extend_eq m] at m_add

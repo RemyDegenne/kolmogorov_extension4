@@ -15,11 +15,11 @@ theorem Finset.sum_image_le {ι α β : Type _} [DecidableEq α] [OrderedSemirin
     (g : ι → α) (f : α → β) (hf : ∀ u ∈ J.image g, 0 ≤ f u) :
     ∑ u in J.image g, f u ≤ ∑ u in J, f (g u) := by
   rw [sum_comp f g]
-  refine sum_le_sum fun a hag => ?_
+  refine sum_le_sum fun a hag ↦ ?_
   let hag' := hag
   rw [Finset.mem_image] at hag'
   obtain ⟨i, hi, hig⟩ := hag'
-  suffices 1 ≤ (J.filter (fun j => g j = a)).card by
+  suffices 1 ≤ (J.filter (fun j ↦ g j = a)).card by
     conv_lhs => rw [← one_smul ℕ (f a)]
     simp_rw [nsmul_eq_mul]
     exact mul_le_mul (Nat.mono_cast this) le_rfl (hf a hag) (Nat.cast_nonneg _)
@@ -35,8 +35,8 @@ theorem partialSups_eq_sUnion_image {α : Type _} [DecidableEq (Set α)] (f : �
   Finset.mem_image, Finset.mem_range, exists_exists_and_eq_and, Nat.lt_succ_iff]
 
 theorem monotone_partialSups {α : Type _} [SemilatticeSup α] (f : ℕ → α) :
-    Monotone fun n => partialSups f n := fun n _ hnm =>
-  partialSups_le f n _ fun _ hm'n => le_partialSups_of_le _ (hm'n.trans hnm)
+    Monotone fun n ↦ partialSups f n := fun n _ hnm ↦
+  partialSups_le f n _ fun _ hm'n ↦ le_partialSups_of_le _ (hm'n.trans hnm)
 
 /-- todo: this has to be somewhere in mathlib -/
 theorem Set.bUnion_le_succ {α : Type _} (s : ℕ → Set α) (n : ℕ) :
@@ -51,14 +51,14 @@ theorem Set.bInter_le_succ {α : Type _} (s : ℕ → Set α) (n : ℕ) :
 
 theorem ENNReal.tendsto_atTop_zero_const_sub_iff (f : ℕ → ℝ≥0∞) (a : ℝ≥0∞) (ha : a ≠ ∞)
     (hfa : ∀ n, f n ≤ a) :
-    Tendsto (fun n => a - f n) atTop (𝓝 0) ↔ Tendsto (fun n => f n) atTop (𝓝 a) := by
+    Tendsto (fun n ↦ a - f n) atTop (𝓝 0) ↔ Tendsto (fun n ↦ f n) atTop (𝓝 a) := by
   rw [ENNReal.tendsto_atTop_zero, ENNReal.tendsto_atTop ha]
-  refine ⟨fun h ε hε => ?_, fun h ε hε => ?_⟩ <;> obtain ⟨N, hN⟩ := h ε hε
-  · refine ⟨N, fun n hn => ⟨?_, (hfa n).trans (le_add_right le_rfl)⟩⟩
+  refine ⟨fun h ε hε ↦ ?_, fun h ε hε ↦ ?_⟩ <;> obtain ⟨N, hN⟩ := h ε hε
+  · refine ⟨N, fun n hn ↦ ⟨?_, (hfa n).trans (le_add_right le_rfl)⟩⟩
     specialize hN n hn
     rw [tsub_le_iff_right] at hN ⊢
     rwa [add_comm]
-  · refine ⟨N, fun n hn => ?_⟩
+  · refine ⟨N, fun n hn ↦ ?_⟩
     have hN_left := (hN n hn).1
     rw [tsub_le_iff_right] at hN_left ⊢
     rwa [add_comm]
@@ -69,7 +69,7 @@ variable {α : Type _}
 
 theorem MeasurableSet.accumulate {_ : MeasurableSpace α} {s : ℕ → Set α}
     (hs : ∀ n, MeasurableSet (s n)) (n : ℕ) : MeasurableSet (Set.Accumulate s n) :=
-  MeasurableSet.biUnion (Set.to_countable _) fun n _ => hs n
+  MeasurableSet.biUnion (Set.to_countable _) fun n _ ↦ hs n
 
 theorem Set.disjoint_accumulate {s : ℕ → Set α} (hs : Pairwise (Disjoint on s)) {i j : ℕ}
     (hij : i < j) : Disjoint (Set.Accumulate s i) (s j) := by
@@ -95,7 +95,7 @@ theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by
 /-- Given some x > 0, there is a sequence of positive reals summing to x. -/
 theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :
     ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x := by
-  use fun n : ℕ => x / 2 / 2 ^ n
+  use fun n : ℕ ↦ x / 2 / 2 ^ n
   constructor
   · intro n
     positivity
