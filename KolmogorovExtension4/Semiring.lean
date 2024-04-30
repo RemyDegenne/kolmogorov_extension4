@@ -2,6 +2,7 @@ import Mathlib.Data.Set.Pairwise.Basic
 import Mathlib.MeasureTheory.PiSystem
 import Mathlib.MeasureTheory.Measure.OuterMeasure
 import KolmogorovExtension4.AuxLemmas
+import Mathlib.Data.Set.Pairwise.Lattice
 
 /-! # Semirings of sets
 
@@ -69,7 +70,7 @@ theorem not_mem_diffFinset (hC : SetSemiring C) (hs : s ∈ C) (ht : t ∈ C) [D
   suffices s ⊆ t \ s by
     have h := @disjoint_sdiff_self_right _ s t _
     specialize h le_rfl this
-    simp only [Set.bot_eq_empty, Set.le_eq_subset, subset_empty_iff] at h 
+    simp only [Set.bot_eq_empty, Set.le_eq_subset, subset_empty_iff] at h
     refine' hC.empty_not_mem_diffFinset hs ht _
     rwa [← h]
   rw [hC.diff_eq_sUnion hs ht]
@@ -125,7 +126,7 @@ theorem exists_disjoint_finset_diff_eq (hC : SetSemiring C) (hs : s ∈ C) (I : 
     simp only [coe_singleton, pairwiseDisjoint_singleton, sUnion_singleton, eq_self_iff_true,
       and_self_iff]
   intro t I' _ h h_insert_subset
-  rw [coe_insert] at h_insert_subset 
+  rw [coe_insert] at h_insert_subset
   have ht : t ∈ C := h_insert_subset (Set.mem_insert _ _)
   obtain ⟨J, h_ss, h_dis, h_eq⟩ := h ((Set.subset_insert _ _).trans h_insert_subset)
   let Ju : ∀ u ∈ C, Finset (Set α) := fun u hu => hC.diffFinset ht hu
@@ -220,13 +221,13 @@ theorem disjoint_sUnion_diff₀ (hC : SetSemiring C) (hs : s ∈ C) (I : Finset 
 theorem disjoint_diff₀ (hC : SetSemiring C) (hs : s ∈ C) (I : Finset (Set α)) (hI : ↑I ⊆ C)
     [DecidableEq (Set α)] : Disjoint I (hC.diff₀ hs I hI) := by
   by_contra h
-  rw [Finset.not_disjoint_iff] at h 
+  rw [Finset.not_disjoint_iff] at h
   obtain ⟨u, huI, hu_diff₀⟩ := h
   have h_disj : u ≤ ⊥ :=
     hC.disjoint_sUnion_diff₀ hs I hI (subset_sUnion_of_mem huI) (subset_sUnion_of_mem hu_diff₀)
-  simp only [Set.bot_eq_empty, Set.le_eq_subset, subset_empty_iff] at h_disj 
+  simp only [Set.bot_eq_empty, Set.le_eq_subset, subset_empty_iff] at h_disj
   refine' hC.empty_not_mem_diff₀ hs I hI _
-  rwa [h_disj] at hu_diff₀ 
+  rwa [h_disj] at hu_diff₀
 
 theorem pairwiseDisjoint_union_diff₀ (hC : SetSemiring C) (hs : s ∈ C) (I : Finset (Set α))
     (hI : ↑I ⊆ C) (h_dis : PairwiseDisjoint (I : Set (Set α)) id) [DecidableEq (Set α)] :
@@ -314,7 +315,7 @@ theorem finsetLT_mono (J : Finset (Set α)) : Monotone (finsetLT J) := by
   simp only [Finset.ordered, finsetLT, Equiv.asEmbedding_apply, Function.comp_apply, mem_map,
     mem_filter, Finset.mem_univ, true_and_iff, exists_prop]
   refine' ⟨i, _, rfl⟩
-  rw [mem_filter] at hi 
+  rw [mem_filter] at hi
   exact hi.2.trans_le hnm
 
 theorem finsetLT_subset (J : Finset (Set α)) (n : Fin J.card) : finsetLT J n ⊆ J := by
@@ -401,7 +402,7 @@ theorem iUnion_sUnion_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) 
     rw [sUnion_finsetLT_eq_bUnion]
     simp only [mem_iUnion, exists_prop, not_exists, not_and]
     intro j hj_lt hj
-    have hj_lt' : ↑j < i := by rwa [← Fin.eta j j.2, Fin.mk_lt_mk] at hj_lt 
+    have hj_lt' : ↑j < i := by rwa [← Fin.eta j j.2, Fin.mk_lt_mk] at hj_lt
     refine' (Nat.lt_find_iff h' j).mp hj_lt' j le_rfl ⟨hj_lt'.trans hi, _⟩
     convert hj
 
@@ -440,8 +441,8 @@ theorem disjoint_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ :
   simp only [Finset.mem_inter, Finset.not_mem_empty, iff_false_iff, not_and]
   intro hsn hsm
   have : Disjoint s s := hC.disjoint_of_mem_indexedDiff₀ J hJ hnm hsn hsm
-  rw [Set.disjoint_iff_inter_eq_empty, Set.inter_self] at this 
-  rw [this] at hsn 
+  rw [Set.disjoint_iff_inter_eq_empty, Set.inter_self] at this
+  rw [this] at hsn
   exact hC.empty_not_mem_indexedDiff₀ _ _ _ hsn
 
 theorem pairwiseDisjoint_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
@@ -467,11 +468,11 @@ theorem pairwiseDisjoint_allDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (
     PairwiseDisjoint ↑(hC.allDiff₀ J hJ) (id : Set α → Set α) := by
   intro u hu v hv huv
   simp_rw [Function.onFun, id.def]
-  simp_rw [SetSemiring.allDiff₀, mem_coe, Finset.mem_disjiUnion] at hu hv 
+  simp_rw [SetSemiring.allDiff₀, mem_coe, Finset.mem_disjiUnion] at hu hv
   obtain ⟨n, _, huBn⟩ := hu
   obtain ⟨m, _, hvBm⟩ := hv
   by_cases hnm : n = m
-  · rw [← hnm] at hvBm 
+  · rw [← hnm] at hvBm
     exact hC.pairwiseDisjoint_indexedDiff₀' _ _ n huBn hvBm huv
   · exact hC.disjoint_of_mem_indexedDiff₀ J hJ hnm huBn hvBm
 
@@ -592,4 +593,3 @@ theorem disjointed_mem (hC : SetField C) {s : ℕ → Set α} (hs : ∀ n, s n �
 end SetField
 
 end MeasureTheory
-

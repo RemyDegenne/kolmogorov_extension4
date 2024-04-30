@@ -162,7 +162,7 @@ theorem iInter_subset_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders 
     [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
     (⋂ n, projCylinder hs n) ⊆ piCylinderSet hs := by
   intro x hx
-  rw [mem_iInter] at hx 
+  rw [mem_iInter] at hx
   rw [mem_piCylinderSet]
   intro i
   specialize hx (indexProj hs i)
@@ -202,10 +202,10 @@ theorem nonempty_iInter_projCylinder_inter_piCylinderSet (hs : ∀ n, s n ∈ cl
       have hy' : y ∈ projCylinder hs m := by
         suffices ⋂ j ≤ n, projCylinder hs j ⊆ projCylinder hs m by exact this hy
         exact biInter_subset_of_mem hi_le
-      rw [mem_projCylinder] at hy' 
+      rw [mem_projCylinder] at hy'
       refine' ⟨fun j => y ⟨j, subset_allProj hs _ j.2⟩, hy', _⟩
       simp_rw [if_pos hi_le]
-    · rw [mem_piCylinderSet] at hx 
+    · rw [mem_piCylinderSet] at hx
       specialize hx i
       obtain ⟨x', hx'_mem, hx'_eq⟩ := hx
       refine' ⟨x', hx'_mem, _⟩
@@ -218,7 +218,7 @@ theorem nonempty_iInter_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders
     [∀ i : allProj hs, DecidablePred fun n => ↑i ∈ Js (hs n)] :
     (⋂ i, projCylinder hs i).Nonempty := by
   suffices ((⋂ i, projCylinder hs i) ∩ piCylinderSet hs).Nonempty by
-    rwa [inter_eq_left_iff_subset.mpr (iInter_subset_piCylinderSet hs)] at this 
+    rwa [inter_eq_left.mpr (iInter_subset_piCylinderSet hs)] at this
   have : (⋂ n, projCylinder hs n) = (⋂ n, ⋂ i ≤ n, projCylinder hs i) := by
     ext x
     simp only [mem_iInter]
@@ -251,11 +251,11 @@ lemma exists_finset_iInter_projCylinder_eq_empty [∀ i, Nonempty (α i)]
   · intro i
     specialize h_nonempty {i}
     simp only [Finset.mem_singleton, iInter_iInter_eq_left, ne_eq] at h_nonempty
-    rwa [←Ne.def, ←nonempty_iff_ne_empty, nonempty_projCylinder_iff] at h_nonempty
+    rwa [nonempty_projCylinder_iff] at h_nonempty
   · intro n
     specialize h_nonempty (Finset.range (n + 1))
-    simp only [Finset.mem_range, ne_eq, Nat.lt_succ_iff] at h_nonempty 
-    rwa [←Ne.def, ←nonempty_iff_ne_empty] at h_nonempty
+    simp only [Finset.mem_range, ne_eq, Nat.lt_succ_iff] at h_nonempty
+    exact h_nonempty
 
 lemma exists_finset_iInter_eq_empty [∀ i, Nonempty (α i)]
     (hs : ∀ n, s n ∈ closedCompactCylinders α)
@@ -297,7 +297,7 @@ end definition
 section cylinders
 
 variable {α : ι → Type*} [∀ i, Nonempty (α i)] [∀ i, MeasurableSpace (α i)]
-  [∀ i, TopologicalSpace (α i)] [∀ i, TopologicalSpace.SecondCountableTopology (α i)]
+  [∀ i, TopologicalSpace (α i)] [∀ i, SecondCountableTopology (α i)]
   [∀ i, OpensMeasurableSpace (α i)]
 
 theorem isCompactSystem_cylinders :

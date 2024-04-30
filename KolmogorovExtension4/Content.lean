@@ -44,7 +44,7 @@ theorem sum_image_eq_of_disjoint {α ι : Type _} [DecidableEq (Set α)] (m : Se
   by_cases hfn : f n = ∅
   · simp only [hfn, m_empty]
     refine' (sum_eq_zero fun i hi => _).symm
-    rw [mem_filter] at hi 
+    rw [mem_filter] at hi
     rw [hi.2, m_empty]
   · have : (fun j => f j = f n) = fun j => j = n := by
       ext1 j
@@ -52,8 +52,8 @@ theorem sum_image_eq_of_disjoint {α ι : Type _} [DecidableEq (Set α)] (m : Se
       refine' ⟨fun h => _, fun h => by rw [h]⟩
       by_contra hij
       have h_dis : Disjoint (f j) (f n) := hf_disj hij
-      rw [h] at h_dis 
-      rw [Set.disjoint_iff_inter_eq_empty, Set.inter_self] at h_dis 
+      rw [h] at h_dis
+      rw [Set.disjoint_iff_inter_eq_empty, Set.inter_self] at h_dis
       exact hfn h_dis
     classical
     simp_rw [this]
@@ -151,7 +151,7 @@ theorem sigma_additive_of_sigma_subadditive (m_empty : m ∅ = 0)
     exact hf j
   · simp only [coe_image]
     intro s hs t ht hst
-    rw [Set.mem_image] at hs ht 
+    rw [Set.mem_image] at hs ht
     obtain ⟨i, _, rfl⟩ := hs
     obtain ⟨j, _, rfl⟩ := ht
     have hij : i ≠ j := by intro h_eq; rw [h_eq] at hst ; exact hst rfl
@@ -192,7 +192,7 @@ theorem continuous_from_below_of_sigma_additive (hC : SetRing C) (m : Set α →
       rintro ⟨i, _, rfl⟩
       exact hC.disjointed_mem hf i
     · intro s hs t ht hst
-      rw [mem_coe, Finset.mem_image] at hs ht 
+      rw [mem_coe, Finset.mem_image] at hs ht
       obtain ⟨i, _, rfl⟩ := hs
       obtain ⟨j, _, rfl⟩ := ht
       have hij : i ≠ j := by intro h_eq; rw [h_eq] at hst ; exact hst rfl
@@ -261,7 +261,7 @@ theorem sigma_additive_of_sigma_subadditive' (hC : SetSemiring C)
   intro I h_ss h_dis h_mem
   rw [m_add I h_ss h_dis h_mem]
   simp only [univ_eq_attach]
-  exact sum_attach
+  exact sum_attach _ _
 
 theorem sigma_subadditive_of_sigma_additive' (hC : SetRing C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞) (m_empty : m ∅ hC.empty_mem = 0)
@@ -278,7 +278,7 @@ theorem sigma_subadditive_of_sigma_additive' (hC : SetRing C)
   intro I h_ss h_dis h_mem
   rw [m_add I h_ss h_dis h_mem]
   simp only [univ_eq_attach]
-  exact sum_attach
+  exact sum_attach _ _
 
 theorem monotone_of_additive' (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_add :
@@ -290,7 +290,7 @@ theorem monotone_of_additive' (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C 
   intro I h_ss h_dis h_mem
   rw [m_add I h_ss h_dis h_mem]
   simp only [univ_eq_attach]
-  exact sum_attach
+  exact sum_attach _ _
 
 end PartialSetFunction
 
@@ -367,7 +367,7 @@ theorem addContent_union' (m : AddContent C) (hs : s ∈ C) (ht : t ∈ C) (hst 
   · rw [sum_insert, sum_singleton]
     simp only [Finset.mem_singleton]
     refine' fun hs_eq_t => hs_empty _
-    rw [← hs_eq_t] at h_dis 
+    rw [← hs_eq_t] at h_dis
     exact Disjoint.eq_bot_of_self h_dis
 
 theorem addContent_union (m : AddContent C) (hC : SetRing C) (hs : s ∈ C) (ht : t ∈ C)
@@ -421,11 +421,11 @@ noncomputable def extendContent (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ 
   toFun := extend m
   empty' := extend_empty hC.empty_mem m_empty
   add' := by
-    simp_rw [← extend_eq m] at m_add 
+    simp_rw [← extend_eq m] at m_add
     intro I h_ss h_dis h_mem
     specialize m_add I h_ss h_dis h_mem
     rw [m_add, univ_eq_attach]
-    exact sum_attach
+    exact sum_attach _ _
 
 theorem extendContent_eq_extend (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
@@ -454,4 +454,3 @@ theorem extendContent_eq_top (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C �
 end ExtendContent
 
 end MeasureTheory
-

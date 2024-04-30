@@ -1,4 +1,4 @@
-import Mathlib.MeasureTheory.Measure.MeasureSpace
+import Mathlib.MeasureTheory.Measure.Trim
 import KolmogorovExtension4.Content
 
 open Finset Set MeasureTheory Order
@@ -26,7 +26,7 @@ theorem ofFunction_eq_iInf_mem (s : Set α) (m : Set α → ℝ≥0∞) (m_empty
     by_cases hf : ∀ i, f i ∈ C
     · exact iInf_le_of_le hf (iInf_le_of_le hf_subset le_rfl)
     · simp only [hf, not_false_eq_true, iInf_neg, top_le_iff]
-      push_neg at hf 
+      push_neg at hf
       obtain ⟨i, hfi_not_mem⟩ := hf
       have hfi_top : m (f i) = ∞ := m_top _ hfi_not_mem
       exact ENNReal.tsum_eq_top_of_eq_top ⟨i, hfi_top⟩
@@ -212,7 +212,7 @@ noncomputable def Measure.ofAddSubaddCaratheodory (hC : SetSemiring C)
     trimmed := by
       refine' le_antisymm (le_inducedOuterMeasure.mpr fun s hs => _) (OuterMeasure.le_trim _)
       · exact hC.empty_mem
-      · exact m_empty 
+      · exact m_empty
       have hs_meas : MeasurableSet[(inducedOuterMeasure m hC.empty_mem m_empty).caratheodory] s := by
         show (inducedOuterMeasure m hC.empty_mem m_empty).IsCaratheodory s
         exact caratheodory_semiring_extension hC m m_empty m_add hs
@@ -326,4 +326,3 @@ theorem Measure.ofAddContent_eq [mα : MeasurableSpace α] (hC : SetSemiring C)
   Measure.ofAddSubadd_eq _ _ _ _ _ _ hs
 
 end MeasureTheory
-

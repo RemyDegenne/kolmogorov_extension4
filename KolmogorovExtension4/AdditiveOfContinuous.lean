@@ -24,7 +24,7 @@ theorem sigma_additive_of_tendsto_zero (hC : SetRing C) (m : ∀ s : Set α, s �
       m (s \ t) (hC.diff_mem hs ht) = m s hs - m t ht := by
     intro s t hs ht hst
     have h_union := hm_add ht (hC.diff_mem hs ht) disjoint_sdiff_self_right
-    simp_rw [Set.union_diff_self, Set.union_eq_right_iff_subset.mpr hst] at h_union 
+    simp_rw [Set.union_diff_self, Set.union_eq_right.mpr hst] at h_union
     rw [h_union, ENNReal.add_sub_cancel_left (hm_ne_top ht)]
   have hm_acc :
     ∀ (s : ℕ → Set α) (_ : Pairwise (Disjoint on s)) (h_meas : ∀ i, s i ∈ C) (n : ℕ),
@@ -42,7 +42,7 @@ theorem sigma_additive_of_tendsto_zero (hC : SetRing C) (m : ∀ s : Set α, s �
   have hm_mono : ∀ {s t} (hs : s ∈ C) (ht : t ∈ C), t ⊆ s → m t ht ≤ m s hs := by
     intro s t hs ht hst
     have h_union := hm_add ht (hC.diff_mem hs ht) disjoint_sdiff_self_right
-    simp_rw [Set.union_diff_self, Set.union_eq_right_iff_subset.mpr hst] at h_union 
+    simp_rw [Set.union_diff_self, Set.union_eq_right.mpr hst] at h_union
     rw [h_union]
     exact le_add_right le_rfl
   -- main proof: we use the continuity of `m` at `∅` on the sequence
@@ -64,15 +64,15 @@ theorem sigma_additive_of_tendsto_zero (hC : SetRing C) (m : ∀ s : Set α, s �
     rw [hm_diff hUf (hC.accumulate_mem h n)]
     · congr
       exact hm_acc _ h_disj _ n
-    · exact Set.accumulate_subset_iUnion _ _
-  simp_rw [hmsn] at h_tendsto 
+    · exact Set.accumulate_subset_iUnion _
+  simp_rw [hmsn] at h_tendsto
   have h_tendsto' :
     Tendsto (fun n => ∑ i in Finset.range n, m (f i) (h i)) atTop (𝓝 (m (⋃ i, f i) hUf)) := by
     refine' (Filter.tendsto_add_atTop_iff_nat 1).mp _
-    rwa [ENNReal.tendsto_atTop_zero_const_sub_iff _ _ (hm_ne_top _)] at h_tendsto 
+    rwa [ENNReal.tendsto_atTop_zero_const_sub_iff _ _ (hm_ne_top _)] at h_tendsto
     intro n
     rw [← hm_acc _ h_disj]
-    exact hm_mono _ _ (Set.accumulate_subset_iUnion _ _)
+    exact hm_mono _ _ (Set.accumulate_subset_iUnion _)
   exact tendsto_nhds_unique h_tendsto' (ENNReal.tendsto_nat_tsum fun i => m (f i) (h i))
 
 theorem sigma_additive_addContent_of_tendsto_zero (hC : SetRing C) (m : AddContent C)
@@ -94,8 +94,8 @@ theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
   induction' I using Finset.induction with s I hsI h
   · simp only [Finset.coe_empty, Set.sUnion_empty, Finset.sum_empty, m_empty]
   rw [Finset.coe_insert] at *
-  rw [Set.insert_subset_iff] at h_ss 
-  rw [Set.pairwiseDisjoint_insert_of_not_mem] at h_dis 
+  rw [Set.insert_subset_iff] at h_ss
+  rw [Set.pairwiseDisjoint_insert_of_not_mem] at h_dis
   swap
   · exact hsI
   have h_sUnion_mem : ⋃₀ ↑I ∈ C :=
@@ -105,13 +105,13 @@ theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
       · simp only [Finset.coe_empty, Set.empty_subset, Set.sUnion_empty, forall_true_left, hC_empty]
       · intro h_insert
         rw [Finset.coe_insert] at h_insert ⊢
-        rw [Set.insert_subset_iff] at h_insert 
+        rw [Set.insert_subset_iff] at h_insert
         rw [Set.sUnion_insert]
         exact hC_union h_insert.1 (h h_insert.2)
     this I h_ss.2
   rw [Set.sUnion_insert, m_add h_ss.1 h_sUnion_mem (Set.disjoint_sUnion_right.mpr h_dis.2),
     Finset.sum_insert hsI, h h_ss.2 h_dis.1]
-  rw [Set.sUnion_insert] at h_mem 
+  rw [Set.sUnion_insert] at h_mem
   exact h_sUnion_mem
 
 theorem sUnion_eq_sum_of_union_eq_add' (hC_empty : ∅ ∈ C)
@@ -124,12 +124,11 @@ theorem sUnion_eq_sum_of_union_eq_add' (hC_empty : ∅ ∈ C)
   have h :=
     sUnion_eq_sum_of_union_eq_add hC_empty (fun hs ht => hC_union hs ht) (extend m)
       (extend_empty hC_empty m_empty) ?_ I h_ss h_dis h_mem
-  · rw [extend_eq m h_mem] at h 
+  · rw [extend_eq m h_mem] at h
     refine' h.trans _
     simp_rw [← extend_eq m, Finset.univ_eq_attach]
-    exact Finset.sum_attach.symm
-  · simp_rw [← extend_eq m] at m_add 
+    exact (Finset.sum_attach _ _).symm
+  · simp_rw [← extend_eq m] at m_add
     exact m_add
 
 end MeasureTheory
-

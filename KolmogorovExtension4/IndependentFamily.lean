@@ -7,7 +7,7 @@ open scoped ENNReal BigOperators
 lemma Finset.prod_mem_not_mem_of_eq_one_if_not_mem {α β : Type*} [CommMonoid β]
     {f g : α → β} {I J : Finset α} (hJI : J ⊆ I)
     (h1 : ∀ (x : α) (_ : x ∈ J), f x = g x) (h2 : ∀ (x : α) (_ : x ∉ J), f x = 1) :
-    (∏ i : { x // x ∈ I }, f i) = ∏ i : { x // x ∈ J }, g i := by 
+    (∏ i : { x // x ∈ I }, f i) = ∏ i : { x // x ∈ J }, g i := by
   simp only [univ_eq_attach, Finset.prod_attach]
   classical
   refine (Finset.prod_subset_one_on_sdiff hJI ?_ ?_).symm
@@ -31,7 +31,7 @@ variable {α}
 end Function
 
 
-namespace Set 
+namespace Set
 
 def boxI (I : Set ι) (t : (i : ι) → Set (α i)) : Set ((i : I) → α i) :=
   (univ : Set I).pi (fun (i : I) => t i)
@@ -72,7 +72,7 @@ theorem mem_boxesI {I : Set ι} (s : Set ((i : I) → α i)) (C : (i : ι) → S
     by_cases hi : i ∈ I
     · simp only [hi, dite_true, hx1]
     · simp only [hi, dite_false, hC i]
-  · rintro ⟨t, ⟨ht1, ht2⟩⟩ 
+  · rintro ⟨t, ⟨ht1, ht2⟩⟩
     rw [ht1, boxI]
     exact ⟨fun (i : I) => t i, fun a _ ↦ ht2 a, rfl⟩
 
@@ -198,7 +198,7 @@ theorem product_isProjective (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMe
   fun I J ↦ proj' P J I
 
 noncomputable def independentFamily [∀ i, PseudoEMetricSpace (α i)]
-    [∀ i, BorelSpace (α i)] [∀ i, TopologicalSpace.SecondCountableTopology (α i)]
+    [∀ i, BorelSpace (α i)] [∀ i, SecondCountableTopology (α i)]
     [∀ i, CompleteSpace (α i)] [∀ i, Nonempty (α i)]
     (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)] :
     Measure (∀ i, α i) :=

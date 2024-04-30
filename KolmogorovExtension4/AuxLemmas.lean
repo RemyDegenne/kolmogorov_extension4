@@ -17,7 +17,7 @@ theorem Finset.sum_image_le {ι α β : Type _} [DecidableEq α] [OrderedSemirin
   rw [sum_comp f g]
   refine sum_le_sum fun a hag => ?_
   let hag' := hag
-  rw [Finset.mem_image] at hag' 
+  rw [Finset.mem_image] at hag'
   obtain ⟨i, hi, hig⟩ := hag'
   suffices 1 ≤ (J.filter (fun j => g j = a)).card by
     conv_lhs => rw [← one_smul ℕ (f a)]
@@ -40,12 +40,12 @@ theorem monotone_partialSups {α : Type _} [SemilatticeSup α] (f : ℕ → α) 
 
 /-- todo: this has to be somewhere in mathlib -/
 theorem Set.bUnion_le_succ {α : Type _} (s : ℕ → Set α) (n : ℕ) :
-    (⋃ i ≤ n.succ, s i) = (⋃ i ≤ n, s i) ∪ s n.succ := by 
+    (⋃ i ≤ n.succ, s i) = (⋃ i ≤ n, s i) ∪ s n.succ := by
   simp_rw [← Nat.lt_succ_iff];
   exact Set.biUnion_lt_succ s (n + 1)
 
 theorem Set.bInter_le_succ {α : Type _} (s : ℕ → Set α) (n : ℕ) :
-    (⋂ i ≤ n.succ, s i) = (⋂ i ≤ n, s i) ∩ s n.succ := by 
+    (⋂ i ≤ n.succ, s i) = (⋂ i ≤ n, s i) ∩ s n.succ := by
   simp_rw [← Nat.lt_succ_iff];
   exact Set.biInter_lt_succ s (n + 1)
 
@@ -71,9 +71,6 @@ theorem MeasurableSet.accumulate {_ : MeasurableSpace α} {s : ℕ → Set α}
     (hs : ∀ n, MeasurableSet (s n)) (n : ℕ) : MeasurableSet (Set.Accumulate s n) :=
   MeasurableSet.biUnion (Set.to_countable _) fun n _ => hs n
 
-theorem Set.accumulate_subset_iUnion (s : ℕ → Set α) (n : ℕ) : Set.Accumulate s n ⊆ ⋃ i, s i := by
-  simp_rw [Set.accumulate_def, Set.iUnion_subset_iff]; exact fun i _ => Set.subset_iUnion s i
-
 theorem Set.disjoint_accumulate {s : ℕ → Set α} (hs : Pairwise (Disjoint on s)) {i j : ℕ}
     (hij : i < j) : Disjoint (Set.Accumulate s i) (s j) := by
   rw [Set.accumulate_def]
@@ -91,7 +88,7 @@ end Accumulate
 
 namespace NNReal
 
-theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by 
+theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by
   rw [← bot_eq_zero, Ico_bot];
   exact isOpen_Iio
 
@@ -109,7 +106,7 @@ theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :
   refine ⟨?_, h⟩
   by_contra h1
   obtain h2 := tsum_eq_zero_of_not_summable h1
-  rw [h] at h2 
+  rw [h] at h2
   apply hx.ne
   rw [h2]
 
@@ -135,6 +132,7 @@ theorem exists_seq_pos_eq (x : ℝ≥0∞) (hx : 0 < x) :
   by_cases hx_top : x = ∞
   · use fun _ ↦ ∞
     simp only [forall_const, ENNReal.tsum_top, hx_top, and_self]
+    simp
   suffices ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x.toNNReal by
     obtain ⟨f, hf_pos, hf_sum, hf_eq⟩ := this
     refine ⟨fun n ↦ f n, ?_, ?_⟩
@@ -152,7 +150,8 @@ theorem exists_seq_pos_lt (x : ℝ≥0∞) (hx : 0 < x) :
       exists_seq_pos_eq 1 zero_lt_one
     refine ⟨f, hf_pos, ?_⟩
     simp only [hf_eq, hx_top, one_lt_top]
-  have hx_half : 0 < x / 2 := by simp only [div_pos_iff, ne_eq, and_true, hx.ne']
+  have hx_half : 0 < x / 2 := by simp only [div_pos_iff, ne_eq, hx.ne', not_false_eq_true,
+    two_ne_top, and_self]
   obtain ⟨f, hf⟩ := ENNReal.exists_seq_pos_eq (x / 2) hx_half
   refine ⟨f, hf.1, ?_⟩
   rcases hf with ⟨_, hf3⟩

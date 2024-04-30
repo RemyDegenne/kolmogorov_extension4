@@ -41,7 +41,7 @@ theorem kolmogorovFun_union (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylin
     (ht : t ∈ cylinders α) (hst : Disjoint s t) :
     kolmogorovFun P (s ∪ t) (union_mem_cylinders hs ht) =
       kolmogorovFun P s hs + kolmogorovFun P t ht := by
-  rw [mem_cylinders] at hs ht 
+  rw [mem_cylinders] at hs ht
   obtain ⟨I, S, hS, hs_eq⟩ := hs
   obtain ⟨J, T, hT, ht_eq⟩ := ht
   classical
@@ -61,7 +61,7 @@ theorem kolmogorovFun_union (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylin
     rw [hs_eq, ht_eq]; exact union_cylinder _ _ _ _
   rw [kolmogorovFun_congr hP hs h_eq1 hS', kolmogorovFun_congr hP ht h_eq2 hT',
     kolmogorovFun_congr hP _ h_eq3 (hS'.union hT'), measure_union _ hT']
-  rwa [hs_eq, ht_eq, disjoint_cylinder_iff] at hst 
+  rwa [hs_eq, ht_eq, disjoint_cylinder_iff] at hst
 
 theorem kolmogorovFun_additive (hP : IsProjectiveMeasureFamily P) (I : Finset (Set (∀ i, α i)))
     (h_ss : ↑I ⊆ cylinders α) (h_dis : PairwiseDisjoint (I : Set (Set (∀ i, α i))) id)
@@ -111,10 +111,10 @@ local notation "Js" => cylinders.finset
 local notation "As" => cylinders.set
 
 variable [∀ i, TopologicalSpace (α i)] [∀ i, OpensMeasurableSpace (α i)]
-  [∀ i, TopologicalSpace.SecondCountableTopology (α i)] [∀ I, IsFiniteMeasure (P I)]
+  [∀ i, SecondCountableTopology (α i)] [∀ I, IsFiniteMeasure (P I)]
 
 theorem exists_compact
-    (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
+    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     (J : Finset ι) (A : Set (∀ i : J, α i)) (hA : MeasurableSet A) (ε : ℝ≥0∞) (hε : 0 < ε) :
     ∃ K, IsCompact K ∧ IsClosed K ∧ K ⊆ A ∧ P J (A \ K) ≤ ε := by
   by_cases hPA : P J A = 0
@@ -130,7 +130,7 @@ theorem exists_compact
   rwa [add_comm]
 
 lemma innerRegular_kolContent [∀ i, Nonempty (α i)] (hP : IsProjectiveMeasureFamily P)
-    (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
+    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     {s : Set (∀ i, α i)} (hs : s ∈ cylinders α) (ε : ℝ≥0∞) (hε : 0 < ε) :
     ∃ (K : Set (∀ i, α i)) (_ : K ∈ closedCompactCylinders α),
       K ⊆ s ∧ kolContent hP (s \ K) ≤ ε := by
@@ -163,12 +163,12 @@ end InnerRegular
 section InnerRegularAssumption
 
 variable [∀ i, Nonempty (α i)] [∀ i, TopologicalSpace (α i)] [∀ i, OpensMeasurableSpace (α i)]
-  [∀ i, TopologicalSpace.SecondCountableTopology (α i)] [∀ I, IsFiniteMeasure (P I)]
+  [∀ i, SecondCountableTopology (α i)] [∀ I, IsFiniteMeasure (P I)]
 
 theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
-    (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
+    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α)
-    (h_disj : Pairwise (Disjoint on f)) : 
+    (h_disj : Pairwise (Disjoint on f)) :
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
   refine (kolContent hP).sigma_additive_of_regular setRing_cylinders ?_ isCompactSystem_cylinders
     (fun t ht ↦ mem_cylinder_of_mem_closedCompactCylinders ht) ?_ hf hf_Union h_disj
@@ -180,7 +180,7 @@ theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamil
     exact ⟨a, b, c⟩
 
 theorem kolContent_sigma_subadditive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
-    (hP_inner : ∀ J, (P J).InnerRegular (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
+    (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s => IsCompact s ∧ IsClosed s) MeasurableSet)
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α) :
     kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) :=
   (kolContent hP).sigma_subadditive_of_sigma_additive setRing_cylinders
@@ -190,7 +190,7 @@ end InnerRegularAssumption
 
 /-- Projective limit of a projective measure family. -/
 noncomputable def projectiveLimitWithWeakestHypotheses [∀ i, PseudoEMetricSpace (α i)]
-    [∀ i, BorelSpace (α i)] [∀ i, TopologicalSpace.SecondCountableTopology (α i)]
+    [∀ i, BorelSpace (α i)] [∀ i, SecondCountableTopology (α i)]
     [∀ i, CompleteSpace (α i)] [∀ i, Nonempty (α i)] (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
     [∀ i, IsFiniteMeasure (P i)] (hP : IsProjectiveMeasureFamily P) : Measure (∀ i, α i) :=
   Measure.ofAddContent setSemiringCylinders generateFrom_cylinders (kolContent hP)
@@ -250,4 +250,3 @@ instance isProbabilityMeasure_projectiveLimit [hι : Nonempty ι]
 end Polish
 
 end MeasureTheory
-
