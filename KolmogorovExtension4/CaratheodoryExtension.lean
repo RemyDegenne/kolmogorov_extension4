@@ -3,11 +3,11 @@ import KolmogorovExtension4.Content
 
 open Finset Set MeasureTheory Order
 
-open scoped Classical BigOperators NNReal Topology ENNReal MeasureTheory
+open scoped Classical NNReal Topology ENNReal MeasureTheory
 
 namespace MeasureTheory
 
-variable {α : Type _} {C : Set (Set α)}
+variable {α : Type*} {C : Set (Set α)}
 
 /-- Same as the definition of `of_function`, except that `f i` belongs to `C`. The hypothesis
 `m_top` applies in particular to a function of the form `extend m'`. -/
@@ -57,7 +57,7 @@ theorem OuterMeasure.ofFunction_eq_of_mono_of_subadditive (hC : SetSemiring C) (
     _ ≤ ∑' i, m (f i) :=
       by
       refine tsum_le_tsum (fun i ↦ ?_) ENNReal.summable ENNReal.summable
-      exact m_mono (hC.inter_mem _ hs _ (hf i)) (hf i) (Set.inter_subset_right _ _)
+      exact m_mono (hC.inter_mem _ hs _ (hf i)) (hf i) Set.inter_subset_right
 
 theorem OuterMeasure.ofFunction_addContent_eq (hC : SetSemiring C) (m : AddContent C)
     (m_sigma_subadd : ∀ ⦃f : ℕ → Set α⦄ (_hf : ∀ i, f i ∈ C) (_hf_Union : (⋃ i, f i) ∈ C),
@@ -110,8 +110,7 @@ theorem caratheodory_semiring_extension' (hC : SetSemiring C) (m : Set α → �
     rw [← SetSemiring.diff_eq_sUnion, Set.inter_comm, diff_inter_self_eq_diff]
   have h_m_eq : ∀ i, m (f i) = m (f i ∩ s) + ∑ u in A i, m u := by
     intro i
-    rw [hC.eq_add_diffFinset_of_subset m m_add (hC.inter_mem _ (hf i) _ hs) (hf i)
-        (inter_subset_left _ _)]
+    rw [hC.eq_add_diffFinset_of_subset m m_add (hC.inter_mem _ (hf i) _ hs) (hf i) inter_subset_left]
   simp_rw [h_m_eq]
   rw [tsum_add ENNReal.summable ENNReal.summable]
   refine add_le_add ?_ ?_
@@ -207,8 +206,8 @@ noncomputable def Measure.ofAddSubaddCaratheodory (hC : SetSemiring C)
   letI : MeasurableSpace α := (inducedOuterMeasure m hC.empty_mem m_empty).caratheodory
   exact { inducedOuterMeasure m hC.empty_mem m_empty with
     m_iUnion := fun f hf hd ↦ OuterMeasure.iUnion_eq_of_caratheodory _ hf hd
-    trimmed := by
-      refine le_antisymm (le_inducedOuterMeasure.mpr fun s hs ↦ ?_) (OuterMeasure.le_trim _)
+    trim_le := by
+      apply le_inducedOuterMeasure.mpr fun s hs ↦ ?_
       have hs_meas : MeasurableSet[(inducedOuterMeasure m hC.empty_mem m_empty).caratheodory] s := by
         show (inducedOuterMeasure m hC.empty_mem m_empty).IsCaratheodory s
         exact caratheodory_semiring_extension hC m m_empty m_add hs

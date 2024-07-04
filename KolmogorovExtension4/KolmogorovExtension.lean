@@ -10,7 +10,7 @@ open scoped ENNReal BigOperators
 
 namespace MeasureTheory
 
-variable {ι : Type _} {α : ι → Type _} [∀ i, MeasurableSpace (α i)]
+variable {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
   {P : ∀ J : Finset ι, Measure (∀ j : J, α j)}
 
 section KolFunDef

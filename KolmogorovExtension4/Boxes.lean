@@ -8,7 +8,7 @@ import KolmogorovExtension4.Semiring
 
 open MeasureTheory Set
 
-variable {ι : Type _} {α : ι → Type _}
+variable {ι : Type*} {α : ι → Type*}
 
 section ProjectionMaps
 
@@ -52,22 +52,22 @@ open Filter
 
 open scoped Topology Filter
 
-variable {ι : Type _} {α : ι → Type _} [∀ i, TopologicalSpace (α i)] {s : Set (∀ i, α i)}
+variable {ι : Type*} {α : ι → Type*} [∀ i, TopologicalSpace (α i)] {s : Set (∀ i, α i)}
 
-theorem continuous_cast {α β : Type _} [tα : TopologicalSpace α] [tβ : TopologicalSpace β]
+theorem continuous_cast {α β : Type u} [tα : TopologicalSpace α] [tβ : TopologicalSpace β]
     (h : α = β) (ht : HEq tα tβ) : Continuous fun x : α ↦ cast h x := by
   subst h
   convert continuous_id
   rw [← heq_iff_eq]
   exact ht.symm
 
-def projCompl (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (x : (i : ι) → α i) :
+def projCompl (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (x : (i : ι) → α i) :
     (j : { k // k ≠ i }) → α j := fun j ↦ x j
 
 lemma continuous_projCompl {i : ι} : Continuous (projCompl α i) :=
   continuous_pi fun _ ↦ continuous_apply _
 
-def X (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
+def X (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
     Set ((j : { k // k ≠ i }) → α j) := projCompl α i '' s
 
 lemma projCompl_mem (hx : x ∈ s) : projCompl α i x ∈ X α i s := by
@@ -81,7 +81,7 @@ lemma compactSpace_X (hs_compact : IsCompact s) : CompactSpace (X α i s) := by
   refine IsCompact.image hs_compact ?_
   exact continuous_pi fun j ↦ continuous_apply _
 
-def XY (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
+def XY (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
     Set ((j : ι) → α j) :=
   {x | projCompl α i x ∈ projCompl α i '' s}
 
@@ -89,7 +89,7 @@ lemma subset_xy : s ⊆ XY α i s := fun x hx ↦ ⟨x, hx, rfl⟩
 
 lemma mem_xy_of_mem (hx : x ∈ s) : x ∈ XY α i s := subset_xy hx
 
-def fromXProd (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j))
+def fromXProd (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j))
     [DecidableEq ι] :
     X α i s × α i → ∀ j, α j :=
   fun p j ↦
@@ -129,7 +129,7 @@ lemma fromXProd_projCompl (x : XY α i s) [DecidableEq ι] :
   refine HEq.trans (cast_heq (_ : α i = α j) _) ?_
   rw [h]
 
-def XYEquiv (α : ι → Type _) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j))
+def XYEquiv (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j))
     [DecidableEq ι] :
     XY α i s ≃ₜ X α i s × α i :=
 { toFun := fun x ↦ ⟨⟨projCompl α i x, x.2⟩, (x : ∀ j, α j) i⟩
@@ -206,8 +206,8 @@ theorem box_inter (t₁ t₂ : (i : ι) → Set (α i)) (s₁ s₂ : Finset ι)
   rw [mem_inter_iff]
   simp_rw [mem_box]
   refine ⟨fun h ↦ ⟨fun i his₁ ↦ ?_, fun i his₂ ↦ ?_⟩, fun h i hi ↦ ?_⟩
-  · exact inter_subset_left _ _ (h i (Finset.mem_union_left s₂ his₁))
-  · exact inter_subset_right _ _ (h i (Finset.mem_union_right s₁ his₂))
+  · exact inter_subset_left (h i (Finset.mem_union_left s₂ his₁))
+  · exact inter_subset_right (h i (Finset.mem_union_right s₁ his₂))
   · rw [Finset.mem_union] at hi
     cases' hi with hi hi
     · by_cases hi2 : i ∈ s₂
@@ -334,7 +334,7 @@ theorem cylinder_eq_empty_iff [h_nonempty : Nonempty ((i : ι) → α i)] (s : F
     (S : Set (∀ i : s, α i)) : cylinder s S = ∅ ↔ S = ∅ := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · by_contra hS
-    rw [← Ne.def, ← nonempty_iff_ne_empty] at hS
+    rw [← Ne.eq_def, ← nonempty_iff_ne_empty] at hS
     let f := hS.some
     have hf : f ∈ S := hS.choose_spec
     classical
@@ -459,8 +459,8 @@ theorem inter_mem_cylinders {s t : Set (∀ i : ι, α i)} (hs : s ∈ cylinders
     (fun f ↦ (fun i ↦ f ⟨i, Finset.mem_union_left s₂ i.prop⟩ : ∀ i : s₁, α i)) ⁻¹' S₁ ∩
       {f | (fun i ↦ f ⟨i, Finset.mem_union_right s₁ i.prop⟩ : ∀ i : s₂, α i) ∈ S₂}, ?_, ?_⟩
   · refine MeasurableSet.inter ?_ ?_
-    · exact (measurable_proj₂' (s₁ ∪ s₂) s₁ (Finset.subset_union_left _ _)) hS₁
-    · exact (measurable_proj₂' (s₁ ∪ s₂) s₂ (Finset.subset_union_right _ _)) hS₂
+    · exact measurable_proj₂' (s₁ ∪ s₂) s₁ Finset.subset_union_left hS₁
+    · exact measurable_proj₂' (s₁ ∪ s₂) s₂ Finset.subset_union_right hS₂
   · exact inter_cylinder _ _ _ _
 
 theorem compl_mem_cylinders {s : Set (∀ i : ι, α i)} (hs : s ∈ cylinders α) :

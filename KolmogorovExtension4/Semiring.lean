@@ -18,7 +18,7 @@ open scoped BigOperators NNReal Topology ENNReal
 
 namespace MeasureTheory
 
-variable {α : Type _} {C : Set (Set α)} {s t : Set α}
+variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 
 /-- A semi-ring of sets `C` is a family of sets containing `∅`, stable by intersection and such that
 for all `s, t ∈ C`, `t \ s` is equal to a disjoint union of finitely many sets in `C`. -/
@@ -54,9 +54,8 @@ theorem diffFinset_subset (hC : SetSemiring C) (hs : s ∈ C) (ht : t ∈ C) [De
 theorem diffFinset_disjoint (hC : SetSemiring C) (hs : s ∈ C) (ht : t ∈ C) [DecidableEq (Set α)] :
     PairwiseDisjoint (hC.diffFinset hs ht : Set (Set α)) id := by
   simp only [SetSemiring.diffFinset, coe_sdiff, coe_singleton]
-  exact
-    Set.PairwiseDisjoint.subset (hC.diff_eq_Union' s hs t ht).choose_spec.choose_spec.choose
-      (Set.diff_subset _ _)
+  exact Set.PairwiseDisjoint.subset (hC.diff_eq_Union' s hs t ht).choose_spec.choose_spec.choose
+    Set.diff_subset
 
 theorem diff_eq_sUnion (hC : SetSemiring C) (hs : s ∈ C) (ht : t ∈ C) [DecidableEq (Set α)] :
     t \ s = ⋃₀ hC.diffFinset hs ht := by
@@ -90,7 +89,6 @@ theorem pairwiseDisjoint_insert (hC : SetSemiring C) (hs : s ∈ C) (ht : t ∈ 
     [DecidableEq (Set α)] : (insert s (hC.diffFinset hs ht) : Set (Set α)).PairwiseDisjoint id := by
   have h := hC.diffFinset_disjoint hs ht
   refine PairwiseDisjoint.insert_of_not_mem h (hC.not_mem_diffFinset hs ht) fun u hu ↦ ?_
-  simp_rw [id.def]
   refine Disjoint.mono_right ?_ (hC.disjoint_sUnion_diffFinset hs ht)
   simp only [Set.le_eq_subset]
   exact subset_sUnion_of_mem hu
@@ -141,7 +139,7 @@ theorem exists_disjoint_finset_diff_eq (hC : SetSemiring C) (hs : s ∈ C) (I : 
       Disjoint (⋃₀ (Ju u hu : Set (Set α))) (⋃₀ ↑(Ju v hv)) :=by
     intro u hu v hv huv_disj
     rw [hJu_sUnion, hJu_sUnion]
-    exact disjoint_of_subset (Set.diff_subset u t) (Set.diff_subset v t) huv_disj
+    exact disjoint_of_subset Set.diff_subset Set.diff_subset huv_disj
   let J' : Finset (Set α) := Finset.biUnion (Finset.univ : Finset J) fun u ↦ Ju u (h_ss u.prop)
   have hJ'_subset : ↑J' ⊆ C := by
     intro u
@@ -152,7 +150,7 @@ theorem exists_disjoint_finset_diff_eq (hC : SetSemiring C) (hs : s ∈ C) (I : 
   refine ⟨J', hJ'_subset, ?_, ?_⟩
   · rw [Finset.coe_biUnion]
     refine PairwiseDisjoint.biUnion ?_ ?_
-    · simp only [univ_eq_attach, mem_coe, id.def, iSup_eq_iUnion]
+    · simp only [univ_eq_attach, mem_coe, iSup_eq_iUnion]
       simp_rw [PairwiseDisjoint, Set.Pairwise, Function.onFun]
       intro x _ y _ hxy
       have hxy_disj : Disjoint (x : Set α) y := by
@@ -201,7 +199,7 @@ theorem pairwiseDisjoint_diff₀ (hC : SetSemiring C) (hs : s ∈ C) (I : Finset
     [DecidableEq (Set α)] : (hC.diff₀ hs I hI : Set (Set α)).PairwiseDisjoint id := by
   simp only [SetSemiring.diff₀, coe_sdiff, coe_singleton]
   exact Set.PairwiseDisjoint.subset
-    (hC.exists_disjoint_finset_diff_eq hs I hI).choose_spec.choose_spec.choose (Set.diff_subset _ _)
+    (hC.exists_disjoint_finset_diff_eq hs I hI).choose_spec.choose_spec.choose Set.diff_subset
 
 theorem diff_sUnion_eq_sUnion_diff₀ (hC : SetSemiring C) (hs : s ∈ C) (I : Finset (Set α))
     (hI : ↑I ⊆ C) [DecidableEq (Set α)] : s \ ⋃₀ I = ⋃₀ hC.diff₀ hs I hI := by
@@ -212,7 +210,7 @@ theorem diff_sUnion_eq_sUnion_diff₀ (hC : SetSemiring C) (hs : s ∈ C) (I : F
 theorem sUnion_diff₀_subset (hC : SetSemiring C) (hs : s ∈ C) (I : Finset (Set α)) (hI : ↑I ⊆ C)
     [DecidableEq (Set α)] : ⋃₀ (hC.diff₀ hs I hI : Set (Set α)) ⊆ s := by
   rw [← hC.diff_sUnion_eq_sUnion_diff₀]
-  exact diff_subset _ _
+  exact diff_subset
 
 theorem disjoint_sUnion_diff₀ (hC : SetSemiring C) (hs : s ∈ C) (I : Finset (Set α)) (hI : ↑I ⊆ C)
     [DecidableEq (Set α)] : Disjoint (⋃₀ (I : Set (Set α))) (⋃₀ hC.diff₀ hs I hI) := by
@@ -234,7 +232,6 @@ theorem pairwiseDisjoint_union_diff₀ (hC : SetSemiring C) (hs : s ∈ C) (I : 
     (I ∪ hC.diff₀ hs I hI : Set (Set α)).PairwiseDisjoint id := by
   rw [pairwiseDisjoint_union]
   refine ⟨h_dis, hC.pairwiseDisjoint_diff₀ hs I hI, fun u hu v hv _ ↦ ?_⟩
-  simp_rw [id.def]
   exact disjoint_of_subset (subset_sUnion_of_mem hu) (subset_sUnion_of_mem hv)
     (hC.disjoint_sUnion_diff₀ hs I hI)
 
@@ -254,7 +251,7 @@ end SetSemiring
 
 section Ordered
 
-theorem Finset.mem_map_univ_asEmbedding {α β : Type _} [Fintype α] {p : β → Prop}
+theorem Finset.mem_map_univ_asEmbedding {α β : Type*} [Fintype α] {p : β → Prop}
     (e : α ≃ Subtype p) {b : β} : b ∈ Finset.map e.asEmbedding univ ↔ p b := by
   rw [mem_map]
   simp only [Finset.mem_univ, Equiv.asEmbedding_apply, Function.comp_apply, exists_true_left,
@@ -290,7 +287,7 @@ theorem iUnion_ordered (J : Finset (Set α)) : (⋃ i : Fin J.card, J.ordered i)
   simp_rw [sUnion_eq_biUnion, coe_map, Set.biUnion_image]
   simp only [mem_coe, Finset.mem_univ, iUnion_true]
 
-theorem sum_ordered {β : Type _} [AddCommMonoid β] (J : Finset (Set α)) (m : Set α → β) :
+theorem sum_ordered {β : Type*} [AddCommMonoid β] (J : Finset (Set α)) (m : Set α → β) :
     ∑ i : Fin J.card, m (J.ordered i) = ∑ u in J, m u := by
   conv_rhs => rw [← map_ordered J]
   rw [sum_map]
@@ -367,7 +364,7 @@ theorem indexedDiff₀_subset (hC : SetSemiring C) (J : Finset (Set α)) (hJ : �
 
 theorem sUnion_indexedDiff₀_subset (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
     (n : Fin J.card) : ⋃₀ ↑(hC.indexedDiff₀ J hJ n) ⊆ J.ordered n :=
-  subset_trans (hC.sUnion_indexedDiff₀ J hJ n).subset (Set.diff_subset _ _)
+  subset_trans (hC.sUnion_indexedDiff₀ J hJ n).subset Set.diff_subset
 
 theorem empty_not_mem_indexedDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
     (n : Fin J.card) : ∅ ∉ hC.indexedDiff₀ J hJ n := by
@@ -467,7 +464,7 @@ noncomputable def allDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : �
 theorem pairwiseDisjoint_allDiff₀ (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
     PairwiseDisjoint ↑(hC.allDiff₀ J hJ) (id : Set α → Set α) := by
   intro u hu v hv huv
-  simp_rw [Function.onFun, id.def]
+  simp_rw [Function.onFun]
   simp_rw [SetSemiring.allDiff₀, mem_coe, Finset.mem_disjiUnion] at hu hv
   obtain ⟨n, _, huBn⟩ := hu
   obtain ⟨m, _, hvBm⟩ := hv
@@ -483,7 +480,7 @@ theorem allDiff₀_subset (hC : SetSemiring C) (J : Finset (Set α)) (hJ : ↑J 
   rintro ⟨n, _, h_mem⟩
   exact hC.indexedDiff₀_subset J hJ n h_mem
 
-theorem Finset.sUnion_disjUnion {α β : Type _} {f : α → Finset (Set β)} (I : Finset α)
+theorem Finset.sUnion_disjUnion {α β : Type*} {f : α → Finset (Set β)} (I : Finset α)
     (hf : (I : Set α).PairwiseDisjoint f) :
     ⋃₀ (I.disjiUnion f hf : Set (Set β)) = ⋃ a ∈ I, ⋃₀ ↑(f a) := by
   ext1 b
