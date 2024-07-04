@@ -14,7 +14,7 @@ for all `s, t ∈ C`, `t \ s` is equal to a disjoint union of finitely many sets
 
 open Finset Set MeasureTheory Order
 
-open scoped BigOperators NNReal Topology ENNReal
+open scoped NNReal Topology ENNReal
 
 namespace MeasureTheory
 

@@ -2,7 +2,7 @@ import KolmogorovExtension4.Content
 
 open Filter
 
-open scoped ENNReal Topology BigOperators
+open scoped ENNReal Topology
 
 namespace MeasureTheory
 

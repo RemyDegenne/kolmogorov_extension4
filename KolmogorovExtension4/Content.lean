@@ -3,7 +3,7 @@ import Mathlib.MeasureTheory.OuterMeasure.Induced
 
 open Set Finset Filter
 
-open scoped ENNReal BigOperators Topology
+open scoped ENNReal Topology
 
 namespace MeasureTheory
 

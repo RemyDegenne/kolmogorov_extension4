@@ -61,13 +61,13 @@ theorem continuous_cast {α β : Type u} [tα : TopologicalSpace α] [tβ : Topo
   rw [← heq_iff_eq]
   exact ht.symm
 
-def projCompl (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (x : (i : ι) → α i) :
+def projCompl (α : ι → Type*) (i : ι) (x : (i : ι) → α i) :
     (j : { k // k ≠ i }) → α j := fun j ↦ x j
 
 lemma continuous_projCompl {i : ι} : Continuous (projCompl α i) :=
   continuous_pi fun _ ↦ continuous_apply _
 
-def X (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
+def X (α : ι → Type*) (i : ι) (s : Set ((j : ι) → α j)) :
     Set ((j : { k // k ≠ i }) → α j) := projCompl α i '' s
 
 lemma projCompl_mem (hx : x ∈ s) : projCompl α i x ∈ X α i s := by
@@ -81,7 +81,7 @@ lemma compactSpace_X (hs_compact : IsCompact s) : CompactSpace (X α i s) := by
   refine IsCompact.image hs_compact ?_
   exact continuous_pi fun j ↦ continuous_apply _
 
-def XY (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
+def XY (α : ι → Type*) (i : ι) (s : Set ((j : ι) → α j)) :
     Set ((j : ι) → α j) :=
   {x | projCompl α i x ∈ projCompl α i '' s}
 
@@ -89,7 +89,7 @@ lemma subset_xy : s ⊆ XY α i s := fun x hx ↦ ⟨x, hx, rfl⟩
 
 lemma mem_xy_of_mem (hx : x ∈ s) : x ∈ XY α i s := subset_xy hx
 
-def fromXProd (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j))
+def fromXProd (α : ι → Type*) (i : ι) (s : Set ((j : ι) → α j))
     [DecidableEq ι] :
     X α i s × α i → ∀ j, α j :=
   fun p j ↦

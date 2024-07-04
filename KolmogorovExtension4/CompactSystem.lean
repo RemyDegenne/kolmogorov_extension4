@@ -286,7 +286,7 @@ def IsCompactSystem.support (hp : IsCompactSystem p) (hC : ∀ i, p (C i))
     Finset ℕ :=
   (hp C hC hC_empty).choose
 
-def IsCompactSystem.iInter_eq_empty (hp : IsCompactSystem p) (hC : ∀ i, p (C i))
+lemma IsCompactSystem.iInter_eq_empty (hp : IsCompactSystem p) (hC : ∀ i, p (C i))
     (hC_empty : ⋂ i, C i = ∅) :
     ⋂ i ∈ hp.support hC hC_empty, C i = ∅ :=
   (hp C hC hC_empty).choose_spec

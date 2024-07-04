@@ -395,22 +395,18 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
     let u : ℕ → Finset α := fun n ↦ (s'fin n (δ n) (hδ1' n)).toFinset
     let A := UniformSpace.interUnionBalls (fun n ↦ (u n : Set α)) (fun n ↦ t n)
     refine ⟨A, UniformSpace.isCompact_closure_interUnionBalls h_basis.toHasBasis u, ?_⟩
-    have hP : P (closure A)ᶜ ≤ P (Aᶜ) := by
-      apply measure_mono
-      rw [← Set.compl_subset_compl, compl_compl, compl_compl]
-      exact subset_closure
     suffices h_meas_balls : P ((UniformSpace.interUnionBalls (fun n ↦ ↑(u n)) fun n ↦ t n)ᶜ) < ε by
-      simp only [A, coe_toFinset] at hP h_meas_balls ⊢
+      simp only [A, coe_toFinset] at h_meas_balls ⊢
       exact h_meas_balls
-    · refine measure_Inter_iUnion_uniform_balls ε P (fun n ↦ ↑(u n)) (fun n ↦ t n) δ
-        (fun n ↦ ?_) hδ2 hδ3
-      obtain h' := le_of_lt ((fun n ↦ (s'bound n) (δ n) (hδ1' n)) n)
-      have h1 : ∀ x, x ∈ s' n (δ n) ↔ x ∈ u n := by
-        intro x
-        simp only [u, Finite.mem_toFinset]
-      obtain h'' : ∀ n, Prod.swap ⁻¹' t n = t n := fun n ↦ SymmetricRel.eq (hto n).2.2
-      simp_rw [Finset.mem_coe, ← h1, h'']
-      exact h'
+    refine measure_Inter_iUnion_uniform_balls ε P (fun n ↦ ↑(u n)) (fun n ↦ t n) δ
+      (fun n ↦ ?_) hδ2 hδ3
+    obtain h' := le_of_lt ((fun n ↦ (s'bound n) (δ n) (hδ1' n)) n)
+    have h1 : ∀ x, x ∈ s' n (δ n) ↔ x ∈ u n := by
+      intro x
+      simp only [u, Finite.mem_toFinset]
+    obtain h'' : ∀ n, Prod.swap ⁻¹' t n = t n := fun n ↦ SymmetricRel.eq (hto n).2.2
+    simp_rw [Finset.mem_coe, ← h1, h'']
+    exact h'
 
 theorem exists_compact_measurable_set_measure_lt_of_complete_countable [UniformSpace α]
     [CompleteSpace α] [SecondCountableTopology α]
