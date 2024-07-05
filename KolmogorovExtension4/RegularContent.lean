@@ -1,7 +1,7 @@
 import KolmogorovExtension4.CompactSystem
 import KolmogorovExtension4.AdditiveOfContinuous
 
-open scoped ENNReal BigOperators
+open scoped ENNReal
 
 namespace MeasureTheory
 

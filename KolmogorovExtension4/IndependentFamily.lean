@@ -2,7 +2,7 @@ import KolmogorovExtension4.KolmogorovExtension
 
 open Set
 
-open scoped ENNReal BigOperators
+open scoped ENNReal
 
 lemma Finset.prod_mem_not_mem_of_eq_one_if_not_mem {α β : Type*} [CommMonoid β]
     {f g : α → β} {I J : Finset α} (hJI : J ⊆ I)
@@ -135,7 +135,7 @@ theorem Measure.subset_pi_eval (I : Finset ι) (P : ∀ i : ι, Measure (α i))
 theorem Measure.subset_pi_eval_boxI (I : Finset ι) (P : ∀ i : ι, Measure (α i))
     [∀ i : ι, IsProbabilityMeasure (P i)] (t : (i : ι) → Set (α i)) :
     Measure.subset_pi P I (boxI I t) = ∏ i : I, P i (t i) := by
-  simp only [subset_pi, boxI._eq_1, Finset.coe_sort_coe, Measure.pi_pi, Finset.univ_eq_attach]
+  simp only [subset_pi, boxI, Finset.coe_sort_coe, Measure.pi_pi, Finset.univ_eq_attach]
 
 theorem Measure.subset_pi_eval_boxI' [DecidableEq ι] (I J : Finset ι) (hJI : J ⊆ I)
     (P : ∀ i, Measure (α i)) [∀ i : ι, IsProbabilityMeasure (P i)] (t : (i : ι) → Set (α i)) :

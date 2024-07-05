@@ -69,6 +69,7 @@ lemma mem_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ)
 theorem preimage_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ) :
     (fun (f : ∀ i, α i) (i : allProj hs) ↦ f i) ⁻¹' (projCylinder hs n) = s n := by
   conv_rhs => rw [closedCompactCylinders.eq_cylinder (hs n)]
+  rfl
 
 lemma nonempty_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α)
     (n : ℕ) (hs_nonempty : (s n).Nonempty) :
@@ -232,7 +233,7 @@ theorem nonempty_iInter_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders
     (fun n ↦ (⋂ i ≤ n, projCylinder hs i) ∩ piCylinderSet hs) ?_ ?_ ?_ ?_
   · refine fun i ↦ inter_subset_inter ?_ subset_rfl
     simp_rw [Set.bInter_le_succ]
-    exact inter_subset_left _ _
+    exact inter_subset_left
   · exact fun n ↦ nonempty_iInter_projCylinder_inter_piCylinderSet hs hs_nonempty h_nonempty n
   · exact (isCompact_piCylinderSet hs).inter_left (h_closed _)
   · exact fun n ↦ IsClosed.inter (h_closed n) (isClosed_piCylinderSet hs)
@@ -285,7 +286,7 @@ def IsCompactSystem.support (hp : IsCompactSystem p) (hC : ∀ i, p (C i))
     Finset ℕ :=
   (hp C hC hC_empty).choose
 
-def IsCompactSystem.iInter_eq_empty (hp : IsCompactSystem p) (hC : ∀ i, p (C i))
+lemma IsCompactSystem.iInter_eq_empty (hp : IsCompactSystem p) (hC : ∀ i, p (C i))
     (hC_empty : ⋂ i, C i = ∅) :
     ⋂ i ∈ hp.support hC hC_empty, C i = ∅ :=
   (hp C hC hC_empty).choose_spec

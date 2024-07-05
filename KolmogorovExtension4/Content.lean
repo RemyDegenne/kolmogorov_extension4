@@ -1,12 +1,13 @@
 import KolmogorovExtension4.Semiring
+import Mathlib.MeasureTheory.OuterMeasure.Induced
 
 open Set Finset Filter
 
-open scoped ENNReal BigOperators Topology
+open scoped ENNReal Topology
 
 namespace MeasureTheory
 
-variable {α : Type _} {C : Set (Set α)} {s t : Set α}
+variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 
 section Extend
 
@@ -36,7 +37,7 @@ end Extend
 
 section TotalSetFunction
 
-theorem sum_image_eq_of_disjoint {α ι : Type _} [DecidableEq (Set α)] (m : Set α → ℝ≥0∞)
+theorem sum_image_eq_of_disjoint {α ι : Type*} [DecidableEq (Set α)] (m : Set α → ℝ≥0∞)
     (m_empty : m ∅ = 0) (f : ι → Set α) (hf_disj : Pairwise (Disjoint on f)) (I : Finset ι) :
     ∑ s in image f I, m s = ∑ i in I, m (f i) := by
   rw [sum_image']
@@ -131,9 +132,8 @@ theorem le_sum_of_additive (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈
   · rwa [← ht_eq]
   refine (Finset.sum_image_le J _ m fun _ _ ↦ zero_le _).trans ?_
   refine sum_le_sum fun u hu ↦ ?_
-  exact
-    monotone_of_additive hC m m_add (hC.inter_mem _ ht _ (h_ss hu)) (h_ss hu)
-      (inter_subset_right _ _)
+  exact monotone_of_additive hC m m_add (hC.inter_mem _ ht _ (h_ss hu)) (h_ss hu)
+    inter_subset_right
 
 theorem sigma_additive_of_sigma_subadditive (m_empty : m ∅ = 0)
     (m_subadd : ∀ (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
@@ -358,7 +358,7 @@ theorem addContent_union' (m : AddContent C) (hs : s ∈ C) (ht : t ∈ C) (hst 
   rotate_left
   · simp only [coe_pair, Set.insert_subset_iff, hs, ht, Set.singleton_subset_iff, and_self_iff]
   · simp only [coe_pair, Set.pairwiseDisjoint_insert, pairwiseDisjoint_singleton,
-      mem_singleton_iff, Ne.def, id.def, forall_eq, true_and_iff]
+      mem_singleton_iff, forall_eq, true_and_iff]
     exact fun _ ↦ h_dis
   · simp only [coe_pair, sUnion_insert, sUnion_singleton]
     exact hst
@@ -377,16 +377,14 @@ theorem addContent_union (m : AddContent C) (hC : SetRing C) (hs : s ∈ C) (ht 
 theorem addContent_union_le (m : AddContent C) (hC : SetRing C) (hs : s ∈ C) (ht : t ∈ C) :
     m (s ∪ t) ≤ m s + m t := by
   rw [← union_diff_self, addContent_union m hC hs (hC.diff_mem ht hs)]
-  · exact add_le_add le_rfl (m.mono hC.setSemiring (hC.diff_mem ht hs) ht (diff_subset _ _))
+  · exact add_le_add le_rfl (m.mono hC.setSemiring (hC.diff_mem ht hs) ht diff_subset)
   · rw [Set.disjoint_iff_inter_eq_empty, inter_diff_self]
 
 theorem addContent_iUnion_le (m : AddContent C) (hC : SetRing C) {s : ℕ → Set α}
     (hs : ∀ n, s n ∈ C) (n : ℕ) :
     m (⋃ i ≤ n, s i) ≤ ∑ i in range (n + 1), m (s i) := by
   induction' n with n hn
-  · simp only [le_zero_iff, iUnion_iUnion_eq_left, Finset.range_one, Finset.sum_singleton, le_refl]
-    simp only [Nat.zero_eq, nonpos_iff_eq_zero, iUnion_iUnion_eq_left, zero_add, range_one,
-      sum_singleton, le_refl]
+  · simp
   rw [Set.bUnion_le_succ _ n, Finset.sum_range_succ]
   exact (addContent_union_le m hC (hC.iUnion_le_mem hs n) (hs _)).trans (add_le_add hn le_rfl)
 
@@ -396,7 +394,7 @@ theorem addContent_diff (m : AddContent C) (hC : SetRing C) (hs : s ∈ C) (ht :
   conv_lhs => rw [h]
   rw [addContent_union m hC (hC.inter_mem hs ht) (hC.diff_mem hs ht) disjoint_inf_sdiff, add_comm]
   refine add_tsub_le_assoc.trans_eq ?_
-  rw [tsub_eq_zero_of_le (m.mono hC.setSemiring (hC.inter_mem hs ht) ht (inter_subset_right _ _)),
+  rw [tsub_eq_zero_of_le (m.mono hC.setSemiring (hC.inter_mem hs ht) ht inter_subset_right),
     add_zero]
 
 theorem AddContent.sigma_subadditive_of_sigma_additive (hC : SetRing C) (m : AddContent C)

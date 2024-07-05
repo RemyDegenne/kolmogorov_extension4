@@ -181,7 +181,7 @@ We start by stating the exact result. We are going to formulate the main result 
 %In addition, there are still new proofs found for the general extension theorem \cite{chin2019new}, but they require some results not yet formalized in mathlib (Borel isomorphism of $\mathbb R$ to $\{0,1\}^{\mathbb N}$), so we do not follow this route.  
 
 \subsection{Formulating the result}
-Before we can state the result, we begin with some mathematical notions. We start off from metric spaces, but quickly introduce projective families of measures. In all definitions, $\alpha$ will be some set (or type, since {\tt Lean} is a dependently typed language, \leanline{α : Type _}). 
+Before we can state the result, we begin with some mathematical notions. We start off from metric spaces, but quickly introduce projective families of measures. In all definitions, $\alpha$ will be some set (or type, since {\tt Lean} is a dependently typed language, \leanline{α : Type*}). 
 
 \begin{definition}[Metric and topological spaces]
   \begin{enumerate}
@@ -427,7 +427,7 @@ defined as a \leanline{Multiset}.
 In contrast to statements already part of \leanline{mathlib}, in the
 sequel we \leanlinecolor{highlight} definitions and statements which
 are part of our own code. In the formalization of the above, we use
-\leanline{variable {ι : Type _} {α: ι → Type _}}, which fixes the
+\leanline{variable {ι : Type*} {α: ι → Type*}}, which fixes the
 index set $\iota$ and all spaces $\alpha_t, t\in\iota$ as global
 variables.  In Lean, the product space is then \leanline{∀ j : ι, α j}
 and the product over a finite subset \leanline{J} of \leanline{ι} is \leanline{∀ j : J, α

@@ -2,11 +2,11 @@ import KolmogorovExtension4.Content
 
 open Filter
 
-open scoped ENNReal Topology BigOperators
+open scoped ENNReal Topology
 
 namespace MeasureTheory
 
-variable {α : Type _} {C : Set (Set α)}
+variable {α : Type*} {C : Set (Set α)}
 
 /-- In a ring of sets, continuity of an additive function at `∅` implies σ-additivity.
 This is not true in general in semirings, or without the hypothesis that `m` is finite. See the

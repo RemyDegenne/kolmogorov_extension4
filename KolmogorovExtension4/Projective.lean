@@ -4,7 +4,7 @@ open Set
 
 namespace MeasureTheory
 
-variable {ι : Type _} {α : ι → Type _}
+variable {ι : Type*} {α : ι → Type*}
 
 def IsProjective [Preorder ι] (P : ∀ j : ι, α j) (π : ∀ {i j : ι}, j ≤ i → α i → α j) : Prop :=
   ∀ (i j) (hji : j ≤ i), P j = π hji (P i)
@@ -47,10 +47,10 @@ theorem IsProjectiveMeasureFamily.congr_cylinder [h_nonempty : Nonempty (∀ i, 
   constructor
   · have h_eq_union : cylinder I S = cylinder (I ∪ J) U := by
       rw [← inter_cylinder, h_eq, inter_self]
-    exact hP.congr_cylinder_aux hS h_eq_union.symm (Finset.subset_union_left _ _)
+    exact hP.congr_cylinder_aux hS h_eq_union.symm Finset.subset_union_left
   · have h_eq_union : cylinder J T = cylinder (I ∪ J) U := by
       rw [← inter_cylinder, h_eq, inter_self]
-    exact hP.congr_cylinder_aux hT h_eq_union.symm (Finset.subset_union_right _ _)
+    exact hP.congr_cylinder_aux hT h_eq_union.symm Finset.subset_union_right
 
 theorem IsProjectiveMeasureFamily.measure_univ_eq_of_subset (hP : IsProjectiveMeasureFamily P)
     (I J : Finset ι) (hJI : J ⊆ I) : P I univ = P J univ := by
@@ -64,8 +64,8 @@ theorem IsProjectiveMeasureFamily.measure_univ_eq_of_subset (hP : IsProjectiveMe
 
 theorem IsProjectiveMeasureFamily.measure_univ_eq (hP : IsProjectiveMeasureFamily P)
     (I J : Finset ι) : P I univ = P J univ := by
-  classical rw [← hP.measure_univ_eq_of_subset (I ∪ J) I (Finset.subset_union_left _ _), ←
-    hP.measure_univ_eq_of_subset (I ∪ J) J (Finset.subset_union_right _ _)]
+  classical rw [← hP.measure_univ_eq_of_subset (I ∪ J) I Finset.subset_union_left,
+    ← hP.measure_univ_eq_of_subset (I ∪ J) J Finset.subset_union_right]
 
 theorem IsProjectiveLimit.measure_cylinder {μ : Measure (∀ i, α i)} (h : IsProjectiveLimit μ P)
     (I : Finset ι) {s : Set (∀ i : I, α i)} (hs : MeasurableSet s) : μ (cylinder I s) = P I s := by

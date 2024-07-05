@@ -1,5 +1,6 @@
 /build
 /lake-packages/*
+/.lake/*
 
 Manuscript/proof_outline.aux
 Manuscript/proof_outline.bbl

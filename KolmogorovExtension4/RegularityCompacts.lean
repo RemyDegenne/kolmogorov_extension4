@@ -5,11 +5,11 @@ import KolmogorovExtension4.AuxLemmas
 
 open Set MeasureTheory
 
-open scoped ENNReal Topology BigOperators NNReal
+open scoped ENNReal Topology NNReal
 
 section Misc
 
-variable {α : Type _}
+variable {α : Type*}
 
 namespace Set
 
@@ -34,9 +34,9 @@ namespace Function
 
 /-- For some set s in the domain and S' in the codomain of f, assume S' ⊆ f '' s.
 Then, there is s' ⊆ s with S' = f '' s'. -/
-theorem subset_image {α β : Type _} {f : α → β} {s : Set α} {S' : Set β} (hS' : S' ⊆ f '' s) :
+theorem subset_image {α β : Type*} {f : α → β} {s : Set α} {S' : Set β} (hS' : S' ⊆ f '' s) :
     ∃ (s' : Set α) (_ : s' ⊆ s), f '' s' = S' := by
-  refine ⟨f ⁻¹' S' ∩ s, Set.inter_subset_right _ _, ?_⟩
+  refine ⟨f ⁻¹' S' ∩ s, inter_subset_right, ?_⟩
   ext x
   simp only [mem_image, mem_inter_iff, mem_preimage]
   constructor
@@ -48,7 +48,7 @@ theorem subset_image {α β : Type _} {f : α → β} {s : Set α} {S' : Set β}
 
 /-- For some set s in the domain and a finset S' in the codomain of f, assume S' ⊆ f '' s.
 Then, there is a finset s' ⊆ s with S' = f '' s'. -/
-theorem subset_image_finset {α β : Type _} {f : α → β} {s : Set α} {S' : Finset β}
+theorem subset_image_finset {α β : Type*} {f : α → β} {s : Set α} {S' : Finset β}
     (hS'1 : ↑S' ⊆ f '' s) : ∃ (s' : Finset α) (_ : ↑s' ⊆ s), f '' s' = S' := by
   classical
   have h : ∀ x ∈ S', ∃ y : α, y ∈ s ∧ f y = x := fun x hx ↦ (mem_image f s _).1 (hS'1 hx)
@@ -72,7 +72,7 @@ theorem subset_image_finset {α β : Type _} {f : α → β} {s : Set α} {S' : 
 
 /-- Same as subset_image, but assuming that S' is finite.
 Then, s' can be chosen to be finite, too. -/
-theorem subset_image_fintype {α β : Type _} {f : α → β} {s : Set α} {S' : Set β}
+theorem subset_image_fintype {α β : Type*} {f : α → β} {s : Set α} {S' : Set β}
     (hS'1 : S' ⊆ f '' s) (hS'2 : S'.Finite) :
     ∃ (s' : Set α) (_ : s' ⊆ s) (_ : s'.Finite), f '' s' = S' := by
   obtain ⟨s', hs', hfs'⟩ :=
@@ -265,7 +265,7 @@ theorem innerRegular_of_univ [TopologicalSpace α] [OpensMeasurableSpace α] (μ
   obtain ⟨K, hK_relatively_compact, hKA, h_lt⟩ :
     ∃ (K : _) (_ : IsCompact (closure K)) (_ : K ⊆ A), μ (A \ closure K) < μ A - r := by
     obtain ⟨K', hK'_relatively_compact, hK'_lt⟩ := hμ (μ A - r) (tsub_pos_of_lt hr)
-    refine ⟨closure K' ∩ A, ?_, ⟨inter_subset_right _ _, ?_⟩⟩
+    refine ⟨closure K' ∩ A, ?_, ⟨inter_subset_right, ?_⟩⟩
     · rw [IsClosed.closure_eq]
       exact hK'_relatively_compact.inter_right hA
       apply IsClosed.inter isClosed_closure hA
@@ -299,7 +299,7 @@ theorem innerRegular_isCompact_isClosed_of_univ [TopologicalSpace α] [OpensMeas
   obtain ⟨K, hK_compact, hK_closed, hKA, h_lt⟩ :
       ∃ K, IsCompact K ∧ IsClosed K ∧ K ⊆ A ∧ μ (A \ K) < μ A - r := by
     obtain ⟨K', hK'_compact, hK'_closed, hK'_lt⟩ := hμ (μ A - r) (tsub_pos_of_lt hr)
-    refine ⟨K' ∩ A, ?_, hK'_closed.inter hA, ⟨inter_subset_right _ _, ?_⟩⟩
+    refine ⟨K' ∩ A, ?_, hK'_closed.inter hA, ⟨inter_subset_right, ?_⟩⟩
     · exact hK'_compact.inter_right hA
     · refine (measure_mono fun x ↦ ?_).trans_lt hK'_lt
       simp only [diff_inter_self_eq_diff, mem_diff, mem_compl_iff, and_imp, imp_self, imp_true_iff]
@@ -395,22 +395,18 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
     let u : ℕ → Finset α := fun n ↦ (s'fin n (δ n) (hδ1' n)).toFinset
     let A := UniformSpace.interUnionBalls (fun n ↦ (u n : Set α)) (fun n ↦ t n)
     refine ⟨A, UniformSpace.isCompact_closure_interUnionBalls h_basis.toHasBasis u, ?_⟩
-    have hP : P (closure A)ᶜ ≤ P (Aᶜ) := by
-      apply measure_mono
-      rw [← Set.compl_subset_compl, compl_compl, compl_compl]
-      exact subset_closure
     suffices h_meas_balls : P ((UniformSpace.interUnionBalls (fun n ↦ ↑(u n)) fun n ↦ t n)ᶜ) < ε by
-      simp only [A, coe_toFinset] at hP h_meas_balls ⊢
+      simp only [A, coe_toFinset] at h_meas_balls ⊢
       exact h_meas_balls
-    · refine measure_Inter_iUnion_uniform_balls ε P (fun n ↦ ↑(u n)) (fun n ↦ t n) δ
-        (fun n ↦ ?_) hδ2 hδ3
-      obtain h' := le_of_lt ((fun n ↦ (s'bound n) (δ n) (hδ1' n)) n)
-      have h1 : ∀ x, x ∈ s' n (δ n) ↔ x ∈ u n := by
-        intro x
-        simp only [u, Finite.mem_toFinset]
-      obtain h'' : ∀ n, Prod.swap ⁻¹' t n = t n := fun n ↦ SymmetricRel.eq (hto n).2.2
-      simp_rw [Finset.mem_coe, ← h1, h'']
-      exact h'
+    refine measure_Inter_iUnion_uniform_balls ε P (fun n ↦ ↑(u n)) (fun n ↦ t n) δ
+      (fun n ↦ ?_) hδ2 hδ3
+    obtain h' := le_of_lt ((fun n ↦ (s'bound n) (δ n) (hδ1' n)) n)
+    have h1 : ∀ x, x ∈ s' n (δ n) ↔ x ∈ u n := by
+      intro x
+      simp only [u, Finite.mem_toFinset]
+    obtain h'' : ∀ n, Prod.swap ⁻¹' t n = t n := fun n ↦ SymmetricRel.eq (hto n).2.2
+    simp_rw [Finset.mem_coe, ← h1, h'']
+    exact h'
 
 theorem exists_compact_measurable_set_measure_lt_of_complete_countable [UniformSpace α]
     [CompleteSpace α] [SecondCountableTopology α]

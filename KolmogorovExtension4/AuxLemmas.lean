@@ -1,17 +1,19 @@
+import Mathlib.MeasureTheory.MeasurableSpace.Basic
 import Mathlib.MeasureTheory.OuterMeasure.Basic
+import Mathlib.Analysis.SpecificLimits.Basic
 
 open Finset Set Filter
 
-open scoped BigOperators ENNReal NNReal Topology
+open scoped ENNReal NNReal Topology
 
-theorem bInter_diff_bUnion_subset {ι α : Type _} (A B : ι → Set α) (s : Set ι) :
+theorem bInter_diff_bUnion_subset {ι α : Type*} (A B : ι → Set α) (s : Set ι) :
     ((⋂ i ∈ s, A i) \ ⋃ i ∈ s, B i) ⊆ ⋂ i ∈ s, A i \ B i := by
   intro x
   simp only [mem_diff, mem_iInter, mem_iUnion, exists_prop, not_exists, not_and, and_imp]
   intro h1 h2 i hi
   exact ⟨h1 i hi, h2 i hi⟩
 
-theorem Finset.sum_image_le {ι α β : Type _} [DecidableEq α] [OrderedSemiring β] (J : Finset ι)
+theorem Finset.sum_image_le {ι α β : Type*} [DecidableEq α] [OrderedSemiring β] (J : Finset ι)
     (g : ι → α) (f : α → β) (hf : ∀ u ∈ J.image g, 0 ≤ f u) :
     ∑ u in J.image g, f u ≤ ∑ u in J, f (g u) := by
   rw [sum_comp f g]
@@ -28,23 +30,23 @@ theorem Finset.sum_image_le {ι α β : Type _} [DecidableEq α] [OrderedSemirin
   rw [mem_filter]
   exact ⟨hi, hig⟩
 
-theorem partialSups_eq_sUnion_image {α : Type _} [DecidableEq (Set α)] (f : ℕ → Set α) (n : ℕ) :
+theorem partialSups_eq_sUnion_image {α : Type*} [DecidableEq (Set α)] (f : ℕ → Set α) (n : ℕ) :
     partialSups f n = ⋃₀ ↑(Finset.image f (range (n + 1))) := by
   ext1 s
   simp only [partialSups_eq_biSup, iSup_eq_iUnion, Set.mem_sUnion, mem_iUnion, exists_prop, mem_coe,
   Finset.mem_image, Finset.mem_range, exists_exists_and_eq_and, Nat.lt_succ_iff]
 
-theorem monotone_partialSups {α : Type _} [SemilatticeSup α] (f : ℕ → α) :
+theorem monotone_partialSups {α : Type*} [SemilatticeSup α] (f : ℕ → α) :
     Monotone fun n ↦ partialSups f n := fun n _ hnm ↦
   partialSups_le f n _ fun _ hm'n ↦ le_partialSups_of_le _ (hm'n.trans hnm)
 
 /-- todo: this has to be somewhere in mathlib -/
-theorem Set.bUnion_le_succ {α : Type _} (s : ℕ → Set α) (n : ℕ) :
+theorem Set.bUnion_le_succ {α : Type*} (s : ℕ → Set α) (n : ℕ) :
     (⋃ i ≤ n.succ, s i) = (⋃ i ≤ n, s i) ∪ s n.succ := by
   simp_rw [← Nat.lt_succ_iff];
   exact Set.biUnion_lt_succ s (n + 1)
 
-theorem Set.bInter_le_succ {α : Type _} (s : ℕ → Set α) (n : ℕ) :
+theorem Set.bInter_le_succ {α : Type*} (s : ℕ → Set α) (n : ℕ) :
     (⋂ i ≤ n.succ, s i) = (⋂ i ≤ n, s i) ∩ s n.succ := by
   simp_rw [← Nat.lt_succ_iff];
   exact Set.biInter_lt_succ s (n + 1)
@@ -65,7 +67,7 @@ theorem ENNReal.tendsto_atTop_zero_const_sub_iff (f : ℕ → ℝ≥0∞) (a : �
 
 section Accumulate
 
-variable {α : Type _}
+variable {α : Type*}
 
 theorem MeasurableSet.accumulate {_ : MeasurableSpace α} {s : ℕ → Set α}
     (hs : ∀ n, MeasurableSet (s n)) (n : ℕ) : MeasurableSet (Set.Accumulate s n) :=
