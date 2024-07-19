@@ -84,8 +84,8 @@ def zer : (X 0) ≃ᵐ ((i : Iic 0) → X i) where
     cases this; rfl
   measurable_invFun := measurable_pi_apply _
 
-/-- Infinite product measure indexed by `ℕ`. Use instead `Measure.infinitePi` for the case of a general
-index space-/
+/-- Infinite product measure indexed by `ℕ`. Use instead `Measure.productMeasure` for the case of a
+general index space-/
 noncomputable def Measure.infinitePiNat : Measure ((n : ℕ) → X n) :=
   ((μ 0).map zer).bind
     (@ionescuTulceaKernel _ (ProbabilityMeasure.nonempty ⟨μ 0, hμ 0⟩) _
@@ -497,58 +497,58 @@ theorem kolContent_nat_sigma_subadditive ⦃f : ℕ → Set ((i : ι) → X i)�
 /-- The product measure of an arbitrary family of probability measures. It is defined as the unique
 extension of the function which gives to cylinders the measure given by the associated product
 measure. -/
-noncomputable def measure_produit : Measure ((i : ι) → X i) := by
+noncomputable def productMeasure : Measure ((i : ι) → X i) := by
   exact Measure.ofAddContent setSemiringCylinders generateFrom_cylinders
     (kolContent (isProjectiveMeasureFamily_pi μ))
     (kolContent_nat_sigma_subadditive μ)
 
 /-- The product measure is the projective limit of the partial product measures. This ensures
 uniqueness and expresses the value of the product measures applied to cylinders. -/
-theorem isProjectiveLimit_measure_produit :
-    IsProjectiveLimit (measure_produit μ) (fun I : Finset ι ↦ (Measure.pi (fun i : I ↦ μ i))) := by
+theorem isProjectiveLimit_productMeasure :
+    IsProjectiveLimit (productMeasure μ) (fun I : Finset ι ↦ (Measure.pi (fun i : I ↦ μ i))) := by
   intro I
   ext1 s hs
   rw [Measure.map_apply _ hs]
   swap; · apply measurable_proj
   have h_mem : (fun (x : (i : ι) → X i) (i : I) ↦ x i) ⁻¹' s ∈ cylinders X := by
     rw [mem_cylinders]; exact ⟨I, s, hs, rfl⟩
-  rw [measure_produit, Measure.ofAddContent_eq _ _ _ _ h_mem,
+  rw [productMeasure, Measure.ofAddContent_eq _ _ _ _ h_mem,
     kolContent_congr (isProjectiveMeasureFamily_pi μ) h_mem rfl hs]
 
-instance : IsProbabilityMeasure (measure_produit μ) := by
+instance : IsProbabilityMeasure (productMeasure μ) := by
   constructor
-  rw [← cylinder_univ ∅, cylinder, ← Measure.map_apply, isProjectiveLimit_measure_produit μ]
+  rw [← cylinder_univ ∅, cylinder, ← Measure.map_apply, isProjectiveLimit_productMeasure μ]
   · simp
   · exact measurable_proj _
   · exact MeasurableSet.univ
 
-theorem measure_boxes {s : Finset ι} {t : (i : ι) → Set (X i)}
+theorem productMeasure_boxes {s : Finset ι} {t : (i : ι) → Set (X i)}
     (mt : ∀ i ∈ s, MeasurableSet (t i)) :
-    measure_produit μ (Set.pi s t) = ∏ i ∈ s, (μ i) (t i) := by
+    productMeasure μ (Set.pi s t) = ∏ i ∈ s, (μ i) (t i) := by
   have : Set.pi s t = cylinder s ((@Set.univ s).pi (fun i : s ↦ t i)) := by
     ext x
     simp
-  rw [this, cylinder, ← Measure.map_apply, isProjectiveLimit_measure_produit μ,
+  rw [this, cylinder, ← Measure.map_apply, isProjectiveLimit_productMeasure μ,
     Measure.pi_pi]
   · rw [Finset.univ_eq_attach, Finset.prod_attach _ (fun i ↦ (μ i) (t i))]
   · exact measurable_proj _
   · exact MeasurableSet.pi Set.countable_univ fun i _ ↦ mt i.1 i.2
 
-theorem measure_cylinder {s : Finset ι} {S : Set ((i : s) → X i)} (mS : MeasurableSet S) :
-    measure_produit μ (cylinder s S) = Measure.pi (fun i : s ↦ μ i) S := by
-  rw [cylinder, ← Measure.map_apply (measurable_proj' _) mS, isProjectiveLimit_measure_produit μ]
+theorem productMeasure_cylinder {s : Finset ι} {S : Set ((i : s) → X i)} (mS : MeasurableSet S) :
+    productMeasure μ (cylinder s S) = Measure.pi (fun i : s ↦ μ i) S := by
+  rw [cylinder, ← Measure.map_apply (measurable_proj' _) mS, isProjectiveLimit_productMeasure μ]
 
-theorem integral_dep_measure_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem integral_dep_productMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {s : Finset ι} {f : ((i : s) → X i) → E} (hf : StronglyMeasurable f) :
-    ∫ y, f ((fun x (i : s) ↦ x i) y) ∂measure_produit μ =
+    ∫ y, f ((fun x (i : s) ↦ x i) y) ∂productMeasure μ =
     ∫ y, f y ∂Measure.pi (fun i : s ↦ μ i) := by
   rw [← integral_map (measurable_proj' _).aemeasurable hf.aestronglyMeasurable,
-    isProjectiveLimit_measure_produit μ]
+    isProjectiveLimit_productMeasure μ]
 
 theorem integral_dependsOn [DecidableEq ι] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {s : Finset ι} {f : ((i : ι) → X i) → E} (mf : StronglyMeasurable f) (hf : DependsOn f s)
     (x : (i : ι) → X i) :
-    ∫ y, f y ∂measure_produit μ =
+    ∫ y, f y ∂productMeasure μ =
     ∫ y, f (Function.updateFinset x s y) ∂Measure.pi (fun i : s ↦ μ i) := by
   let g : ((i : s) → X i) → E := fun y ↦ f (Function.updateFinset x _ y)
   have this y : g ((fun z (i : s) ↦ z i) y) = f y := by
@@ -556,17 +556,17 @@ theorem integral_dependsOn [DecidableEq ι] {E : Type*} [NormedAddCommGroup E] [
     intro i hi
     simp only [Function.updateFinset, dite_eq_ite, ite_eq_left_iff]
     exact fun h ↦ (h hi).elim
-  rw [← integral_congr_ae <| eventually_of_forall this, integral_dep_measure_prod]
+  rw [← integral_congr_ae <| eventually_of_forall this, integral_dep_productMeasure]
   exact mf.comp_measurable measurable_updateFinset
 
 theorem lintegral_dep {s : Finset ι} {f : ((i : s) → X i) → ℝ≥0∞} (hf : Measurable f) :
-    ∫⁻ y, f ((fun x (i : s) ↦ x i) y) ∂measure_produit μ =
+    ∫⁻ y, f ((fun x (i : s) ↦ x i) y) ∂productMeasure μ =
     ∫⁻ y, f y∂Measure.pi (fun i : s ↦ μ i) := by
-  rw [← lintegral_map hf (measurable_proj' _), isProjectiveLimit_measure_produit μ]
+  rw [← lintegral_map hf (measurable_proj' _), isProjectiveLimit_productMeasure μ]
 
 theorem lintegral_dependsOn [DecidableEq ι]
     {f : ((i : ι) → X i) → ℝ≥0∞} (mf : Measurable f) {s : Finset ι} (hf : DependsOn f s)
-    (x : (i : ι) → X i) : ∫⁻ y, f y ∂measure_produit μ = (∫⋯∫⁻_s, f ∂μ) x := by
+    (x : (i : ι) → X i) : ∫⁻ y, f y ∂productMeasure μ = (∫⋯∫⁻_s, f ∂μ) x := by
   let g : ((i : s) → X i) → ℝ≥0∞ := fun y ↦ f (Function.updateFinset x _ y)
   have this y : g ((fun z (i : s) ↦ z i) y) = f y := by
     refine hf fun i hi ↦ ?_
