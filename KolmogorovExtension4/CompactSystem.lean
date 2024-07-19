@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2023 Rémy Degenne. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rémy Degenne, Peter Pfaffelhuber
+-/
 import KolmogorovExtension4.Boxes
 
 open Set
@@ -27,19 +32,22 @@ theorem exists_nat_proj {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ clo
     ∃ n : ℕ, i ∈ Js (hs n) := by
   simpa only [allProj, mem_iUnion, Finset.mem_coe] using hi
 
+open Classical in
 /-- The smallest `n` such that `i ∈ Js (hs n)`. That is, the first `n` such that `i` belongs to the
 finset defining the cylinder for `s n`. -/
-def indexProj {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ closedCompactCylinders α) (i : allProj hs)
-    [DecidablePred fun n ↦ ↑i ∈ Js (hs n)] : ℕ :=
+noncomputable def indexProj {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ closedCompactCylinders α)
+    (i : allProj hs) : ℕ :=
   Nat.find (exists_nat_proj hs i i.2)
 
+open Classical in
 theorem mem_indexProj {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    (i : allProj hs) [DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
+    (i : allProj hs) :
     (i : ι) ∈ Js (hs (indexProj hs i)) :=
   Nat.find_spec (exists_nat_proj hs i i.2)
 
+open Classical in
 theorem indexProj_le {s : ℕ → Set (∀ i, α i)} (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ)
-    [∀ i, DecidablePred fun n ↦ i ∈ Js (hs n)] (i : Js (hs n)) :
+    (i : Js (hs n)) :
     indexProj hs ⟨i, subset_allProj hs n i.2⟩ ≤ n :=
   Nat.find_le i.2
 
@@ -57,6 +65,8 @@ end AllProj
 
 section projCylinder
 
+/-- Given a countable family of closed cylinders, consider one of them as depending only on
+the countably many coordinates that appear in all of them. -/
 def projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ) :
     Set (∀ i : allProj hs, α i) :=
   (fun (f : ∀ i : allProj hs, α i) (i : Js (hs n)) ↦ f ⟨i, subset_allProj hs _ i.2⟩) ⁻¹' (As (hs n))
@@ -103,46 +113,45 @@ end projCylinder
 
 section piCylinderSet
 
-def piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
+open Classical in
+/-- Given countably many closed compact cylinders, the product set which, in each relevant
+coordinate, is the projection of the first cylinder for which this coordinate is relevant. -/
+def piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α) :
     Set (∀ i : allProj hs, α i) :=
   {x : ∀ i : allProj hs, α i |
     ∀ i, x i ∈ (fun a : ∀ j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
       (As (hs (indexProj hs i)))}
 
 lemma mem_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] (x : ∀ i : allProj hs, α i) :
+    (x : ∀ i : allProj hs, α i) :
     x ∈ piCylinderSet hs ↔
     ∀ i, x i ∈ (fun a : ∀ j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
       (As (hs (indexProj hs i))) := by
   simp only [piCylinderSet, mem_image, Subtype.forall, mem_setOf_eq]
 
 theorem isCompact_piCylinderSet [∀ i, TopologicalSpace (α i)]
-    (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
+    (hs : ∀ n, s n ∈ closedCompactCylinders α) :
     IsCompact (piCylinderSet hs) :=
   isCompact_pi_infinite fun _ ↦
     (closedCompactCylinders.isCompact (hs _)).image (continuous_apply _)
 
-theorem piCylinderSet_eq_pi_univ (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
+theorem piCylinderSet_eq_pi_univ (hs : ∀ n, s n ∈ closedCompactCylinders α) :
     piCylinderSet hs =
       pi univ fun i ↦
         (fun a : ∀ j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
           (As (hs (indexProj hs i))) := by
   ext1 x; simp only [piCylinderSet, mem_univ_pi]; rfl
 
-theorem isClosed_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
+theorem isClosed_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α) :
     IsClosed (piCylinderSet hs) := by
+  classical
   rw [piCylinderSet_eq_pi_univ]
   exact isClosed_set_pi fun i _ ↦
     (isClosed_proj (closedCompactCylinders.isCompact (hs _))
       (closedCompactCylinders.isClosed (hs _)) _)
 
 theorem nonempty_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    (hs_nonempty : ∀ i, (s i).Nonempty)
-    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
+    (hs_nonempty : ∀ i, (s i).Nonempty) :
     (piCylinderSet hs).Nonempty := by
   have hs_nonempty' : ∀ i, (As (hs i)).Nonempty := by
     intro i
@@ -159,8 +168,7 @@ theorem nonempty_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
 
 end piCylinderSet
 
-theorem iInter_subset_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
+theorem iInter_subset_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α) :
     (⋂ n, projCylinder hs n) ⊆ piCylinderSet hs := by
   intro x hx
   rw [mem_iInter] at hx
@@ -172,8 +180,7 @@ theorem iInter_subset_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders 
 
 theorem nonempty_iInter_projCylinder_inter_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
     (hs_nonempty : ∀ i, (s i).Nonempty)
-    (h_nonempty : ∀ n, (⋂ i ≤ n, projCylinder hs i).Nonempty)
-    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] (n : ℕ) :
+    (h_nonempty : ∀ n, (⋂ i ≤ n, projCylinder hs i).Nonempty) (n : ℕ) :
     ((⋂ i ≤ n, projCylinder hs i) ∩ piCylinderSet hs).Nonempty := by
   obtain ⟨x, hx⟩ := nonempty_piCylinderSet hs hs_nonempty
   obtain ⟨y, hy⟩ := h_nonempty n
@@ -215,8 +222,7 @@ theorem nonempty_iInter_projCylinder_inter_piCylinderSet (hs : ∀ n, s n ∈ cl
 
 theorem nonempty_iInter_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α)
     (hs_nonempty : ∀ i, (s i).Nonempty)
-    (h_nonempty : ∀ n, (⋂ i ≤ n, projCylinder hs i).Nonempty)
-    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)] :
+    (h_nonempty : ∀ n, (⋂ i ≤ n, projCylinder hs i).Nonempty) :
     (⋂ i, projCylinder hs i).Nonempty := by
   suffices ((⋂ i, projCylinder hs i) ∩ piCylinderSet hs).Nonempty by
     rwa [inter_eq_left.mpr (iInter_subset_piCylinderSet hs)] at this
@@ -240,7 +246,6 @@ theorem nonempty_iInter_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders
 
 lemma exists_finset_iInter_projCylinder_eq_empty [∀ i, Nonempty (α i)]
     (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)]
     (h : ⋂ n, projCylinder hs n = ∅) :
     ∃ t : Finset ℕ, (⋂ i ∈ t, projCylinder hs i) = ∅ := by
   by_contra h_nonempty
@@ -256,20 +261,23 @@ lemma exists_finset_iInter_projCylinder_eq_empty [∀ i, Nonempty (α i)]
     simp only [Finset.mem_range, ne_eq, Nat.lt_succ_iff] at h_nonempty
     exact h_nonempty
 
-lemma exists_finset_iInter_eq_empty [∀ i, Nonempty (α i)]
+lemma exists_finset_iInter_eq_empty
     (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    [∀ i : allProj hs, DecidablePred fun n ↦ ↑i ∈ Js (hs n)]
     (h : ⋂ n, s n = ∅) :
     ∃ t : Finset ℕ, (⋂ i ∈ t, s i) = ∅ := by
-  have h' : ⋂ n, projCylinder hs n = ∅ := by
-    simp_rw [← preimage_projCylinder hs, ← preimage_iInter] at h
-    have h_surj : Function.Surjective (fun (f : (∀ i, α i)) (i : allProj hs) ↦ f (i : ι)) :=
-      surjective_proj_allProj hs
-    rwa [← not_nonempty_iff_eq_empty, ← Function.Surjective.nonempty_preimage h_surj,
-      not_nonempty_iff_eq_empty]
-  obtain ⟨t, ht⟩ := exists_finset_iInter_projCylinder_eq_empty hs h'
-  refine ⟨t, ?_⟩
-  simp_rw [← preimage_projCylinder hs, ← preimage_iInter₂, ht, preimage_empty]
+  by_cases hα : ∀ i, Nonempty (α i)
+  · have h' : ⋂ n, projCylinder hs n = ∅ := by
+      simp_rw [← preimage_projCylinder hs, ← preimage_iInter] at h
+      have h_surj : Function.Surjective (fun (f : (∀ i, α i)) (i : allProj hs) ↦ f (i : ι)) :=
+        surjective_proj_allProj hs
+      rwa [← not_nonempty_iff_eq_empty, ← Function.Surjective.nonempty_preimage h_surj,
+        not_nonempty_iff_eq_empty]
+    obtain ⟨t, ht⟩ := exists_finset_iInter_projCylinder_eq_empty hs h'
+    refine ⟨t, ?_⟩
+    simp_rw [← preimage_projCylinder hs, ← preimage_iInter₂, ht, preimage_empty]
+  · have : IsEmpty ((i : ι) → α i) := by simpa using hα
+    refine ⟨{0}, ?_⟩
+    simpa using eq_empty_of_isEmpty (s 0)
 
 end cylinder_sequence
 
@@ -277,13 +285,16 @@ section definition
 
 variable {α : Type*} [CompleteLattice α] {p : Set α → Prop} {C : ℕ → Set α}
 
+/-- A set of sets is a compact system if, whenever a countable subfamily has empty intersection,
+then finitely many of them already have empty intersection. -/
 def IsCompactSystem (p : Set α → Prop) : Prop :=
   ∀ C : ℕ → Set α, (∀ i, p (C i)) → ⋂ i, C i = ∅ → ∃ (s : Finset ℕ), ⋂ i ∈ s, C i = ∅
 
+/-- In a compact system, fiven a countable family with empty intersection, we choose a finite
+subfamily with empty intersection-/
 noncomputable
 def IsCompactSystem.support (hp : IsCompactSystem p) (hC : ∀ i, p (C i))
-    (hC_empty : ⋂ i, C i = ∅) :
-    Finset ℕ :=
+    (hC_empty : ⋂ i, C i = ∅) : Finset ℕ :=
   (hp C hC hC_empty).choose
 
 lemma IsCompactSystem.iInter_eq_empty (hp : IsCompactSystem p) (hC : ∀ i, p (C i))
@@ -295,7 +306,7 @@ end definition
 
 section cylinders
 
-variable {α : ι → Type*} [∀ i, Nonempty (α i)] [∀ i, MeasurableSpace (α i)]
+variable {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
   [∀ i, TopologicalSpace (α i)] [∀ i, SecondCountableTopology (α i)]
   [∀ i, OpensMeasurableSpace (α i)]
 

@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2023 Rémy Degenne. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rémy Degenne, Peter Pfaffelhuber
+-/
 import Mathlib.MeasureTheory.Measure.Trim
 import KolmogorovExtension4.Content
 
@@ -196,6 +201,8 @@ theorem caratheodory_semiring_extension (hC : SetSemiring C) (m : ∀ s : Set α
   caratheodory_semiring_extension' hC (extend m) _ (extend_sUnion_eq_sum m m_add)
     (fun _ hs ↦ extend_eq_top m hs) hs
 
+/-- Construct a measure from a sigma-subadditive function on a semiring. This
+measure is defined on the associated Carathéodory sigma-algebra. -/
 noncomputable def Measure.ofAddSubaddCaratheodory (hC : SetSemiring C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞) (m_empty : m ∅ hC.empty_mem = 0)
     (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -274,6 +281,8 @@ theorem isCaratheodory_generateFrom (hC : SetSemiring C) (m : ∀ s : Set α, s 
   · exact fun _ hf ↦ isCaratheodory_iUnion hf
   · exact hs
 
+/-- Construct a measure from a sigma-subadditive function on a semiring, assuming the semiring
+generates a given measurable structure. The measure is defined on this measurable structure. -/
 noncomputable def Measure.ofAddSubadd [mα : MeasurableSpace α] (hC : SetSemiring C)
     (hC_gen : MeasurableSpace.generateFrom C = mα) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
@@ -301,6 +310,8 @@ theorem Measure.ofAddSubadd_eq [mα : MeasurableSpace α] (hC : SetSemiring C)
   · exact Measure.ofAddSubaddCaratheodory_eq hC m m_empty m_add m_sigma_subadd hs
   · rw [← hC_gen]; exact MeasurableSpace.measurableSet_generateFrom hs
 
+/-- Construct a measure from a sigma-subadditive content on a semiring, assuming the semiring
+generates a given measurable structure. The measure is defined on this measurable structure. -/
 noncomputable def Measure.ofAddContent [mα : MeasurableSpace α] (hC : SetSemiring C)
     (hC_gen : MeasurableSpace.generateFrom C = mα) (m : AddContent C)
     (m_sigma_subadd :

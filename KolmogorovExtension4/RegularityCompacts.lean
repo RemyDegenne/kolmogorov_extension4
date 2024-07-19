@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2023 Rémy Degenne. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rémy Degenne, Peter Pfaffelhuber
+-/
 import Mathlib.Topology.MetricSpace.Polish
 import Mathlib.MeasureTheory.Measure.Regular
 import Mathlib.Logic.Denumerable
@@ -203,6 +208,9 @@ section Topology
 
 namespace UniformSpace
 
+/-- Given a family of sets `s' n` and a family of entourages `V n` of the diagonal, the
+intersection over `n` of the `V n`-neighborhood of `s' n`. Designed to be relatively compact
+when the `s' n` are finite and `V n` tends to the diagonal. -/
 def interUnionBalls (s' : ℕ → Set α) (V : ℕ → Set (α × α)) : Set α :=
   ⋂ n : ℕ, ⋃ x ∈ s' n, UniformSpace.ball x (Prod.swap ⁻¹' V n)
 

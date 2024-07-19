@@ -1,1 +1,1 @@
-import KolmogorovExtension4.IndependentFamily
+import KolmogorovExtension4.MesureProduit2

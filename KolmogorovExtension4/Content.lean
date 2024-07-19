@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2023 Rémy Degenne. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rémy Degenne, Peter Pfaffelhuber
+-/
 import KolmogorovExtension4.Semiring
 import Mathlib.MeasureTheory.OuterMeasure.Induced
 
@@ -299,6 +304,7 @@ end PartialSetFunction
 /-- An additive content is a finitely additive set-function defined on a set of sets with value 0
 at the empty set. -/
 structure AddContent (C : Set (Set α)) where
+  /-- The bare function underlying the `AddContent`. -/
   toFun : Set α → ℝ≥0∞
   empty' : toFun ∅ = 0
   add' :
