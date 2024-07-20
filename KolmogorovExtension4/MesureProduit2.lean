@@ -96,17 +96,13 @@ open Measure
 instance {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {κ : kernel X Y}
     [IsProbabilityMeasure μ] [IsMarkovKernel κ] : IsProbabilityMeasure (μ.bind κ) := by
   constructor
-  rw [Measure.bind_apply]
+  rw [bind_apply MeasurableSet.univ (kernel.measurable _)]
   simp
-  · exact MeasurableSet.univ
-  · exact kernel.measurable _
 
 instance : IsProbabilityMeasure (infinitePiNat μ) := by
   rw [infinitePiNat]
-  have : IsProbabilityMeasure ((μ 0).map zer) := by
-    constructor
-    rw [Measure.map_apply zer.measurable MeasurableSet.univ]
-    simp
+  have : IsProbabilityMeasure ((μ 0).map zer) :=
+    isProbabilityMeasure_map zer.measurable.aemeasurable
   infer_instance
 
 theorem er_succ_preimage_pi {n : ℕ} (hn : 0 < n) (s : (i : Ioc 0 (n + 1)) → Set (X i)) :
@@ -164,9 +160,9 @@ theorem kerNat_prod {N : ℕ} (hN : 0 < N) :
 
 theorem prod_noyau_proj (N : ℕ) :
     partialKernel (fun n => kernel.const ((i : { x // x ∈ Iic n }) → X ↑i) (μ (n + 1))) 0 N =
-    kernel.map ((kernel.deterministic id measurable_id) ×ₖ
-        (kernel.const _ (Measure.pi (fun i : Ioc 0 N ↦ μ i))))
-      (el 0 N (zero_le N)) (el 0 N (zero_le N)).measurable := by
+      kernel.map ((kernel.deterministic id measurable_id) ×ₖ
+          (kernel.const _ (Measure.pi (fun i : Ioc 0 N ↦ μ i))))
+        (el 0 N (zero_le N)) (el 0 N (zero_le N)).measurable := by
   rcases eq_zero_or_pos N with hN | hN
   · cases hN
     have : IsEmpty (Ioc 0 0) := by simp
@@ -264,12 +260,12 @@ variable {ι : Type*}
 variable {X : ι → Type*} [hX : ∀ i, MeasurableSpace (X i)]
 variable (μ : (i : ι) → Measure (X i)) [hμ : ∀ i, IsProbabilityMeasure (μ i)]
 
-lemma omg_ (s : Set ι) (x : (i : s) → X i) (i j : s) (h : i = j) (h' : X i = X j) :
+lemma cast_pi_eval (s : Set ι) (x : (i : s) → X i) (i j : s) (h : i = j) (h' : X i = X j) :
     cast h' (x i) = x j := by
   subst h
   rfl
 
-lemma omg'_ (α β : Type u) (h : α = β) (a : α) (s : Set α) (h' : Set α = Set β) :
+lemma cast_mem_cast (α β : Type u) (h : α = β) (a : α) (s : Set α) (h' : Set α = Set β) :
     (cast h a ∈ cast h' s) = (a ∈ s) := by
   subst h
   rfl
@@ -347,11 +343,12 @@ theorem secondLemma
       Subtype.forall, Equiv.coe_fn_symm_mk, g, aux]
     refine ⟨fun h' k hk ↦ ?_, fun h' i hi ↦ ?_⟩
     · convert h' (φ k) (e' n k hk)
-      rw [@omg_ ℕ (fun k ↦ X (φ k)) (t n) x ⟨φ.symm (φ k), by simp [hk]⟩ ⟨k, hk⟩]
+      rw [@cast_pi_eval ℕ (fun k ↦ X (φ k)) (t n) x ⟨φ.symm (φ k), by simp [hk]⟩ ⟨k, hk⟩]
       simp
     · convert h' (φ.symm i) (e n i hi)
-      rw [← @omg_ ι (fun i ↦ Set (X i)) (s n) u ⟨φ (φ.symm i), by simp [hi]⟩ ⟨i, hi⟩ (by simp) _,
-        omg'_ (X (φ (φ.symm i))) (X i) (by simp) (x ⟨φ.symm i, e n i hi⟩)
+      rw [← @cast_pi_eval ι (fun i ↦ Set (X i)) (s n) u ⟨φ (φ.symm i), by simp [hi]⟩
+          ⟨i, hi⟩ (by simp) _,
+        cast_mem_cast (X (φ (φ.symm i))) (X i) (by simp) (x ⟨φ.symm i, e n i hi⟩)
           (u ⟨φ (φ.symm i), by simp [hi]⟩) (by simp)]
   -- The pushforward measure of the product measure of `(μ_{φ k})_{k ∈ tₙ}` by `gₙ` is the
   -- product measre of `(∨ᵢ)_{i ∈ sₙ}`.
@@ -470,8 +467,8 @@ theorem thirdLemma (A : ℕ → Set ((i : ι) → X i)) (A_mem : ∀ n, A n ∈ 
     simp_rw [crucial]
     exact secondLemma (fun i : u ↦ μ i) φ B_mem B_anti B_inter
 
-/-- The `kolContent` associated to a family of probability measures is $\simga$-subadditive. -/
-theorem kolContent_nat_sigma_subadditive ⦃f : ℕ → Set ((i : ι) → X i)⦄ (hf : ∀ n, f n ∈ cylinders X)
+/-- The `kolContent` associated to a family of probability measures is σ-subadditive. -/
+theorem kolContent_pi_sigma_subadditive ⦃f : ℕ → Set ((i : ι) → X i)⦄ (hf : ∀ n, f n ∈ cylinders X)
     (hf_Union : (⋃ n, f n) ∈ cylinders X) :
     kolContent (isProjectiveMeasureFamily_pi μ) (⋃ n, f n) ≤
     ∑' n, kolContent (isProjectiveMeasureFamily_pi μ) (f n) := by
@@ -500,7 +497,7 @@ measure. -/
 noncomputable def productMeasure : Measure ((i : ι) → X i) := by
   exact Measure.ofAddContent setSemiringCylinders generateFrom_cylinders
     (kolContent (isProjectiveMeasureFamily_pi μ))
-    (kolContent_nat_sigma_subadditive μ)
+    (kolContent_pi_sigma_subadditive μ)
 
 /-- The product measure is the projective limit of the partial product measures. This ensures
 uniqueness and expresses the value of the product measures applied to cylinders. -/
