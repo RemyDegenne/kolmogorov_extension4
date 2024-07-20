@@ -1,1 +1,1 @@
-# kolmogorov_extension4
+Lean formalization of the Kolmogorov extension theorem 
