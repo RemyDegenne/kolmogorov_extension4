@@ -134,9 +134,7 @@ theorem lmarginalPartialKernel_lt {a b : ℕ} (hab : a < b) {f : ((n : ℕ) → 
   · congrm ∫⁻ _, f (fun i ↦ ?_) ∂_
     simp only [updateFinset, mem_Iic, el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, mem_Ioc]
     split_ifs <;> try rfl
-    · omega
-    · omega
-    · omega
+    all_goals omega
   · apply Measurable.lintegral_prod_right'
       (f := fun p ↦ f (updateFinset x (Iic b) (el a b hab.le p)))
     exact mf.comp <| measurable_updateFinset.comp (el a b hab.le).measurable
@@ -891,7 +889,7 @@ theorem measurable_updateFinset' {ι : Type*} [DecidableEq ι] {I : Finset ι}
 
 theorem aux {n : ℕ} (x₀ : (i : Iic n) → X i) :
     (el' n ∘ (Prod.mk x₀) ∘ (fun x i ↦ x i : ((n : ℕ) → X n) → (i : Set.Ioi n) → X i)) =
-    fun y ↦ updateFinset y _ x₀ := by
+      fun y ↦ updateFinset y _ x₀ := by
   ext y i
   by_cases hi : i ≤ n <;> simp [hi, el', updateFinset]
 
@@ -960,7 +958,8 @@ theorem condexp_ionescuTulceaKernel
     apply Integrable.integrableOn
     conv => enter [1]; change (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x) ∘ (proj b)
     rw [← partialKernel_comp_ionescuTulceaKernel κ hab, kernel.integrable_comp_iff] at i_f
-    · rw [← integrable_map_measure, ← kernel.map_apply, ionescuTulceaKernel_proj, ← integrable_norm_iff]
+    · rw [← integrable_map_measure, ← kernel.map_apply, ionescuTulceaKernel_proj,
+        ← integrable_norm_iff]
       · apply i_f.2.mono'
         · apply AEStronglyMeasurable.norm
           exact (mf.comp_measurable measurable_snd).integral_kernel_prod_right'.aestronglyMeasurable
@@ -1000,8 +999,8 @@ theorem condexp_ionescuTulceaKernel
     · exact (mf.comp_measurable measurable_snd).integral_kernel_prod_right'.aestronglyMeasurable
     · exact (meas_proj b).aemeasurable
 
-theorem condexp_ionescuTulceaKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c) (x₀ : (i : Iic a) → X i)
-    {f : ((n : ℕ) → X n) → E} :
+theorem condexp_ionescuTulceaKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
+    (x₀ : (i : Iic a) → X i) {f : ((n : ℕ) → X n) → E} :
     (ionescuTulceaKernel κ a x₀)[f|ℱ b] =ᵐ[ionescuTulceaKernel κ a x₀]
       fun x ↦ ∫ y, ((ionescuTulceaKernel κ a x₀)[f|ℱ c]) (updateFinset x _ y)
         ∂partialKernel κ b c (proj b x) := by

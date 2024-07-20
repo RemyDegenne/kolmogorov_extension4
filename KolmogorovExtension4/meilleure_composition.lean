@@ -604,7 +604,8 @@ theorem partialKernel_comp (c : ℕ) {a b : ℕ} (h : a ≤ b) :
     rw [partialKernel_lt κ hab, partialKernel_lt κ hbc, partialKernel_lt κ hac,
       kernel.comp_apply' _ _ _ ms, kernel.lintegral_map, kernel.lintegral_prod,
       kernel.map_apply' _ _ _ ms, kernel.prod_apply', kernel.lintegral_deterministic',
-      kernel.lintegral_deterministic', ← compProdNat_kerNat κ hab hbc, compProdNat_apply' _ _ hab hbc]
+      kernel.lintegral_deterministic', ← compProdNat_kerNat κ hab hbc,
+      compProdNat_apply' _ _ hab hbc]
     · congr with y
       rw [kernel.map_apply' _ _ _ ms, kernel.prod_apply', kernel.lintegral_deterministic']
       · congr with z
@@ -638,7 +639,7 @@ and then the distribution up to time `c` is the same as directly computing the d
 to time `c`. -/
 theorem partialKernel_comp' (a : ℕ) {b c : ℕ} (h : c ≤ b) :
     (partialKernel κ b c) ∘ₖ (partialKernel κ a b) = partialKernel κ a c := by
-  by_cases hab : a < b <;> by_cases hbc : b < c <;> by_cases hac : a < c <;>
+  by_cases a < b <;> by_cases hbc : b < c <;> by_cases a < c <;>
     try rw [partialKernel_le κ (not_lt.1 hbc), kernel.deterministic_comp_eq_map,
       partialKernel_proj κ a (not_lt.1 hbc)]
   all_goals omega
