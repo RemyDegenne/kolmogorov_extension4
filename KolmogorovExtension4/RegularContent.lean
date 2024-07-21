@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2023 Rémy Degenne. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rémy Degenne, Peter Pfaffelhuber
+-/
 import KolmogorovExtension4.CompactSystem
 import KolmogorovExtension4.AdditiveOfContinuous
 
@@ -9,11 +14,13 @@ variable {α : Type*} {C R : Set (Set α)} {s : ℕ → Set α}
 
 -- `innerRegular` is defined only for a measure, hence we expand the definition to use it with a
 -- content
-lemma tendsto_zero_of_regular_addContent [Nonempty α] (hR : SetRing R) (m : AddContent R)
+lemma tendsto_zero_of_regular_addContent (hR : SetRing R) (m : AddContent R)
     (hs : ∀ n, s n ∈ R) (hs_anti : Antitone s) (hs_Inter : (⋂ n, s n) = ∅)
     (hC : IsCompactSystem C) (hCR : C ⊆ R)
     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε) :
     Filter.Tendsto (fun n ↦ m (s n)) Filter.atTop (nhds 0) := by
+  rcases isEmpty_or_nonempty α with hα | hα
+  · simp [Set.eq_empty_of_isEmpty]
   rw [ENNReal.tendsto_nhds_zero]
   intro ε hε
   obtain ⟨δ, hδ_pos, hδ_sum⟩ := ENNReal.exists_seq_pos_lt ε hε
@@ -64,7 +71,7 @@ lemma tendsto_zero_of_regular_addContent [Nonempty α] (hR : SetRing R) (m : Add
     _ ≤ ∑' i, δ i := ENNReal.sum_le_tsum _
     _ ≤ ε := hδ_sum.le
 
-lemma AddContent.sigma_additive_of_regular [Nonempty α] (hR : SetRing R) (m : AddContent R)
+lemma AddContent.sigma_additive_of_regular (hR : SetRing R) (m : AddContent R)
     (hm_ne_top : ∀ {s} (_ : s ∈ R), m s ≠ ∞)
     (hC : IsCompactSystem C) (hCR : C ⊆ R)
     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε)

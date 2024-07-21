@@ -1,5 +1,10 @@
-import Mathlib.MeasureTheory.MeasurableSpace.Basic
+/-
+Copyright (c) 2023 Rémy Degenne. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rémy Degenne, Peter Pfaffelhuber
+-/
 import Mathlib.MeasureTheory.OuterMeasure.Basic
+import Mathlib.MeasureTheory.MeasurableSpace.Defs
 import Mathlib.Analysis.SpecificLimits.Basic
 
 open Finset Set Filter
@@ -102,7 +107,7 @@ theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :
   · intro n
     positivity
   have h : ∑' n : ℕ, x / 2 / 2 ^ n = x := by
-    rw [← NNReal.eq_iff, NNReal.coe_tsum]
+    rw [NNReal.eq_iff, NNReal.coe_tsum]
     push_cast [(· ∘ ·), NNReal.coe_div]
     rw [tsum_geometric_two' (x : ℝ)]
   refine ⟨?_, h⟩
