@@ -1,1 +1,1 @@
-import KolmogorovExtension4.MesureProduit2
+import KolmogorovExtension4.ProductMeasure
