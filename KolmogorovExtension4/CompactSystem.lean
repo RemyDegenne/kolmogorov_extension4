@@ -290,7 +290,7 @@ then finitely many of them already have empty intersection. -/
 def IsCompactSystem (p : Set α → Prop) : Prop :=
   ∀ C : ℕ → Set α, (∀ i, p (C i)) → ⋂ i, C i = ∅ → ∃ (s : Finset ℕ), ⋂ i ∈ s, C i = ∅
 
-/-- In a compact system, fiven a countable family with empty intersection, we choose a finite
+/-- In a compact system, given a countable family with empty intersection, we choose a finite
 subfamily with empty intersection-/
 noncomputable
 def IsCompactSystem.support (hp : IsCompactSystem p) (hC : ∀ i, p (C i))

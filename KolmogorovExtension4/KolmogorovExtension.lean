@@ -11,7 +11,7 @@ import KolmogorovExtension4.RegularContent
 
 open Set
 
-open scoped ENNReal BigOperators
+open scoped ENNReal
 
 namespace MeasureTheory
 
