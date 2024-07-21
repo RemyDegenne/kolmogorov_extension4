@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2023 Rémy Degenne. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rémy Degenne, Peter Pfaffelhuber
+-/
 import Mathlib.MeasureTheory.Constructions.Pi
 import KolmogorovExtension4.Semiring
 
@@ -17,6 +22,9 @@ section Measurable
 variable [∀ i, MeasurableSpace (α i)]
 
 theorem measurable_proj (I : Set ι) : Measurable fun (f : (i : ι) → α i) (i : I) ↦ f i := by
+  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
+
+theorem measurable_proj' (I : Finset ι) : Measurable fun (f : (i : ι) → α i) (i : I) ↦ f i := by
   rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
 
 theorem measurable_proj₂ (I J : Set ι) (hIJ : J ⊆ I) :
@@ -61,14 +69,19 @@ theorem continuous_cast {α β : Type u} [tα : TopologicalSpace α] [tβ : Topo
   rw [← heq_iff_eq]
   exact ht.symm
 
+/-- Given a dependent function of `i`, specialize it as a function on the complement of `{i}`. -/
 def projCompl (α : ι → Type*) (i : ι) (x : (i : ι) → α i) :
     (j : { k // k ≠ i }) → α j := fun j ↦ x j
 
 lemma continuous_projCompl {i : ι} : Continuous (projCompl α i) :=
   continuous_pi fun _ ↦ continuous_apply _
 
+/-- Given a set of dependent functions, construct the set of corresponding functions on the
+complement of a given `i`. -/
 def X (α : ι → Type*) (i : ι) (s : Set ((j : ι) → α j)) :
     Set ((j : { k // k ≠ i }) → α j) := projCompl α i '' s
+
+variable (i : ι) (x : ∀ i, α i)
 
 lemma projCompl_mem (hx : x ∈ s) : projCompl α i x ∈ X α i s := by
   simp only [ne_eq, projCompl, X, mem_image]
@@ -81,32 +94,36 @@ lemma compactSpace_X (hs_compact : IsCompact s) : CompactSpace (X α i s) := by
   refine IsCompact.image hs_compact ?_
   exact continuous_pi fun j ↦ continuous_apply _
 
+/-- Given a set of dependent functions, construct the functions that coincide with one of the
+initial functions away from a given `i`. -/
 def XY (α : ι → Type*) (i : ι) (s : Set ((j : ι) → α j)) :
     Set ((j : ι) → α j) :=
   {x | projCompl α i x ∈ projCompl α i '' s}
 
 lemma subset_xy : s ⊆ XY α i s := fun x hx ↦ ⟨x, hx, rfl⟩
 
-lemma mem_xy_of_mem (hx : x ∈ s) : x ∈ XY α i s := subset_xy hx
+lemma mem_xy_of_mem (hx : x ∈ s) : x ∈ XY α i s := subset_xy i hx
 
-def fromXProd (α : ι → Type*) (i : ι) (s : Set ((j : ι) → α j))
-    [DecidableEq ι] :
+open Classical in
+/-- Given a set of dependent functions, construct a function on a product space separating out
+the coordinate `i` from the other ones. -/
+noncomputable def fromXProd (α : ι → Type*) (i : ι) (s : Set ((j : ι) → α j)) :
     X α i s × α i → ∀ j, α j :=
   fun p j ↦
     if h : j = i then by refine cast ?_ p.2; rw [h] else (↑(p.1) : ∀ j : { k // k ≠ i }, α j) ⟨j, h⟩
 
-lemma fromXProd_same (p : X α i s × α i) [DecidableEq ι] :
+lemma fromXProd_same (p : X α i s × α i) :
     fromXProd α i s p i = p.2 := by
   simp only [fromXProd, ne_eq, cast_eq, dite_true]
 
-lemma projCompl_fromXProd (p : X α i s × α i) [DecidableEq ι] :
+lemma projCompl_fromXProd (p : X α i s × α i) :
     projCompl α i (fromXProd α i s p) = p.1 := by
   ext1 j
   have : (j : ι) ≠ i := j.2
   simp only [fromXProd, projCompl]
   rw [dif_neg this]
 
-lemma continuous_fromXProd [DecidableEq ι] : Continuous (fromXProd α i s) := by
+lemma continuous_fromXProd : Continuous (fromXProd α i s) := by
   refine continuous_pi fun j ↦ ?_
   simp only [fromXProd]
   split_ifs with h
@@ -114,13 +131,13 @@ lemma continuous_fromXProd [DecidableEq ι] : Continuous (fromXProd α i s) := b
     rw [h]
   · exact (Continuous.comp (continuous_apply _) continuous_subtype_val).comp continuous_fst
 
-lemma fromXProd_mem_XY (p : X α i s × α i) [DecidableEq ι] :
+lemma fromXProd_mem_XY (p : X α i s × α i) :
     fromXProd α i s p ∈ XY α i s := by
   simp only [XY, mem_image, mem_setOf_eq]
   obtain ⟨y, hy_mem_s, hy_eq⟩ := p.1.2
-  exact ⟨y, hy_mem_s, hy_eq.trans (projCompl_fromXProd _).symm⟩
+  exact ⟨y, hy_mem_s, hy_eq.trans (projCompl_fromXProd _ _).symm⟩
 
-lemma fromXProd_projCompl (x : XY α i s) [DecidableEq ι] :
+lemma fromXProd_projCompl (x : XY α i s) :
     fromXProd α i s ⟨⟨projCompl α i x, x.2⟩, (x : ∀ j, α j) i⟩ = (x : ∀ j, α j) := by
   ext1 j
   simp only [fromXProd, projCompl, ne_eq, dite_eq_right_iff]
@@ -129,11 +146,13 @@ lemma fromXProd_projCompl (x : XY α i s) [DecidableEq ι] :
   refine HEq.trans (cast_heq (_ : α i = α j) _) ?_
   rw [h]
 
-def XYEquiv (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j))
-    [DecidableEq ι] :
+/-- Homeomorphism between the set of functions that concide with a given set of functions away
+from a given `i`, and dependent functions away from `i` times any value on `i`. -/
+noncomputable
+def XYEquiv (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set ((j : ι) → α j)) :
     XY α i s ≃ₜ X α i s × α i :=
 { toFun := fun x ↦ ⟨⟨projCompl α i x, x.2⟩, (x : ∀ j, α j) i⟩
-  invFun := fun p ↦ ⟨fromXProd α i s p, fromXProd_mem_XY p⟩
+  invFun := fun p ↦ ⟨fromXProd α i s p, fromXProd_mem_XY _ p⟩
   left_inv := fun x ↦ by
     ext j
     simp only [ne_eq]
@@ -144,14 +163,14 @@ def XYEquiv (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : S
     · simp only
       rw [projCompl_fromXProd]
     · simp only
-      exact fromXProd_same _
+      exact fromXProd_same _ _
   continuous_toFun := by
     refine Continuous.prod_mk ?_ ?_
     · exact Continuous.subtype_mk (continuous_projCompl.comp continuous_subtype_val) _
     · exact (continuous_apply _).comp continuous_subtype_val
-  continuous_invFun := Continuous.subtype_mk continuous_fromXProd _}
+  continuous_invFun := Continuous.subtype_mk (continuous_fromXProd _) _}
 
-lemma snd_xyEquiv_preimage [DecidableEq ι] :
+lemma snd_xyEquiv_preimage :
     Prod.snd '' (XYEquiv α i s '' ((fun (x : XY α i s) ↦ (x : ∀ j, α j)) ⁻¹' s))
       = (fun x : ∀ j, α j ↦ x i) '' s := by
   ext1 x
@@ -162,7 +181,7 @@ lemma snd_xyEquiv_preimage [DecidableEq ι] :
   · rintro ⟨y, _, z, hz_mem, _, hzx⟩
     exact ⟨z, hz_mem, hzx⟩
   · rintro ⟨z, hz_mem, hzx⟩
-    exact ⟨projCompl α i z, projCompl_mem hz_mem, z, hz_mem, ⟨⟨mem_xy_of_mem hz_mem, rfl⟩, hzx⟩⟩
+    exact ⟨projCompl α i z, projCompl_mem _ _ hz_mem, z, hz_mem, ⟨⟨mem_xy_of_mem _ _ hz_mem, rfl⟩, hzx⟩⟩
 
 theorem isClosed_proj (hs_compact : IsCompact s) (hs_closed : IsClosed s) (i : ι) :
     IsClosed ((fun x : ∀ j, α j ↦ x i) '' s) := by
@@ -170,9 +189,9 @@ theorem isClosed_proj (hs_compact : IsCompact s) (hs_closed : IsClosed s) (i : �
   classical
   have h_image_eq : πi '' s
       = Prod.snd '' (XYEquiv α i s '' ((fun (x : XY α i s) ↦ (x : ∀ j, α j)) ⁻¹' s)) := by
-    exact snd_xyEquiv_preimage.symm
+    exact (snd_xyEquiv_preimage _).symm
   rw [h_image_eq]
-  have : CompactSpace (X α i s) := compactSpace_X hs_compact
+  have : CompactSpace (X α i s) := compactSpace_X _ hs_compact
   refine isClosedMap_snd_of_compactSpace _ ?_
   rw [Homeomorph.isClosed_image]
   exact IsClosed.preimage continuous_subtype_val hs_closed
@@ -183,6 +202,7 @@ end ProjectionMaps
 
 section boxes
 
+/-- The product of sets along a finset. -/
 def box (t : (i : ι) → Set (α i)) (s : Finset ι) : Set ((i : ι) → α i) :=
   (s : Set ι).pi t
 
@@ -221,6 +241,7 @@ theorem box_inter (t₁ t₂ : (i : ι) → Set (α i)) (s₁ s₂ : Finset ι)
         rw [ht₁ i hi1]
         exact mem_univ _
 
+/-- The set of all boxes in a given type. -/
 def boxes (C : (i : ι) → Set (Set (α i))) : Set (Set ((i : ι) → α i)) :=
   {S | ∃ s : Finset ι, ∃ t ∈ univ.pi C, S = box t s}
 
@@ -316,6 +337,8 @@ end boxes
 
 section cylinder
 
+/-- Given a set depending on finitely many coordinates, lift it to a set on all indices.
+This is called a *cylinder*. -/
 def cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) : Set ((i : ι) → α i) :=
   (fun f : (i : ι) → α i ↦ fun i : s ↦ f i) ⁻¹' S
 
@@ -334,7 +357,7 @@ theorem cylinder_eq_empty_iff [h_nonempty : Nonempty ((i : ι) → α i)] (s : F
     (S : Set (∀ i : s, α i)) : cylinder s S = ∅ ↔ S = ∅ := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · by_contra hS
-    rw [← Ne.eq_def, ← nonempty_iff_ne_empty] at hS
+    rw [← Ne, ← nonempty_iff_ne_empty] at hS
     let f := hS.some
     have hf : f ∈ S := hS.choose_spec
     classical
@@ -417,6 +440,7 @@ variable [∀ i, MeasurableSpace (α i)]
 
 variable (α)
 
+/-- The set of all cylinders based on measurable sets. -/
 def cylinders : Set (Set ((i : ι) → α i)) :=
   ⋃ (s) (S) (_ : MeasurableSet S), {cylinder s S}
 
@@ -431,9 +455,11 @@ theorem mem_cylinders (t : Set ((i : ι) → α i)) :
     t ∈ cylinders α ↔ ∃ (s S : _) (_ : MeasurableSet S), t = cylinder s S := by
   simp_rw [cylinders, mem_iUnion, mem_singleton_iff]
 
+/-- Given a cylinder, choose a finset of variables such that it only depends on these variables. -/
 noncomputable def cylinders.finset {t : Set ((i : ι) → α i)} (ht : t ∈ cylinders α) : Finset ι :=
   ((mem_cylinders t).mp ht).choose
 
+/-- Given a cylinder, choose a set depending on finitely many variables of which it is a lift. -/
 def cylinders.set {t : Set ((i : ι) → α i)} (ht : t ∈ cylinders α) :
     Set (∀ i : cylinders.finset ht, α i) :=
   ((mem_cylinders t).mp ht).choose_spec.choose
@@ -445,6 +471,11 @@ theorem cylinders.measurableSet {t : Set ((i : ι) → α i)} (ht : t ∈ cylind
 theorem cylinders.eq_cylinder {t : Set ((i : ι) → α i)} (ht : t ∈ cylinders α) :
     t = cylinder (cylinders.finset ht) (cylinders.set ht) :=
   ((mem_cylinders t).mp ht).choose_spec.choose_spec.choose_spec
+
+theorem cylinders_measurableSet {t : Set ((i : ι) → α i)} (ht : t ∈ cylinders α) :
+    MeasurableSet t := by
+  rw [cylinders.eq_cylinder ht, cylinder]
+  exact measurable_proj' _ (cylinders.measurableSet ht)
 
 theorem cylinder_mem_cylinders (s : Finset ι) (S : Set (∀ i : s, α i)) (hS : MeasurableSet S) :
     cylinder s S ∈ cylinders α := by rw [mem_cylinders]; exact ⟨s, S, hS, rfl⟩
@@ -459,8 +490,8 @@ theorem inter_mem_cylinders {s t : Set (∀ i : ι, α i)} (hs : s ∈ cylinders
     (fun f ↦ (fun i ↦ f ⟨i, Finset.mem_union_left s₂ i.prop⟩ : ∀ i : s₁, α i)) ⁻¹' S₁ ∩
       {f | (fun i ↦ f ⟨i, Finset.mem_union_right s₁ i.prop⟩ : ∀ i : s₂, α i) ∈ S₂}, ?_, ?_⟩
   · refine MeasurableSet.inter ?_ ?_
-    · exact measurable_proj₂' (s₁ ∪ s₂) s₁ Finset.subset_union_left hS₁
-    · exact measurable_proj₂' (s₁ ∪ s₂) s₂ Finset.subset_union_right hS₂
+    · exact (measurable_proj₂' (s₁ ∪ s₂) s₁ Finset.subset_union_left) hS₁
+    · exact (measurable_proj₂' (s₁ ∪ s₂) s₂ Finset.subset_union_right) hS₂
   · exact inter_cylinder _ _ _ _
 
 theorem compl_mem_cylinders {s : Set (∀ i : ι, α i)} (hs : s ∈ cylinders α) :
@@ -538,6 +569,8 @@ variable [∀ i, TopologicalSpace (α i)]
 
 variable (α)
 
+/-- The set of all cylinders based on closed compact sets. Note that such a set is closed, but
+not compact in general (for instance, the whole space is always a closed compact cylinder). -/
 def closedCompactCylinders : Set (Set ((i : ι) → α i)) :=
   ⋃ (s) (S) (_ : IsClosed S) (_ : IsCompact S), {cylinder s S}
 
@@ -553,11 +586,15 @@ theorem mem_closedCompactCylinders (t : Set ((i : ι) → α i)) :
       ↔ ∃ (s S : _) (_ : IsClosed S) (_ : IsCompact S), t = cylinder s S := by
   simp_rw [closedCompactCylinders, mem_iUnion, mem_singleton_iff]
 
+/-- Given a closed compact cylinder, choose a finset of variables such that it only depends on
+these variables. -/
 noncomputable def closedCompactCylinders.finset {t : Set ((i : ι) → α i)}
     (ht : t ∈ closedCompactCylinders α) :
     Finset ι :=
   ((mem_closedCompactCylinders t).mp ht).choose
 
+/-- Given a closed compact cylinder, choose a set depending on finitely many variables of which it
+is a lift. -/
 def closedCompactCylinders.set {t : Set ((i : ι) → α i)} (ht : t ∈ closedCompactCylinders α) :
     Set (∀ i : closedCompactCylinders.finset ht, α i) :=
   ((mem_closedCompactCylinders t).mp ht).choose_spec.choose

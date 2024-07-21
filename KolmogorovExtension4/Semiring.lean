@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2023 Rémy Degenne. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Rémy Degenne, Peter Pfaffelhuber
+-/
 import Mathlib.Data.Set.Pairwise.Basic
 import Mathlib.MeasureTheory.PiSystem
 import Mathlib.MeasureTheory.OuterMeasure.Basic
@@ -502,6 +507,8 @@ end SetSemiring
 
 end Ordered
 
+/-- A ring of sets is a family of sets which is stable under union, difference, and contains
+the empty set. -/
 structure SetRing (C : Set (Set α)) : Prop where
   empty_mem : ∅ ∈ C
   union_mem : ∀ {s t}, s ∈ C → t ∈ C → s ∪ t ∈ C
@@ -557,6 +564,8 @@ theorem accumulate_mem (hC : SetRing C) {s : ℕ → Set α} (hs : ∀ i, s i �
 
 end SetRing
 
+/-- A field of sets is a family of sets which is stable under union, difference, and contains
+the empty set and the whole space. -/
 structure SetField (C : Set (Set α)) extends SetRing C : Prop where
   univ_mem : Set.univ ∈ C
 
