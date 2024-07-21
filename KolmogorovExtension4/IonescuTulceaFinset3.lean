@@ -5,14 +5,9 @@ Authors: Etienne Marion
 -/
 import KolmogorovExtension4.meilleure_composition
 import KolmogorovExtension4.Projective
-import Mathlib.Probability.Kernel.MeasureCompProd
 import KolmogorovExtension4.DependsOn
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import KolmogorovExtension4.KolmogorovExtension
-import Mathlib.Data.PNat.Interval
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
-import Mathlib.MeasureTheory.Constructions.Prod.Integral
-import Mathlib.Probability.Process.Filtration
 
 open MeasureTheory ProbabilityTheory Finset ENNReal Filter Topology Function MeasurableSpace
 
@@ -354,7 +349,8 @@ theorem cylinders_nat :
 /-- This function takes a trajectory up to time `p` and a way of building the next step of the
 trajectory and returns a whole trajectory whose first steps correspond
 to the initial ones provided. -/
-def iterate_induction {p : ℕ} (x₀ : (i : Iic p) → X i) (ind : (k : ℕ) → ((n : Iic k) → X n) → X (k + 1)) :
+def iterate_induction {p : ℕ} (x₀ : (i : Iic p) → X i)
+    (ind : (k : ℕ) → ((n : Iic k) → X n) → X (k + 1)) :
     (k : ℕ) → X k := fun k ↦ by
   cases k with
   | zero => exact x₀ ⟨0, mem_Iic.2 <| zero_le p⟩
@@ -659,147 +655,12 @@ theorem ionescuTulceaKernel_proj_le {a b : ℕ} (hab : a ≤ b) :
     kernel.deterministic (projection (Iic_subset_Iic.2 hab)) (measurable_projection _) := by
   rw [ionescuTulceaKernel_proj, partialKernel, dif_neg (not_lt.2 hab)]
 
-section Annexe
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-variable {X Y Z T : Type*}
-variable [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpace Z] [MeasurableSpace T]
-
-theorem MeasureTheory.Filtration.condexp_condexp {ι : Type*} [Preorder ι]
-    (f : X → E) {μ : Measure X}
-    (ℱ : @Filtration X ι _ inferInstance)
-    {i j : ι} (hij : i ≤ j) [SigmaFinite (μ.trim (ℱ.le j))] :
-    μ[μ[f|ℱ j]|ℱ i] =ᵐ[μ] μ[f|ℱ i] := condexp_condexp_of_le (ℱ.mono hij) (ℱ.le j)
-
-/-- If a function `g` is measurable with respect to the pullback along some function `f`, then
-to prove `g x = g y` it is enough to prove `f x = f y`. -/
-theorem eq_of_measurable_comap [m : MeasurableSpace Y] [MeasurableSingletonClass Z]
-    (f : X → Y) {g : X → Z} (hg : @Measurable _ _ (m.comap f) _ g)
-    {x₁ x₂ : X} (h : f x₁ = f x₂) : g x₁ = g x₂ := by
-  rcases hg (measurableSet_singleton (g x₁)) with ⟨s, -, hs⟩
-  have : x₁ ∈ f ⁻¹' s := by simp [hs]
-  have : x₂ ∈ f ⁻¹' s := by rwa [Set.mem_preimage, ← h]
-  rw [hs] at this
-  exact (by simpa using this : g x₂ = g x₁).symm
-
-/-- If a function `g` is strongly measurable with respect to the pullback along some function `f`,
-then to prove `g x = g y` it is enough to prove `f x = f y`. -/
-theorem eq_of_stronglyMeasurable_comap {Z : Type*} [m : MeasurableSpace Y]
-    [TopologicalSpace Z] [TopologicalSpace.PseudoMetrizableSpace Z] [T1Space Z]
-    (f : X → Y) {g : X → Z} (hg : @StronglyMeasurable _ _ _ (m.comap f) g)
-    {x₁ x₂ : X} (h : f x₁ = f x₂) : g x₁ = g x₂ := by
-  let _ : MeasurableSpace Z := borel Z
-  have : BorelSpace Z := BorelSpace.mk rfl
-  exact eq_of_measurable_comap f hg.measurable h
-
-theorem Set.indicator_const_smul_apply' {α R M : Type*} [Zero R] [Zero M] [SMulWithZero R M]
-    (s : Set α) (r : R) (f : α → M) (a : α) :
-    s.indicator (r • f) a = (s.indicator (fun _ ↦ r : α → R) a) • (f a) := by
-  by_cases h : a ∈ s <;> simp [h]
-
-theorem Set.indicator_one_smul_apply {α M β : Type*} [Zero β] [MonoidWithZero M]
-    [MulActionWithZero M β] (f : α → β) (s : Set α) (a : α) :
-    s.indicator f a = (s.indicator (fun _ ↦ 1 : α → M) a) • (f a) := by
-  by_cases h : a ∈ s <;> simp [h]
-
-theorem kernel.integrable_prod_iff (κ : kernel X Y) [IsFiniteKernel κ]
-    (η : kernel X Z) [IsFiniteKernel η] (x : X) {f : (Y × Z) → E}
-    (hf : AEStronglyMeasurable f ((κ ×ₖ η) x)) : Integrable f ((κ ×ₖ η) x) ↔
-      (∀ᵐ y ∂κ x, Integrable (fun z ↦ f (y, z)) (η x)) ∧
-      Integrable (fun y ↦ ∫ z, ‖f (y, z)‖ ∂η x) (κ x) := by
-  rwa [kernel.prod_apply, MeasureTheory.integrable_prod_iff] at *
-
-theorem kernel.integrable_prod_iff' (κ : kernel X Y) [IsFiniteKernel κ]
-    (η : kernel X Z) [IsFiniteKernel η] (x : X) {f : (Y × Z) → E}
-    (hf : AEStronglyMeasurable f ((κ ×ₖ η) x)) : Integrable f ((κ ×ₖ η) x) ↔
-      (∀ᵐ z ∂η x, Integrable (fun y ↦ f (y, z)) (κ x)) ∧
-      Integrable (fun z ↦ ∫ y, ‖f (y, z)‖ ∂κ x) (η x) := by
-  rwa [kernel.prod_apply, MeasureTheory.integrable_prod_iff'] at *
-
-theorem kernel.integral_prod (κ : kernel X Y) [IsFiniteKernel κ]
-    (η : kernel X Z) [IsFiniteKernel η] (x : X)
-    {f : (Y × Z) → E} (hf : Integrable f ((κ ×ₖ η) x)) :
-    ∫ p, f p ∂(κ ×ₖ η) x = ∫ y, ∫ z, f (y, z) ∂η x ∂κ x := by
-  rw [kernel.prod_apply, MeasureTheory.integral_prod]
-  rwa [← kernel.prod_apply]
-
-theorem integrable_dirac {f : X → E} (mf : StronglyMeasurable f) {x : X} :
-    Integrable f (Measure.dirac x) := by
-    let _ : MeasurableSpace E := borel E
-    have _ : BorelSpace E := BorelSpace.mk rfl
-    have : f =ᵐ[Measure.dirac x] (fun _ ↦ f x) := ae_eq_dirac' mf.measurable
-    rw [integrable_congr this]
-    exact integrable_const _
-
-theorem kernel.integrable_deterministic_prod {f : X → Y} (mf : Measurable f)
-    (κ : kernel X Z) [IsFiniteKernel κ] (x : X)
-    {g : (Y × Z) → E} (mg : StronglyMeasurable g) :
-    Integrable g (((kernel.deterministic f mf) ×ₖ κ) x) ↔
-      Integrable (fun z ↦ g (f x, z)) (κ x) := by
-  rw [kernel.integrable_prod_iff]
-  · constructor
-    · rintro ⟨h, -⟩
-      rwa [kernel.deterministic_apply, ae_dirac_iff] at h
-      exact measurableSet_integrable mg
-    · intro h
-      constructor
-      · rwa [kernel.deterministic_apply, ae_dirac_iff]
-        exact measurableSet_integrable mg
-      · rw [kernel.deterministic_apply]
-        apply integrable_dirac
-        exact mg.norm.integral_prod_right'
-  · exact mg.aestronglyMeasurable
-
-theorem kernel.integral_deterministic_prod {f : X → Y} (mf : Measurable f)
-    (κ : kernel X Z) [IsFiniteKernel κ] (x : X)
-    {g : (Y × Z) → E} (mg : StronglyMeasurable g)
-    (i_g : Integrable (fun z ↦ g (f x, z)) (κ x)) :
-    ∫ p, g p ∂((kernel.deterministic f mf) ×ₖ κ) x = ∫ z, g (f x, z) ∂κ x := by
-  rw [kernel.integral_prod, kernel.integral_deterministic']
-  · exact mg.integral_prod_right'
-  · rwa [kernel.integrable_deterministic_prod _ _ _ mg]
-
-theorem kernel.integrable_comp_iff (η : kernel Y Z) [IsSFiniteKernel η]
-    (κ : kernel X Y) [IsSFiniteKernel κ] (x : X)
-    {f : Z → E} (hf : AEStronglyMeasurable f ((η ∘ₖ κ) x)) :
-    Integrable f ((η ∘ₖ κ) x) ↔
-    (∀ᵐ y ∂κ x, Integrable f (η y)) ∧ (Integrable (fun y ↦ ∫ z, ‖f z‖ ∂η y) (κ x)) := by
-  rw [kernel.comp_eq_snd_compProd, kernel.snd] at *
-  rw [kernel.map_apply, integrable_map_measure, ProbabilityTheory.integrable_compProd_iff]
-  · rfl
-  · exact hf.comp_measurable measurable_snd
-  · exact hf
-  · exact measurable_snd.aemeasurable
-
-theorem kernel.integral_comp (η : kernel Y Z) [IsFiniteKernel η]
-    (κ : kernel X Y) [IsFiniteKernel κ]
-    (x : X) {g : Z → E} (hg : Integrable g ((η ∘ₖ κ) x)) :
-    ∫ z, g z ∂(η ∘ₖ κ) x = ∫ y, ∫ z, g z ∂η y ∂κ x := by
-  rw [kernel.comp_eq_snd_compProd, kernel.snd_apply, integral_map,
-    ProbabilityTheory.integral_compProd]
-  · simp_rw [kernel.prodMkLeft_apply η]
-  · apply Integrable.comp_measurable
-    · convert hg
-      rw [kernel.comp_eq_snd_compProd, kernel.snd_apply]
-    · exact measurable_snd
-  · exact measurable_snd.aemeasurable
-  · convert hg.aestronglyMeasurable
-    rw [kernel.comp_eq_snd_compProd, kernel.snd_apply]
-
-end Annexe
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-
-/-- The canonical measurable space instance on dependent functions indexed by `ℕ`. -/
-abbrev m : MeasurableSpace ((n : ℕ) → X n) := inferInstance
-
-/-- The canonical measurable space instance on dependent functions indexed by `Iic n`. -/
-abbrev m' : (n : ℕ) → MeasurableSpace ((i : Iic n) → X i) := inferInstance
 
 /-- The canonical filtration on dependent functions indexed by `ℕ`, where `𝓕 n` consists of
 measurable sets depending only on coordinates `≤ n`. -/
-def ℱ : Filtration ℕ (m (X := X)) where
-  seq n := (m' n).comap (proj n)
+def ℱ : @Filtration ((n : ℕ) → X n) ℕ _ inferInstance where
+  seq n := (inferInstance : MeasurableSpace ((i : Iic n) → X i)).comap (proj n)
   mono' i j hij := by
     simp only
     conv_lhs => enter [1]; change (projection (Iic_subset_Iic.2 hij)) ∘ (proj j)
@@ -807,7 +668,7 @@ def ℱ : Filtration ℕ (m (X := X)) where
     exact MeasurableSpace.comap_mono (measurable_projection _).comap_le
   le' n := (meas_proj n).comap_le
 
-/-- If a function is strongly measurable with respect to the $\sigma$-algebra generated by the
+/-- If a function is strongly measurable with respect to the σ-algebra generated by the
 first coordinates, then it only depends on those first coordinates. -/
 theorem measurable_dependsOn {n : ℕ} {f : ((n : ℕ) → X n) → E}
     (mf : @StronglyMeasurable _ _ _ (ℱ n) f) : DependsOn f (Iic n) := by
@@ -927,13 +788,13 @@ theorem partialKernel_comp_ionescuTulceaKernel_apply {a b : ℕ} (hab : a ≤ b)
     ∫ x, ∫ y, f x y ∂ionescuTulceaKernel κ b x ∂partialKernel κ a b x₀ =
       ∫ x, f (proj b x) x ∂ionescuTulceaKernel κ a x₀ := by
   rw [← partialKernel_comp_ionescuTulceaKernel κ hab, kernel.integral_comp]
-  congr with x
-  rw [integral_ionescuTulceaKernel]
-  nth_rw 2 [integral_ionescuTulceaKernel]
-  congrm ∫ y, f (fun i ↦ ?_) _ ∂_
-  simp [updateFinset, i.2]
-  · exact (hf.comp_measurable ((meas_proj b).prod_mk measurable_id)).aestronglyMeasurable
-  · exact hf.of_uncurry_left.aestronglyMeasurable
+  · congr with x
+    rw [integral_ionescuTulceaKernel]
+    nth_rw 2 [integral_ionescuTulceaKernel]
+    congrm ∫ y, f (fun i ↦ ?_) _ ∂_
+    simp [updateFinset, i.2]
+    · exact (hf.comp_measurable ((meas_proj b).prod_mk measurable_id)).aestronglyMeasurable
+    · exact hf.of_uncurry_left.aestronglyMeasurable
   · convert i_f
     rw [partialKernel_comp_ionescuTulceaKernel _ hab]
 
