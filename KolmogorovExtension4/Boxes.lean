@@ -508,39 +508,39 @@ theorem univ_mem_cylinders : Set.univ ∈ cylinders α := by
 
 variable {α}
 
-theorem union_mem_cylinders {s t : Set (∀ i : ι, α i)} (hs : s ∈ cylinders α)
+theorem union_mem_cylinders ⦃s t : Set (∀ i : ι, α i)⦄ (hs : s ∈ cylinders α)
     (ht : t ∈ cylinders α) : s ∪ t ∈ cylinders α := by
   rw [union_eq_compl_compl_inter_compl]
   exact compl_mem_cylinders (inter_mem_cylinders (compl_mem_cylinders hs) (compl_mem_cylinders ht))
 
-theorem diff_mem_cylinders {s t : Set (∀ i : ι, α i)} (hs : s ∈ cylinders α)
+theorem diff_mem_cylinders ⦃s t : Set (∀ i : ι, α i)⦄ (hs : s ∈ cylinders α)
     (ht : t ∈ cylinders α) : s \ t ∈ cylinders α := by
   rw [diff_eq_compl_inter]; exact inter_mem_cylinders (compl_mem_cylinders ht) hs
 
 theorem isPiSystem_cylinders : IsPiSystem (cylinders α) := fun _ hS _ hT _ ↦
   inter_mem_cylinders hS hT
 
-theorem setField_cylinders : SetField (cylinders α) :=
+theorem isSetField_cylinders : IsSetField (cylinders α) :=
   { empty_mem := empty_mem_cylinders α
     univ_mem := univ_mem_cylinders α
     union_mem := union_mem_cylinders
     diff_mem := diff_mem_cylinders }
 
-theorem setRing_cylinders : MeasureTheory.SetRing (cylinders α) :=
-  setField_cylinders.toSetRing
+theorem setRing_cylinders : MeasureTheory.IsSetRing (cylinders α) :=
+  isSetField_cylinders.toIsSetRing
 
-theorem setSemiringCylinders : MeasureTheory.SetSemiring (cylinders α) :=
-  setField_cylinders.setSemiring
+theorem isSetSemiring_cylinders : MeasureTheory.IsSetSemiring (cylinders α) :=
+  isSetField_cylinders.isSetSemiring
 
 theorem iUnion_le_mem_cylinders {s : ℕ → Set (∀ i : ι, α i)} (hs : ∀ n, s n ∈ cylinders α)
     (n : ℕ) :
     (⋃ i ≤ n, s i) ∈ cylinders α :=
-  setField_cylinders.iUnion_le_mem hs n
+  isSetField_cylinders.iUnion_le_mem hs n
 
 theorem iInter_le_mem_cylinders {s : ℕ → Set (∀ i : ι, α i)} (hs : ∀ n, s n ∈ cylinders α)
     (n : ℕ) :
     (⋂ i ≤ n, s i) ∈ cylinders α :=
-  setField_cylinders.iInter_le_mem hs n
+  isSetField_cylinders.iInter_le_mem hs n
 
 theorem generateFrom_cylinders :
     MeasurableSpace.generateFrom (cylinders α) = MeasurableSpace.pi := by

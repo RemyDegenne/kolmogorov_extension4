@@ -555,7 +555,7 @@ theorem ionescuTulceaContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) →
 /-- This function is the kernel given by the Ionescu-Tulcea theorem. -/
 noncomputable def ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     Measure ((n : ℕ) → X n) :=
-  Measure.ofAddContent setSemiringCylinders generateFrom_cylinders
+  Measure.ofAddContent isSetSemiring_cylinders generateFrom_cylinders
     (ionescuTulceaContent κ x₀) (ionescuTulceaContent_sigma_subadditive κ x₀)
 
 theorem isProbabilityMeasure_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
@@ -606,8 +606,8 @@ variables `i ≤ p` and associates to it a kernel on trajectories depending on a
 where the entries with index `≤ p` are those of `x`, and then one follows iteratively the
 kernels `κ p`, then `κ (p+1)`, and so on.
 
-The fact that such a kernel exists on infinite trajectories is not obvious, and is the content of the
-Ionescu-Tulcea theorem. -/
+The fact that such a kernel exists on infinite trajectories is not obvious, and is the content of
+the Ionescu-Tulcea theorem. -/
 noncomputable def ionescuTulceaKernel (p : ℕ) : kernel ((i : Iic p) → X i) ((n : ℕ) → X n) :=
   { val := ionescuTulceaFun κ p
     property := measurable_ionescuTulceaFun κ p }
