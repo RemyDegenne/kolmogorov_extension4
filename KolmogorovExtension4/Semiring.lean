@@ -8,7 +8,7 @@ import Mathlib.MeasureTheory.PiSystem
 import Mathlib.MeasureTheory.OuterMeasure.Basic
 import KolmogorovExtension4.AuxLemmas
 import Mathlib.Data.Set.Pairwise.Lattice
-import Mathlib.MeasureTheory.SetSemiRing
+import Mathlib.MeasureTheory.SetSemiring
 
 /-! # Semirings of sets
 
