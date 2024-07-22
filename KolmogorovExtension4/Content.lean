@@ -5,6 +5,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import KolmogorovExtension4.Semiring
 import Mathlib.MeasureTheory.OuterMeasure.Induced
+import Mathlib.MeasureTheory.Measure.AddContent
 
 open Set Finset Filter
 
@@ -300,118 +301,13 @@ theorem monotone_of_additive' (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ 
 
 end PartialSetFunction
 
--- named `AddContent` because there is already a MeasureTheory.content, and it satisfies a
--- stronger additivity property than the wikipedia content.
-/-- An additive content is a finitely additive set-function defined on a set of sets with value 0
-at the empty set. -/
-structure AddContent (C : Set (Set α)) where
-  /-- The bare function underlying the `AddContent`. -/
-  toFun : Set α → ℝ≥0∞
-  empty' : toFun ∅ = 0
-  add' :
-    ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-      (_h_mem : ⋃₀ ↑I ∈ C), toFun (⋃₀ I) = ∑ u in I, toFun u
-
-variable {hC : IsSetSemiring C}
-
-instance (C : Set (Set α)) : CoeFun (AddContent C) fun _ ↦ Set α → ℝ≥0∞ :=
-  ⟨fun μ s ↦ μ.toFun s⟩
-
-@[simp]
-theorem addContent_empty {m : AddContent C} : m ∅ = 0 := m.empty'
-
-theorem AddContent.add (m : AddContent C) (I : Finset (Set α)) (h_ss : ↑I ⊆ C)
-    (h_dis : PairwiseDisjoint (I : Set (Set α)) id) (h_mem : ⋃₀ ↑I ∈ C) :
-    m (⋃₀ I) = ∑ u in I, m u :=
-  m.add' I h_ss h_dis h_mem
-
-theorem AddContent.eq_add_diffFinset₀_of_subset (hC : IsSetSemiring C) (m : AddContent C)
-    (hs : s ∈ C) {I : Finset (Set α)} (hI : ↑I ⊆ C) (hI_ss : ∀ t ∈ I, t ⊆ s)
-    (h_dis : PairwiseDisjoint (I : Set (Set α)) id) [DecidableEq (Set α)] :
-    m s = ∑ i in I, m i + ∑ i in hC.diffFinset₀ hs hI, m i := by
-  classical
-  conv_lhs => rw [← hC.sUnion_union_diffFinset₀_of_subset hs hI hI_ss]
-  rw [m.add]
-  · rw [sum_union]
-    exact hC.disjoint_diffFinset₀ hs hI
-  · rw [coe_union]
-    exact Set.union_subset hI (hC.diffFinset₀_subset hs hI)
-  · rw [coe_union]
-    exact hC.pairwiseDisjoint_union_diffFinset₀ hs hI h_dis
-  · rwa [hC.sUnion_union_diffFinset₀_of_subset hs hI hI_ss]
-
-theorem AddContent.sum_le_of_subset (hC : IsSetSemiring C) (m : AddContent C) {J : Finset (Set α)}
-    (h_ss : ↑J ⊆ C) (h_dis : PairwiseDisjoint (J : Set (Set α)) id) (ht : t ∈ C)
-    (hJt : ∀ u ∈ J, u ⊆ t) :
-    ∑ u in J, m u ≤ m t := by
-  classical
-  rw [m.eq_add_diffFinset₀_of_subset hC ht h_ss hJt h_dis]
-  exact le_add_right le_rfl
-
-theorem AddContent.mono (m : AddContent C) (hC : IsSetSemiring C) (hs : s ∈ C) (ht : t ∈ C)
-    (hst : s ⊆ t) : m s ≤ m t := by
-  have h := m.sum_le_of_subset hC (J := {s}) ?_ ?_ ht ?_
-  · simpa only [sum_singleton] using h
-  · rwa [singleton_subset_set_iff]
-  · simp only [coe_singleton, pairwiseDisjoint_singleton]
-  · simp only [Finset.mem_singleton, forall_eq]
-    exact hst
-
-theorem addContent_union' (m : AddContent C) (hs : s ∈ C) (ht : t ∈ C) (hst : s ∪ t ∈ C)
-    (h_dis : Disjoint s t) : m (s ∪ t) = m s + m t := by
-  by_cases hs_empty : s = ∅
-  · simp only [hs_empty, Set.empty_union, addContent_empty, zero_add]
-  classical
-  have h := m.add {s, t} ?_ ?_ ?_
-  rotate_left
-  · simp only [coe_pair, Set.insert_subset_iff, hs, ht, Set.singleton_subset_iff, and_self_iff]
-  · simp only [coe_pair, Set.pairwiseDisjoint_insert, pairwiseDisjoint_singleton,
-      mem_singleton_iff, forall_eq, true_and_iff]
-    exact fun _ ↦ h_dis
-  · simp only [coe_pair, sUnion_insert, sUnion_singleton]
-    exact hst
-  convert h
-  · simp only [coe_pair, sUnion_insert, sUnion_singleton]
-  · rw [sum_insert, sum_singleton]
-    simp only [Finset.mem_singleton]
-    refine fun hs_eq_t ↦ hs_empty ?_
-    rw [← hs_eq_t] at h_dis
-    exact Disjoint.eq_bot_of_self h_dis
-
-theorem addContent_union (m : AddContent C) (hC : IsSetRing C) (hs : s ∈ C) (ht : t ∈ C)
-    (h_dis : Disjoint s t) : m (s ∪ t) = m s + m t :=
-  addContent_union' m hs ht (hC.union_mem hs ht) h_dis
-
-theorem addContent_union_le (m : AddContent C) (hC : IsSetRing C) (hs : s ∈ C) (ht : t ∈ C) :
-    m (s ∪ t) ≤ m s + m t := by
-  rw [← union_diff_self, addContent_union m hC hs (hC.diff_mem ht hs)]
-  · exact add_le_add le_rfl (m.mono hC.isSetSemiring (hC.diff_mem ht hs) ht diff_subset)
-  · rw [Set.disjoint_iff_inter_eq_empty, inter_diff_self]
-
-theorem addContent_iUnion_le (m : AddContent C) (hC : IsSetRing C) {s : ℕ → Set α}
-    (hs : ∀ n, s n ∈ C) (n : ℕ) :
-    m (⋃ i ≤ n, s i) ≤ ∑ i in range (n + 1), m (s i) := by
-  induction' n with n hn
-  · simp
-  rw [Set.bUnion_le_succ _ n, Finset.sum_range_succ]
-  exact (addContent_union_le m hC (hC.iUnion_le_mem hs n) (hs _)).trans (add_le_add hn le_rfl)
-
-theorem addContent_diff (m : AddContent C) (hC : IsSetRing C) (hs : s ∈ C) (ht : t ∈ C) :
-    m s - m t ≤ m (s \ t) := by
-  have h : s = s ∩ t ∪ s \ t := by rw [inter_union_diff]
-  conv_lhs => rw [h]
-  rw [addContent_union m hC (hC.inter_mem hs ht) (hC.diff_mem hs ht) disjoint_inf_sdiff, add_comm]
-  refine add_tsub_le_assoc.trans_eq ?_
-  rw [tsub_eq_zero_of_le (m.mono hC.isSetSemiring (hC.inter_mem hs ht) ht inter_subset_right),
-    add_zero]
-
 theorem AddContent.sigma_subadditive_of_sigma_additive (hC : IsSetRing C) (m : AddContent C)
     (m_c_add :
       ∀ (f : ℕ → Set α) (_hf : ∀ i, f i ∈ C) (_hf_Union : (⋃ i, f i) ∈ C)
         (_hf_disj : Pairwise (Disjoint on f)), m (⋃ i, f i) = ∑' i, m (f i))
     (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C) :
     m (⋃ i, f i) ≤ ∑' i, m (f i) :=
-  MeasureTheory.sigma_subadditive_of_sigma_additive hC m addContent_empty m.add m_c_add f hf
+  MeasureTheory.sigma_subadditive_of_sigma_additive hC m addContent_empty m.sUnion' m_c_add f hf
     hf_Union
 
 section ExtendContent
@@ -425,7 +321,7 @@ noncomputable def extendContent (hC : IsSetSemiring C) (m : ∀ s : Set α, s �
     AddContent C where
   toFun := extend m
   empty' := extend_empty hC.empty_mem m_empty
-  add' := by
+  sUnion' := by
     simp_rw [← extend_eq m] at m_add
     intro I h_ss h_dis h_mem
     specialize m_add I h_ss h_dis h_mem
