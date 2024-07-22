@@ -535,8 +535,8 @@ theorem ionescuTulceaContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) →
     exact ProbabilityMeasure.nonempty
       ⟨κ n Classical.ofNonempty, inferInstance⟩
   refine (ionescuTulceaContent κ x₀).sigma_subadditive_of_sigma_additive
-    setRing_cylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
-  refine sigma_additive_addContent_of_tendsto_zero setRing_cylinders
+    isSetRing_cylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
+  refine sigma_additive_addContent_of_tendsto_zero isSetRing_cylinders
     (ionescuTulceaContent κ x₀) (fun h ↦ ?_) ?_ hf hf_Union hf'
   · rename_i s
     obtain ⟨N, S, mS, s_eq⟩ : ∃ N S, MeasurableSet S ∧ s = cylinder (Iic N) S := by

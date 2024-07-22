@@ -11,7 +11,7 @@ import KolmogorovExtension4.RegularContent
 
 open Set
 
-open scoped ENNReal BigOperators
+open scoped ENNReal
 
 namespace MeasureTheory
 
@@ -102,11 +102,11 @@ theorem kolContent_mono (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylinders
 theorem kolContent_iUnion_le (hP : IsProjectiveMeasureFamily P) ⦃s : ℕ → Set (∀ i : ι, α i)⦄
     (hs : ∀ n, s n ∈ cylinders α) (n : ℕ) :
     kolContent hP (⋃ i ≤ n, s i) ≤ ∑ i in Finset.range (n + 1), kolContent hP (s i) :=
-  addContent_iUnion_le (kolContent hP) setRing_cylinders hs n
+  addContent_iUnion_le (kolContent hP) isSetRing_cylinders hs n
 
 theorem kolContent_diff (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylinders α)
     (ht : t ∈ cylinders α) : kolContent hP s - kolContent hP t ≤ kolContent hP (s \ t) :=
-  addContent_diff (kolContent hP) setRing_cylinders hs ht
+  addContent_diff (kolContent hP) isSetRing_cylinders hs ht
 
 end KolFunDef
 
@@ -179,7 +179,7 @@ theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamil
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α)
     (h_disj : Pairwise (Disjoint on f)) :
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
-  refine (kolContent hP).sigma_additive_of_regular setRing_cylinders ?_ isCompactSystem_cylinders
+  refine (kolContent hP).sigma_additive_of_regular isSetRing_cylinders ?_ isCompactSystem_cylinders
       (fun t ht ↦ mem_cylinder_of_mem_closedCompactCylinders ht) ?_ hf hf_Union h_disj
   · exact fun hx ↦ kolContent_ne_top _ hx
   · intros t ht ε hε
@@ -192,7 +192,7 @@ theorem kolContent_sigma_subadditive_of_innerRegular (hP : IsProjectiveMeasureFa
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α) :
     kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) :=
-  (kolContent hP).sigma_subadditive_of_sigma_additive setRing_cylinders
+  (kolContent hP).sigma_subadditive_of_sigma_additive isSetRing_cylinders
     (kolContent_sigma_additive_of_innerRegular hP hP_inner) f hf hf_Union
 
 end InnerRegularAssumption

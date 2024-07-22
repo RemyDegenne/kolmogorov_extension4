@@ -477,8 +477,8 @@ theorem kolContent_pi_sigma_subadditive ⦃f : ℕ → Set ((i : ι) → X i)⦄
     have := fun i ↦ ProbabilityMeasure.nonempty ⟨μ i, hμ i⟩;
     infer_instance
   refine (kolContent (isProjectiveMeasureFamily_pi μ)).sigma_subadditive_of_sigma_additive
-    setRing_cylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
-  refine sigma_additive_addContent_of_tendsto_zero setRing_cylinders
+    isSetRing_cylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
+  refine sigma_additive_addContent_of_tendsto_zero isSetRing_cylinders
     (kolContent (isProjectiveMeasureFamily_pi μ)) (fun h ↦ ?_) ?_ hf hf_Union hf'
   · rcases (mem_cylinders _).1 h with ⟨s, S, mS, s_eq⟩
     rw [s_eq, kolContent_eq_lmarginal μ (mS := mS) (x := Classical.ofNonempty)]
