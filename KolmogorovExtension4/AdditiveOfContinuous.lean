@@ -87,7 +87,7 @@ theorem sigma_additive_addContent_of_tendsto_zero (hC : IsSetRing C) (m : AddCon
     ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C) (h_disj : Pairwise (Disjoint on f)) :
     m (⋃ i, f i) = ∑' i, m (f i) :=
   sigma_additive_of_tendsto_zero hC (fun s _ ↦ m s) (fun hs ↦ hm_ne_top hs)
-    (addContent_union m hC) hm hf hUf h_disj
+    (addContent_union hC) hm hf hUf h_disj
 
 theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
     (hC_union : ∀ {s t : Set α} (_ : s ∈ C) (_ : t ∈ C), s ∪ t ∈ C) (m : Set α → ℝ≥0∞)
