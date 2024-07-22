@@ -54,7 +54,7 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent R)
           simp only [this, Set.diff_empty]
         exact ht_empty' n hn
     _ ≤ m (⋃ i ≤ n, (s i \ t i)) := by
-        refine AddContent.mono m hR.isSetSemiring ?_ ?_ ?_
+        refine addContent_mono hR.isSetSemiring ?_ ?_ ?_
         · exact hR.diff_mem (hR.iInter_le_mem hs n) (hR.iInter_le_mem (fun i ↦ hCR (ht_mem_C i)) n)
         · exact hR.iUnion_le_mem (fun i ↦ hR.diff_mem (hs i) (hCR (ht_mem_C i))) n
         · rw [Set.diff_iInter]
@@ -65,8 +65,9 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent R)
             exact Set.biInter_subset_of_mem hin
           · simp only [hin, Set.iInter_of_empty, Set.diff_univ, Set.iUnion_of_empty,
               Set.empty_subset]
+    _ = m (⋃ i ∈ Finset.range (n + 1), (s i \ t i)) := by simp only [Finset.mem_range_succ_iff]
     _ ≤ ∑ i in Finset.range (n + 1), m (s i \ t i) :=
-        addContent_iUnion_le m hR (fun i ↦ hR.diff_mem (hs i) (hCR (ht_mem_C i))) n
+        addContent_biUnion_le hR (fun i _ ↦ hR.diff_mem (hs i) (hCR (ht_mem_C i)))
     _ ≤ ∑ i in Finset.range (n + 1), δ i := Finset.sum_le_sum (fun i _ ↦ ht i)
     _ ≤ ∑' i, δ i := ENNReal.sum_le_tsum _
     _ ≤ ε := hδ_sum.le

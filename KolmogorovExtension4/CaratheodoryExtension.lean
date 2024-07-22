@@ -69,8 +69,8 @@ theorem OuterMeasure.ofFunction_addContent_eq (hC : IsSetSemiring C) (m : AddCon
       m (⋃ i, f i) ≤ ∑' i, m (f i))
     (m_top : ∀ (s) (_ : s ∉ C), m s = ∞) {s : Set α} (hs : s ∈ C) :
     OuterMeasure.ofFunction m addContent_empty s = m s :=
-  OuterMeasure.ofFunction_eq_of_mono_of_subadditive hC m addContent_empty (fun _ _ ↦ m.mono hC)
-    m_sigma_subadd m_top hs
+  OuterMeasure.ofFunction_eq_of_mono_of_subadditive hC m addContent_empty
+    (fun _ _ ↦ addContent_mono hC) m_sigma_subadd m_top hs
 
 theorem OuterMeasure.ofFunction_eq_of_add_of_subadditive (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
     (m_empty : m ∅ = 0)
@@ -317,9 +317,8 @@ noncomputable def Measure.ofAddContent [mα : MeasurableSpace α] (hC : IsSetSem
       ∀ ⦃f : ℕ → Set α⦄ (_hf : ∀ i, f i ∈ C) (_hf_Union : (⋃ i, f i) ∈ C),
         m (⋃ i, f i) ≤ ∑' i, m (f i)) :
     Measure α :=
-  Measure.ofAddSubadd hC hC_gen (fun s _ ↦ m s) addContent_empty
-    (fun I hI hI_disj hI_sUnion ↦ (m.add I hI hI_disj hI_sUnion).trans
-      (by rw [Finset.sum_coe_sort]))
+  Measure.ofAddSubadd hC hC_gen (fun s _ ↦ m s) addContent_empty (fun I hI hI_disj hI_sUnion ↦
+    (addContent_sUnion hI hI_disj hI_sUnion).trans (by rw [Finset.sum_coe_sort]))
     m_sigma_subadd
 
 theorem Measure.ofAddContent_eq [mα : MeasurableSpace α] (hC : IsSetSemiring C)

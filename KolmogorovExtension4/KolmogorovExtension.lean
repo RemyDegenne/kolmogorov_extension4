@@ -97,16 +97,19 @@ theorem kolContent_congr (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylinder
 
 theorem kolContent_mono (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylinders α)
     (ht : t ∈ cylinders α) (hst : s ⊆ t) : kolContent hP s ≤ kolContent hP t :=
-  (kolContent hP).mono isSetSemiring_cylinders hs ht hst
+  addContent_mono isSetSemiring_cylinders hs ht hst
 
 theorem kolContent_iUnion_le (hP : IsProjectiveMeasureFamily P) ⦃s : ℕ → Set (∀ i : ι, α i)⦄
     (hs : ∀ n, s n ∈ cylinders α) (n : ℕ) :
-    kolContent hP (⋃ i ≤ n, s i) ≤ ∑ i in Finset.range (n + 1), kolContent hP (s i) :=
-  addContent_iUnion_le (kolContent hP) isSetRing_cylinders hs n
+    kolContent hP (⋃ i ≤ n, s i) ≤ ∑ i in Finset.range (n + 1), kolContent hP (s i) := calc
+  kolContent hP (⋃ i ≤ n, s i) = kolContent hP (⋃ i ∈ Finset.range (n+1), s i) := by
+    simp only [Finset.mem_range_succ_iff]
+  _ ≤ ∑ i in Finset.range (n + 1), kolContent hP (s i) :=
+    addContent_biUnion_le isSetRing_cylinders (fun i _ ↦ hs i)
 
 theorem kolContent_diff (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylinders α)
     (ht : t ∈ cylinders α) : kolContent hP s - kolContent hP t ≤ kolContent hP (s \ t) :=
-  addContent_diff (kolContent hP) isSetRing_cylinders hs ht
+  le_addContent_diff (kolContent hP) isSetRing_cylinders hs ht
 
 end KolFunDef
 
@@ -155,8 +158,7 @@ lemma innerRegular_kolContent (hP : IsProjectiveMeasureFamily P)
         refine ⟨fun i ↦ if hi : i ∈ Js hs then y ⟨i, hi⟩ else x i, ?_⟩
         ext1 i
         simp only [Finset.coe_mem, dite_true]
-    · simp only
-      have : (s \ cylinder (Js hs) K') = (cylinder (Js hs) (As hs) \ cylinder (Js hs) K') := by
+    · have : (s \ cylinder (Js hs) K') = (cylinder (Js hs) (As hs) \ cylinder (Js hs) K') := by
         congr
         exact cylinders.eq_cylinder hs
       rw [this, diff_cylinder_same]
