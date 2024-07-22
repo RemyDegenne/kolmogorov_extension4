@@ -75,13 +75,13 @@ theorem kolmogorovFun_additive (hP : IsProjectiveMeasureFamily P) (I : Finset (S
     kolmogorovFun P (⋃₀ I) h_mem = ∑ u : I, kolmogorovFun P u (h_ss u.prop) := by
   refine sUnion_eq_sum_of_union_eq_add' ?_ ?_ _ ?_ ?_ I h_ss h_dis h_mem
   · exact empty_mem_cylinders α
-  · exact union_mem_cylinders
+  · apply union_mem_cylinders
   · exact kolmogorovFun_empty hP
   · exact kolmogorovFun_union hP
 
 /-- `kolmogorovFun` as an additive content. -/
 noncomputable def kolContent (hP : IsProjectiveMeasureFamily P) : AddContent (cylinders α) :=
-  extendContent setSemiringCylinders (kolmogorovFun P) (kolmogorovFun_empty hP)
+  extendContent isSetSemiring_cylinders (kolmogorovFun P) (kolmogorovFun_empty hP)
     (kolmogorovFun_additive hP)
 
 theorem kolContent_eq (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylinders α) :
@@ -97,16 +97,16 @@ theorem kolContent_congr (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylinder
 
 theorem kolContent_mono (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylinders α)
     (ht : t ∈ cylinders α) (hst : s ⊆ t) : kolContent hP s ≤ kolContent hP t :=
-  (kolContent hP).mono setSemiringCylinders hs ht hst
+  (kolContent hP).mono isSetSemiring_cylinders hs ht hst
 
 theorem kolContent_iUnion_le (hP : IsProjectiveMeasureFamily P) ⦃s : ℕ → Set (∀ i : ι, α i)⦄
     (hs : ∀ n, s n ∈ cylinders α) (n : ℕ) :
     kolContent hP (⋃ i ≤ n, s i) ≤ ∑ i in Finset.range (n + 1), kolContent hP (s i) :=
-  addContent_iUnion_le (kolContent hP) setRing_cylinders hs n
+  addContent_iUnion_le (kolContent hP) isSetRing_cylinders hs n
 
 theorem kolContent_diff (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylinders α)
     (ht : t ∈ cylinders α) : kolContent hP s - kolContent hP t ≤ kolContent hP (s \ t) :=
-  addContent_diff (kolContent hP) setRing_cylinders hs ht
+  addContent_diff (kolContent hP) isSetRing_cylinders hs ht
 
 end KolFunDef
 
@@ -179,7 +179,7 @@ theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamil
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α)
     (h_disj : Pairwise (Disjoint on f)) :
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
-  refine (kolContent hP).sigma_additive_of_regular setRing_cylinders ?_ isCompactSystem_cylinders
+  refine (kolContent hP).sigma_additive_of_regular isSetRing_cylinders ?_ isCompactSystem_cylinders
       (fun t ht ↦ mem_cylinder_of_mem_closedCompactCylinders ht) ?_ hf hf_Union h_disj
   · exact fun hx ↦ kolContent_ne_top _ hx
   · intros t ht ε hε
@@ -192,7 +192,7 @@ theorem kolContent_sigma_subadditive_of_innerRegular (hP : IsProjectiveMeasureFa
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α) (hf_Union : (⋃ i, f i) ∈ cylinders α) :
     kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) :=
-  (kolContent hP).sigma_subadditive_of_sigma_additive setRing_cylinders
+  (kolContent hP).sigma_subadditive_of_sigma_additive isSetRing_cylinders
     (kolContent_sigma_additive_of_innerRegular hP hP_inner) f hf hf_Union
 
 end InnerRegularAssumption
@@ -202,7 +202,7 @@ noncomputable def projectiveLimitWithWeakestHypotheses [∀ i, PseudoEMetricSpac
     [∀ i, BorelSpace (α i)] [∀ i, SecondCountableTopology (α i)]
     [∀ i, CompleteSpace (α i)] (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
     [∀ i, IsFiniteMeasure (P i)] (hP : IsProjectiveMeasureFamily P) : Measure (∀ i, α i) :=
-  Measure.ofAddContent setSemiringCylinders generateFrom_cylinders (kolContent hP)
+  Measure.ofAddContent isSetSemiring_cylinders generateFrom_cylinders (kolContent hP)
     (kolContent_sigma_subadditive_of_innerRegular hP fun J ↦
       innerRegular_isCompact_isClosed_measurableSet_of_complete_countable (P J))
 
@@ -227,7 +227,7 @@ theorem kolContent_sigma_subadditive (hP : IsProjectiveMeasureFamily P) ⦃f : �
 /-- Projective limit of a projective measure family. -/
 noncomputable def projectiveLimit (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
     [∀ i, IsFiniteMeasure (P i)] (hP : IsProjectiveMeasureFamily P) : Measure (∀ i, α i) :=
-  Measure.ofAddContent setSemiringCylinders generateFrom_cylinders (kolContent hP)
+  Measure.ofAddContent isSetSemiring_cylinders generateFrom_cylinders (kolContent hP)
     (kolContent_sigma_subadditive hP)
 
 /-- **Kolmogorov extension theorem**: for any projective measure family `P`, there exists a measure

@@ -67,37 +67,38 @@ theorem sum_image_eq_of_disjoint {α ι : Type*} [DecidableEq (Set α)] (m : Set
 
 section Semiring
 
-variable (hC : SetSemiring C) (m : Set α → ℝ≥0∞)
+variable (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
   (m_add : ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
     (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
 
-theorem eq_add_diff₀_of_subset (hs : s ∈ C) (I : Finset (Set α)) (hI : ↑I ⊆ C) (hI_ss : ⋃₀ ↑I ⊆ s)
+theorem eq_add_diffFinset₀_of_subset (hs : s ∈ C)
+    {I : Finset (Set α)} (hI : ↑I ⊆ C) (hI_ss : ∀ t ∈ I, t ⊆ s)
     (h_dis : PairwiseDisjoint (I : Set (Set α)) id) [DecidableEq (Set α)] :
-    m s = ∑ i in I, m i + ∑ i in hC.diff₀ hs I hI, m i := by
+    m s = ∑ i in I, m i + ∑ i in hC.diffFinset₀ hs hI, m i := by
   classical
-  conv_lhs => rw [hC.eq_sUnion_union_diff₀_of_subset hs I hI hI_ss]
+  conv_lhs => rw [← hC.sUnion_union_diffFinset₀_of_subset hs hI hI_ss]
   rw [m_add]
   · rw [sum_union]
-    exact hC.disjoint_diff₀ hs I hI
+    exact hC.disjoint_diffFinset₀ hs hI
   · rw [coe_union]
-    exact Set.union_subset hI (hC.diff₀_subset hs I hI)
+    exact Set.union_subset hI (hC.diffFinset₀_subset hs hI)
   · rw [coe_union]
-    exact hC.pairwiseDisjoint_union_diff₀ hs I hI h_dis
-  · rwa [← hC.eq_sUnion_union_diff₀_of_subset hs I hI hI_ss]
+    exact hC.pairwiseDisjoint_union_diffFinset₀ hs hI h_dis
+  · rwa [hC.sUnion_union_diffFinset₀_of_subset hs hI hI_ss]
 
-theorem sum_le_of_additive (J : Finset (Set α)) (h_ss : ↑J ⊆ C)
-    (h_dis : PairwiseDisjoint (J : Set (Set α)) id) (ht : t ∈ C) (hJt : ⋃₀ ↑J ⊆ t) :
+theorem sum_le_of_additive {J : Finset (Set α)} (h_ss : ↑J ⊆ C)
+    (h_dis : PairwiseDisjoint (J : Set (Set α)) id) (ht : t ∈ C) (hJt : ∀ u ∈ J, u ⊆ t) :
     ∑ u in J, m u ≤ m t := by
   classical
-  rw [eq_add_diff₀_of_subset hC m m_add ht J h_ss hJt h_dis]
+  rw [eq_add_diffFinset₀_of_subset hC m m_add ht h_ss hJt h_dis]
   exact le_add_right le_rfl
 
 theorem monotone_of_additive (hs : s ∈ C) (ht : t ∈ C) (hst : s ⊆ t) : m s ≤ m t := by
-  have h := sum_le_of_additive hC m m_add {s} ?_ ?_ ht ?_
+  have h := sum_le_of_additive hC m m_add (J := {s}) ?_ ?_ ht ?_
   · simpa only [sum_singleton] using h
   · rwa [singleton_subset_set_iff]
   · simp only [coe_singleton, pairwiseDisjoint_singleton]
-  · simpa only [coe_singleton, sUnion_singleton]
+  · simpa only [Finset.mem_singleton, forall_eq]
 
 theorem monotone_of_additive_of_eq_top (m_top : ∀ (t) (_ : t ∉ C), m t = ∞) (hs : s ∈ C)
     (hst : s ⊆ t) : m s ≤ m t := by
@@ -106,22 +107,22 @@ theorem monotone_of_additive_of_eq_top (m_top : ∀ (t) (_ : t ∉ C), m t = ∞
   · rw [m_top t ht]
     exact le_top
 
-theorem le_sum_of_additive_aux (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
+theorem le_sum_of_additive_aux {J : Finset (Set α)} (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
     m (⋃₀ ↑J) ≤ ∑ u in J, m u := by
   classical
-  rw [← hC.sUnion_allDiff₀ J h_ss, m_add]
+  rw [← hC.sUnion_allDiff₀ h_ss, m_add]
   rotate_left
-  · exact hC.allDiff₀_subset J h_ss
-  · exact hC.pairwiseDisjoint_allDiff₀ J h_ss
-  · rwa [hC.sUnion_allDiff₀ J h_ss]
-  rw [SetSemiring.allDiff₀, sum_disjiUnion, ← sum_ordered J]
-  refine sum_le_sum fun i _ ↦ sum_le_of_additive hC m m_add _ ?_ ?_ ?_ ?_
-  · exact hC.indexedDiff₀_subset J h_ss i
-  · exact hC.pairwiseDisjoint_indexedDiff₀' J h_ss i
+  · exact hC.allDiff₀_subset h_ss
+  · exact hC.pairwiseDisjoint_allDiff₀ h_ss
+  · rwa [hC.sUnion_allDiff₀ h_ss]
+  rw [IsSetSemiring.allDiff₀, sum_disjiUnion, ← sum_ordered J]
+  refine sum_le_sum fun i _ ↦ sum_le_of_additive hC m m_add ?_ ?_ ?_ ?_
+  · exact hC.indexedDiff₀_subset h_ss i
+  · exact hC.pairwiseDisjoint_indexedDiff₀' h_ss i
   · exact ordered_mem' h_ss i
-  · exact hC.sUnion_indexedDiff₀_subset J h_ss i
+  · exact hC.subset_of_mem_indexedDiff₀ _ _
 
-theorem le_sum_of_additive (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈ C) (htJ : t ⊆ ⋃₀ ↑J) :
+theorem le_sum_of_additive {J : Finset (Set α)} (h_ss : ↑J ⊆ C) (ht : t ∈ C) (htJ : t ⊆ ⋃₀ ↑J) :
     m t ≤ ∑ u in J, m u := by
   classical
   let Jt := Finset.image (fun u ↦ t ∩ u) J
@@ -129,7 +130,7 @@ theorem le_sum_of_additive (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈
     rw [coe_image, sUnion_image, ← inter_iUnion₂, inter_eq_self_of_subset_left]
     rwa [← sUnion_eq_biUnion]
   rw [ht_eq]
-  refine (le_sum_of_additive_aux hC m m_add Jt ?_ ?_).trans ?_
+  refine (le_sum_of_additive_aux hC m m_add ?_ ?_).trans ?_
   · intro s
     simp only [Jt, coe_image, Set.mem_image, mem_coe, forall_exists_index, and_imp]
     rintro u hu rfl
@@ -148,7 +149,7 @@ theorem sigma_additive_of_sigma_subadditive (m_empty : m ∅ = 0)
   refine le_antisymm (m_subadd f hf hf_Union hf_disj) ?_
   refine tsum_le_of_sum_le ENNReal.summable fun I ↦ ?_
   classical
-  refine le_trans ?_ (sum_le_of_additive hC m m_add (I.image f) ?_ ?_ ?_ ?_)
+  refine le_trans ?_ (sum_le_of_additive hC m m_add (J := I.image f) ?_ ?_ ?_ ?_)
   · rw [sum_image_eq_of_disjoint m m_empty f hf_disj]
   · simp only [coe_image, Set.image_subset_iff]
     refine (subset_preimage_image f I).trans (preimage_mono ?_)
@@ -162,14 +163,14 @@ theorem sigma_additive_of_sigma_subadditive (m_empty : m ∅ = 0)
     have hij : i ≠ j := by intro h_eq; rw [h_eq] at hst ; exact hst rfl
     exact hf_disj hij
   · exact hf_Union
-  · simp only [coe_image, sUnion_image, mem_coe, iUnion_subset_iff]
+  · simp only [Finset.mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
     exact fun i _ ↦ subset_iUnion _ i
 
 end Semiring
 
 section Ring
 
-theorem continuous_from_below_of_sigma_additive (hC : SetRing C) (m : Set α → ℝ≥0∞)
+theorem continuous_from_below_of_sigma_additive (hC : IsSetRing C) (m : Set α → ℝ≥0∞)
     (m_empty : m ∅ = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -210,7 +211,7 @@ theorem continuous_from_below_of_sigma_additive (hC : SetRing C) (m : Set α →
   exact ENNReal.tendsto_nat_tsum _
 
 -- note that the `f i` are not disjoint
-theorem sigma_subadditive_of_sigma_additive (hC : SetRing C) (m : Set α → ℝ≥0∞)
+theorem sigma_subadditive_of_sigma_additive (hC : IsSetRing C) (m : Set α → ℝ≥0∞)
     (m_empty : m ∅ = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -235,7 +236,7 @@ theorem sigma_subadditive_of_sigma_additive (hC : SetRing C) (m : Set α → ℝ
     exact ENNReal.tendsto_nat_tsum _
   refine le_of_tendsto_of_tendsto' h_tendsto h_tendsto' fun n ↦ ?_
   rw [partialSups_eq_sUnion_image]
-  refine (le_sum_of_additive_aux hC.setSemiring m m_add _ ?_ ?_).trans ?_
+  refine (le_sum_of_additive_aux hC.isSetSemiring m m_add ?_ ?_).trans ?_
   · intro s
     rw [mem_coe, Finset.mem_image]
     rintro ⟨i, _, rfl⟩
@@ -250,7 +251,7 @@ end TotalSetFunction
 
 section PartialSetFunction
 
-theorem sigma_additive_of_sigma_subadditive' (hC : SetSemiring C)
+theorem sigma_additive_of_sigma_subadditive' (hC : IsSetSemiring C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞) (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -268,7 +269,7 @@ theorem sigma_additive_of_sigma_subadditive' (hC : SetSemiring C)
   simp only [univ_eq_attach]
   exact sum_attach _ _
 
-theorem sigma_subadditive_of_sigma_additive' (hC : SetRing C)
+theorem sigma_subadditive_of_sigma_additive' (hC : IsSetRing C)
     (m : ∀ s : Set α, s ∈ C → ℝ≥0∞) (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -285,7 +286,7 @@ theorem sigma_subadditive_of_sigma_additive' (hC : SetRing C)
   simp only [univ_eq_attach]
   exact sum_attach _ _
 
-theorem monotone_of_additive' (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
+theorem monotone_of_additive' (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_add :
       ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
         (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
@@ -311,7 +312,7 @@ structure AddContent (C : Set (Set α)) where
     ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
       (_h_mem : ⋃₀ ↑I ∈ C), toFun (⋃₀ I) = ∑ u in I, toFun u
 
-variable {hC : SetSemiring C}
+variable {hC : IsSetSemiring C}
 
 instance (C : Set (Set α)) : CoeFun (AddContent C) fun _ ↦ Set α → ℝ≥0∞ :=
   ⟨fun μ s ↦ μ.toFun s⟩
@@ -324,35 +325,36 @@ theorem AddContent.add (m : AddContent C) (I : Finset (Set α)) (h_ss : ↑I ⊆
     m (⋃₀ I) = ∑ u in I, m u :=
   m.add' I h_ss h_dis h_mem
 
-theorem AddContent.eq_add_diff₀_of_subset (hC : SetSemiring C) (m : AddContent C) (hs : s ∈ C)
-    (I : Finset (Set α)) (hI : ↑I ⊆ C) (hI_ss : ⋃₀ ↑I ⊆ s)
+theorem AddContent.eq_add_diffFinset₀_of_subset (hC : IsSetSemiring C) (m : AddContent C)
+    (hs : s ∈ C) {I : Finset (Set α)} (hI : ↑I ⊆ C) (hI_ss : ∀ t ∈ I, t ⊆ s)
     (h_dis : PairwiseDisjoint (I : Set (Set α)) id) [DecidableEq (Set α)] :
-    m s = ∑ i in I, m i + ∑ i in hC.diff₀ hs I hI, m i := by
+    m s = ∑ i in I, m i + ∑ i in hC.diffFinset₀ hs hI, m i := by
   classical
-  conv_lhs => rw [hC.eq_sUnion_union_diff₀_of_subset hs I hI hI_ss]
+  conv_lhs => rw [← hC.sUnion_union_diffFinset₀_of_subset hs hI hI_ss]
   rw [m.add]
   · rw [sum_union]
-    exact hC.disjoint_diff₀ hs I hI
+    exact hC.disjoint_diffFinset₀ hs hI
   · rw [coe_union]
-    exact Set.union_subset hI (hC.diff₀_subset hs I hI)
+    exact Set.union_subset hI (hC.diffFinset₀_subset hs hI)
   · rw [coe_union]
-    exact hC.pairwiseDisjoint_union_diff₀ hs I hI h_dis
-  · rwa [← hC.eq_sUnion_union_diff₀_of_subset hs I hI hI_ss]
+    exact hC.pairwiseDisjoint_union_diffFinset₀ hs hI h_dis
+  · rwa [hC.sUnion_union_diffFinset₀_of_subset hs hI hI_ss]
 
-theorem AddContent.sum_le_of_subset (hC : SetSemiring C) (m : AddContent C) (J : Finset (Set α))
-    (h_ss : ↑J ⊆ C) (h_dis : PairwiseDisjoint (J : Set (Set α)) id) (ht : t ∈ C) (hJt : ⋃₀ ↑J ⊆ t) :
+theorem AddContent.sum_le_of_subset (hC : IsSetSemiring C) (m : AddContent C) {J : Finset (Set α)}
+    (h_ss : ↑J ⊆ C) (h_dis : PairwiseDisjoint (J : Set (Set α)) id) (ht : t ∈ C)
+    (hJt : ∀ u ∈ J, u ⊆ t) :
     ∑ u in J, m u ≤ m t := by
   classical
-  rw [m.eq_add_diff₀_of_subset hC ht J h_ss hJt h_dis]
+  rw [m.eq_add_diffFinset₀_of_subset hC ht h_ss hJt h_dis]
   exact le_add_right le_rfl
 
-theorem AddContent.mono (m : AddContent C) (hC : SetSemiring C) (hs : s ∈ C) (ht : t ∈ C)
+theorem AddContent.mono (m : AddContent C) (hC : IsSetSemiring C) (hs : s ∈ C) (ht : t ∈ C)
     (hst : s ⊆ t) : m s ≤ m t := by
-  have h := m.sum_le_of_subset hC {s} ?_ ?_ ht ?_
+  have h := m.sum_le_of_subset hC (J := {s}) ?_ ?_ ht ?_
   · simpa only [sum_singleton] using h
   · rwa [singleton_subset_set_iff]
   · simp only [coe_singleton, pairwiseDisjoint_singleton]
-  · simp only [coe_singleton, sUnion_singleton]
+  · simp only [Finset.mem_singleton, forall_eq]
     exact hst
 
 theorem addContent_union' (m : AddContent C) (hs : s ∈ C) (ht : t ∈ C) (hst : s ∪ t ∈ C)
@@ -376,17 +378,17 @@ theorem addContent_union' (m : AddContent C) (hs : s ∈ C) (ht : t ∈ C) (hst 
     rw [← hs_eq_t] at h_dis
     exact Disjoint.eq_bot_of_self h_dis
 
-theorem addContent_union (m : AddContent C) (hC : SetRing C) (hs : s ∈ C) (ht : t ∈ C)
+theorem addContent_union (m : AddContent C) (hC : IsSetRing C) (hs : s ∈ C) (ht : t ∈ C)
     (h_dis : Disjoint s t) : m (s ∪ t) = m s + m t :=
   addContent_union' m hs ht (hC.union_mem hs ht) h_dis
 
-theorem addContent_union_le (m : AddContent C) (hC : SetRing C) (hs : s ∈ C) (ht : t ∈ C) :
+theorem addContent_union_le (m : AddContent C) (hC : IsSetRing C) (hs : s ∈ C) (ht : t ∈ C) :
     m (s ∪ t) ≤ m s + m t := by
   rw [← union_diff_self, addContent_union m hC hs (hC.diff_mem ht hs)]
-  · exact add_le_add le_rfl (m.mono hC.setSemiring (hC.diff_mem ht hs) ht diff_subset)
+  · exact add_le_add le_rfl (m.mono hC.isSetSemiring (hC.diff_mem ht hs) ht diff_subset)
   · rw [Set.disjoint_iff_inter_eq_empty, inter_diff_self]
 
-theorem addContent_iUnion_le (m : AddContent C) (hC : SetRing C) {s : ℕ → Set α}
+theorem addContent_iUnion_le (m : AddContent C) (hC : IsSetRing C) {s : ℕ → Set α}
     (hs : ∀ n, s n ∈ C) (n : ℕ) :
     m (⋃ i ≤ n, s i) ≤ ∑ i in range (n + 1), m (s i) := by
   induction' n with n hn
@@ -394,16 +396,16 @@ theorem addContent_iUnion_le (m : AddContent C) (hC : SetRing C) {s : ℕ → Se
   rw [Set.bUnion_le_succ _ n, Finset.sum_range_succ]
   exact (addContent_union_le m hC (hC.iUnion_le_mem hs n) (hs _)).trans (add_le_add hn le_rfl)
 
-theorem addContent_diff (m : AddContent C) (hC : SetRing C) (hs : s ∈ C) (ht : t ∈ C) :
+theorem addContent_diff (m : AddContent C) (hC : IsSetRing C) (hs : s ∈ C) (ht : t ∈ C) :
     m s - m t ≤ m (s \ t) := by
   have h : s = s ∩ t ∪ s \ t := by rw [inter_union_diff]
   conv_lhs => rw [h]
   rw [addContent_union m hC (hC.inter_mem hs ht) (hC.diff_mem hs ht) disjoint_inf_sdiff, add_comm]
   refine add_tsub_le_assoc.trans_eq ?_
-  rw [tsub_eq_zero_of_le (m.mono hC.setSemiring (hC.inter_mem hs ht) ht inter_subset_right),
+  rw [tsub_eq_zero_of_le (m.mono hC.isSetSemiring (hC.inter_mem hs ht) ht inter_subset_right),
     add_zero]
 
-theorem AddContent.sigma_subadditive_of_sigma_additive (hC : SetRing C) (m : AddContent C)
+theorem AddContent.sigma_subadditive_of_sigma_additive (hC : IsSetRing C) (m : AddContent C)
     (m_c_add :
       ∀ (f : ℕ → Set α) (_hf : ∀ i, f i ∈ C) (_hf_Union : (⋃ i, f i) ∈ C)
         (_hf_disj : Pairwise (Disjoint on f)), m (⋃ i, f i) = ∑' i, m (f i))
@@ -415,7 +417,7 @@ theorem AddContent.sigma_subadditive_of_sigma_additive (hC : SetRing C) (m : Add
 section ExtendContent
 
 /-- Build an `AddContent` from an additive function defined on a semiring. -/
-noncomputable def extendContent (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
+noncomputable def extendContent (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -430,7 +432,7 @@ noncomputable def extendContent (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ 
     rw [m_add, univ_eq_attach]
     exact sum_attach _ _
 
-theorem extendContent_eq_extend (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
+theorem extendContent_eq_extend (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -438,7 +440,7 @@ theorem extendContent_eq_extend (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ 
     ⇑(extendContent hC m m_empty m_add) = extend m :=
   rfl
 
-theorem extendContent_eq (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
+theorem extendContent_eq (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -446,7 +448,7 @@ theorem extendContent_eq (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C → �
     (hs : s ∈ C) : extendContent hC m m_empty m_add s = m s hs := by
   rw [extendContent_eq_extend, extend_eq]
 
-theorem extendContent_eq_top (hC : SetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
+theorem extendContent_eq_top (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
     (m_add :
       ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)

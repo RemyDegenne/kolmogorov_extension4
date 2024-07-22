@@ -14,7 +14,7 @@ variable {α : Type*} {C R : Set (Set α)} {s : ℕ → Set α}
 
 -- `innerRegular` is defined only for a measure, hence we expand the definition to use it with a
 -- content
-lemma tendsto_zero_of_regular_addContent (hR : SetRing R) (m : AddContent R)
+lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent R)
     (hs : ∀ n, s n ∈ R) (hs_anti : Antitone s) (hs_Inter : (⋂ n, s n) = ∅)
     (hC : IsCompactSystem C) (hCR : C ⊆ R)
     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε) :
@@ -54,7 +54,7 @@ lemma tendsto_zero_of_regular_addContent (hR : SetRing R) (m : AddContent R)
           simp only [this, Set.diff_empty]
         exact ht_empty' n hn
     _ ≤ m (⋃ i ≤ n, (s i \ t i)) := by
-        refine AddContent.mono m hR.setSemiring ?_ ?_ ?_
+        refine AddContent.mono m hR.isSetSemiring ?_ ?_ ?_
         · exact hR.diff_mem (hR.iInter_le_mem hs n) (hR.iInter_le_mem (fun i ↦ hCR (ht_mem_C i)) n)
         · exact hR.iUnion_le_mem (fun i ↦ hR.diff_mem (hs i) (hCR (ht_mem_C i))) n
         · rw [Set.diff_iInter]
@@ -71,7 +71,7 @@ lemma tendsto_zero_of_regular_addContent (hR : SetRing R) (m : AddContent R)
     _ ≤ ∑' i, δ i := ENNReal.sum_le_tsum _
     _ ≤ ε := hδ_sum.le
 
-lemma AddContent.sigma_additive_of_regular (hR : SetRing R) (m : AddContent R)
+lemma AddContent.sigma_additive_of_regular (hR : IsSetRing R) (m : AddContent R)
     (hm_ne_top : ∀ {s} (_ : s ∈ R), m s ≠ ∞)
     (hC : IsCompactSystem C) (hCR : C ⊆ R)
     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε)
