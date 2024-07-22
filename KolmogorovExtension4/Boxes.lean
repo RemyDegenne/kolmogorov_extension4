@@ -526,7 +526,7 @@ theorem isSetField_cylinders : IsSetField (cylinders α) :=
     union_mem := union_mem_cylinders
     diff_mem := diff_mem_cylinders }
 
-theorem setRing_cylinders : MeasureTheory.IsSetRing (cylinders α) :=
+theorem isSetRing_cylinders : MeasureTheory.IsSetRing (cylinders α) :=
   isSetField_cylinders.toIsSetRing
 
 theorem isSetSemiring_cylinders : MeasureTheory.IsSetSemiring (cylinders α) :=
