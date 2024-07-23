@@ -67,19 +67,19 @@ section Measure
 variable {X Y Z T U : Type*} [MeasurableSpace X] [MeasurableSpace Y]
 variable [MeasurableSpace Z] [MeasurableSpace T] [MeasurableSpace U]
 
-theorem kernel.compProd_apply_prod (κ : kernel X Y) [IsSFiniteKernel κ]
-    (η : kernel (X × Y) Z) [IsSFiniteKernel η]
+theorem Kernel.compProd_apply_prod (κ : Kernel X Y) [IsSFiniteKernel κ]
+    (η : Kernel (X × Y) Z) [IsSFiniteKernel η]
     {s : Set Y} (hs : MeasurableSet s) {t : Set Z} (ht : MeasurableSet t) (x : X) :
     (κ ⊗ₖ η) x (s ×ˢ t) = ∫⁻ y in s, η (x, y) t ∂κ x := by
-  rw [kernel.compProd_apply _ _ _ (hs.prod ht), ← lintegral_indicator _ hs]
+  rw [Kernel.compProd_apply _ _ _ (hs.prod ht), ← lintegral_indicator _ hs]
   congr with y
   by_cases hy : y ∈ s <;> simp [Set.indicator, hy]
 
-theorem kernel.map_map (κ : kernel X Y) {f : Y → Z} (hf : Measurable f)
+theorem Kernel.map_map (κ : Kernel X Y) {f : Y → Z} (hf : Measurable f)
     {g : Z → T} (hg : Measurable g) :
-    kernel.map (kernel.map κ f hf) g hg = kernel.map κ (g ∘ f) (hg.comp hf) := by
+    Kernel.map (Kernel.map κ f hf) g hg = Kernel.map κ (g ∘ f) (hg.comp hf) := by
   ext1 x
-  rw [kernel.map_apply, kernel.map_apply, Measure.map_map hg hf, ← kernel.map_apply]
+  rw [Kernel.map_apply, Kernel.map_apply, Measure.map_map hg hf, ← Kernel.map_apply]
 
 theorem Measure.map_prod (μ : Measure X) [IsFiniteMeasure μ]
     (ν : Measure Y) [IsFiniteMeasure ν] {f : X → Z} (hf : Measurable f)
@@ -90,74 +90,74 @@ theorem Measure.map_prod (μ : Measure X) [IsFiniteMeasure μ]
   · have : Prod.map f g ⁻¹' s ×ˢ t = (f ⁻¹' s) ×ˢ (g ⁻¹' t) := Set.prod_preimage_eq.symm
     rw [this, Measure.prod_prod, Measure.map_apply hf ms, Measure.map_apply hg mt]
 
-theorem kernel.map_prod (κ : kernel X Y) [IsFiniteKernel κ] (η : kernel X T) [IsFiniteKernel η]
+theorem Kernel.map_prod (κ : Kernel X Y) [IsFiniteKernel κ] (η : Kernel X T) [IsFiniteKernel η]
     {f : Y → Z} (hf : Measurable f) {g : T → U} (hg : Measurable g) :
-    kernel.map (κ ×ₖ η) (Prod.map f g) (hf.prod_map hg) =
-    (kernel.map κ f hf) ×ₖ (kernel.map η g hg) := by
+    Kernel.map (κ ×ₖ η) (Prod.map f g) (hf.prod_map hg) =
+    (Kernel.map κ f hf) ×ₖ (Kernel.map η g hg) := by
   ext1 x
-  rw [kernel.map_apply, kernel.prod_apply, Measure.map_prod _ _ hf hg, kernel.prod_apply,
-    kernel.map_apply, kernel.map_apply]
+  rw [Kernel.map_apply, Kernel.prod_apply, Measure.map_prod _ _ hf hg, Kernel.prod_apply,
+    Kernel.map_apply, Kernel.map_apply]
 
-theorem kernel.map_prod_fst (κ : kernel X Y) [IsSFiniteKernel κ]
-    (η : kernel X Z) [IsMarkovKernel η] :
-    kernel.map (κ ×ₖ η) Prod.fst measurable_fst = κ := kernel.fst_prod κ η
+theorem Kernel.map_prod_fst (κ : Kernel X Y) [IsSFiniteKernel κ]
+    (η : Kernel X Z) [IsMarkovKernel η] :
+    Kernel.map (κ ×ₖ η) Prod.fst measurable_fst = κ := Kernel.fst_prod κ η
 
-theorem kernel.map_prod_snd (κ : kernel X Y) [IsMarkovKernel κ]
-    (η : kernel X Z) [IsSFiniteKernel η] :
-    kernel.map (κ ×ₖ η) Prod.snd measurable_snd = η := kernel.snd_prod κ η
+theorem Kernel.map_prod_snd (κ : Kernel X Y) [IsMarkovKernel κ]
+    (η : Kernel X Z) [IsSFiniteKernel η] :
+    Kernel.map (κ ×ₖ η) Prod.snd measurable_snd = η := Kernel.snd_prod κ η
 
-theorem kernel.map_deterministic {f : X → Y} (hf : Measurable f)
+theorem Kernel.map_deterministic {f : X → Y} (hf : Measurable f)
     {g : Y → Z} (hg : Measurable g) :
-    kernel.map (kernel.deterministic f hf) g hg = kernel.deterministic (g ∘ f) (hg.comp hf) := by
+    Kernel.map (Kernel.deterministic f hf) g hg = Kernel.deterministic (g ∘ f) (hg.comp hf) := by
   ext x s ms
-  rw [kernel.map_apply' _ _ _ ms, kernel.deterministic_apply' _ _ (hg ms),
-    kernel.deterministic_apply' _ _ ms, preimage_indicator]
+  rw [Kernel.map_apply' _ _ _ ms, Kernel.deterministic_apply' _ _ (hg ms),
+    Kernel.deterministic_apply' _ _ ms, preimage_indicator]
   rfl
 
-theorem kernel.deterministic_prod_apply' {f : X → Y} (mf : Measurable f)
-    (η : kernel X Z) [IsSFiniteKernel η] (x : X)
+theorem Kernel.deterministic_prod_apply' {f : X → Y} (mf : Measurable f)
+    (η : Kernel X Z) [IsSFiniteKernel η] (x : X)
     {s : Set (Y × Z)} (ms : MeasurableSet s) :
-    ((kernel.deterministic f mf) ×ₖ η) x s = η x {z | (f x, z) ∈ s} := by
-  rw [kernel.prod_apply' _ _ _ ms, kernel.lintegral_deterministic']
+    ((Kernel.deterministic f mf) ×ₖ η) x s = η x {z | (f x, z) ∈ s} := by
+  rw [Kernel.prod_apply' _ _ _ ms, Kernel.lintegral_deterministic']
   exact measurable_measure_prod_mk_left ms
 
-theorem kernel.prod_apply_symm' (κ : kernel X Y) [IsSFiniteKernel κ]
-    (η : kernel X Z) [IsSFiniteKernel η]
+theorem Kernel.prod_apply_symm' (κ : Kernel X Y) [IsSFiniteKernel κ]
+    (η : Kernel X Z) [IsSFiniteKernel η]
     (x : X) {s : Set (Y × Z)} (hs : MeasurableSet s) :
     (κ ×ₖ η) x s = ∫⁻ z, κ x ((fun y ↦ (y, z)) ⁻¹' s) ∂η x := by
-  rw [kernel.prod_apply, Measure.prod_apply_symm hs]
+  rw [Kernel.prod_apply, Measure.prod_apply_symm hs]
 
-theorem kernel.prod_deterministic_apply' {f : X → Z} (mf : Measurable f)
-    (η : kernel X Y) [IsSFiniteKernel η] (x : X)
+theorem Kernel.prod_deterministic_apply' {f : X → Z} (mf : Measurable f)
+    (η : Kernel X Y) [IsSFiniteKernel η] (x : X)
     {s : Set (Y × Z)} (ms : MeasurableSet s) :
-    (η ×ₖ (kernel.deterministic f mf)) x s = η x {y | (y, f x) ∈ s} := by
-  rw [kernel.prod_apply_symm' _ _ _ ms, kernel.lintegral_deterministic']
+    (η ×ₖ (Kernel.deterministic f mf)) x s = η x {y | (y, f x) ∈ s} := by
+  rw [Kernel.prod_apply_symm' _ _ _ ms, Kernel.lintegral_deterministic']
   · rfl
   · exact measurable_measure_prod_mk_right ms
 
-theorem Measure.map_snd_compProd (μ : Measure X) [IsProbabilityMeasure μ] (κ : kernel X Y)
+theorem Measure.map_snd_compProd (μ : Measure X) [IsProbabilityMeasure μ] (κ : Kernel X Y)
     [IsSFiniteKernel κ] {f : Y → Z} (hf : Measurable f) :
-    (μ ⊗ₘ κ).snd.map f = (μ ⊗ₘ (kernel.map κ f hf)).snd := by
+    (μ ⊗ₘ κ).snd.map f = (μ ⊗ₘ (Kernel.map κ f hf)).snd := by
   ext s ms
   rw [Measure.map_apply hf ms, Measure.snd_apply (hf ms), ← Set.univ_prod,
     Measure.compProd_apply_prod MeasurableSet.univ (hf ms), Measure.snd_apply ms, ← Set.univ_prod,
     Measure.compProd_apply_prod MeasurableSet.univ ms]
-  simp_rw [kernel.map_apply' _ _ _ ms]
+  simp_rw [Kernel.map_apply' _ _ _ ms]
 
 theorem Measure.fst_compProd (μ : Measure X) [SFinite μ]
-    (κ : kernel X Y) [IsMarkovKernel κ] :
+    (κ : Kernel X Y) [IsMarkovKernel κ] :
     (μ ⊗ₘ κ).fst = μ := by
   ext s ms
   rw [Measure.fst_apply ms, ← Set.prod_univ, Measure.compProd_apply_prod ms MeasurableSet.univ]
   simp
 
-theorem kernel.map_eq (κ : kernel X Y) {f g : Y → Z} (hf : Measurable f) (hfg : f = g) :
-    kernel.map κ f hf = kernel.map κ g (hfg ▸ hf) := by cases hfg; rfl
+theorem Kernel.map_eq (κ : Kernel X Y) {f g : Y → Z} (hf : Measurable f) (hfg : f = g) :
+    Kernel.map κ f hf = Kernel.map κ g (hfg ▸ hf) := by cases hfg; rfl
 
-theorem kernel.comap_const (μ : Measure Z) {f : X → Y} (hf : Measurable f) :
-    kernel.comap (kernel.const Y μ) f hf = kernel.const X μ := by
+theorem Kernel.comap_const (μ : Measure Z) {f : X → Y} (hf : Measurable f) :
+    Kernel.comap (Kernel.const Y μ) f hf = Kernel.const X μ := by
   ext1 x
-  rw [kernel.const_apply, kernel.comap_apply, kernel.const_apply]
+  rw [Kernel.const_apply, Kernel.comap_apply, Kernel.const_apply]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
@@ -187,26 +187,26 @@ theorem eq_of_stronglyMeasurable_comap {Z : Type*} [m : MeasurableSpace Y]
   have : BorelSpace Z := BorelSpace.mk rfl
   exact eq_of_measurable_comap f hg.measurable h
 
-theorem kernel.integrable_prod_iff (κ : kernel X Y) [IsFiniteKernel κ]
-    (η : kernel X Z) [IsFiniteKernel η] (x : X) {f : (Y × Z) → E}
+theorem Kernel.integrable_prod_iff (κ : Kernel X Y) [IsFiniteKernel κ]
+    (η : Kernel X Z) [IsFiniteKernel η] (x : X) {f : (Y × Z) → E}
     (hf : AEStronglyMeasurable f ((κ ×ₖ η) x)) : Integrable f ((κ ×ₖ η) x) ↔
       (∀ᵐ y ∂κ x, Integrable (fun z ↦ f (y, z)) (η x)) ∧
       Integrable (fun y ↦ ∫ z, ‖f (y, z)‖ ∂η x) (κ x) := by
-  rwa [kernel.prod_apply, MeasureTheory.integrable_prod_iff] at *
+  rwa [Kernel.prod_apply, MeasureTheory.integrable_prod_iff] at *
 
-theorem kernel.integrable_prod_iff' (κ : kernel X Y) [IsFiniteKernel κ]
-    (η : kernel X Z) [IsFiniteKernel η] (x : X) {f : (Y × Z) → E}
+theorem Kernel.integrable_prod_iff' (κ : Kernel X Y) [IsFiniteKernel κ]
+    (η : Kernel X Z) [IsFiniteKernel η] (x : X) {f : (Y × Z) → E}
     (hf : AEStronglyMeasurable f ((κ ×ₖ η) x)) : Integrable f ((κ ×ₖ η) x) ↔
       (∀ᵐ z ∂η x, Integrable (fun y ↦ f (y, z)) (κ x)) ∧
       Integrable (fun z ↦ ∫ y, ‖f (y, z)‖ ∂κ x) (η x) := by
-  rwa [kernel.prod_apply, MeasureTheory.integrable_prod_iff'] at *
+  rwa [Kernel.prod_apply, MeasureTheory.integrable_prod_iff'] at *
 
-theorem kernel.integral_prod (κ : kernel X Y) [IsFiniteKernel κ]
-    (η : kernel X Z) [IsFiniteKernel η] (x : X)
+theorem Kernel.integral_prod (κ : Kernel X Y) [IsFiniteKernel κ]
+    (η : Kernel X Z) [IsFiniteKernel η] (x : X)
     {f : (Y × Z) → E} (hf : Integrable f ((κ ×ₖ η) x)) :
     ∫ p, f p ∂(κ ×ₖ η) x = ∫ y, ∫ z, f (y, z) ∂η x ∂κ x := by
-  rw [kernel.prod_apply, MeasureTheory.integral_prod]
-  rwa [← kernel.prod_apply]
+  rw [Kernel.prod_apply, MeasureTheory.integral_prod]
+  rwa [← Kernel.prod_apply]
 
 theorem integrable_dirac {f : X → E} (mf : StronglyMeasurable f) {x : X} :
     Integrable f (Measure.dirac x) := by
@@ -216,60 +216,60 @@ theorem integrable_dirac {f : X → E} (mf : StronglyMeasurable f) {x : X} :
     rw [integrable_congr this]
     exact integrable_const _
 
-theorem kernel.integrable_deterministic_prod {f : X → Y} (mf : Measurable f)
-    (κ : kernel X Z) [IsFiniteKernel κ] (x : X)
+theorem Kernel.integrable_deterministic_prod {f : X → Y} (mf : Measurable f)
+    (κ : Kernel X Z) [IsFiniteKernel κ] (x : X)
     {g : (Y × Z) → E} (mg : StronglyMeasurable g) :
-    Integrable g (((kernel.deterministic f mf) ×ₖ κ) x) ↔
+    Integrable g (((Kernel.deterministic f mf) ×ₖ κ) x) ↔
       Integrable (fun z ↦ g (f x, z)) (κ x) := by
-  rw [kernel.integrable_prod_iff]
+  rw [Kernel.integrable_prod_iff]
   · constructor
     · rintro ⟨h, -⟩
-      rwa [kernel.deterministic_apply, ae_dirac_iff] at h
+      rwa [Kernel.deterministic_apply, ae_dirac_iff] at h
       exact measurableSet_integrable mg
     · intro h
       constructor
-      · rwa [kernel.deterministic_apply, ae_dirac_iff]
+      · rwa [Kernel.deterministic_apply, ae_dirac_iff]
         exact measurableSet_integrable mg
-      · rw [kernel.deterministic_apply]
+      · rw [Kernel.deterministic_apply]
         apply integrable_dirac
         exact mg.norm.integral_prod_right'
   · exact mg.aestronglyMeasurable
 
-theorem kernel.integral_deterministic_prod {f : X → Y} (mf : Measurable f)
-    (κ : kernel X Z) [IsFiniteKernel κ] (x : X)
+theorem Kernel.integral_deterministic_prod {f : X → Y} (mf : Measurable f)
+    (κ : Kernel X Z) [IsFiniteKernel κ] (x : X)
     {g : (Y × Z) → E} (mg : StronglyMeasurable g)
     (i_g : Integrable (fun z ↦ g (f x, z)) (κ x)) :
-    ∫ p, g p ∂((kernel.deterministic f mf) ×ₖ κ) x = ∫ z, g (f x, z) ∂κ x := by
-  rw [kernel.integral_prod, kernel.integral_deterministic']
+    ∫ p, g p ∂((Kernel.deterministic f mf) ×ₖ κ) x = ∫ z, g (f x, z) ∂κ x := by
+  rw [Kernel.integral_prod, Kernel.integral_deterministic']
   · exact mg.integral_prod_right'
-  · rwa [kernel.integrable_deterministic_prod _ _ _ mg]
+  · rwa [Kernel.integrable_deterministic_prod _ _ _ mg]
 
-theorem kernel.integrable_comp_iff (η : kernel Y Z) [IsSFiniteKernel η]
-    (κ : kernel X Y) [IsSFiniteKernel κ] (x : X)
+theorem Kernel.integrable_comp_iff (η : Kernel Y Z) [IsSFiniteKernel η]
+    (κ : Kernel X Y) [IsSFiniteKernel κ] (x : X)
     {f : Z → E} (hf : AEStronglyMeasurable f ((η ∘ₖ κ) x)) :
     Integrable f ((η ∘ₖ κ) x) ↔
     (∀ᵐ y ∂κ x, Integrable f (η y)) ∧ (Integrable (fun y ↦ ∫ z, ‖f z‖ ∂η y) (κ x)) := by
-  rw [kernel.comp_eq_snd_compProd, kernel.snd] at *
-  rw [kernel.map_apply, integrable_map_measure, ProbabilityTheory.integrable_compProd_iff]
+  rw [Kernel.comp_eq_snd_compProd, Kernel.snd] at *
+  rw [Kernel.map_apply, integrable_map_measure, ProbabilityTheory.integrable_compProd_iff]
   · rfl
   · exact hf.comp_measurable measurable_snd
   · exact hf
   · exact measurable_snd.aemeasurable
 
-theorem kernel.integral_comp (η : kernel Y Z) [IsFiniteKernel η]
-    (κ : kernel X Y) [IsFiniteKernel κ]
+theorem Kernel.integral_comp (η : Kernel Y Z) [IsFiniteKernel η]
+    (κ : Kernel X Y) [IsFiniteKernel κ]
     (x : X) {g : Z → E} (hg : Integrable g ((η ∘ₖ κ) x)) :
     ∫ z, g z ∂(η ∘ₖ κ) x = ∫ y, ∫ z, g z ∂η y ∂κ x := by
-  rw [kernel.comp_eq_snd_compProd, kernel.snd_apply, integral_map,
+  rw [Kernel.comp_eq_snd_compProd, Kernel.snd_apply, integral_map,
     ProbabilityTheory.integral_compProd]
-  · simp_rw [kernel.prodMkLeft_apply η]
+  · simp_rw [Kernel.prodMkLeft_apply η]
   · apply Integrable.comp_measurable
     · convert hg
-      rw [kernel.comp_eq_snd_compProd, kernel.snd_apply]
+      rw [Kernel.comp_eq_snd_compProd, Kernel.snd_apply]
     · exact measurable_snd
   · exact measurable_snd.aemeasurable
   · convert hg.aestronglyMeasurable
-    rw [kernel.comp_eq_snd_compProd, kernel.snd_apply]
+    rw [Kernel.comp_eq_snd_compProd, Kernel.snd_apply]
 
 end Measure
 

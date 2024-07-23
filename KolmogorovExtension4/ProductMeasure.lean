@@ -5,7 +5,7 @@ Authors: Etienne Marion
 -/
 import KolmogorovExtension4.IonescuTulceaKernel
 
-open MeasureTheory MeasurableSpace ProbabilityTheory Finset ENNReal Filter Topology Function kernel
+open MeasureTheory MeasurableSpace ProbabilityTheory Finset ENNReal Filter Topology Function Kernel
 
 namespace MeasureTheory
 
@@ -93,10 +93,10 @@ noncomputable def Measure.infinitePiNat : Measure ((n : ℕ) → X n) :=
 
 open Measure
 
-instance {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {κ : kernel X Y}
+instance {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {κ : Kernel X Y}
     [IsProbabilityMeasure μ] [IsMarkovKernel κ] : IsProbabilityMeasure (μ.bind κ) := by
   constructor
-  rw [bind_apply MeasurableSet.univ (kernel.measurable κ)]
+  rw [bind_apply MeasurableSet.univ (Kernel.measurable κ)]
   simp
 
 instance : IsProbabilityMeasure (infinitePiNat μ) := by
@@ -125,10 +125,10 @@ theorem er_succ_preimage_pi {n : ℕ} (hn : 0 < n) (s : (i : Ioc 0 (n + 1)) → 
 
 theorem kerNat_prod {N : ℕ} (hN : 0 < N) :
     (kerNat (fun n ↦ const _ (μ (n + 1))) 0 N) =
-      kernel.const _ (Measure.pi (fun i : Ioc 0 N ↦ μ i)) := by
+      Kernel.const _ (Measure.pi (fun i : Ioc 0 N ↦ μ i)) := by
   ext1 x₀
   refine Nat.le_induction ?_ (fun n hn hind ↦ ?_) N (Nat.succ_le.2 hN)
-  · rw [kerNat_succ, kernel.const_apply]
+  · rw [kerNat_succ, Kernel.const_apply]
     refine (Measure.pi_eq (fun s ms ↦ ?_)).symm
     have : Subsingleton (Ioc 0 1) := by
       constructor
@@ -136,7 +136,7 @@ theorem kerNat_prod {N : ℕ} (hN : 0 < N) :
       rw [mem_Ioc_succ] at hi hj
       simp [hi, hj]
     rw [Fintype.prod_subsingleton _ ⟨1, right_mem_Ioc.2 zero_lt_one⟩,
-      map_apply' _ (e 0).measurable, kernel.const_apply]
+      map_apply' _ (e 0).measurable, Kernel.const_apply]
     · congr with x
       simp only [Nat.reduceAdd, e, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Nat.succ_eq_add_one,
         Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies, Subtype.forall,
@@ -144,15 +144,15 @@ theorem kerNat_prod {N : ℕ} (hN : 0 < N) :
       refine ⟨fun h ↦ h 1 rfl, fun h i hi ↦ ?_⟩
       cases hi; exact h
     · exact MeasurableSet.univ_pi ms
-  · rw [kernel.const_apply]
+  · rw [Kernel.const_apply]
     refine (Measure.pi_eq fun s ms ↦ ?_).symm
     rw [kerNat_succ_right _ _ _ (Nat.succ_le.1 hn), kerNat_succ, compProdNat,
       dif_pos ⟨Nat.succ_le.1 hn, n.lt_succ_self⟩,
       map_apply' _ _ _ (MeasurableSet.univ_pi ms), er_succ_preimage_pi (Nat.succ_le.1 hn),
-      split, kernel.map_const, kernel.comap_const, kernel.compProd_apply_prod, ← prod_Ioc,
-      ← Measure.pi_pi, ← setLIntegral_const, hind, kernel.const_apply]
+      split, Kernel.map_const, Kernel.comap_const, Kernel.compProd_apply_prod, ← prod_Ioc,
+      ← Measure.pi_pi, ← setLIntegral_const, hind, Kernel.const_apply]
     · congr with x
-      rw [kernel.const_apply, Measure.map_apply (e n).measurable]
+      rw [Kernel.const_apply, Measure.map_apply (e n).measurable]
       · congr
       · exact (e n).measurable_invFun (ms _)
     · exact MeasurableSet.univ_pi (fun _ ↦ ms _)
@@ -160,7 +160,7 @@ theorem kerNat_prod {N : ℕ} (hN : 0 < N) :
 
 theorem prod_noyau_proj (N : ℕ) :
     partialKernel (fun n ↦ const ((i : Iic n) → X i) (μ (n + 1))) 0 N =
-      kernel.map ((deterministic id measurable_id) ×ₖ
+      Kernel.map ((deterministic id measurable_id) ×ₖ
           (const _ (Measure.pi (fun i : Ioc 0 N ↦ μ i))))
         (el 0 N (zero_le N)) (el 0 N (zero_le N)).measurable := by
   rcases eq_zero_or_pos N with hN | hN
@@ -168,8 +168,8 @@ theorem prod_noyau_proj (N : ℕ) :
     have : IsEmpty (Ioc 0 0) := by simp
     rw [partialKernel, dif_neg (lt_irrefl 0), Measure.pi_of_empty]
     ext x s ms
-    rw [kernel.map_apply, deterministic_apply, kernel.prod_apply,
-      deterministic_apply, kernel.const_apply, Measure.dirac_prod_dirac,
+    rw [Kernel.map_apply, deterministic_apply, Kernel.prod_apply,
+      deterministic_apply, Kernel.const_apply, Measure.dirac_prod_dirac,
       Measure.map_apply (el 0 0 (le_refl 0)).measurable ms,
       Measure.dirac_apply' _ ((el 0 0 (le_refl 0)).measurable ms),
       Measure.dirac_apply' _ ms]
@@ -200,22 +200,22 @@ theorem el_preimage {n : ℕ} (s : (i : Iic n) → Set (X i)) :
 
 theorem Measure.map_bind {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     [MeasurableSpace Z]
-    (μ : Measure X) (κ : kernel X Y) (f : Y → Z) (mf : Measurable f) :
-    (μ.bind κ).map f = μ.bind (kernel.map κ f mf) := by
+    (μ : Measure X) (κ : Kernel X Y) (f : Y → Z) (mf : Measurable f) :
+    (μ.bind κ).map f = μ.bind (Kernel.map κ f mf) := by
   ext s ms
-  rw [Measure.map_apply mf ms, Measure.bind_apply ms (kernel.measurable _),
-    Measure.bind_apply (mf ms) (kernel.measurable _)]
-  simp_rw [kernel.map_apply' _ _ _ ms]
+  rw [Measure.map_apply mf ms, Measure.bind_apply ms (Kernel.measurable _),
+    Measure.bind_apply (mf ms) (Kernel.measurable _)]
+  simp_rw [Kernel.map_apply' _ _ _ ms]
 
 theorem map_bind_eq_bind_comap {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     [MeasurableSpace Z]
-    (μ : Measure X) (κ : kernel Y Z) (f : X → Y) (mf : Measurable f) :
-    (μ.map f).bind κ = μ.bind (kernel.comap κ f mf) := by
+    (μ : Measure X) (κ : Kernel Y Z) (f : X → Y) (mf : Measurable f) :
+    (μ.map f).bind κ = μ.bind (Kernel.comap κ f mf) := by
   ext s ms
-  rw [Measure.bind_apply ms (kernel.measurable _), lintegral_map, Measure.bind_apply ms]
+  rw [Measure.bind_apply ms (Kernel.measurable _), lintegral_map, Measure.bind_apply ms]
   · rfl
-  · exact kernel.measurable _
-  · exact kernel.measurable_coe _ ms
+  · exact Kernel.measurable _
+  · exact Kernel.measurable_coe _ ms
   · exact mf
 
 theorem isProjectiveLimit_infinitePiNat :
@@ -234,11 +234,11 @@ theorem isProjectiveLimit_infinitePiNat :
   · exact zer.measurable
   refine (Measure.pi_eq fun s ms ↦ ?_).symm
   have mpis := MeasurableSet.univ_pi ms
-  rw [Measure.bind_apply mpis (kernel.measurable _), ← prod_Iic,
+  rw [Measure.bind_apply mpis (Kernel.measurable _), ← prod_Iic,
     ← setLIntegral_const, ← lintegral_indicator _ (ms _)]
   congr with x₀
-  rw [kernel.comap_apply, prod_noyau_proj, kernel.map_apply', kernel.prod_apply, el_preimage,
-    Measure.prod_prod, deterministic_apply', kernel.const_apply, indicator_one_mul_const',
+  rw [Kernel.comap_apply, prod_noyau_proj, Kernel.map_apply', Kernel.prod_apply, el_preimage,
+    Measure.prod_prod, deterministic_apply', Kernel.const_apply, indicator_one_mul_const',
     zer.image_eq_preimage, preimage_indicator]
   · simp
   · rw [zer.image_eq_preimage]
