@@ -3,35 +3,14 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Etienne Marion
 -/
-import KolmogorovExtension4.Boxes
-import KolmogorovExtension4.Annexe
+import KolmogorovExtension4.Projections
 
 open Finset ENNReal ProbabilityTheory MeasureTheory
 
 noncomputable section
 
-section projection
-
-variable {ι : Type*} {X : ι → Type*}
-
 lemma Finset.sub_Iic (I : Finset ℕ) : I ⊆ (Iic (I.sup id)) :=
   fun _ hi ↦ mem_Iic.2 <| le_sup (f := id) hi
-
-/-- Given a dependent function of variables in `J`, restrict it to a function of variables in `I`
-when `I ⊆ J`. -/
-abbrev projection {I J : Finset ι} (hIJ : I ⊆ J) : ((i : J) → X i) → (i : I) → X i :=
-  fun x i ↦ x ⟨i.1, hIJ i.2⟩
-
-theorem projection_comp_projection {I J K : Finset ι} (hIJ : I ⊆ J) (hJK : J ⊆ K) :
-    (projection (X := X) hIJ) ∘ (projection hJK) = projection (hIJ.trans hJK) := by
-  ext x i
-  simp
-
-theorem measurable_projection [∀ i, MeasurableSpace (X i)] {I J : Finset ι} (hIJ : I ⊆ J) :
-    Measurable (projection (X := X) hIJ) :=
-  measurable_pi_lambda _ (fun _ ↦ measurable_pi_apply _)
-
-end projection
 
 section compProdNat
 
@@ -115,11 +94,11 @@ def er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k) :
   measurable_invFun := by
     refine Measurable.prod_mk ?_ ?_ <;> exact measurable_pi_lambda _ (fun a ↦ measurable_id.eval)
 
-theorem projection_er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k)
+theorem projSubset'_er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k)
     (y : (n : Ioc i j) → X n) (z : (n : Ioc j k) → X n) :
-    projection (Ioc_subset_Ioc_right hjk) (er i j k hij hjk (y, z)) = y := by
+    projSubset' (Ioc_subset_Ioc_right hjk) (er i j k hij hjk (y, z)) = y := by
   ext n
-  simp [projection, er, (mem_Ioc.1 n.2).2]
+  simp [projSubset', er, (mem_Ioc.1 n.2).2]
 
 lemma el_assoc {i j k : ℕ} (hij : i < j) (hjk : j ≤ k) (a : (x : Iic i) → X ↑x)
     (b : (l : Ioc i j) → X l) (c : (l : Ioc j k) → X l) :
@@ -491,25 +470,25 @@ theorem isMarkovKernel_kerNat {i j : ℕ}
 
 theorem kerNat_proj (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
     [∀ i, IsMarkovKernel (κ i)] {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
-    Kernel.map (kerNat κ a c) (projection (Ioc_subset_Ioc_right hbc)) (measurable_projection _) =
+    Kernel.map (kerNat κ a c) (projSubset' (Ioc_subset_Ioc_right hbc)) (measurable_projSubset' _) =
       kerNat κ a b := by
   rcases eq_or_lt_of_le hbc with hbc | hbc
   · cases hbc
     exact Kernel.map_id _
   · ext x s ms
     rw [Kernel.map_apply' _ _ _ ms, ← compProdNat_kerNat κ hab hbc,
-      compProdNat_apply' _ _ hab hbc _ (measurable_projection _ ms), ← one_mul (kerNat κ a b x s),
+      compProdNat_apply' _ _ hab hbc _ (measurable_projSubset' _ ms), ← one_mul (kerNat κ a b x s),
       ← lintegral_indicator_const ms]
     congr with y
     by_cases hy : y ∈ s <;> simp only [Set.mem_preimage, Set.indicator, hy, ↓reduceIte]
     · have := isMarkovKernel_kerNat κ hbc
       convert measure_univ
       · ext z
-        simpa only [Set.mem_setOf_eq, Set.mem_univ, iff_true, projection_er] using hy
+        simpa only [Set.mem_setOf_eq, Set.mem_univ, iff_true, projSubset'_er] using hy
       · infer_instance
     · convert measure_empty
       · ext z
-        simpa [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, projection_er] using hy
+        simpa [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, projSubset'_er] using hy
       · infer_instance
 
 end kerNat
@@ -523,11 +502,6 @@ section partialKernel
 
 variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
 variable (κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1)))
-
-/-- Given a dependent function indexed by `ℕ`, specialize it as a function on `Iic n`. -/
-abbrev proj : (n : ℕ) → ((n : ℕ) → X n) → (i : Iic n) → X i := fun _ x i ↦ x i
-
-theorem meas_proj (n : ℕ) : Measurable (@proj X n) := measurable_proj _
 
 namespace ProbabilityTheory
 namespace Kernel
@@ -544,9 +518,7 @@ noncomputable def partialKernel (a b : ℕ) : Kernel ((i : Iic a) → X i) ((i :
   if hab : a < b
     then Kernel.map ((Kernel.deterministic id measurable_id) ×ₖ kerNat κ a b)
       (el a b hab.le) (el a b hab.le).measurable
-    else Kernel.deterministic
-      (fun (x : (i : Iic a) → X i) (i : Iic b) ↦ x ⟨i.1, Iic_subset_Iic.2 (not_lt.1 hab) i.2⟩)
-      (measurable_proj₂' ..)
+    else Kernel.deterministic (projNat_le' (not_lt.1 hab)) (measurable_projNat_le' _)
 
 theorem partialKernel_lt {a b : ℕ} (hab : a < b) :
     partialKernel κ a b =
@@ -556,7 +528,7 @@ theorem partialKernel_lt {a b : ℕ} (hab : a < b) :
 
 theorem partialKernel_le {a b : ℕ} (hab : b ≤ a) :
     partialKernel κ a b =
-      Kernel.deterministic (projection (Iic_subset_Iic.2 hab)) (measurable_projection _) := by
+      Kernel.deterministic (projNat_le' hab) (measurable_projNat_le' _) := by
   rw [partialKernel, dif_neg (not_lt.2 hab)]
 
 variable [∀ n, IsMarkovKernel (κ n)]
@@ -571,22 +543,22 @@ instance (a b : ℕ) : IsMarkovKernel (partialKernel κ a b) := by
 /-- If `b ≤ c`, then projecting the trajectory up to time `c` on first coordinates gives the
 trajectory up to time `b`. -/
 theorem partialKernel_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
-    Kernel.map (partialKernel κ a c) (projection (Iic_subset_Iic.2 hbc)) (measurable_projection _) =
+    Kernel.map (partialKernel κ a c) (projNat_le' hbc) (measurable_projNat_le' _) =
       partialKernel κ a b := by
   unfold partialKernel
   split_ifs with h1 h2 h3
-  · have : (projection (X := X) (Iic_subset_Iic.2 hbc)) ∘ (el a c h1.le) =
-        (el a b h2.le) ∘ (Prod.map id (projection (Ioc_subset_Ioc_right hbc))) := by
+  · have : (projNat_le' (X := X) hbc) ∘ (el a c h1.le) =
+        (el a b h2.le) ∘ (Prod.map id (projSubset' (Ioc_subset_Ioc_right hbc))) := by
       ext x i
-      simp [el]
+      simp [el, projSubset', projNat_le']
     rw [Kernel.map_map, Kernel.map_eq _ _ this, ← Kernel.map_map, Kernel.map_prod, Kernel.map_id,
       kerNat_proj _ h2 hbc]
-  · have : (projection (X := X) (Iic_subset_Iic.2 hbc)) ∘ (el a c h1.le) =
-          (projection (Iic_subset_Iic.2 (not_lt.1 h2))) ∘ Prod.fst := by
+  · have : (projNat_le' (X := X) hbc) ∘ (el a c h1.le) =
+        (projNat_le' (not_lt.1 h2)) ∘ Prod.fst := by
       ext x i
-      simp [el, projection, (mem_Iic.1 i.2).trans (not_lt.1 h2)]
+      simp [el, projNat_le', projSubset', (mem_Iic.1 i.2).trans (not_lt.1 h2)]
     have _ := isMarkovKernel_kerNat κ h1
-    rw [Kernel.map_map, Kernel.map_eq _ _ this, ← Kernel.map_map _ _ (measurable_projection _),
+    rw [Kernel.map_map, Kernel.map_eq _ _ this, ← Kernel.map_map _ _ (measurable_projNat_le' _),
       Kernel.map_prod_fst, Kernel.map_deterministic]
     rfl
   · omega

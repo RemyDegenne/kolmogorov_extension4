@@ -15,7 +15,7 @@ variable {X : ℕ → Type*} [Nonempty (X 0)] [∀ n, MeasurableSpace (X n)]
 variable (κ : (k : ℕ) → Kernel ((i : Iic k) → X i) (X (k + 1)))
 variable [∀ k, IsMarkovKernel (κ k)]
 
-theorem dependsOn_proj (n : ℕ) : DependsOn (@proj X n) (Iic n) := by
+theorem dependsOn_proj (n : ℕ) : DependsOn (@projNat' X n) (Iic n) := by
   intro x y hxy
   ext i
   exact hxy i.1 (mem_coe.1 i.2)
@@ -25,21 +25,22 @@ by `Finset ℕ`, it is enough to check on intervals of the form `Iic n`, where `
 a given integer. -/
 theorem isProjectiveLimit_nat_iff' (μ : (I : Finset ℕ) → Measure ((i : I) → X i))
     (hμ : IsProjectiveMeasureFamily μ) (ν : Measure ((n : ℕ) → X n)) (a : ℕ) :
-    IsProjectiveLimit ν μ ↔ ∀ n ≥ a, ν.map (proj n) = μ (Iic n) := by
+    IsProjectiveLimit ν μ ↔ ∀ n ≥ a, ν.map (projNat' n) = μ (Iic n) := by
   refine ⟨fun h n _ ↦ h (Iic n), fun h I ↦ ?_⟩
   conv_lhs =>
     enter [1]
-    change (projection (I.sub_Iic.trans (Iic_subset_Iic.2 (le_max_left (I.sup id) a)))) ∘
-       (proj (max (I.sup id) a))
-  rw [← Measure.map_map (measurable_projection _) (meas_proj _),
-    h (max (I.sup id) a) (le_max_right _ _), hμ (Iic (max (I.sup id) a)) I]
+    change (projSubset' (I.sub_Iic.trans (Iic_subset_Iic.2 (le_max_left (I.sup id) a)))) ∘
+       (projNat' (max (I.sup id) a))
+  rw [← Measure.map_map (measurable_projSubset' _) (measurable_projNat' _),
+    h (max (I.sup id) a) (le_max_right _ _)]
+  refine (hμ (Iic (max (I.sup id) a)) I ?_).symm
   exact I.sub_Iic.trans (Iic_subset_Iic.2 (le_max_left (I.sup id) a))
 
 /-- To check that a measure `ν` is the projective limit of a projective family of measures indexed
 by `Finset ℕ`, it is enough to check on intervals of the form `Iic n`. -/
 theorem isProjectiveLimit_nat_iff (μ : (I : Finset ℕ) → Measure ((i : I) → X i))
     (hμ : IsProjectiveMeasureFamily μ) (ν : Measure ((n : ℕ) → X n)) :
-    IsProjectiveLimit ν μ ↔ ∀ n, ν.map (proj n) = μ (Iic n) := by
+    IsProjectiveLimit ν μ ↔ ∀ n, ν.map (projNat' n) = μ (Iic n) := by
   rw [isProjectiveLimit_nat_iff' _ hμ _ 0]
   simp
 
@@ -47,8 +48,12 @@ theorem isProjectiveLimit_nat_iff (μ : (I : Finset ℕ) → Measure ((i : I) �
 of measures indexed by `Finset ℕ` by projecting the measures. -/
 noncomputable def inducedFamily (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) :
     (S : Finset ℕ) → Measure ((k : S) → X k) :=
-  fun S ↦ (μ (S.sup id)).map
-    (fun x (i : S) ↦ x ⟨i.1, mem_Iic.2 (le_sup (f := id) i.2)⟩)
+  fun S ↦ (μ (S.sup id)).map (projSubset' S.sub_Iic)
+
+instance (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) [∀ n, IsFiniteMeasure (μ n)] (I : Finset ℕ) :
+    IsFiniteMeasure (inducedFamily μ I) := by
+  rw [inducedFamily]
+  infer_instance
 
 private lemma Iic_pi_eq {a b : ℕ} (h : a = b) :
     ((i : Iic a) → X i) = ((i : Iic b) → X i) := by cases h; rfl
@@ -70,28 +75,29 @@ theorem inducedFamily_Iic (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) (n 
     inducedFamily μ (Iic n) = μ n := by
   rw [inducedFamily, ← measure_cast (sup_Iic n) μ]
   congr with x i
-  rw [cast_pi _ (Iic_pi_eq (sup_Iic n)) x i]
+  rw [projSubset', cast_pi _ (Iic_pi_eq (sup_Iic n)) x i]
   rw [sup_Iic n]
 
 /-- Given a family of measures `μ : (n : ℕ) → Measure ((i : Iic n) → X i)`, the induced family
 will be projective only if `μ` is projective, in the sense that if `a ≤ b`, then projecting
 `μ b` gives `μ a`. -/
 theorem isProjectiveMeasureFamily_inducedFamily (μ : (n : ℕ) → Measure ((i : Iic n) → X i))
-    (h : ∀ a b : ℕ, ∀ hab : a ≤ b, (μ b).map (projection (Iic_subset_Iic.2 hab)) = μ a) :
+    (h : ∀ a b : ℕ, ∀ hab : a ≤ b, (μ b).map (projNat_le' hab) = μ a) :
     IsProjectiveMeasureFamily (inducedFamily μ) := by
   intro I J hJI
   have sls : J.sup id ≤ I.sup id := sup_mono hJI
   simp only [inducedFamily]
-  rw [Measure.map_map, projection_comp_projection hJI I.sub_Iic,
-    ← projection_comp_projection J.sub_Iic (Iic_subset_Iic.2 sls), ← Measure.map_map,
-    h (J.sup id) (I.sup id) sls] <;> exact measurable_projection _
-  exact measurable_projection hJI
-  exact measurable_projection I.sub_Iic
+  rw [Measure.map_map]
+  conv_rhs => enter [1]; change projSubset' (hJI.trans I.sub_Iic)
+  rw [← projSubset'_comp_projSubset' J.sub_Iic (Iic_subset_Iic.2 sls), ← Measure.map_map,
+    h (J.sup id) (I.sup id) sls]
+  all_goals exact measurable_projSubset' _
+  exact measurable_projSubset' hJI
 
 open Kernel
 
 theorem partialKernel_proj_apply {n : ℕ} (x : (i : Iic n) → X i) (a b : ℕ) (hab : a ≤ b) :
-    (partialKernel κ n b x).map (projection (Iic_subset_Iic.2 hab)) = partialKernel κ n a x := by
+    (partialKernel κ n b x).map (projNat_le' hab) = partialKernel κ n a x := by
   rw [← partialKernel_proj _ _ hab, Kernel.map_apply]
 
 /-- Given a family of kernels `κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1))`, and the
@@ -106,24 +112,25 @@ private lemma heq_measurableSpace_Iic_pi {a b : ℕ} (h : a = b) :
 
 /-- The `ionescuTulceaContent κ x` of a cylinder indexed by first coordinates is given by
 `partialKernel`. -/
-theorem ionescuTulceaContent_cylinder {a b : ℕ} (x : (i : Iic a) → X i) {S : Set ((i : Iic b) → X i)}
-    (mS : MeasurableSet S) :
+theorem ionescuTulceaContent_cylinder {a b : ℕ} (x : (i : Iic a) → X i)
+    {S : Set ((i : Iic b) → X i)} (mS : MeasurableSet S) :
     ionescuTulceaContent κ x (cylinder _ S) = partialKernel κ a b x S := by
-  rw [ionescuTulceaContent, kolContent_congr _ (by rw [mem_cylinders]; exact ⟨Iic b, S, mS, rfl⟩) rfl mS,
+  rw [ionescuTulceaContent,
+    kolContent_congr _ (by rw [mem_cylinders]; exact ⟨Iic b, S, mS, rfl⟩) rfl mS,
     inducedFamily_Iic]
 
 /-- This function computes the integral of a function `f` against `partialKernel`,
 and allows to view it as a function depending on all the variables. -/
 noncomputable def lmarginalPartialKernel (a b : ℕ) (f : ((n : ℕ) → X n) → ℝ≥0∞)
     (x : (n : ℕ) → X n) : ℝ≥0∞ :=
-  ∫⁻ z : (i : Iic b) → X i, f (updateFinset x _ z) ∂(partialKernel κ a b (proj a x))
+  ∫⁻ z : (i : Iic b) → X i, f (updateFinset x _ z) ∂(partialKernel κ a b (projNat' a x))
 
 /-- If `a < b`, then integrating `f` against the `partialKernel κ a b` is the same as integrating
   against `kerNat a b`. -/
 theorem lmarginalPartialKernel_lt {a b : ℕ} (hab : a < b) {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (mf : Measurable f) (x : (n : ℕ) → X n) :
     lmarginalPartialKernel κ a b f x =
-      ∫⁻ y : (i : Ioc a b) → X i, f (updateFinset x _ y) ∂kerNat κ a b (proj a x) := by
+      ∫⁻ y : (i : Ioc a b) → X i, f (updateFinset x _ y) ∂kerNat κ a b (projNat' a x) := by
   rw [lmarginalPartialKernel, partialKernel, dif_pos hab, Kernel.lintegral_map,
     Kernel.lintegral_prod, Kernel.lintegral_deterministic']
   · congrm ∫⁻ _, f (fun i ↦ ?_) ∂_
@@ -143,13 +150,13 @@ theorem lmarginalPartialKernel_le {a b : ℕ} (hba : b ≤ a)
   rw [lmarginalPartialKernel, partialKernel, dif_neg (not_lt.2 hba),
     Kernel.lintegral_deterministic']
   · congr with i
-    by_cases hi : i ∈ Iic b <;> simp [updateFinset, hi]
+    by_cases hi : i ∈ Iic b <;> simp [updateFinset, hi, projNat_le', projSubset', projNat', proj']
   · exact mf.comp measurable_updateFinset
 
 /-- The `ionescuTulceaContent` of a cylinder is equal to the integral of its indicator function. -/
 theorem ionescuTulceaContent_eq_lmarginalPartialKernel {N : ℕ} {S : Set ((i : Iic N) → X i)}
     (mS : MeasurableSet S) (x : (n : ℕ) → X n) (n : ℕ) :
-    ionescuTulceaContent κ (proj n x) (cylinder _ S) =
+    ionescuTulceaContent κ (projNat' n x) (cylinder _ S) =
     lmarginalPartialKernel κ n N ((cylinder _ S).indicator 1) x := by
   rw [ionescuTulceaContent_cylinder _ _ mS, ← lintegral_indicator_one mS, lmarginalPartialKernel]
   congr with y
@@ -186,7 +193,7 @@ theorem DependsOn.lmarginalPartialKernel_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ
   · ext x
     have := isMarkovKernel_kerNat κ hbc
     rw [lmarginalPartialKernel_lt κ hbc mf, ← mul_one (f x),
-      ← measure_univ (μ := kerNat κ b c (proj b x)), ← MeasureTheory.lintegral_const]
+      ← measure_univ (μ := kerNat κ b c (projNat' b x)), ← MeasureTheory.lintegral_const]
     refine lintegral_congr fun y ↦ hf fun i hi ↦ ?_
     simp only [updateFinset, mem_Iic, el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
       dite_eq_right_iff, dite_eq_left_iff, not_le]
@@ -220,7 +227,8 @@ theorem lmarginalPartialKernel_self {a b c : ℕ} (hab : a < b) (hbc : b < c)
   · congrm ∫⁻ _, ∫⁻ _, f fun i ↦ ?_ ∂(?_) ∂_
     · rw [split_eq_comap, Kernel.comap_apply]
       congr with i
-      simp only [el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, proj, updateFinset, mem_Ioc]
+      simp only [el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, updateFinset, mem_Ioc,
+        projNat', proj']
       split_ifs with h1 h2 h3 <;> try rfl
       · omega
       · have := mem_Iic.1 i.2
@@ -233,8 +241,8 @@ theorem lmarginalPartialKernel_self {a b c : ℕ} (hab : a < b) (hbc : b < c)
   · exact measurable_lmarginalPartialKernel _ _ _ hf
 
 theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
-    update (updateFinset x (Iic m) (proj m z)) (m + 1) (z (m + 1)) =
-    updateFinset x (Iic (m + 1)) (proj (m + 1) z) := by
+    update (updateFinset x (Iic m) (projNat' m z)) (m + 1) (z (m + 1)) =
+    updateFinset x (Iic (m + 1)) (projNat' (m + 1) z) := by
   ext i
   simp only [update, updateFinset, mem_Iic, dite_eq_ite]
   split_ifs with h1 h2 h3 h4 h5 <;> try omega
@@ -282,7 +290,7 @@ theorem le_lmarginalPartialKernel_succ {f : ℕ → ((n : ℕ) → X n) → ℝ�
   -- `F` is also a bounded sequence.
   have F_le n x : F n x ≤ bound := by
     simp_rw [F, lmarginalPartialKernel]
-    rw [← mul_one bound, ← measure_univ (μ := partialKernel κ (k + 1) (N n) (proj (k + 1) x)),
+    rw [← mul_one bound, ← measure_univ (μ := partialKernel κ (k + 1) (N n) (projNat' (k + 1) x)),
         ← MeasureTheory.lintegral_const]
     exact lintegral_mono fun _ ↦ le_bound _ _
   -- By dominated convergence, the integral of `fₙ` between time `k` and time `N n` converges
@@ -316,7 +324,7 @@ theorem le_lmarginalPartialKernel_succ {f : ℕ → ((n : ℕ) → X n) → ℝ�
           rw [lmarginalPartialKernel_lt _ k.lt_succ_self, kerNat_succ, Kernel.map_apply,
             lintegral_map_equiv]
           · congrm ∫⁻ z, (l fun i ↦ ?_) ∂κ k (fun i ↦ ?_)
-            · simp [i.2, updateFinset]
+            · simp [i.2, updateFinset, proj']
             · simp [update, updateFinset, e]
           · refine ENNReal.measurable_of_tendsto ?_ (tendsto_pi_nhds.2 htendsto)
             exact fun n ↦ measurable_lmarginalPartialKernel _ _ _ (mf n)
@@ -341,7 +349,7 @@ theorem cylinders_nat :
   simp only [mem_cylinders, exists_prop, Set.mem_iUnion, mem_singleton]
   refine ⟨?_, fun ⟨N, S, mS, s_eq⟩ ↦ ⟨Iic N, S, mS, s_eq⟩⟩
   rintro ⟨t, S, mS, rfl⟩
-  refine ⟨t.sup id, projection t.sub_Iic ⁻¹' S, measurable_projection _ mS, ?_⟩
+  refine ⟨t.sup id, projSubset' t.sub_Iic ⁻¹' S, measurable_projSubset' _ mS, ?_⟩
   unfold cylinder
   rw [← Set.preimage_comp]
   rfl
@@ -382,9 +390,9 @@ theorem dependsOn_cylinder_indicator {ι : Type*} {α : ι → Type*} {I : Finse
   fun x y hxy ↦ indicator_const_eq _ (by simp [hxy])
 
 theorem proj_updateFinset {n : ℕ} (x : (n : ℕ) → X n) (y : (i : Iic n) → X i) :
-    proj n (updateFinset x _ y) = y := by
+    projNat' n (updateFinset x _ y) = y := by
   ext i
-  simp [proj, updateFinset, mem_Iic.1 i.2]
+  simp [projNat', proj', updateFinset, mem_Iic.1 i.2]
 
 /-- This is the key theorem to prove the existence of the `ionescuTulceaKernel`:
 the `ionescuTulceaContent` of a decresaing sequence of cylinders with empty intersection converges to `0`.
@@ -480,11 +488,12 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
       χ_le (anti_lma (k + 1)) (hl (k + 1)) ε y h
   let z := iterate_induction x₀ ind
   have imp k (hk : p ≤ k) : ∀ x n,
-      ε ≤ lmarginalPartialKernel κ k (N n) (χ n) (updateFinset x (Iic k) (fun i ↦ z i)) := by
+      ε ≤ lmarginalPartialKernel κ k (N n) (χ n) (updateFinset x (Iic k) (projNat' k z)) := by
     refine Nat.le_induction ?_ ?_ k hk
     · intro x n
-      convert hpos x n with i
-      simp_rw [z]
+      convert hpos x n
+      ext i
+      simp only [projNat', proj', z]
       apply iterate_induction_le
     · intro k hn h x n
       rw [← update_updateFinset_eq]
@@ -517,7 +526,7 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
       rw [this]
       convert lt_of_lt_of_le ε_pos (imp _ (le_max_left _ _) z n) using 2
       ext i
-      simp [updateFinset]
+      simp [updateFinset, projNat', proj']
     exact Set.mem_of_indicator_ne_zero (ne_of_lt this).symm
   exact (A_inter ▸ Set.mem_iInter.2 mem).elim
 
@@ -573,8 +582,8 @@ theorem isProjectiveLimit_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i
   rw [isProjectiveLimit_nat_iff]
   · intro n
     ext s ms
-    rw [Measure.map_apply (meas_proj n) ms]
-    have h_mem : (proj n) ⁻¹' s ∈ cylinders X := by
+    rw [Measure.map_apply (measurable_projNat' n) ms]
+    have h_mem : (projNat' n) ⁻¹' s ∈ cylinders X := by
       rw [mem_cylinders]; exact ⟨Iic n, s, ms, rfl⟩
     rw [ionescuTulceaFun, Measure.ofAddContent_eq _ _ _ _ h_mem, ionescuTulceaContent,
       kolContent_congr _ h_mem rfl ms]
@@ -619,40 +628,38 @@ instance (p : ℕ) : IsMarkovKernel (ionescuTulceaKernel κ p) :=
   IsMarkovKernel.mk fun _ ↦ isProbabilityMeasure_ionescuTulceaFun ..
 
 theorem ionescuTulceaKernel_proj (a b : ℕ) :
-    Kernel.map (ionescuTulceaKernel κ a) (proj b) (meas_proj b) = partialKernel κ a b := by
+    Kernel.map (ionescuTulceaKernel κ a) (projNat' b) (measurable_projNat' b) =
+      partialKernel κ a b := by
   ext1 x₀
   rw [Kernel.map_apply, ionescuTulceaKernel_apply, isProjectiveLimit_ionescuTulceaFun,
     inducedFamily_Iic]
 
 theorem eq_ionescuTulceaKernel' {a : ℕ} (n : ℕ) (η : Kernel ((i : Iic a) → X i) ((n : ℕ) → X n))
-    (hη : ∀ b ≥ n, Kernel.map η (proj b) (meas_proj b) = partialKernel κ a b) :
+    (hη : ∀ b ≥ n, Kernel.map η (projNat' b) (measurable_projNat' b) = partialKernel κ a b) :
     η = ionescuTulceaKernel κ a := by
   ext1 x₀
-  have _ I : IsFiniteMeasure (inducedFamily (fun n ↦ partialKernel κ a n x₀) I) := by
-    rw [inducedFamily]
-    infer_instance
   refine isProjectiveLimit_unique ?_ (isProjectiveLimit_ionescuTulceaFun _ _ _)
   rw [isProjectiveLimit_nat_iff' _ _ _ n]
   · intro k hk
-    rw [inducedFamily_Iic, ← Kernel.map_apply _ (meas_proj k), hη k hk]
+    rw [inducedFamily_Iic, ← Kernel.map_apply _ (measurable_projNat' k), hη k hk]
   · exact (isProjectiveMeasureFamily_inducedFamily _ (partialKernel_proj_apply κ x₀))
 
 theorem eq_ionescuTulceaKernel {a : ℕ} (η : Kernel ((i : Iic a) → X i) ((n : ℕ) → X n))
-    (hη : ∀ b, Kernel.map η (proj b) (meas_proj b) = partialKernel κ a b) :
+    (hη : ∀ b, Kernel.map η (projNat' b) (measurable_projNat' b) = partialKernel κ a b) :
     η = ionescuTulceaKernel κ a := eq_ionescuTulceaKernel' κ 0 η fun b _ ↦ hη b
 
 theorem partialKernel_comp_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b) :
     (ionescuTulceaKernel κ b) ∘ₖ (partialKernel κ a b) = ionescuTulceaKernel κ a := by
   refine eq_ionescuTulceaKernel _ _ fun n ↦ ?_
   ext x₀ s ms
-  rw [Kernel.map_apply' _ _ _ ms, Kernel.comp_apply' _ _ _ (meas_proj n ms)]
-  simp_rw [← Measure.map_apply (meas_proj n) ms,
-    ← Kernel.map_apply (ionescuTulceaKernel κ b) (meas_proj n), ionescuTulceaKernel_proj κ b n]
+  rw [Kernel.map_apply' _ _ _ ms, Kernel.comp_apply' _ _ _ (measurable_projNat' n ms)]
+  simp_rw [← Measure.map_apply (measurable_projNat' n) ms,
+    ← Kernel.map_apply (ionescuTulceaKernel κ b) (measurable_projNat' n), ionescuTulceaKernel_proj κ b n]
   rw [← Kernel.comp_apply' _ _ _ ms, partialKernel_comp _ n hab]
 
 theorem ionescuTulceaKernel_proj_le {a b : ℕ} (hab : a ≤ b) :
-    Kernel.map (ionescuTulceaKernel κ b) (@proj X a) (meas_proj a) =
-    Kernel.deterministic (projection (Iic_subset_Iic.2 hab)) (measurable_projection _) := by
+    Kernel.map (ionescuTulceaKernel κ b) (@projNat' X a) (measurable_projNat' a) =
+    Kernel.deterministic (projNat_le' hab) (measurable_projNat_le' _) := by
   rw [ionescuTulceaKernel_proj, partialKernel, dif_neg (not_lt.2 hab)]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
@@ -660,20 +667,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 /-- The canonical filtration on dependent functions indexed by `ℕ`, where `𝓕 n` consists of
 measurable sets depending only on coordinates `≤ n`. -/
 def ℱ : @Filtration ((n : ℕ) → X n) ℕ _ inferInstance where
-  seq n := (inferInstance : MeasurableSpace ((i : Iic n) → X i)).comap (proj n)
+  seq n := (inferInstance : MeasurableSpace ((i : Iic n) → X i)).comap (projNat' n)
   mono' i j hij := by
     simp only
-    conv_lhs => enter [1]; change (projection (Iic_subset_Iic.2 hij)) ∘ (proj j)
+    conv_lhs => enter [1]; change (projNat_le' hij) ∘ (projNat' j)
     rw [← comap_comp]
-    exact MeasurableSpace.comap_mono (measurable_projection _).comap_le
-  le' n := (meas_proj n).comap_le
+    exact MeasurableSpace.comap_mono (measurable_projNat_le' _).comap_le
+  le' n := (measurable_projNat' n).comap_le
 
 /-- If a function is strongly measurable with respect to the σ-algebra generated by the
 first coordinates, then it only depends on those first coordinates. -/
 theorem measurable_dependsOn {n : ℕ} {f : ((n : ℕ) → X n) → E}
     (mf : @StronglyMeasurable _ _ _ (ℱ n) f) : DependsOn f (Iic n) := by
   intro x y hxy
-  apply eq_of_stronglyMeasurable_comap (proj n) mf
+  apply eq_of_stronglyMeasurable_comap (projNat' n) mf
   exact dependsOn_proj n hxy
 
 /-- The union of `Iic n` and `Ioi n` is the whole `ℕ`, version as a measurable equivalence
@@ -695,11 +702,6 @@ def el' (n : ℕ) : (((i : Iic n) → X i) × ((i : Set.Ioi n) → X i)) ≃ᵐ 
       · exact measurable_snd.eval
     measurable_invFun := Measurable.prod_mk (measurable_proj _) (measurable_proj _) }
 
-theorem projel' (n : ℕ) (x : (i : Iic n) → X i) (y : (i : Set.Ioi n) → X i) :
-    proj n ((el' (X := X) n) (x, y)) = x := by
-  ext i
-  simp [el', proj, mem_Iic.1 i.2]
-
 /-- This theorem shows that `ionescuTulceaKernel κ n` is, up to an equivalence, the product of
 a determinstic kernel with another kernel. This is an intermediate result to compute integrals
 with respect to this kernel. -/
@@ -714,11 +716,12 @@ theorem ionescuTulceaKernel_eq (n : ℕ) :
   ext x s ms
   rw [Kernel.map_map, Kernel.map_apply' _ _ _ ms, Kernel.deterministic_prod_apply',
     Kernel.map_apply']
-  · have : (proj a) ∘ (el' n) ∘ (Prod.mk x) ∘
+  · have : (projNat' a) ∘ (el' n) ∘ (Prod.mk x) ∘
         (fun x i ↦ x i : ((n : ℕ) → X n) → (i : Set.Ioi n) → X i) =
-        (fun y (i : Iic a) ↦ if hi : i.1 ≤ n then x ⟨i.1, mem_Iic.2 hi⟩ else y i) ∘ (proj a) := by
+        (fun y (i : Iic a) ↦ if hi : i.1 ≤ n then x ⟨i.1, mem_Iic.2 hi⟩ else y i) ∘
+        (projNat' a) := by
       ext x i
-      by_cases hi : i.1 ≤ n <;> simp [proj, hi, el']
+      by_cases hi : i.1 ≤ n <;> simp [projNat', proj', hi, el']
     have aux t : {c : (i : Set.Ioi n) → X i | (id x, c) ∈ t} = Prod.mk x ⁻¹' t := rfl
     have hyp : Measurable
         (fun (y : (i : Iic a) → X i) (i : Iic a) ↦
@@ -727,7 +730,7 @@ theorem ionescuTulceaKernel_eq (n : ℕ) :
       by_cases hi : i.1 ≤ n <;> simp [hi]
       exact measurable_pi_apply _
     rw [aux, ← Set.preimage_comp, ← Set.preimage_comp, comp.assoc, this,
-      ← Kernel.map_apply' _ _ _ ms, ← Kernel.map_map _ (meas_proj a) hyp, ionescuTulceaKernel_proj,
+      ← Kernel.map_apply' _ _ _ ms, ← Kernel.map_map _ (measurable_projNat' a) hyp, ionescuTulceaKernel_proj,
       Kernel.map_apply' _ _ _ ms, partialKernel_lt κ (by omega),
       Kernel.map_apply' _ _ _ (hyp ms), Kernel.deterministic_prod_apply',
       Kernel.map_apply' _ _ _ ms, Kernel.deterministic_prod_apply']
@@ -738,8 +741,8 @@ theorem ionescuTulceaKernel_eq (n : ℕ) :
       by_cases hi : i.1 ≤ n <;> simp [hi]
     · exact (el n a (by omega)).measurable ms
     · exact (el n a (by omega)).measurable <| hyp ms
-  · exact measurable_prod_mk_left ((el' n).measurable <| (meas_proj a) ms)
-  · exact (el' n).measurable <| (meas_proj a) ms
+  · exact measurable_prod_mk_left ((el' n).measurable <| (measurable_projNat' a) ms)
+  · exact (el' n).measurable <| (measurable_projNat' a) ms
 
 theorem measurable_updateFinset' {ι : Type*} [DecidableEq ι] {I : Finset ι}
     {X : ι → Type*} [∀ i, MeasurableSpace (X i)]
@@ -784,16 +787,16 @@ theorem partialKernel_comp_ionescuTulceaKernel_apply {a b : ℕ} (hab : a ≤ b)
     (f : ((i : Iic b) → X i) → ((n : ℕ) → X n) → E)
     (hf : StronglyMeasurable f.uncurry)
     (x₀ : (i : Iic a) → X i)
-    (i_f : Integrable (fun x ↦ f (proj b x) x) (ionescuTulceaKernel κ a x₀)) :
+    (i_f : Integrable (fun x ↦ f (projNat' b x) x) (ionescuTulceaKernel κ a x₀)) :
     ∫ x, ∫ y, f x y ∂ionescuTulceaKernel κ b x ∂partialKernel κ a b x₀ =
-      ∫ x, f (proj b x) x ∂ionescuTulceaKernel κ a x₀ := by
+      ∫ x, f (projNat' b x) x ∂ionescuTulceaKernel κ a x₀ := by
   rw [← partialKernel_comp_ionescuTulceaKernel κ hab, Kernel.integral_comp]
   · congr with x
     rw [integral_ionescuTulceaKernel]
     nth_rw 2 [integral_ionescuTulceaKernel]
     congrm ∫ y, f (fun i ↦ ?_) _ ∂_
-    simp [updateFinset, i.2]
-    · exact (hf.comp_measurable ((meas_proj b).prod_mk measurable_id)).aestronglyMeasurable
+    simp [updateFinset, proj', i.2]
+    · exact (hf.comp_measurable ((measurable_projNat' b).prod_mk measurable_id)).aestronglyMeasurable
     · exact hf.of_uncurry_left.aestronglyMeasurable
   · convert i_f
     rw [partialKernel_comp_ionescuTulceaKernel _ hab]
@@ -801,10 +804,10 @@ theorem partialKernel_comp_ionescuTulceaKernel_apply {a b : ℕ} (hab : a ≤ b)
 theorem integrable_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b) {f : ((n : ℕ) → X n) → E}
     (x₀ : (i : Iic a) → X i)
     (i_f : Integrable f (ionescuTulceaKernel κ a x₀)) :
-    ∀ᵐ x ∂ionescuTulceaKernel κ a x₀, Integrable f (ionescuTulceaKernel κ b (proj b x)) := by
+    ∀ᵐ x ∂ionescuTulceaKernel κ a x₀, Integrable f (ionescuTulceaKernel κ b (projNat' b x)) := by
   rw [← partialKernel_comp_ionescuTulceaKernel _ hab, Kernel.integrable_comp_iff] at i_f
   · apply ae_of_ae_map (p := fun x ↦ Integrable f (ionescuTulceaKernel κ b x))
-    · exact (meas_proj b).aemeasurable
+    · exact (measurable_projNat' b).aemeasurable
     · convert i_f.1
       rw [← ionescuTulceaKernel_proj, Kernel.map_apply]
   · exact i_f.aestronglyMeasurable
@@ -813,11 +816,11 @@ theorem condexp_ionescuTulceaKernel
     {a b : ℕ} (hab : a ≤ b) (x₀ : (i : Iic a) → X i) {f : ((n : ℕ) → X n) → E}
     (i_f : Integrable f (ionescuTulceaKernel κ a x₀)) (mf : StronglyMeasurable f) :
     ((ionescuTulceaKernel κ a) x₀)[f|ℱ b] =ᵐ[ionescuTulceaKernel κ a x₀]
-      fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b (proj b x) := by
+      fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b (projNat' b x) := by
   refine (ae_eq_condexp_of_forall_setIntegral_eq _ i_f ?_ ?_ ?_).symm
   · rintro - - -
     apply Integrable.integrableOn
-    conv => enter [1]; change (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x) ∘ (proj b)
+    conv => enter [1]; change (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x) ∘ (projNat' b)
     rw [← partialKernel_comp_ionescuTulceaKernel κ hab, Kernel.integrable_comp_iff] at i_f
     · rw [← integrable_map_measure, ← Kernel.map_apply, ionescuTulceaKernel_proj,
         ← integrable_norm_iff]
@@ -829,42 +832,42 @@ theorem condexp_ionescuTulceaKernel
           exact norm_integral_le_integral_norm _
       · exact (mf.comp_measurable measurable_snd).integral_kernel_prod_right'.aestronglyMeasurable
       · exact (mf.comp_measurable measurable_snd).integral_kernel_prod_right'.aestronglyMeasurable
-      · exact (meas_proj b).aemeasurable
+      · exact (measurable_projNat' b).aemeasurable
     · exact mf.aestronglyMeasurable
   · rintro - ⟨t, mt, rfl⟩ -
     rw [← integral_indicator]
-    · have this x : ((proj b) ⁻¹' t).indicator
-          (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b (proj b x)) x =
-          t.indicator (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x) ((proj b) x) :=
-        Set.indicator_comp_right (proj b) (g := fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x)
+    · have this x : ((projNat' b) ⁻¹' t).indicator
+          (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b (projNat' b x)) x =
+          t.indicator (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x) ((projNat' b) x) :=
+        Set.indicator_comp_right (projNat' b) (g := fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x)
       simp_rw [this]
       rw [← integral_map, ← Kernel.map_apply, ionescuTulceaKernel_proj κ]
       simp_rw [Set.indicator_one_smul_apply (M := ℝ)
         (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x), ← integral_smul]
       · rw [partialKernel_comp_ionescuTulceaKernel_apply _ hab, ← integral_indicator]
         · congr with x
-          by_cases h : proj b x ∈ t <;> simp [h]
-        · exact meas_proj b mt
+          by_cases h : projNat' b x ∈ t <;> simp [h]
+        · exact measurable_projNat' b mt
         · rw [uncurry_def]
           apply StronglyMeasurable.smul
           · exact (stronglyMeasurable_const.indicator mt).comp_measurable measurable_fst
           · exact mf.comp_measurable measurable_snd
         · simp_rw [← Set.indicator_comp_right, Function.comp, ← Set.indicator_one_smul_apply]
-          exact i_f.indicator (meas_proj b mt)
-      · exact (meas_proj b).aemeasurable
+          exact i_f.indicator (measurable_projNat' b mt)
+      · exact (measurable_projNat' b).aemeasurable
       · refine (StronglyMeasurable.indicator ?_ mt).aestronglyMeasurable
         exact (mf.comp_measurable measurable_snd).integral_kernel_prod_right'
-    · exact meas_proj b mt
-  · conv => enter [2]; change (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x) ∘ (proj b)
+    · exact measurable_projNat' b mt
+  · conv => enter [2]; change (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x) ∘ (projNat' b)
     apply AEStronglyMeasurable.comp_ae_measurable'
     · exact (mf.comp_measurable measurable_snd).integral_kernel_prod_right'.aestronglyMeasurable
-    · exact (meas_proj b).aemeasurable
+    · exact (measurable_projNat' b).aemeasurable
 
 theorem condexp_ionescuTulceaKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
     (x₀ : (i : Iic a) → X i) {f : ((n : ℕ) → X n) → E} :
     (ionescuTulceaKernel κ a x₀)[f|ℱ b] =ᵐ[ionescuTulceaKernel κ a x₀]
       fun x ↦ ∫ y, ((ionescuTulceaKernel κ a x₀)[f|ℱ c]) (updateFinset x _ y)
-        ∂partialKernel κ b c (proj b x) := by
+        ∂partialKernel κ b c (projNat' b x) := by
   have i_cf : Integrable ((ionescuTulceaKernel κ a x₀)[f|ℱ c])
       (ionescuTulceaKernel κ a x₀) := integrable_condexp
   have mcf : StronglyMeasurable ((ionescuTulceaKernel κ a x₀)[f|ℱ c]) :=
@@ -876,5 +879,5 @@ theorem condexp_ionescuTulceaKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ 
     apply measurable_dependsOn stronglyMeasurable_condexp
     simp [updateFinset, proj]
     exact fun i hi ↦ (if_pos hi).symm
-  · exact (meas_proj c).aemeasurable
+  · exact (measurable_projNat' c).aemeasurable
   · exact (mcf.comp_measurable measurable_updateFinset).aestronglyMeasurable

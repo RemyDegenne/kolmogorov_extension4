@@ -5,6 +5,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import Mathlib.MeasureTheory.Constructions.Pi
 import KolmogorovExtension4.Semiring
+import KolmogorovExtension4.Projections
 
 /-! # π-systems generating `MeasurableSpace.pi`
 
@@ -16,26 +17,6 @@ open MeasureTheory Set
 variable {ι : Type*} {α : ι → Type*}
 
 section ProjectionMaps
-
-section Measurable
-
-variable [∀ i, MeasurableSpace (α i)]
-
-theorem measurable_proj (I : Set ι) : Measurable fun (f : (i : ι) → α i) (i : I) ↦ f i := by
-  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
-
-theorem measurable_proj' (I : Finset ι) : Measurable fun (f : (i : ι) → α i) (i : I) ↦ f i := by
-  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
-
-theorem measurable_proj₂ (I J : Set ι) (hIJ : J ⊆ I) :
-    Measurable fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ := by
-  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
-
-theorem measurable_proj₂' (I J : Finset ι) (hIJ : J ⊆ I) :
-    Measurable fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ := by
-  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
-
-end Measurable
 
 section Continuous
 
@@ -373,7 +354,7 @@ theorem cylinder_eq_empty_iff [h_nonempty : Nonempty ((i : ι) → α i)] (s : F
 theorem measurableSet_cylinder [∀ i, MeasurableSpace (α i)] (s : Finset ι)
     (S : Set (∀ i : s, α i)) (hS : MeasurableSet S) :
     MeasurableSet (cylinder s S) := by
-  rw [cylinder]; exact measurableSet_preimage (measurable_proj _) hS
+  rw [cylinder]; exact measurableSet_preimage (measurable_proj' _) hS
 
 theorem inter_cylinder (s₁ s₂ : Finset ι) (S₁ : Set (∀ i : s₁, α i)) (S₂ : Set (∀ i : s₂, α i))
     [DecidableEq ι] :
@@ -490,8 +471,8 @@ theorem inter_mem_cylinders {s t : Set (∀ i : ι, α i)} (hs : s ∈ cylinders
     (fun f ↦ (fun i ↦ f ⟨i, Finset.mem_union_left s₂ i.prop⟩ : ∀ i : s₁, α i)) ⁻¹' S₁ ∩
       {f | (fun i ↦ f ⟨i, Finset.mem_union_right s₁ i.prop⟩ : ∀ i : s₂, α i) ∈ S₂}, ?_, ?_⟩
   · refine MeasurableSet.inter ?_ ?_
-    · exact (measurable_proj₂' (s₁ ∪ s₂) s₁ Finset.subset_union_left) hS₁
-    · exact (measurable_proj₂' (s₁ ∪ s₂) s₂ Finset.subset_union_right) hS₂
+    · exact (measurable_projSubset' Finset.subset_union_left) hS₁
+    · exact (measurable_projSubset' Finset.subset_union_right) hS₂
   · exact inter_cylinder _ _ _ _
 
 theorem compl_mem_cylinders {s : Set (∀ i : ι, α i)} (hs : s ∈ cylinders α) :

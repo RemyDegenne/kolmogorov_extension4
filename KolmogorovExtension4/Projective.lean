@@ -38,14 +38,15 @@ theorem IsProjectiveMeasureFamily.empty_of_subset (hP : IsProjectiveMeasureFamil
   ext S mS
   rw [hP J I hIJ]
   simp only
-  rw [Measure.map_apply (measurable_proj₂' J I hIJ) mS]
-  have : IsEmpty ((j : J) → α j) := by
-    rw [← not_nonempty_iff, Classical.nonempty_pi]
-    push_neg
-    simp_rw [not_nonempty_iff]
-    exact ⟨⟨i, i_mem⟩, hi⟩
-  have : P J = 0 := (P J).eq_zero_of_isEmpty
-  simp [this]
+  rw [Measure.map_apply _ mS]
+  · have : IsEmpty ((j : J) → α j) := by
+      rw [← not_nonempty_iff, Classical.nonempty_pi]
+      push_neg
+      simp_rw [not_nonempty_iff]
+      exact ⟨⟨i, i_mem⟩, hi⟩
+    have : P J = 0 := (P J).eq_zero_of_isEmpty
+    simp [this]
+  · exact measurable_projSubset' hIJ
 
 theorem IsProjectiveMeasureFamily.empty (hP : IsProjectiveMeasureFamily P)
     (h : ¬(∀ i, Nonempty (α i))) (I : Finset ι) : P I = 0 := by
@@ -96,7 +97,7 @@ theorem IsProjectiveMeasureFamily.measure_univ_eq_of_subset (hP : IsProjectiveMe
     by rw [preimage_univ]
   rw [this, ← Measure.map_apply _ MeasurableSet.univ]
   · rw [hP I J hJI]
-  · exact measurable_proj₂' I J hJI
+  · exact measurable_projSubset' hJI
 
 theorem IsProjectiveMeasureFamily.measure_univ_eq (hP : IsProjectiveMeasureFamily P)
     (I J : Finset ι) : P I univ = P J univ := by
