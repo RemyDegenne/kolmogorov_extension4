@@ -50,6 +50,11 @@ noncomputable def inducedFamily (μ : (n : ℕ) → Measure ((i : Iic n) → X i
   fun S ↦ (μ (S.sup id)).map
     (fun x (i : S) ↦ x ⟨i.1, mem_Iic.2 (le_sup (f := id) i.2)⟩)
 
+instance (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) [∀ n, IsFiniteMeasure (μ n)] (I : Finset ℕ) :
+     IsFiniteMeasure (inducedFamily μ I) := by
+   rw [inducedFamily]
+   infer_instance
+
 private lemma Iic_pi_eq {a b : ℕ} (h : a = b) :
     ((i : Iic a) → X i) = ((i : Iic b) → X i) := by cases h; rfl
 
@@ -628,9 +633,6 @@ theorem eq_ionescuTulceaKernel' {a : ℕ} (n : ℕ) (η : Kernel ((i : Iic a) �
     (hη : ∀ b ≥ n, Kernel.map η (proj b) (meas_proj b) = partialKernel κ a b) :
     η = ionescuTulceaKernel κ a := by
   ext1 x₀
-  have _ I : IsFiniteMeasure (inducedFamily (fun n ↦ partialKernel κ a n x₀) I) := by
-    rw [inducedFamily]
-    infer_instance
   refine isProjectiveLimit_unique ?_ (isProjectiveLimit_ionescuTulceaFun _ _ _)
   rw [isProjectiveLimit_nat_iff' _ _ _ n]
   · intro k hk
