@@ -93,7 +93,7 @@ lemma nonempty_projCylinder_iff [∀ i, Nonempty (α i)]
   refine ⟨fun h ↦ ?_, nonempty_projCylinder hs n⟩
   obtain ⟨x, hx⟩ := h
   rw [mem_projCylinder] at hx
-  rw [closedCompactCylinders.eq_cylinder (hs n), cylinder]
+  rw [closedCompactCylinders.eq_cylinder (hs n), MeasureTheory.cylinder]
   refine Set.Nonempty.preimage ?_ ?_
   · exact ⟨_, hx⟩
   · intro y
