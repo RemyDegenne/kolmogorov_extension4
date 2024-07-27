@@ -178,7 +178,8 @@ variable [∀ i, TopologicalSpace (α i)] [∀ i, OpensMeasurableSpace (α i)]
 
 theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
-    ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ measurableCylinders α) (hf_Union : (⋃ i, f i) ∈ measurableCylinders α)
+    ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ measurableCylinders α)
+    (hf_Union : (⋃ i, f i) ∈ measurableCylinders α)
     (h_disj : Pairwise (Disjoint on f)) :
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
   refine (kolContent hP).sigma_additive_of_regular isSetRing_measurableCylinders ?_
@@ -193,7 +194,8 @@ theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamil
 
 theorem kolContent_sigma_subadditive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
-    ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ measurableCylinders α) (hf_Union : (⋃ i, f i) ∈ measurableCylinders α) :
+    ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ measurableCylinders α)
+    (hf_Union : (⋃ i, f i) ∈ measurableCylinders α) :
     kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) :=
   (kolContent hP).sigma_subadditive_of_sigma_additive isSetRing_measurableCylinders
     (kolContent_sigma_additive_of_innerRegular hP hP_inner) f hf hf_Union
@@ -205,7 +207,8 @@ noncomputable def projectiveLimitWithWeakestHypotheses [∀ i, PseudoEMetricSpac
     [∀ i, BorelSpace (α i)] [∀ i, SecondCountableTopology (α i)]
     [∀ i, CompleteSpace (α i)] (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
     [∀ i, IsFiniteMeasure (P i)] (hP : IsProjectiveMeasureFamily P) : Measure (∀ i, α i) :=
-  Measure.ofAddContent isSetSemiring_measurableCylinders generateFrom_measurableCylinders (kolContent hP)
+  Measure.ofAddContent isSetSemiring_measurableCylinders generateFrom_measurableCylinders
+    (kolContent hP)
     (kolContent_sigma_subadditive_of_innerRegular hP fun J ↦
       innerRegular_isCompact_isClosed_measurableSet_of_complete_countable (P J))
 
@@ -230,26 +233,28 @@ theorem kolContent_sigma_subadditive (hP : IsProjectiveMeasureFamily P) ⦃f : �
 /-- Projective limit of a projective measure family. -/
 noncomputable def projectiveLimit (P : ∀ J : Finset ι, Measure (∀ j : J, α j))
     [∀ i, IsFiniteMeasure (P i)] (hP : IsProjectiveMeasureFamily P) : Measure (∀ i, α i) :=
-  Measure.ofAddContent isSetSemiring_measurableCylinders generateFrom_measurableCylinders (kolContent hP)
+  Measure.ofAddContent isSetSemiring_measurableCylinders generateFrom_measurableCylinders
+    (kolContent hP)
     (kolContent_sigma_subadditive hP)
 
 /-- **Kolmogorov extension theorem**: for any projective measure family `P`, there exists a measure
 on `Π i, α i` which is the projective limit of `P`. That measure is given by
-`projective_limit P hP`, where `hP : is_projective_measure_family P`.
-The projective limit is unique: see `is_projective_limit_unique`. -/
+`projectiveLimit P hP`, where `hP : IsProjectiveMeasureFamily P`.
+The projective limit is unique: see `IsProjectiveLimit.unique`. -/
 theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
     IsProjectiveLimit (projectiveLimit P hP) P := by
   intro J
   ext1 s hs
   rw [Measure.map_apply _ hs]
-  swap; · apply measurable_proj
-  have h_mem : (fun (x : ∀ i : ι, (fun i : ι ↦ α i) i) (i : ↥J) ↦ x ↑i) ⁻¹' s ∈ measurableCylinders α := by
+  swap; · exact measurable_proj _
+  have h_mem : (fun (x : ∀ i : ι, (fun i : ι ↦ α i) i) (i : ↥J) ↦ x ↑i) ⁻¹' s
+      ∈ measurableCylinders α := by
     rw [mem_measurableCylinders]; exact ⟨J, s, hs, rfl⟩
   rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr hP h_mem rfl hs]
 
 instance isFiniteMeasure_projectiveLimit [Nonempty ι] (hP : IsProjectiveMeasureFamily P) :
     IsFiniteMeasure (projectiveLimit P hP) :=
-  isFiniteMeasure_of_isProjectiveLimit (isProjectiveLimit_projectiveLimit hP)
+  IsProjectiveLimit.isFiniteMeasure (isProjectiveLimit_projectiveLimit hP)
 
 instance isProbabilityMeasure_projectiveLimit [hι : Nonempty ι]
     {P : ∀ J : Finset ι, Measure (∀ j : J, α j)} [∀ i, IsProbabilityMeasure (P i)]
