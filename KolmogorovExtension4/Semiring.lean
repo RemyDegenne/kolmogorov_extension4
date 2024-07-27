@@ -3,11 +3,7 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
-import Mathlib.Data.Set.Pairwise.Basic
-import Mathlib.MeasureTheory.PiSystem
-import Mathlib.MeasureTheory.OuterMeasure.Basic
 import KolmogorovExtension4.AuxLemmas
-import Mathlib.Data.Set.Pairwise.Lattice
 import Mathlib.MeasureTheory.SetSemiring
 
 /-! # Semirings of sets
