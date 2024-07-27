@@ -440,12 +440,6 @@ theorem innerRegular_isCompact_isClosed_measurableSet_of_complete_countable [Pse
     exact ⟨hs_compact.inter_right ht_open.isClosed_compl,
       hs_closed.inter (isClosed_compl_iff.mpr ht_open)⟩
 
--- now unused. But useful in general?
-instance weaklyRegular_of_polishSpace [TopologicalSpace α] [PolishSpace α] [BorelSpace α]
-    (μ : Measure α) [IsFiniteMeasure μ] : μ.WeaklyRegular :=
-  letI := upgradePolishSpace α
-  MeasureTheory.Measure.WeaklyRegular.of_pseudoMetrizableSpace_of_isFiniteMeasure μ
-
 /-- On a Polish space, any finite measure is regular with respect to compact and closed sets. -/
 theorem PolishSpace.innerRegular_isCompact_measurableSet [TopologicalSpace α] [PolishSpace α]
     [BorelSpace α] (μ : Measure α) [IsFiniteMeasure μ] :
