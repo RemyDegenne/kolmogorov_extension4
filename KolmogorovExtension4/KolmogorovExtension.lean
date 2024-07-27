@@ -240,7 +240,7 @@ noncomputable def projectiveLimit (P : ∀ J : Finset ι, Measure (∀ j : J, α
 /-- **Kolmogorov extension theorem**: for any projective measure family `P`, there exists a measure
 on `Π i, α i` which is the projective limit of `P`. That measure is given by
 `projectiveLimit P hP`, where `hP : IsProjectiveMeasureFamily P`.
-The projective limit is unique: see `isProjectiveLimit_unique`. -/
+The projective limit is unique: see `IsProjectiveLimit.unique`. -/
 theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
     IsProjectiveLimit (projectiveLimit P hP) P := by
   intro J
@@ -254,7 +254,7 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
 
 instance isFiniteMeasure_projectiveLimit [Nonempty ι] (hP : IsProjectiveMeasureFamily P) :
     IsFiniteMeasure (projectiveLimit P hP) :=
-  isFiniteMeasure_of_isProjectiveLimit (isProjectiveLimit_projectiveLimit hP)
+  IsProjectiveLimit.isFiniteMeasure (isProjectiveLimit_projectiveLimit hP)
 
 instance isProbabilityMeasure_projectiveLimit [hι : Nonempty ι]
     {P : ∀ J : Finset ι, Measure (∀ j : J, α j)} [∀ i, IsProbabilityMeasure (P i)]
