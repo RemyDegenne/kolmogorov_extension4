@@ -73,7 +73,7 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent R)
     _ ≤ ε := hδ_sum.le
 
 lemma AddContent.sigma_additive_of_regular (hR : IsSetRing R) (m : AddContent R)
-    (hm_ne_top : ∀ {s} (_ : s ∈ R), m s ≠ ∞)
+    (hm_ne_top : ∀ s ∈ R, m s ≠ ∞)
     (hC : IsCompactSystem C) (hCR : C ⊆ R)
     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε)
     ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ R) (hUf : (⋃ i, f i) ∈ R) (h_disj : Pairwise (Disjoint on f)) :
