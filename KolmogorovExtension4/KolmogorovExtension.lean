@@ -67,7 +67,8 @@ theorem kolmogorovFun_union (hP : IsProjectiveMeasureFamily P) (hs : s ∈ measu
   by_cases h : ∀ i, Nonempty (α i)
   · rw [measure_union _ hT']
     rwa [hs_eq, ht_eq, disjoint_cylinder_iff] at hst
-  · simp [hP.empty h]
+  · simp only [not_forall, not_nonempty_iff] at h
+    simp [hP.empty h]
 
 theorem kolmogorovFun_additive (hP : IsProjectiveMeasureFamily P) (I : Finset (Set (∀ i, α i)))
     (h_ss : ↑I ⊆ measurableCylinders α) (h_dis : PairwiseDisjoint (I : Set (Set (∀ i, α i))) id)
