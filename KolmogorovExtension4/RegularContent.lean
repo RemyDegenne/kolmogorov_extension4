@@ -49,10 +49,7 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent R)
         congr
         exact le_antisymm (le_iInf₂ fun i hi ↦ hs_anti hi)
           (iInf₂_le (κ := fun i ↦ i ≤ n) (f := fun i _ ↦ s i) n le_rfl)
-    _ = m ((⋂ i ≤ n, s i) \ (⋂ i ≤ n, t i)) := by
-        suffices ⋂ i ≤ n, t i = ∅ by
-          simp only [this, Set.diff_empty]
-        exact ht_empty' n hn
+    _ = m ((⋂ i ≤ n, s i) \ (⋂ i ≤ n, t i)) := by simp only [ht_empty' n hn, Set.diff_empty]
     _ ≤ m (⋃ i ≤ n, (s i \ t i)) := by
         refine addContent_mono hR.isSetSemiring ?_ ?_ ?_
         · exact hR.diff_mem (hR.iInter_le_mem hs n) (hR.iInter_le_mem (fun i ↦ hCR (ht_mem_C i)) n)
