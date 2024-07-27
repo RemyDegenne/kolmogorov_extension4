@@ -184,7 +184,7 @@ theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamil
   refine (kolContent hP).sigma_additive_of_regular isSetRing_measurableCylinders ?_
       isCompactSystem_closedCompactCylinders
       (fun t ht ↦ mem_cylinder_of_mem_closedCompactCylinders ht) ?_ hf hf_Union h_disj
-  · exact fun hx ↦ kolContent_ne_top _ hx
+  · exact fun _ hx ↦ kolContent_ne_top _ hx
   · intros t ht ε hε
     convert innerRegular_kolContent hP hP_inner ht ε hε with u
     refine ⟨fun h ↦ ⟨h.1, h.2.1, h.2.2⟩, fun h ↦ ?_⟩
