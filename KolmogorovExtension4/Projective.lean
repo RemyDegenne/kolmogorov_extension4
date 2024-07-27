@@ -126,9 +126,10 @@ theorem isProjectiveLimit_unique [hι : Nonempty ι] {μ ν : Measure (∀ i, α
     [∀ i, IsFiniteMeasure (P i)] (hμ : IsProjectiveLimit μ P) (hν : IsProjectiveLimit ν P) :
     μ = ν := by
   haveI : IsFiniteMeasure μ := isFiniteMeasure_of_isProjectiveLimit hμ
-  refine ext_of_generate_finite (cylinders α) generateFrom_cylinders.symm isPiSystem_cylinders
+  refine ext_of_generate_finite (measurableCylinders α) generateFrom_measurableCylinders.symm
+    isPiSystem_measurableCylinders
     (fun s hs ↦ ?_) (hμ.measure_univ_unique hν)
-  obtain ⟨I, S, hS, rfl⟩ := (mem_cylinders _).mp hs
+  obtain ⟨I, S, hS, rfl⟩ := (mem_measurableCylinders _).mp hs
   rw [hμ.measure_cylinder _ hS, hν.measure_cylinder _ hS]
 
 end MeasureTheory
