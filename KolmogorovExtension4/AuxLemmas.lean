@@ -90,6 +90,9 @@ theorem Set.accumulate_succ (s : ℕ → Set α) (n : ℕ) :
     Set.Accumulate s (n + 1) = Set.Accumulate s n ∪ s (n + 1) :=
   Set.bUnion_le_succ s n
 
+@[simp]
+lemma accumulate_zero_nat (s : ℕ → Set α) : Set.Accumulate s 0 = s 0 := by simp [Set.accumulate_def]
+
 end Accumulate
 
 namespace NNReal

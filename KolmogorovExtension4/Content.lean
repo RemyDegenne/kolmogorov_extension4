@@ -18,9 +18,8 @@ variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 section Extend
 
 theorem extend_sUnion_eq_sum (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
-    (m_add :
-      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-        (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
+    (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
     (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : PairwiseDisjoint (I : Set (Set α)) id)
     (h_mem : ⋃₀ ↑I ∈ C) : extend m (⋃₀ I) = ∑ u in I, extend m u := by
   rw [extend_eq m h_mem, m_add I h_ss h_dis h_mem]
@@ -170,6 +169,25 @@ theorem sigma_additive_of_sigma_subadditive (m_empty : m ∅ = 0)
 end Semiring
 
 section Ring
+
+lemma addContent_diff_of_ne_top (m : AddContent C) (hC : IsSetRing C)
+    (hm_ne_top : ∀ s ∈ C, m s ≠ ∞)
+    {s t : Set α} (hs : s ∈ C) (ht : t ∈ C) (hts : t ⊆ s) :
+    m (s \ t) = m s - m t := by
+  have h_union : m (t ∪ s \ t) = m t + m (s \ t) :=
+    addContent_union hC ht (hC.diff_mem hs ht) disjoint_sdiff_self_right
+  simp_rw [Set.union_diff_self, Set.union_eq_right.mpr hts] at h_union
+  rw [h_union, ENNReal.add_sub_cancel_left (hm_ne_top _ ht)]
+
+lemma addContent_accumulate (m : AddContent C) (hC : IsSetRing C)
+    {s : ℕ → Set α} (hs_disj : Pairwise (Disjoint on s)) (hsC : ∀ i, s i ∈ C) (n : ℕ) :
+      m (Set.Accumulate s n) = ∑ i in Finset.range (n + 1), m (s i) := by
+  induction n with
+  | zero => simp
+  | succ n hn =>
+    rw [Finset.sum_range_succ, ← hn, Set.accumulate_succ, addContent_union hC _ (hsC _)]
+    · exact Set.disjoint_accumulate hs_disj (Nat.lt_succ_self n)
+    · exact hC.accumulate_mem hsC n
 
 theorem continuous_from_below_of_sigma_additive (hC : IsSetRing C) (m : Set α → ℝ≥0∞)
     (m_empty : m ∅ = 0)
