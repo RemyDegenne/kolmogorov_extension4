@@ -82,18 +82,8 @@ variable [MeasurableSpace α]
 theorem tendsto_zero_measure_of_antitone (μ : Measure α) [IsFiniteMeasure μ] {s : ℕ → Set α}
     (hs1 : ∀ n, MeasurableSet (s n)) (hs2 : Antitone s) (hs3 : (⋂ n, s n) = ∅) :
     Filter.Tendsto (fun n ↦ μ (s n)) Filter.atTop (𝓝 0) := by
-  convert MeasureTheory.tendsto_measure_iInter hs1 hs2 _
-  · rw [hs3]
-    exact measure_empty.symm
-  · exact ⟨0, measure_ne_top μ _⟩
-
-theorem tendsto_zero_measure_of_antitone' (μ : Measure α) [IsFiniteMeasure μ] {s : ℕ → Set α}
-    (hs1 : ∀ n, MeasurableSet (s n)) (hs2 : Antitone s) (hs3 : (⋂ n, s n) = ∅)
-    (ε : ℝ≥0∞) (hε : 0 < ε) :
-    ∃ n, μ (s n) < ε :=
-  (ENNReal.tendsto_atTop_of_antitone (fun n ↦ μ (s n))
-    (fun _ _ h12 ↦ measure_mono (hs2 h12))).mp (tendsto_zero_measure_of_antitone μ hs1 hs2 hs3)
-    ε hε
+  convert MeasureTheory.tendsto_measure_iInter hs1 hs2 ⟨0, measure_ne_top μ _⟩
+  simp [hs3]
 
 /-- Some version of continuity of a measure in the emptyset using the intersection along a set of
 sets. -/
