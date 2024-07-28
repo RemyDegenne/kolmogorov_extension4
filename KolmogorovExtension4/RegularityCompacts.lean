@@ -188,6 +188,23 @@ theorem continuous_at_emptyset_inter (μ : Measure α) [IsFiniteMeasure μ] (S :
     refine ⟨S', Set.Finite.image _ (toFinite _), S'_sub, ?_⟩
     rwa [h0]
 
+/-- Some version of continuity of a measure in the emptyset using the intersection along a set of
+sets. -/
+theorem continuous_at_emptyset_inter' (μ : Measure α) [IsFiniteMeasure μ] (S : ℕ → Set α)
+    (hS2 : ∀ n, MeasurableSet (S n)) (hS3 : ⋂ n, S n = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    ∃ m, μ (⋂ n ≤ m, S n) < ε := by
+  let s m := ⋂ n ≤ m, S n
+  have hs_anti : Antitone s := sorry
+  have hs_iInter : ⋂ n, s n = ∅ := sorry
+  have hs_meas n : MeasurableSet (s n) := sorry
+  change ∃ m, μ (s m) < ε
+  suffices Filter.Tendsto (fun m ↦ μ (s m)) Filter.atTop (𝓝 0) by
+    rw [ENNReal.tendsto_atTop_of_antitone] at this
+    · exact this ε hε
+    · exact fun _ _ h ↦ measure_mono (hs_anti h)
+  convert tendsto_measure_iInter hs_meas hs_anti ⟨0, measure_ne_top μ _⟩
+  simp [hs_iInter]
+
 end MeasureTheory
 
 section Topology
@@ -255,49 +272,38 @@ namespace MeasureTheory
 
 variable [MeasurableSpace α] {μ : Measure α}
 
-theorem innerRegularWRT_isCompact_of_innerRegularWRT_isCompact_closure [TopologicalSpace α]
-    (h : μ.InnerRegularWRT (IsCompact ∘ closure) IsClosed) :
-    μ.InnerRegularWRT IsCompact IsClosed := by
-  intro A hA r hr
-  rcases h hA r hr with ⟨K, ⟨hK1, hK2, hK3⟩⟩
-  exact ⟨closure K, closure_minimal hK1 hA, hK2, hK3.trans_le (measure_mono subset_closure)⟩
-
-theorem innerRegularWRT_isCompact_iff_innerRegularWRT_isCompact_closure
-    [TopologicalSpace α] [R1Space α] (μ : Measure α) :
-    μ.InnerRegularWRT IsCompact IsClosed ↔ μ.InnerRegularWRT (IsCompact ∘ closure) IsClosed := by
-  refine ⟨fun h A hA r hr ↦ ?_, innerRegularWRT_isCompact_of_innerRegularWRT_isCompact_closure⟩
-  rcases h hA r hr with ⟨K, ⟨hK1, hK2, hK3⟩⟩
-  use closure K
-  refine ⟨closure_minimal hK1 hA, ?_, ?_⟩
-  · simp only [closure_closure, Function.comp_apply]; exact hK2.closure
-  · exact hK3.trans_le (measure_mono subset_closure)
+theorem innerRegularWRT_isCompact_closure_iff [TopologicalSpace α] [R1Space α] :
+    μ.InnerRegularWRT (IsCompact ∘ closure) IsClosed ↔ μ.InnerRegularWRT IsCompact IsClosed := by
+  constructor <;> intro h A hA r hr
+  · rcases h hA r hr with ⟨K, ⟨hK1, hK2, hK3⟩⟩
+    exact ⟨closure K, closure_minimal hK1 hA, hK2, hK3.trans_le (measure_mono subset_closure)⟩
+  · rcases h hA r hr with ⟨K, ⟨hK1, hK2, hK3⟩⟩
+    refine ⟨closure K, closure_minimal hK1 hA, ?_, ?_⟩
+    · simpa only [closure_closure, Function.comp_apply] using hK2.closure
+    · exact hK3.trans_le (measure_mono subset_closure)
 
 lemma innerRegularWRT_isCompact_isClosed_iff_innerRegularWRT_isCompact_closure
-    [TopologicalSpace α] [R1Space α] (μ : Measure α) :
+    [TopologicalSpace α] [R1Space α] :
     μ.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsClosed
       ↔ μ.InnerRegularWRT (IsCompact ∘ closure) IsClosed := by
-  constructor
-  · intro h A hA r hr
-    obtain ⟨K, hK1, ⟨hK2, _⟩, hK4⟩ := h hA r hr
-    refine ⟨K, hK1, ?_, ?_⟩
-    · simp only [closure_closure, Function.comp_apply]
-      exact hK2.closure
-    · exact hK4
-  · intro h A hA r hr
-    obtain ⟨K, hK1, hK2, hK3⟩ := h hA r hr
+  constructor <;> intro h A hA r hr
+  · obtain ⟨K, hK1, ⟨hK2, _⟩, hK4⟩ := h hA r hr
+    refine ⟨K, hK1, ?_, hK4⟩
+    simp only [closure_closure, Function.comp_apply]
+    exact hK2.closure
+  · obtain ⟨K, hK1, hK2, hK3⟩ := h hA r hr
     refine ⟨closure K, closure_minimal hK1 hA, ?_, ?_⟩
     · simpa only [isClosed_closure, and_true]
     · exact hK3.trans_le (measure_mono subset_closure)
 
-lemma innerRegularWRT_isCompact_isClosed_iff_innerRegularWRT_isCompact
-    [TopologicalSpace α] [R1Space α] (μ : Measure α) :
+lemma innerRegularWRT_isCompact_isClosed_iff [TopologicalSpace α] [R1Space α] :
     μ.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsClosed
       ↔ μ.InnerRegularWRT IsCompact IsClosed :=
-  (innerRegularWRT_isCompact_isClosed_iff_innerRegularWRT_isCompact_closure μ).trans
-    (innerRegularWRT_isCompact_iff_innerRegularWRT_isCompact_closure μ).symm
+  innerRegularWRT_isCompact_isClosed_iff_innerRegularWRT_isCompact_closure.trans
+    innerRegularWRT_isCompact_closure_iff
 
-theorem innerRegularWRT_of_exists_compl_lt (p q : Set α → Prop) (hpq : ∀ A B, p A → q B → p (A ∩ B))
-    (hμ : ∀ ε , 0 < ε → ∃ K, p K ∧ μ Kᶜ < ε) :
+theorem innerRegularWRT_of_exists_compl_lt {p q : Set α → Prop} (hpq : ∀ A B, p A → q B → p (A ∩ B))
+    (hμ : ∀ ε, 0 < ε → ∃ K, p K ∧ μ Kᶜ < ε) :
     μ.InnerRegularWRT p q := by
   intro A hA r hr
   obtain ⟨K, hK, hK_subset, h_lt⟩ : ∃ K, p K ∧ K ⊆ A ∧ μ (A \ K) < μ A - r := by
@@ -312,27 +318,11 @@ theorem innerRegularWRT_of_exists_compl_lt (p q : Set α → Prop) (hpq : ∀ A 
 theorem innerRegularWRT_isCompact_closure_of_univ [TopologicalSpace α]
     (hμ : ∀ ε, 0 < ε → ∃ K, IsCompact (closure K) ∧ μ (Kᶜ) < ε) :
     μ.InnerRegularWRT (IsCompact ∘ closure) IsClosed := by
-  refine innerRegularWRT_of_exists_compl_lt (IsCompact ∘ closure) IsClosed (fun s t hs ht ↦ ?_) hμ
+  refine innerRegularWRT_of_exists_compl_lt (fun s t hs ht ↦ ?_) hμ
   have : IsCompact (closure s ∩ t) := hs.inter_right ht
   refine this.of_isClosed_subset isClosed_closure ?_
   refine (closure_inter_subset_inter_closure _ _).trans_eq ?_
   rw [IsClosed.closure_eq ht]
-
-theorem innerRegularWRT_isCompact_isClosed_of_univ [TopologicalSpace α]
-    (hμ : ∀ (ε : ℝ≥0∞) (hε : 0 < ε), ∃ K, IsCompact K ∧ IsClosed K ∧ μ Kᶜ < ε) :
-    μ.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsClosed := by
-  refine innerRegularWRT_of_exists_compl_lt (fun s ↦ IsCompact s ∧ IsClosed s) IsClosed
-    (fun s t hs ht ↦ ⟨hs.1.inter_right ht, hs.2.inter ht⟩) (fun ε hε ↦ ?_)
-  obtain ⟨K, hK1, hK2, hK3⟩ := hμ ε hε
-  exact ⟨K, ⟨hK1, hK2⟩, hK3⟩
-
-/-- Every measure on a compact space is regular with respect to relatively compact sets. -/
-theorem innerRegularWRT_isCompact_closure_of_compactSpace [TopologicalSpace α] [CompactSpace α]
-    (P : Measure α) :
-    P.InnerRegularWRT (IsCompact ∘ closure) IsClosed := by
-  refine innerRegularWRT_isCompact_closure_of_univ ?_
-  refine fun ε hε ↦ ⟨univ, by rw [closure_univ]; exact isCompact_univ, ?_⟩
-  simpa only [Set.compl_univ, MeasureTheory.measure_empty, ENNReal.coe_pos]
 
 theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace α] [CompleteSpace α]
     [SecondCountableTopology α] [(uniformity α).IsCountablyGenerated]
@@ -345,12 +335,12 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
     · simpa only [compl_univ, measure_empty, ENNReal.coe_pos] using hε
     · assumption
   case inr =>
-    rcases TopologicalSpace.exists_countable_dense α with ⟨s, hsc, hsd⟩
+    obtain ⟨s, hsc, hsd⟩ := TopologicalSpace.exists_countable_dense α
+    --let seq := TopologicalSpace.denseSeq α
     obtain ⟨t : ℕ → Set (α × α),
         hto : ∀ i, t i ∈ (uniformity α).sets ∧ IsOpen (t i) ∧ SymmetricRel (t i),
         h_basis : (uniformity α).HasAntitoneBasis t⟩ :=
       (@uniformity_hasBasis_open_symmetric α _).exists_antitone_subbasis
-    cases' (Set.countable_iff_exists_surjective (Dense.nonempty hsd)).1 hsc with f hf
     let f : ℕ → α → Set α := fun n x ↦ UniformSpace.ball x (t n)
     have h_univ n : (⋃ x ∈ s, f n x) = univ := Dense.biUnion_uniformity_ball hsd (hto n).1
     have h3 n (ε : ℝ≥0∞) (hε : 0 < ε) :
@@ -375,28 +365,25 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
     choose! s' s'fin _ s'bound using h3
     rcases ENNReal.exists_seq_pos_lt ε hε with ⟨δ, hδ1, hδ2⟩
     let u : ℕ → Finset α := fun n ↦ (s'fin n (δ n) (hδ1 n)).toFinset
-    let A := UniformSpace.interUnionBalls (fun n ↦ (u n : Set α)) (fun n ↦ t n)
+    let A := UniformSpace.interUnionBalls (fun n ↦ (u n : Set α)) t
     refine ⟨A, UniformSpace.isCompact_closure_interUnionBalls h_basis.toHasBasis u, ?_⟩
-    suffices h_meas_balls : P ((UniformSpace.interUnionBalls (fun n ↦ ↑(u n)) fun n ↦ t n)ᶜ) < ε by
-      simp only [A, coe_toFinset] at h_meas_balls ⊢
-      exact h_meas_balls
-    refine measure_compl_interUnionBalls_lt ε P (fun n ↦ ↑(u n)) (fun n ↦ t n) δ (fun n ↦ ?_) hδ2
-    obtain h' := le_of_lt ((fun n ↦ (s'bound n) (δ n) (hδ1 n)) n)
+    change P ((UniformSpace.interUnionBalls (fun n ↦ ↑(u n)) t)ᶜ) < ε
+    refine measure_compl_interUnionBalls_lt ε P (fun n ↦ ↑(u n)) t δ (fun n ↦ ?_) hδ2
     have h1 : ∀ x, x ∈ s' n (δ n) ↔ x ∈ u n := by
       intro x
       simp only [u, Finite.mem_toFinset]
     obtain h'' : ∀ n, Prod.swap ⁻¹' t n = t n := fun n ↦ SymmetricRel.eq (hto n).2.2
     simp_rw [Finset.mem_coe, ← h1, h'']
-    exact h'
+    exact (s'bound n (δ n) (hδ1 n)).le
 
-theorem innerRegular_isCompact_closure_of_complete_countable [UniformSpace α] [CompleteSpace α]
+theorem innerRegularWRT_isCompact_closure_of_complete_countable [UniformSpace α] [CompleteSpace α]
     [SecondCountableTopology α] [(uniformity α).IsCountablyGenerated]
     [OpensMeasurableSpace α] (P : Measure α) [IsFiniteMeasure P] :
     P.InnerRegularWRT (IsCompact ∘ closure) IsClosed :=
   innerRegularWRT_isCompact_closure_of_univ
     (inner_regular_isCompact_is_closed_of_complete_countable' P)
 
-theorem innerRegular_isCompact_isClosed_of_complete_countable [UniformSpace α] [CompleteSpace α]
+theorem innerRegularWRT_isCompact_isClosed_of_complete_countable [UniformSpace α] [CompleteSpace α]
     [SecondCountableTopology α] [(uniformity α).IsCountablyGenerated]
     [OpensMeasurableSpace α] (P : Measure α) [IsFiniteMeasure P] :
     P.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsClosed := by
@@ -404,18 +391,25 @@ theorem innerRegular_isCompact_isClosed_of_complete_countable [UniformSpace α] 
   exact innerRegularWRT_isCompact_closure_of_univ
     (inner_regular_isCompact_is_closed_of_complete_countable' P)
 
-theorem innerRegular_isCompact_of_complete_countable [UniformSpace α] [CompleteSpace α]
+theorem innerRegularWRT_isCompact_of_complete_countable [UniformSpace α] [CompleteSpace α]
     [SecondCountableTopology α] [(uniformity α).IsCountablyGenerated]
     [OpensMeasurableSpace α] (P : Measure α) [IsFiniteMeasure P] :
     P.InnerRegularWRT IsCompact IsClosed := by
-  rw [innerRegularWRT_isCompact_iff_innerRegularWRT_isCompact_closure]
-  exact innerRegular_isCompact_closure_of_complete_countable P
+  rw [← innerRegularWRT_isCompact_closure_iff]
+  exact innerRegularWRT_isCompact_closure_of_complete_countable P
 
-theorem innerRegular_isCompact_isClosed_isOpen_of_complete_countable [PseudoEMetricSpace α]
+theorem innerRegularWRT_isCompact_isClosed_isOpen_of_complete_countable [PseudoEMetricSpace α]
     [CompleteSpace α] [SecondCountableTopology α] [OpensMeasurableSpace α]
     (P : Measure α) [IsFiniteMeasure P] :
     P.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsOpen :=
-  (innerRegular_isCompact_isClosed_of_complete_countable P).trans
+  (innerRegularWRT_isCompact_isClosed_of_complete_countable P).trans
+    (Measure.InnerRegularWRT.of_pseudoMetrizableSpace P)
+
+theorem innerRegularWRT_isCompact_isOpen_of_complete_countable [PseudoEMetricSpace α]
+    [CompleteSpace α] [SecondCountableTopology α] [OpensMeasurableSpace α]
+    (P : Measure α) [IsFiniteMeasure P] :
+    P.InnerRegularWRT IsCompact IsOpen :=
+  (innerRegularWRT_isCompact_of_complete_countable P).trans
     (Measure.InnerRegularWRT.of_pseudoMetrizableSpace P)
 
 lemma InnerRegularCompactLTTop_of_complete_countable [PseudoEMetricSpace α]
@@ -423,20 +417,20 @@ lemma InnerRegularCompactLTTop_of_complete_countable [PseudoEMetricSpace α]
     (P : Measure α) [IsFiniteMeasure P] :
     P.InnerRegularCompactLTTop := by
   refine ⟨Measure.InnerRegularWRT.measurableSet_of_isOpen ?_ ?_⟩
-  · exact (innerRegular_isCompact_of_complete_countable P).trans
-      (Measure.InnerRegularWRT.of_pseudoMetrizableSpace P)
+  · exact innerRegularWRT_isCompact_isOpen_of_complete_countable P
   · exact fun s t hs_compact ht_open ↦ hs_compact.inter_right ht_open.isClosed_compl
 
 theorem innerRegular_isCompact_isClosed_measurableSet_of_complete_countable [PseudoEMetricSpace α]
     [CompleteSpace α] [SecondCountableTopology α] [BorelSpace α]
     (P : Measure α) [IsFiniteMeasure P] :
     P.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet := by
-  suffices P.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) fun s ↦ MeasurableSet s ∧ P s ≠ ∞ by
+  suffices P.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s)
+      fun s ↦ MeasurableSet s ∧ P s ≠ ∞ by
     convert this
     simp only [eq_iff_iff, iff_self_and]
     exact fun _ ↦ measure_ne_top P _
   refine Measure.InnerRegularWRT.measurableSet_of_isOpen ?_ ?_
-  · exact innerRegular_isCompact_isClosed_isOpen_of_complete_countable P
+  · exact innerRegularWRT_isCompact_isClosed_isOpen_of_complete_countable P
   · rintro s t ⟨hs_compact, hs_closed⟩ ht_open
     rw [diff_eq]
     exact ⟨hs_compact.inter_right ht_open.isClosed_compl,

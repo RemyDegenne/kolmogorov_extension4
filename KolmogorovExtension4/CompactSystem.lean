@@ -310,10 +310,7 @@ variable {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
   [∀ i, TopologicalSpace (α i)] [∀ i, SecondCountableTopology (α i)]
   [∀ i, OpensMeasurableSpace (α i)]
 
-theorem isCompactSystem_closedCompactCylinders :
-    IsCompactSystem (fun t ↦ t ∈ closedCompactCylinders α) := by
-  intro C hC hC_empty
-  classical
-  exact exists_finset_iInter_eq_empty hC hC_empty
+theorem isCompactSystem_closedCompactCylinders : IsCompactSystem (closedCompactCylinders α) :=
+  fun _ hC hC_empty ↦ exists_finset_iInter_eq_empty hC hC_empty
 
 end cylinders
