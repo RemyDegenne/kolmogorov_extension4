@@ -194,9 +194,16 @@ theorem continuous_at_emptyset_inter' (μ : Measure α) [IsFiniteMeasure μ] (S 
     (hS2 : ∀ n, MeasurableSet (S n)) (hS3 : ⋂ n, S n = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ m, μ (⋂ n ≤ m, S n) < ε := by
   let s m := ⋂ n ≤ m, S n
-  have hs_anti : Antitone s := sorry
-  have hs_iInter : ⋂ n, s n = ∅ := sorry
-  have hs_meas n : MeasurableSet (s n) := sorry
+  have hs_anti : Antitone s := by
+    intro i j hij
+    simp only [le_eq_subset, subset_iInter_iff, s]
+    exact fun k hki ↦ (iInter_subset _ k).trans (iInter_subset _ (hki.trans hij))
+  have hs_iInter : ⋂ n, s n = ∅ := by
+    simp only [s]
+    rw [← hS3]
+    sorry
+  have hs_meas n : MeasurableSet (s n) :=
+    MeasurableSet.iInter (fun m ↦ MeasurableSet.iInter fun _ ↦ hS2 _)
   change ∃ m, μ (s m) < ε
   suffices Filter.Tendsto (fun m ↦ μ (s m)) Filter.atTop (𝓝 0) by
     rw [ENNReal.tendsto_atTop_of_antitone] at this
@@ -330,50 +337,35 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
     ∃ K, IsCompact (closure K) ∧ P Kᶜ < ε := by
   cases isEmpty_or_nonempty α
   case inl =>
-    refine ⟨∅, by rw [closure_empty]; exact isCompact_empty, ?_⟩
+    refine ⟨∅, by simp, ?_⟩
     rw [← Set.univ_eq_empty_iff.mpr]
     · simpa only [compl_univ, measure_empty, ENNReal.coe_pos] using hε
     · assumption
   case inr =>
-    obtain ⟨s, hsc, hsd⟩ := TopologicalSpace.exists_countable_dense α
-    --let seq := TopologicalSpace.denseSeq α
+    let seq := TopologicalSpace.denseSeq α
+    have hseq_dense : DenseRange seq := TopologicalSpace.denseRange_denseSeq α
     obtain ⟨t : ℕ → Set (α × α),
         hto : ∀ i, t i ∈ (uniformity α).sets ∧ IsOpen (t i) ∧ SymmetricRel (t i),
         h_basis : (uniformity α).HasAntitoneBasis t⟩ :=
       (@uniformity_hasBasis_open_symmetric α _).exists_antitone_subbasis
-    let f : ℕ → α → Set α := fun n x ↦ UniformSpace.ball x (t n)
-    have h_univ n : (⋃ x ∈ s, f n x) = univ := Dense.biUnion_uniformity_ball hsd (hto n).1
-    have h3 n (ε : ℝ≥0∞) (hε : 0 < ε) :
-        ∃ (s' : Set α) (_ : s'.Finite) (_ : s' ⊆ s), P (⋃ x ∈ s', f n x)ᶜ < ε := by
-      simp_rw [compl_iUnion]
-      let S : Set (Set α) := (fun t ↦ (f n t)ᶜ) '' s
-      have h_count : Countable S := by
-        simp only [countable_coe_iff]
-        exact hsc.image _
-      have h_mea : ∀ s ∈ S, MeasurableSet s := by
-        rintro s ⟨x, _, rfl⟩
-        exact ((IsOpen.measurableSet (hto n).2.1).ball _).compl
-      have h_inter_empty : ⋂₀ S = ∅ := by
-        simp_rw [S, sInter_image, ← compl_iUnion, h_univ n, compl_univ]
-      rcases continuous_at_emptyset_inter P S h_count h_mea h_inter_empty hε
-        with ⟨S', S'1, S'2, S'3⟩
-      obtain hs' := Function.subset_image_fintype S'2 S'1
-      rcases hs' with ⟨s', s'sub, s'fin, s'im⟩
-      use s', s'fin, s'sub
-      apply lt_of_eq_of_lt _ S'3
-      simp only [← s'im, sInter_image]
-    choose! s' s'fin _ s'bound using h3
+    let f : ℕ → ℕ → Set α := fun n m ↦ UniformSpace.ball (seq m) (t n)
+    have h_univ n : (⋃ m, f n m) = univ := hseq_dense.iUnion_uniformity_ball (hto n).1
+    have h3 n (ε : ℝ≥0∞) (hε : 0 < ε) : ∃ m, P (⋃ m' ≤ m, f n m')ᶜ < ε := by
+      simp only [compl_iUnion]
+      refine continuous_at_emptyset_inter' P _ (fun m ↦ ?_) ?_ hε
+      · exact ((IsOpen.measurableSet (hto n).2.1).ball _).compl
+      · rw [← compl_iUnion, h_univ, compl_univ]
+    choose! s' s'bound using h3
     rcases ENNReal.exists_seq_pos_lt ε hε with ⟨δ, hδ1, hδ2⟩
-    let u : ℕ → Finset α := fun n ↦ (s'fin n (δ n) (hδ1 n)).toFinset
+    classical
+    let u : ℕ → Finset α := fun n ↦ Finset.image seq (Finset.range (s' n (δ n) + 1))
     let A := UniformSpace.interUnionBalls (fun n ↦ (u n : Set α)) t
     refine ⟨A, UniformSpace.isCompact_closure_interUnionBalls h_basis.toHasBasis u, ?_⟩
-    change P ((UniformSpace.interUnionBalls (fun n ↦ ↑(u n)) t)ᶜ) < ε
     refine measure_compl_interUnionBalls_lt ε P (fun n ↦ ↑(u n)) t δ (fun n ↦ ?_) hδ2
-    have h1 : ∀ x, x ∈ s' n (δ n) ↔ x ∈ u n := by
-      intro x
-      simp only [u, Finite.mem_toFinset]
-    obtain h'' : ∀ n, Prod.swap ⁻¹' t n = t n := fun n ↦ SymmetricRel.eq (hto n).2.2
-    simp_rw [Finset.mem_coe, ← h1, h'']
+    have h'' n : Prod.swap ⁻¹' t n = t n := SymmetricRel.eq (hto n).2.2
+    simp only [Finset.mem_coe, compl_iUnion, h'', Finset.mem_image, Finset.mem_range, iInter_exists,
+      biInter_and', iInter_iInter_eq_right, ge_iff_le, u, Nat.lt_succ_iff]
+    simp only [compl_iUnion] at s'bound
     exact (s'bound n (δ n) (hδ1 n)).le
 
 theorem innerRegularWRT_isCompact_closure_of_complete_countable [UniformSpace α] [CompleteSpace α]
