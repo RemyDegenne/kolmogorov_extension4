@@ -193,18 +193,20 @@ sets. -/
 theorem continuous_at_emptyset_inter' (μ : Measure α) [IsFiniteMeasure μ] (S : ℕ → Set α)
     (hS2 : ∀ n, MeasurableSet (S n)) (hS3 : ⋂ n, S n = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ m, μ (⋂ n ≤ m, S n) < ε := by
-  let s m := ⋂ n ≤ m, S n
+  let s m := (Accumulate (fun n ↦ (S n)ᶜ) m)ᶜ
   have hs_anti : Antitone s := by
     intro i j hij
-    simp only [le_eq_subset, subset_iInter_iff, s]
-    exact fun k hki ↦ (iInter_subset _ k).trans (iInter_subset _ (hki.trans hij))
+    simp only [compl_le_compl_iff_le, le_eq_subset, s]
+    exact monotone_accumulate hij
   have hs_iInter : ⋂ n, s n = ∅ := by
     simp only [s]
-    rw [← hS3]
-    sorry
-  have hs_meas n : MeasurableSet (s n) :=
-    MeasurableSet.iInter (fun m ↦ MeasurableSet.iInter fun _ ↦ hS2 _)
-  change ∃ m, μ (s m) < ε
+    rw [← hS3, ← compl_iUnion, iUnion_accumulate, compl_iUnion]
+    simp_rw [compl_compl]
+  have hs_meas n : MeasurableSet (s n) := (MeasurableSet.accumulate (fun m ↦ (hS2 m).compl) n).compl
+  suffices ∃ m, μ (s m) < ε by
+    obtain ⟨m, hm⟩ := this
+    refine ⟨m, ?_⟩
+    simpa [s, accumulate_def] using hm
   suffices Filter.Tendsto (fun m ↦ μ (s m)) Filter.atTop (𝓝 0) by
     rw [ENNReal.tendsto_atTop_of_antitone] at this
     · exact this ε hε
