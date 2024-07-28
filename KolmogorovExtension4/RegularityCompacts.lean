@@ -34,58 +34,6 @@ theorem eq_iInter_iInter {s : ℕ → Set α} : (⋂ n, s n) = ⋂ (n : ℕ) (m 
 
 end Set
 
-namespace Function
-
-/-- For some set s in the domain and S' in the codomain of f, assume S' ⊆ f '' s.
-Then, there is s' ⊆ s with S' = f '' s'. -/
-theorem subset_image {α β : Type*} {f : α → β} {s : Set α} {S' : Set β} (hS' : S' ⊆ f '' s) :
-    ∃ (s' : Set α) (_ : s' ⊆ s), f '' s' = S' := by
-  refine ⟨f ⁻¹' S' ∩ s, inter_subset_right, ?_⟩
-  ext x
-  simp only [mem_image, mem_inter_iff, mem_preimage]
-  constructor
-  · rintro ⟨y, ⟨hfy_mem, _⟩, rfl⟩
-    exact hfy_mem
-  · intro h
-    obtain ⟨y, hy_mem, rfl⟩ : x ∈ f '' s := hS' h
-    exact ⟨y, ⟨h, hy_mem⟩, rfl⟩
-
-/-- For some set s in the domain and a finset S' in the codomain of f, assume S' ⊆ f '' s.
-Then, there is a finset s' ⊆ s with S' = f '' s'. -/
-theorem subset_image_finset {α β : Type*} {f : α → β} {s : Set α} {S' : Finset β}
-    (hS'1 : ↑S' ⊆ f '' s) : ∃ (s' : Finset α) (_ : ↑s' ⊆ s), f '' s' = S' := by
-  classical
-  have h : ∀ x ∈ S', ∃ y : α, y ∈ s ∧ f y = x := fun x hx ↦ (mem_image f s _).1 (hS'1 hx)
-  choose g hg using h
-  let g' : S' → α := fun x ↦ g x x.2
-  refine ⟨(range g').toFinset, ?_, ?_⟩
-  · intro x
-    simp only [toFinset_range, Finset.univ_eq_attach, Finset.coe_image, mem_image, Finset.mem_coe, Finset.mem_attach,
-      true_and, Subtype.exists, forall_exists_index]
-    rintro y H rfl
-    exact (hg y H).1
-  · ext1 x
-    simp only [toFinset_range, Finset.univ_eq_attach, Finset.coe_image, mem_image, Finset.mem_coe,
-      Finset.mem_attach, true_and_iff, Finset.exists_coe]
-    constructor
-    · rintro ⟨y, ⟨x, hx_mem, rfl⟩, rfl⟩
-      rwa [(hg x hx_mem).2]
-    · intro h
-      obtain ⟨y, _, rfl⟩ : x ∈ f '' s := hS'1 h
-      exact ⟨g (f y) h, ⟨f y, h, rfl⟩, (hg (f y) h).2⟩
-
-/-- Same as subset_image, but assuming that S' is finite.
-Then, s' can be chosen to be finite, too. -/
-theorem subset_image_fintype {α β : Type*} {f : α → β} {s : Set α} {S' : Set β}
-    (hS'1 : S' ⊆ f '' s) (hS'2 : S'.Finite) :
-    ∃ (s' : Set α) (_ : s' ⊆ s) (_ : s'.Finite), f '' s' = S' := by
-  obtain ⟨s', hs', hfs'⟩ :=
-    @subset_image_finset α β f s hS'2.toFinset (by rwa [Finite.coe_toFinset])
-  refine ⟨s', hs', Finset.finite_toSet s', ?_⟩
-  rwa [Finite.coe_toFinset] at hfs'
-
-end Function
-
 namespace ENNReal
 
 theorem tendsto_atTop_zero_iff_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
@@ -149,48 +97,7 @@ theorem tendsto_zero_measure_of_antitone' (μ : Measure α) [IsFiniteMeasure μ]
 
 /-- Some version of continuity of a measure in the emptyset using the intersection along a set of
 sets. -/
-theorem continuous_at_emptyset_inter (μ : Measure α) [IsFiniteMeasure μ] (S : Set (Set α))
-    (hS : Countable S) (hS2 : ∀ s ∈ S, MeasurableSet s) (hS3 : ⋂₀ S = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
-    ∃ (S' : Set (Set α)) (_ : S'.Finite) (_ : S' ⊆ S), μ (⋂₀ S') < ε := by
-  simp only [countable_coe_iff] at hS
-  cases' fintypeOrInfinite S with hS1 hS1
-  · refine ⟨S, toFinite S, subset_rfl, ?_⟩
-    rw [hS3, measure_empty]
-    exact hε
-  · have hS' : Denumerable S :=
-      @Denumerable.ofEncodableOfInfinite S (Set.Countable.toEncodable hS) hS1
-    let e : S ≃ ℕ := Denumerable.eqv S
-    let u n := ((e.symm n) : Set α)
-    have hu_range : range u = S := by
-      change range (Subtype.val ∘ e.symm) = S
-      rw [range_comp, Equiv.range_eq_univ]
-      simp only [image_univ, Subtype.range_coe_subtype, setOf_mem_eq]
-    have hu_meas n : MeasurableSet (u n) := hS2 _ (Subtype.coe_prop _)
-    let s n := (Set.Accumulate (fun m ↦ ((u m)ᶜ : Set α)) n)ᶜ
-    have hs1 n : MeasurableSet (s n) :=
-      (MeasurableSet.iUnion (fun b ↦ MeasurableSet.iUnion (fun _ ↦ (hu_meas _).compl))).compl
-    have hs2 : Antitone s := by
-      intro n1 n2 h12
-      simp only [s, le_eq_subset, compl_subset_compl]
-      apply Set.monotone_accumulate h12
-    have hs3 : ⋂ n, s n = ∅ := by
-      rw [Iff.symm compl_univ_iff]
-      simp only [s, compl_iInter, compl_compl]
-      rw [Set.iUnion_accumulate, ← compl_iInter, compl_univ_iff, ←hS3, ← Set.sInter_range, hu_range]
-    obtain ⟨n, hn⟩ : ∃ n, μ (s n) < ε := tendsto_zero_measure_of_antitone' μ hs1 hs2 hs3 ε hε
-    let S' := u '' {m : ℕ | m ≤ n}
-    have S'_sub : S' ⊆ S := by
-      rw [← hu_range]
-      exact image_subset_range _ _
-    have h0 : (⋂₀ S') = s n := by
-      simp only [S', s, Denumerable.decode_eq_ofNat, Option.some.injEq, sInter_image, mem_setOf_eq]
-      simp [Set.accumulate_def]
-    refine ⟨S', Set.Finite.image _ (toFinite _), S'_sub, ?_⟩
-    rwa [h0]
-
-/-- Some version of continuity of a measure in the emptyset using the intersection along a set of
-sets. -/
-theorem continuous_at_emptyset_inter' (μ : Measure α) [IsFiniteMeasure μ] (S : ℕ → Set α)
+theorem continuous_at_emptyset_inter (μ : Measure α) [IsFiniteMeasure μ] (S : ℕ → Set α)
     (hS2 : ∀ n, MeasurableSet (S n)) (hS3 : ⋂ n, S n = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ m, μ (⋂ n ≤ m, S n) < ε := by
   let s m := (Accumulate (fun n ↦ (S n)ᶜ) m)ᶜ
@@ -354,7 +261,7 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
     have h_univ n : (⋃ m, f n m) = univ := hseq_dense.iUnion_uniformity_ball (hto n).1
     have h3 n (ε : ℝ≥0∞) (hε : 0 < ε) : ∃ m, P (⋃ m' ≤ m, f n m')ᶜ < ε := by
       simp only [compl_iUnion]
-      refine continuous_at_emptyset_inter' P _ (fun m ↦ ?_) ?_ hε
+      refine continuous_at_emptyset_inter P _ (fun m ↦ ?_) ?_ hε
       · exact ((IsOpen.measurableSet (hto n).2.1).ball _).compl
       · rw [← compl_iUnion, h_univ, compl_univ]
     choose! s' s'bound using h3
