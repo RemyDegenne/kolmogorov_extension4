@@ -47,8 +47,6 @@ theorem sigma_additive_addContent_of_tendsto_zero (hC : IsSetRing C) (m : AddCon
       (Set.accumulate_subset_iUnion _)
   exact tendsto_nhds_unique h_tendsto' (ENNReal.tendsto_nat_tsum fun i ↦ m (f i))
 
--- TODO: check whether any of the below lemmas is used.
-
 lemma apply_sdiff_eq_sub_of_apply_union_eq_add (hC : IsSetRing C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (hm_ne_top : ∀ {s} (hs : s ∈ C), m s hs ≠ ∞)
     (hm_add : ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),

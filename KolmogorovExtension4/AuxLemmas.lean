@@ -10,6 +10,22 @@ open Finset Set Filter
 
 open scoped ENNReal NNReal Topology
 
+namespace Set
+
+-- not used anymore
+theorem monotone_iUnion {s : ℕ → Set α} (hs : Monotone s) (n : ℕ) : (⋃ m ≤ n, s m) = s n := by
+  apply subset_antisymm
+  · exact iUnion_subset fun m ↦ iUnion_subset fun hm ↦ hs hm
+  · exact subset_iUnion_of_subset n (subset_iUnion_of_subset le_rfl subset_rfl)
+
+-- not used anymore
+theorem antitone_iInter {s : ℕ → Set α} (hs : Antitone s) (n : ℕ) : (⋂ m ≤ n, s m) = s n := by
+  apply subset_antisymm
+  · exact iInter_subset_of_subset n (iInter_subset _ le_rfl)
+  · exact subset_iInter fun i ↦ subset_iInter fun hin ↦ hs hin
+
+end Set
+
 theorem bInter_diff_bUnion_subset {ι α : Type*} (A B : ι → Set α) (s : Set ι) :
     ((⋂ i ∈ s, A i) \ ⋃ i ∈ s, B i) ⊆ ⋂ i ∈ s, A i \ B i := by
   intro x
@@ -166,5 +182,37 @@ theorem exists_seq_pos_lt (x : ℝ≥0∞) (hx : 0 < x) :
   rcases hf with ⟨_, hf3⟩
   rw [hf3]
   exact ENNReal.half_lt_self hx.ne' hx_top
+
+theorem tendsto_atTop_zero_iff_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
+    Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n ≤ ε := by
+  rw [ENNReal.tendsto_atTop_zero]
+  refine ⟨fun h ↦ fun ε hε ↦ ?_, fun h ↦ fun ε hε ↦ ?_⟩
+  · obtain ⟨n, hn⟩ := h ε hε
+    exact ⟨n, hn n le_rfl⟩
+  · obtain ⟨n, hn⟩ := h ε hε
+    exact ⟨n, fun m hm ↦ (hf hm).trans hn⟩
+
+theorem tendsto_atTop_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
+    Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n < ε := by
+  rw [ENNReal.tendsto_atTop_zero_iff_of_antitone f hf]
+  constructor <;> intro h ε hε
+  have hε' : (min 1 (ε / 2)) > 0 := by
+    simp only [ge_iff_le, gt_iff_lt, lt_min_iff, zero_lt_one, div_pos_iff, ne_eq, and_true,
+      true_and]
+    simp only [two_ne_top, not_false_eq_true, and_true]
+    intro g
+    exact hε.ne g.symm
+  · obtain ⟨n, hn⟩ := h (min 1 (ε / 2)) hε'
+    · refine ⟨n, hn.trans_lt ?_⟩
+      by_cases hε_top : ε = ∞
+      · rw [hε_top]
+        exact (min_le_left _ _).trans_lt ENNReal.one_lt_top
+      refine (min_le_right _ _).trans_lt ?_
+      rw [ENNReal.div_lt_iff (Or.inr hε.ne') (Or.inr hε_top)]
+      conv_lhs => rw [← mul_one ε]
+      rw [ENNReal.mul_lt_mul_left hε.ne' hε_top]
+      norm_num
+  · obtain ⟨n, hn⟩ := h ε hε
+    exact ⟨n, hn.le⟩
 
 end ENNReal
