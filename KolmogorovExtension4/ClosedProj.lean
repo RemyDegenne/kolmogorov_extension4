@@ -63,24 +63,19 @@ theorem continuous_cast {α β : Type u} [tα : TopologicalSpace α] [tβ : Topo
   exact ht.symm
 
 /-- Given a dependent function of `i`, specialize it as a function on the complement of `{i}`. -/
-def projCompl (α : ι → Type*) (i : ι) (x : Π i, α i) (j : { k // k ≠ i }) : α j := x j
+def projCompl (α : ι → Type*) (i : ι) (x : Π i, α i) :
+    Π j : { k // k ≠ i }, α j := fun j ↦ x j
 
 lemma continuous_projCompl : Continuous (projCompl α i) := continuous_pi fun _ ↦ continuous_apply _
-
-variable (i : ι) (x : Π i, α i)
-
-lemma compactSpace_image_projCompl (hs_compact : IsCompact s) :
-    CompactSpace (projCompl α i '' s) :=
-  isCompact_iff_compactSpace.mp (hs_compact.image continuous_projCompl)
 
 /-- Given a set of dependent functions, construct the functions that coincide with one of the
 initial functions away from a given `i`. -/
 def XY (α : ι → Type*) (i : ι) (s : Set (Π j, α j)) : Set (Π j, α j) :=
   projCompl α i ⁻¹' (projCompl α i '' s)
 
-lemma subset_xy : s ⊆ XY α i s := subset_preimage_image (projCompl α i) s
+lemma subset_xy (i : ι) : s ⊆ XY α i s := subset_preimage_image (projCompl α i) s
 
-lemma mem_xy_of_mem (hx : x ∈ s) : x ∈ XY α i s := subset_xy i hx
+lemma mem_xy_of_mem (i : ι) (hx : x ∈ s) : x ∈ XY α i s := subset_xy i hx
 
 open Classical in
 /-- Given a set of dependent functions, construct a function on a product space separating out
@@ -90,28 +85,26 @@ noncomputable def fromXProd (α : ι → Type*) (i : ι) (s : Set (Π j, α j))
     Π j, α j :=
   fun j ↦ if h : j = i then cast (h ▸ rfl) p.2 else (↑(p.1) : Π j : { k // k ≠ i }, α j) ⟨j, h⟩
 
+@[simp]
 lemma fromXProd_same (p : projCompl α i '' s × α i) :
     fromXProd α i s p i = p.2 := by simp only [fromXProd, ne_eq, cast_eq, dite_true]
 
+@[simp]
 lemma projCompl_fromXProd (p : projCompl α i '' s × α i) :
     projCompl α i (fromXProd α i s p) = p.1 := by
-  ext j
-  have : (j : ι) ≠ i := j.2
-  simp only [fromXProd, projCompl]
-  rw [dif_neg this]
+  ext j; simp only [fromXProd, projCompl, dif_neg j.2]
 
 lemma continuous_fromXProd : Continuous (fromXProd α i s) := by
   refine continuous_pi fun j ↦ ?_
   simp only [fromXProd]
   split_ifs with h
-  · refine (continuous_cast _ ?_).comp continuous_snd
-    rw [h]
+  · exact (continuous_cast _ (h ▸ HEq.rfl)).comp continuous_snd
   · exact ((continuous_apply _).comp continuous_subtype_val).comp continuous_fst
 
 lemma fromXProd_mem_XY (p : projCompl α i '' s × α i) :
     fromXProd α i s p ∈ XY α i s := by
   obtain ⟨y, hy_mem_s, hy_eq⟩ := p.1.2
-  exact ⟨y, hy_mem_s, hy_eq.trans (projCompl_fromXProd _ _).symm⟩
+  exact ⟨y, hy_mem_s, hy_eq.trans (projCompl_fromXProd p).symm⟩
 
 @[simp]
 lemma fromXProd_projCompl (x : XY α i s) :
@@ -120,8 +113,7 @@ lemma fromXProd_projCompl (x : XY α i s) :
   simp only [fromXProd, projCompl, ne_eq, dite_eq_right_iff]
   intro h
   rw [← heq_iff_eq]
-  refine HEq.trans (cast_heq (_ : α i = α j) _) ?_
-  rw [h]
+  exact HEq.trans (cast_heq (h ▸ rfl) _) (h.symm ▸ HEq.rfl)
 
 /-- Homeomorphism between the set of functions that concide with a given set of functions away
 from a given `i`, and dependent functions away from `i` times any value on `i`. -/
@@ -129,22 +121,18 @@ noncomputable
 def XYEquiv (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set (Π j, α j)) :
     XY α i s ≃ₜ projCompl α i '' s × α i where
   toFun x := ⟨⟨projCompl α i x, x.2⟩, (x : Π j, α j) i⟩
-  invFun p := ⟨fromXProd α i s p, fromXProd_mem_XY _ p⟩
+  invFun p := ⟨fromXProd α i s p, fromXProd_mem_XY p⟩
   left_inv x := by ext; simp
-  right_inv p := by
-    ext x
-    · simp only
-      rw [projCompl_fromXProd]
-    · exact fromXProd_same _ _
+  right_inv p := by ext <;> simp
   continuous_toFun := by
     refine Continuous.prod_mk ?_ ?_
     · exact (continuous_projCompl.comp continuous_subtype_val).subtype_mk _
     · exact (continuous_apply _).comp continuous_subtype_val
-  continuous_invFun := (continuous_fromXProd _).subtype_mk _
+  continuous_invFun := continuous_fromXProd.subtype_mk _
 
 lemma preimage_snd_xyEquiv :
     Prod.snd '' (XYEquiv α i s '' ((fun (x : XY α i s) ↦ (x : Π j, α j)) ⁻¹' s))
-      = (fun x : Π j, α j ↦ x i) '' s := by
+      = (fun x ↦ x i) '' s := by
   ext x
   simp only [ne_eq, XYEquiv, projCompl, Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk, mem_image,
     mem_preimage, Subtype.exists, exists_and_left, Prod.exists, Prod.mk.injEq, exists_and_right,
@@ -154,13 +142,14 @@ lemma preimage_snd_xyEquiv :
     exact ⟨z, hz_mem, hzx⟩
   · rintro ⟨z, hz_mem, hzx⟩
     exact ⟨projCompl α i z, mem_image_of_mem (projCompl α i) hz_mem, z, hz_mem,
-      ⟨⟨mem_xy_of_mem _ _ hz_mem, rfl⟩, hzx⟩⟩
+      ⟨⟨mem_xy_of_mem _ hz_mem, rfl⟩, hzx⟩⟩
 
 /-- The projection of a compact closed set onto a coordinate is closed. -/
 theorem isClosed_proj (hs_compact : IsCompact s) (hs_closed : IsClosed s) (i : ι) :
-    IsClosed ((fun x : Π j, α j ↦ x i) '' s) := by
+    IsClosed ((fun x ↦ x i) '' s) := by
   rw [← preimage_snd_xyEquiv]
-  have : CompactSpace (projCompl α i '' s) := compactSpace_image_projCompl _ hs_compact
+  have : CompactSpace (projCompl α i '' s) :=
+    isCompact_iff_compactSpace.mp (hs_compact.image continuous_projCompl)
   refine isClosedMap_snd_of_compactSpace _ ?_
   rw [Homeomorph.isClosed_image]
   exact hs_closed.preimage continuous_subtype_val
