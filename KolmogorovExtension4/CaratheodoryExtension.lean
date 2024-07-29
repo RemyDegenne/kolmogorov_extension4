@@ -21,23 +21,19 @@ section IsCaratheodory
 variable {m : OuterMeasure α} {s : ℕ → Set α}
 
 lemma isCaratheodory_diff {s t : Set α} (hs : IsCaratheodory m s) (ht : IsCaratheodory m t) :
-    IsCaratheodory m (s \ t) := by
-  rw [diff_eq]
-  exact m.isCaratheodory_inter hs (m.isCaratheodory_compl ht)
+    IsCaratheodory m (s \ t) := m.isCaratheodory_inter hs (m.isCaratheodory_compl ht)
 
 lemma isCaratheodory_partialSups (h : ∀ i, m.IsCaratheodory (s i)) (i : ℕ) :
     m.IsCaratheodory (partialSups s i) := by
   induction i with
-  | zero => rw [partialSups_zero]; exact h 0
-  | succ i hi => rw [partialSups_succ]; exact m.isCaratheodory_union hi (h (i + 1))
+  | zero => exact h 0
+  | succ i hi => exact m.isCaratheodory_union hi (h (i + 1))
 
 lemma isCaratheodory_disjointed (h : ∀ i, m.IsCaratheodory (s i)) (i : ℕ) :
     m.IsCaratheodory (disjointed s i) := by
   induction i with
-  | zero => rw [disjointed_zero]; exact h 0
-  | succ i _ =>
-    rw [disjointed_succ, diff_eq]
-    exact m.isCaratheodory_diff (h (i + 1)) (isCaratheodory_partialSups h i)
+  | zero => exact h 0
+  | succ i _ => exact m.isCaratheodory_diff (h (i + 1)) (isCaratheodory_partialSups h i)
 
 -- todo: this is an improvement over `isCaratheodory_iUnion_nat`
 lemma isCaratheodory_iUnion (h : ∀ i, m.IsCaratheodory (s i)) : m.IsCaratheodory (⋃ i, s i) := by
@@ -57,12 +53,9 @@ theorem ofFunction_eq_iInf_mem (s : Set α) (m : Set α → ℝ≥0∞) (m_empty
       ⨅ (f : ℕ → Set α) (_hf : ∀ i, f i ∈ C) (_ : s ⊆ ⋃ i, f i), ∑' i, m (f i) := by
   rw [OuterMeasure.ofFunction_apply]
   apply le_antisymm
-  · refine le_iInf fun f ↦ le_iInf fun _ ↦ le_iInf fun h ↦ ?_
-    refine iInf₂_le _ ?_
-    exact h
+  · exact le_iInf fun f ↦ le_iInf fun _ ↦ le_iInf fun h ↦ iInf₂_le _ (by exact h)
   · simp_rw [le_iInf_iff]
-    intro f hf_subset
-    refine iInf_le_of_le f ?_
+    refine fun f hf_subset ↦ iInf_le_of_le f ?_
     by_cases hf : ∀ i, f i ∈ C
     · exact iInf_le_of_le hf (iInf_le_of_le hf_subset le_rfl)
     · simp only [hf, not_false_eq_true, iInf_neg, top_le_iff]
@@ -108,8 +101,7 @@ theorem inducedOuterMeasure_addContent_of_subadditive (hC : IsSetSemiring C) (m 
   suffices inducedOuterMeasure (fun x _ ↦ m x) hC.empty_mem addContent_empty s = m.extend hC s by
     rwa [m.extend_eq hC hs] at this
   refine Eq.trans ?_ (OuterMeasure.ofFunction_addContent_eq hC (m.extend hC) ?_ ?_ hs)
-  · rw [inducedOuterMeasure]
-    congr
+  · congr
   · intro f hf hf_mem
     rw [m.extend_eq hC hf_mem]
     refine (m_sigma_subadd hf hf_mem).trans_eq ?_
