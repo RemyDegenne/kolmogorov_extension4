@@ -10,22 +10,6 @@ open Finset Set Filter
 
 open scoped ENNReal NNReal Topology
 
-namespace Set
-
--- not used anymore
-theorem monotone_iUnion {s : ℕ → Set α} (hs : Monotone s) (n : ℕ) : (⋃ m ≤ n, s m) = s n := by
-  apply subset_antisymm
-  · exact iUnion_subset fun m ↦ iUnion_subset fun hm ↦ hs hm
-  · exact subset_iUnion_of_subset n (subset_iUnion_of_subset le_rfl subset_rfl)
-
--- not used anymore
-theorem antitone_iInter {s : ℕ → Set α} (hs : Antitone s) (n : ℕ) : (⋂ m ≤ n, s m) = s n := by
-  apply subset_antisymm
-  · exact iInter_subset_of_subset n (iInter_subset _ le_rfl)
-  · exact subset_iInter fun i ↦ subset_iInter fun hin ↦ hs hin
-
-end Set
-
 lemma Finset.sUnion_disjiUnion {α β : Type*} {f : α → Finset (Set β)} (I : Finset α)
     (hf : (I : Set α).PairwiseDisjoint f) :
     ⋃₀ (I.disjiUnion f hf : Set (Set β)) = ⋃ a ∈ I, ⋃₀ ↑(f a) := by
@@ -86,20 +70,6 @@ theorem monotone_partialSups {α : Type*} [SemilatticeSup α] (f : ℕ → α) :
     Monotone fun n ↦ partialSups f n := fun n _ hnm ↦
   partialSups_le f n _ fun _ hm'n ↦ le_partialSups_of_le _ (hm'n.trans hnm)
 
-theorem ENNReal.tendsto_atTop_zero_const_sub_iff (f : ℕ → ℝ≥0∞) (a : ℝ≥0∞) (ha : a ≠ ∞)
-    (hfa : ∀ n, f n ≤ a) :
-    Tendsto (fun n ↦ a - f n) atTop (𝓝 0) ↔ Tendsto (fun n ↦ f n) atTop (𝓝 a) := by
-  rw [ENNReal.tendsto_atTop_zero, ENNReal.tendsto_atTop ha]
-  refine ⟨fun h ε hε ↦ ?_, fun h ε hε ↦ ?_⟩ <;> obtain ⟨N, hN⟩ := h ε hε
-  · refine ⟨N, fun n hn ↦ ⟨?_, (hfa n).trans (le_add_right le_rfl)⟩⟩
-    specialize hN n hn
-    rw [tsub_le_iff_right] at hN ⊢
-    rwa [add_comm]
-  · refine ⟨N, fun n hn ↦ ?_⟩
-    have hN_left := (hN n hn).1
-    rw [tsub_le_iff_right] at hN_left ⊢
-    rwa [add_comm]
-
 section Accumulate
 
 variable {α : Type*}
@@ -111,15 +81,14 @@ theorem MeasurableSet.accumulate {_ : MeasurableSpace α} {s : ℕ → Set α}
 theorem Set.disjoint_accumulate {s : ℕ → Set α} (hs : Pairwise (Disjoint on s)) {i j : ℕ}
     (hij : i < j) : Disjoint (Set.Accumulate s i) (s j) := by
   rw [Set.accumulate_def]
-  induction' i with i hi
-  · simp only [Nat.zero_eq, nonpos_iff_eq_zero, iUnion_iUnion_eq_left]
-    exact hs hij.ne
-  · rw [Set.biUnion_le_succ s i]
+  induction i with
+  | zero => simp only [Nat.zero_eq, nonpos_iff_eq_zero, iUnion_iUnion_eq_left]; exact hs hij.ne
+  | succ i hi =>
+    rw [Set.biUnion_le_succ s i]
     exact Disjoint.union_left (hi ((Nat.lt_succ_self i).trans hij)) (hs hij.ne)
 
 theorem Set.accumulate_succ (s : ℕ → Set α) (n : ℕ) :
-    Set.Accumulate s (n + 1) = Set.Accumulate s n ∪ s (n + 1) :=
-  Set.biUnion_le_succ s n
+    Set.Accumulate s (n + 1) = Set.Accumulate s n ∪ s (n + 1) := Set.biUnion_le_succ s n
 
 @[simp]
 lemma accumulate_zero_nat (s : ℕ → Set α) : Set.Accumulate s 0 = s 0 := by simp [Set.accumulate_def]
@@ -129,8 +98,7 @@ end Accumulate
 namespace NNReal
 
 theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by
-  rw [← bot_eq_zero, Ico_bot];
-  exact isOpen_Iio
+  rw [← bot_eq_zero, Ico_bot]; exact isOpen_Iio
 
 /-- Given some x > 0, there is a sequence of positive reals summing to x. -/
 theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :
@@ -197,6 +165,20 @@ theorem exists_seq_pos_lt (x : ℝ≥0∞) (hx : 0 < x) :
   rcases hf with ⟨_, hf3⟩
   rw [hf3]
   exact ENNReal.half_lt_self hx.ne' hx_top
+
+theorem tendsto_atTop_zero_const_sub_iff (f : ℕ → ℝ≥0∞) (a : ℝ≥0∞) (ha : a ≠ ∞)
+    (hfa : ∀ n, f n ≤ a) :
+    Tendsto (fun n ↦ a - f n) atTop (𝓝 0) ↔ Tendsto (fun n ↦ f n) atTop (𝓝 a) := by
+  rw [ENNReal.tendsto_atTop_zero, ENNReal.tendsto_atTop ha]
+  refine ⟨fun h ε hε ↦ ?_, fun h ε hε ↦ ?_⟩ <;> obtain ⟨N, hN⟩ := h ε hε
+  · refine ⟨N, fun n hn ↦ ⟨?_, (hfa n).trans (le_add_right le_rfl)⟩⟩
+    specialize hN n hn
+    rw [tsub_le_iff_right] at hN ⊢
+    rwa [add_comm]
+  · refine ⟨N, fun n hn ↦ ?_⟩
+    have hN_left := (hN n hn).1
+    rw [tsub_le_iff_right] at hN_left ⊢
+    rwa [add_comm]
 
 theorem tendsto_atTop_zero_iff_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
     Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n ≤ ε := by
