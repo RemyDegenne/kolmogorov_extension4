@@ -152,7 +152,7 @@ theorem innerRegularWRT_isCompact_closure_of_univ [TopologicalSpace α]
   refine (closure_inter_subset_inter_closure _ _).trans_eq ?_
   rw [IsClosed.closure_eq ht]
 
-theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace α] [CompleteSpace α]
+theorem exists_isCompact_closure_measure_lt_of_complete_countable [UniformSpace α] [CompleteSpace α]
     [SecondCountableTopology α] [(uniformity α).IsCountablyGenerated]
     [OpensMeasurableSpace α] (P : Measure α) [IsFiniteMeasure P] (ε : ℝ≥0∞) (hε : 0 < ε) :
     ∃ K, IsCompact (closure K) ∧ P Kᶜ < ε := by
@@ -192,15 +192,14 @@ theorem innerRegularWRT_isCompact_closure_of_complete_countable [UniformSpace α
     [OpensMeasurableSpace α] (P : Measure α) [IsFiniteMeasure P] :
     P.InnerRegularWRT (IsCompact ∘ closure) IsClosed :=
   innerRegularWRT_isCompact_closure_of_univ
-    (inner_regular_isCompact_is_closed_of_complete_countable' P)
+    (exists_isCompact_closure_measure_lt_of_complete_countable P)
 
 theorem innerRegularWRT_isCompact_isClosed_of_complete_countable [UniformSpace α] [CompleteSpace α]
     [SecondCountableTopology α] [(uniformity α).IsCountablyGenerated]
     [OpensMeasurableSpace α] (P : Measure α) [IsFiniteMeasure P] :
     P.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsClosed := by
   rw [innerRegularWRT_isCompact_isClosed_iff_innerRegularWRT_isCompact_closure]
-  exact innerRegularWRT_isCompact_closure_of_univ
-    (inner_regular_isCompact_is_closed_of_complete_countable' P)
+  exact innerRegularWRT_isCompact_closure_of_complete_countable P
 
 theorem innerRegularWRT_isCompact_of_complete_countable [UniformSpace α] [CompleteSpace α]
     [SecondCountableTopology α] [(uniformity α).IsCountablyGenerated]
