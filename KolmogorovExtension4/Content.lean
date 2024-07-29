@@ -77,6 +77,29 @@ theorem extendContent_eq_top (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C
     extendContent hC m m_empty m_add s = ∞ := by
   rw [extendContent_eq_extend, extend_eq_top m hs]
 
+protected noncomputable
+def AddContent.extend (hC : IsSetSemiring C) (m : AddContent C) : AddContent C where
+  toFun := extend (fun x (_ : x ∈ C) ↦ m x)
+  empty' := by rw [extend_eq, addContent_empty]; exact hC.empty_mem
+  sUnion' I h_ss h_dis h_mem := by
+    rw [extend_eq]
+    swap; · exact h_mem
+    rw [addContent_sUnion h_ss h_dis h_mem]
+    refine Finset.sum_congr rfl (fun s hs ↦ ?_)
+    rw [extend_eq]
+    exact h_ss hs
+
+protected theorem AddContent.extend_eq_extend (hC : IsSetSemiring C) (m : AddContent C) :
+    m.extend hC = extend (fun x (_ : x ∈ C) ↦ m x) := rfl
+
+protected theorem AddContent.extend_eq (hC : IsSetSemiring C) (m : AddContent C) (hs : s ∈ C) :
+    m.extend hC s = m s := by
+  rwa [m.extend_eq_extend, extend_eq]
+
+protected theorem AddContent.extend_eq_top (hC : IsSetSemiring C) (m : AddContent C) (hs : s ∉ C) :
+    m.extend hC s = ∞ := by
+  rwa [m.extend_eq_extend, extend_eq_top]
+
 end ExtendContent
 
 section TotalSetFunction
