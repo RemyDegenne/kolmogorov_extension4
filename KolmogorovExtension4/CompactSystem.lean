@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import KolmogorovExtension4.Boxes
+import KolmogorovExtension4.ClosedProj
 
 open Set
 
