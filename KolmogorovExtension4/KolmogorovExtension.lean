@@ -202,7 +202,7 @@ theorem kolContent_sigma_subadditive_of_innerRegular (hP : IsProjectiveMeasureFa
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ measurableCylinders α)
     (hf_Union : (⋃ i, f i) ∈ measurableCylinders α) :
     kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) :=
-  (kolContent hP).sigma_subadditive_of_sigma_additive isSetRing_measurableCylinders
+  addContent_iUnion_le_of_addContent_iUnion_eq_tsum isSetRing_measurableCylinders
     (kolContent_sigma_additive_of_innerRegular hP hP_inner) f hf hf_Union
 
 end InnerRegularAssumption

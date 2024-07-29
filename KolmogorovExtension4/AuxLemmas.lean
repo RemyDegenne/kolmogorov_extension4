@@ -33,22 +33,55 @@ theorem bInter_diff_bUnion_subset {ι α : Type*} (A B : ι → Set α) (s : Set
   intro h1 h2 i hi
   exact ⟨h1 i hi, h2 i hi⟩
 
-theorem Finset.sum_image_le {ι α β : Type*} [DecidableEq α] [OrderedSemiring β] (J : Finset ι)
-    (g : ι → α) (f : α → β) (hf : ∀ u ∈ J.image g, 0 ≤ f u) :
+lemma Finset.sUnion_disjiUnion {α β : Type*} {f : α → Finset (Set β)} (I : Finset α)
+    (hf : (I : Set α).PairwiseDisjoint f) :
+    ⋃₀ (I.disjiUnion f hf : Set (Set β)) = ⋃ a ∈ I, ⋃₀ ↑(f a) := by
+  ext1 b
+  simp only [coe_disjiUnion, mem_coe, Set.mem_sUnion, Set.mem_iUnion, exists_prop]
+  constructor
+  · rintro ⟨t, ⟨a, haI, hatf⟩, hbt⟩
+    exact ⟨a, haI, t, hatf, hbt⟩
+  · rintro ⟨a, haI, t, hatf, hbt⟩
+    exact ⟨t, ⟨a, haI, hatf⟩, hbt⟩
+
+lemma Finset.sum_image_le_of_nonneg {ι α β : Type*} [DecidableEq α]
+    [OrderedAddCommMonoid β] [SMulPosMono ℕ β]
+    {J : Finset ι} {g : ι → α} {f : α → β} (hf : ∀ u ∈ J.image g, 0 ≤ f u) :
     ∑ u in J.image g, f u ≤ ∑ u in J, f (g u) := by
   rw [sum_comp f g]
-  refine sum_le_sum fun a hag ↦ ?_
-  let hag' := hag
-  rw [Finset.mem_image] at hag'
-  obtain ⟨i, hi, hig⟩ := hag'
-  suffices 1 ≤ (J.filter (fun j ↦ g j = a)).card by
-    conv_lhs => rw [← one_smul ℕ (f a)]
-    simp_rw [nsmul_eq_mul]
-    exact mul_le_mul (Nat.mono_cast this) le_rfl (hf a hag) (Nat.cast_nonneg _)
-  rw [Nat.succ_le_iff, card_pos]
-  refine ⟨i, ?_⟩
-  rw [mem_filter]
-  exact ⟨hi, hig⟩
+  refine sum_le_sum fun a hag => ?_
+  obtain ⟨i, hi, hig⟩ := Finset.mem_image.mp hag
+  conv_lhs => rw [← one_smul ℕ (f a)]
+  refine smul_le_smul_of_nonneg_right ?_ (hf a hag)
+  rw [Nat.one_le_iff_ne_zero, ← Nat.pos_iff_ne_zero, card_pos]
+  exact ⟨i, mem_filter.mpr ⟨hi, hig⟩⟩
+
+@[to_additive]
+lemma Finset.prod_image_of_disjoint {α β : Type*} [PartialOrder α] [OrderBot α] [DecidableEq α]
+    [CommMonoid β] {g : α → β}
+    (hg_bot : g ⊥ = 1) {f : ι → α} {I : Finset ι} (hf_disj : (I : Set ι).PairwiseDisjoint f) :
+    ∏ s in I.image f, g s = ∏ i in I, g (f i) := by
+  rw [prod_image']
+  intro n hnI
+  by_cases hfn : f n = ⊥
+  · simp only [hfn, hg_bot]
+    refine (prod_eq_one fun i hi ↦ ?_).symm
+    rw [mem_filter] at hi
+    rw [hi.2, hg_bot]
+  · classical
+    suffices filter (fun j ↦ f j = f n) I = filter (fun j ↦ j = n) I by
+      simp only [this, prod_filter, prod_ite_eq', if_pos hnI]
+    refine filter_congr (fun j hj ↦ ?_)
+    refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
+    by_contra hij
+    have h_dis : Disjoint (f j) (f n) := hf_disj hj hnI hij
+    rw [h] at h_dis
+    exact hfn (disjoint_self.mp h_dis)
+
+lemma _root_.Pairwise.pairwiseDisjoint {α ι : Type*} [PartialOrder α] [OrderBot α] {f : ι → α}
+    (h : Pairwise (Disjoint on f)) (s : Set ι) :
+    s.PairwiseDisjoint f :=
+  Pairwise.set_pairwise h s
 
 theorem partialSups_eq_sUnion_image {α : Type*} [DecidableEq (Set α)] (f : ℕ → Set α) (n : ℕ) :
     partialSups f n = ⋃₀ ↑(Finset.image f (range (n + 1))) := by
