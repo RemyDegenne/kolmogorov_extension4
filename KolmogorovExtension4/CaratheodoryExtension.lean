@@ -6,9 +6,9 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 import Mathlib.MeasureTheory.Measure.Trim
 import KolmogorovExtension4.Content
 
-open Finset Set MeasureTheory Order
+open Set
 
-open scoped Classical NNReal Topology ENNReal MeasureTheory
+open scoped ENNReal
 
 namespace MeasureTheory
 
@@ -126,6 +126,7 @@ theorem caratheodory_semiring_extension' (hC : IsSetSemiring C) (m : AddContent 
   refine le_iInf fun f ↦ le_iInf fun hf ↦ le_iInf fun hf_subset ↦ ?_
   let A : ℕ → Finset (Set α) := fun i ↦ hC.diffFinset (hf i) (hC.inter_mem _ (hf i) _ hs)
   have h_diff_eq_sUnion i : f i \ s = ⋃₀ A i := by simp [A, IsSetSemiring.sUnion_diffFinset]
+  classical
   have h_m_eq i : m (f i) = m (f i ∩ s) + ∑ u in A i, m u :=
     hC.eq_add_diffFinset_of_subset m (fun _ ↦ addContent_sUnion) (hC.inter_mem _ (hf i) _ hs) (hf i)
       inter_subset_left
@@ -141,7 +142,7 @@ theorem caratheodory_semiring_extension' (hC : IsSetSemiring C) (m : AddContent 
       if h : n.2 < (A n.1).card then (A n.1).ordered ⟨n.2, h⟩ else ∅
     have h_sum_sum : ∑' i, ∑ u in A i, m u = ∑' n, m (g' (e n)) := by
       have h1 i : ∑ u in A i, m u = ∑' n, m (g' ⟨i, n⟩) := by
-        rw [← sum_ordered]
+        rw [← Finset.sum_ordered]
         let e_fin_range : Fin (A i).card ≃ Finset.range (A i).card :=
           { toFun := fun j ↦ ⟨j, Finset.mem_range.mpr j.2⟩
             invFun := fun j ↦ ⟨j, Finset.mem_range.mp j.2⟩
@@ -177,7 +178,7 @@ theorem caratheodory_semiring_extension' (hC : IsSetSemiring C) (m : AddContent 
       simp only [g', iUnion_dite, iUnion_empty,
         Set.union_empty, h_diff_eq_sUnion]
       ext x
-      simp only [← iUnion_ordered, mem_iUnion, Prod.exists]
+      simp only [← Finset.iUnion_ordered, mem_iUnion, Prod.exists]
       constructor
       · rintro ⟨a, b, h, h_mem⟩
         exact ⟨a, ⟨b, h⟩, h_mem⟩
