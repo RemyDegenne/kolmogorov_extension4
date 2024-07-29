@@ -45,69 +45,41 @@ section ExtendContent
 /-- Build an `AddContent` from an additive function defined on a semiring. -/
 noncomputable def extendContent (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
-    (m_add :
-      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-        (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop)) :
+    (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop)) :
     AddContent C where
   toFun := extend m
   empty' := extend_empty hC.empty_mem m_empty
-  sUnion' := by
+  sUnion' I h_ss h_dis h_mem := by
     simp_rw [← extend_eq m] at m_add
-    intro I h_ss h_dis h_mem
-    specialize m_add I h_ss h_dis h_mem
-    rw [m_add, univ_eq_attach]
+    rw [m_add I h_ss h_dis h_mem, univ_eq_attach]
     exact sum_attach _ _
 
 theorem extendContent_eq_extend (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
-    (m_add :
-      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-        (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop)) :
-    ⇑(extendContent hC m m_empty m_add) = extend m :=
-  rfl
+    (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop)) :
+    extendContent hC m m_empty m_add = extend m := rfl
 
 theorem extendContent_eq (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
-    (m_add :
-      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-        (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
-    (hs : s ∈ C) : extendContent hC m m_empty m_add s = m s hs := by
+    (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
+    (hs : s ∈ C) :
+    extendContent hC m m_empty m_add s = m s hs := by
   rw [extendContent_eq_extend, extend_eq]
 
 theorem extendContent_eq_top (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
-    (m_add :
-      ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-        (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
-    (hs : s ∉ C) : extendContent hC m m_empty m_add s = ∞ := by
+    (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+      (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
+    (hs : s ∉ C) :
+    extendContent hC m m_empty m_add s = ∞ := by
   rw [extendContent_eq_extend, extend_eq_top m hs]
 
 end ExtendContent
 
 section TotalSetFunction
-
-theorem sum_image_eq_of_disjoint {α ι : Type*} [DecidableEq (Set α)] (m : Set α → ℝ≥0∞)
-    (m_empty : m ∅ = 0) (f : ι → Set α) (hf_disj : Pairwise (Disjoint on f)) (I : Finset ι) :
-    ∑ s in image f I, m s = ∑ i in I, m (f i) := by
-  rw [sum_image']
-  intro n hnI
-  by_cases hfn : f n = ∅
-  · simp only [hfn, m_empty]
-    refine (sum_eq_zero fun i hi ↦ ?_).symm
-    rw [mem_filter] at hi
-    rw [hi.2, m_empty]
-  · have : (fun j ↦ f j = f n) = fun j ↦ j = n := by
-      ext1 j
-      rw [eq_iff_iff]
-      refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
-      by_contra hij
-      have h_dis : Disjoint (f j) (f n) := hf_disj hij
-      rw [h] at h_dis
-      rw [Set.disjoint_iff_inter_eq_empty, Set.inter_self] at h_dis
-      exact hfn h_dis
-    classical
-    simp_rw [this]
-    simp only [sum_filter, sum_ite_eq', if_pos hnI]
 
 section Semiring
 
@@ -117,7 +89,7 @@ variable (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
 
 theorem eq_add_diffFinset₀_of_subset (hs : s ∈ C)
     {I : Finset (Set α)} (hI : ↑I ⊆ C) (hI_ss : ∀ t ∈ I, t ⊆ s)
-    (h_dis : PairwiseDisjoint (I : Set (Set α)) id) [DecidableEq (Set α)] :
+    (h_dis : PairwiseDisjoint (I : Set (Set α)) id) :
     m s = ∑ i in I, m i + ∑ i in hC.diffFinset₀ hs hI, m i := by
   classical
   conv_lhs => rw [← hC.sUnion_union_diffFinset₀_of_subset hs hI hI_ss]
@@ -194,7 +166,7 @@ theorem sigma_additive_of_sigma_subadditive (m_empty : m ∅ = 0)
   refine tsum_le_of_sum_le ENNReal.summable fun I ↦ ?_
   classical
   refine le_trans ?_ (sum_le_of_additive hC m m_add (J := I.image f) ?_ ?_ ?_ ?_)
-  · rw [sum_image_eq_of_disjoint m m_empty f hf_disj]
+  · rw [Finset.sum_image_of_disjoint m_empty (hf_disj.pairwiseDisjoint _)]
   · simp only [coe_image, Set.image_subset_iff]
     refine (subset_preimage_image f I).trans (preimage_mono ?_)
     rintro i ⟨j, _, rfl⟩
@@ -311,7 +283,7 @@ theorem continuous_from_below_of_sigma_additive (hC : IsSetRing C) (m : Set α �
       have hij : i ≠ j := by intro h_eq; rw [h_eq] at hst ; exact hst rfl
       exact disjoint_disjointed f hij
     · rw [← h1]; exact hf n
-    rw [sum_image_eq_of_disjoint m m_empty g (disjoint_disjointed f)]
+    rw [Finset.sum_image_of_disjoint m_empty ((disjoint_disjointed f).pairwiseDisjoint _)]
   simp_rw [h]
   change Tendsto (fun n ↦ (fun k ↦ ∑ i in range k, m (g i)) (n + 1)) atTop (𝓝 (∑' i, m (g i)))
   rw [tendsto_add_atTop_iff_nat (f := (fun k ↦ ∑ i in range k, m (g i))) 1]
