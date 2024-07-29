@@ -20,22 +20,25 @@ section IsCaratheodory
 
 variable {m : OuterMeasure α} {s : ℕ → Set α}
 
+-- PR: #15265
 lemma isCaratheodory_diff {s t : Set α} (hs : IsCaratheodory m s) (ht : IsCaratheodory m t) :
     IsCaratheodory m (s \ t) := m.isCaratheodory_inter hs (m.isCaratheodory_compl ht)
 
+-- PR: #15265
 lemma isCaratheodory_partialSups (h : ∀ i, m.IsCaratheodory (s i)) (i : ℕ) :
     m.IsCaratheodory (partialSups s i) := by
   induction i with
   | zero => exact h 0
   | succ i hi => exact m.isCaratheodory_union hi (h (i + 1))
 
+-- PR: #15265
 lemma isCaratheodory_disjointed (h : ∀ i, m.IsCaratheodory (s i)) (i : ℕ) :
     m.IsCaratheodory (disjointed s i) := by
   induction i with
   | zero => exact h 0
   | succ i _ => exact m.isCaratheodory_diff (h (i + 1)) (isCaratheodory_partialSups h i)
 
--- todo: this is an improvement over `isCaratheodory_iUnion_nat`
+-- PR: #15265
 lemma isCaratheodory_iUnion (h : ∀ i, m.IsCaratheodory (s i)) : m.IsCaratheodory (⋃ i, s i) := by
   rw [← iUnion_disjointed]
   exact OuterMeasure.isCaratheodory_iUnion_nat m (isCaratheodory_disjointed h)
