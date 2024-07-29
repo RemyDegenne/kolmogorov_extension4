@@ -57,12 +57,9 @@ lemma _root_.MeasurableSet.ball {_ : MeasurableSpace α} (x : α)
     {s : Set (α × α)} (hs : MeasurableSet s) :
     MeasurableSet (UniformSpace.ball x s) := measurable_prod_mk_left hs
 
---/-- Given a family of sets `s' n` and a family of entourages `V n` of the diagonal, the
---intersection over `n` of the `V n`-neighborhood of `s' n`. Designed to be relatively compact
---when the `s' n` are finite and `V n` tends to the diagonal. -/
---def interUnionBalls (s' : ℕ → Set α) (V : ℕ → Set (α × α)) : Set α :=
---  ⋂ n, ⋃ x ∈ s' n, UniformSpace.ball x (Prod.swap ⁻¹' V n)
-
+/-- Given a family of points `xs n`, a family of entourages `V n` of the diagonal and a family of
+natural numbers `u n`, the intersection over `n` of the `V n`-neighborhood of `xs 1, ..., xs (u n)`.
+Designed to be relatively compact when `V n` tends to the diagonal. -/
 def interUnionBalls (xs : ℕ → α) (u : ℕ → ℕ) (V : ℕ → Set (α × α)) : Set α :=
   ⋂ n, ⋃ m ≤ u n, UniformSpace.ball (xs m) (Prod.swap ⁻¹' V n)
 
