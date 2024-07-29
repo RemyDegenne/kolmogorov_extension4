@@ -26,13 +26,6 @@ theorem antitone_iInter {s : ℕ → Set α} (hs : Antitone s) (n : ℕ) : (⋂ 
 
 end Set
 
-theorem bInter_diff_bUnion_subset {ι α : Type*} (A B : ι → Set α) (s : Set ι) :
-    ((⋂ i ∈ s, A i) \ ⋃ i ∈ s, B i) ⊆ ⋂ i ∈ s, A i \ B i := by
-  intro x
-  simp only [mem_diff, mem_iInter, mem_iUnion, exists_prop, not_exists, not_and, and_imp]
-  intro h1 h2 i hi
-  exact ⟨h1 i hi, h2 i hi⟩
-
 lemma Finset.sUnion_disjiUnion {α β : Type*} {f : α → Finset (Set β)} (I : Finset α)
     (hf : (I : Set α).PairwiseDisjoint f) :
     ⋃₀ (I.disjiUnion f hf : Set (Set β)) = ⋃ a ∈ I, ⋃₀ ↑(f a) := by
@@ -93,17 +86,6 @@ theorem monotone_partialSups {α : Type*} [SemilatticeSup α] (f : ℕ → α) :
     Monotone fun n ↦ partialSups f n := fun n _ hnm ↦
   partialSups_le f n _ fun _ hm'n ↦ le_partialSups_of_le _ (hm'n.trans hnm)
 
-/-- todo: this has to be somewhere in mathlib -/
-theorem Set.bUnion_le_succ {α : Type*} (s : ℕ → Set α) (n : ℕ) :
-    (⋃ i ≤ n.succ, s i) = (⋃ i ≤ n, s i) ∪ s n.succ := by
-  simp_rw [← Nat.lt_succ_iff];
-  exact Set.biUnion_lt_succ s (n + 1)
-
-theorem Set.bInter_le_succ {α : Type*} (s : ℕ → Set α) (n : ℕ) :
-    (⋂ i ≤ n.succ, s i) = (⋂ i ≤ n, s i) ∩ s n.succ := by
-  simp_rw [← Nat.lt_succ_iff];
-  exact Set.biInter_lt_succ s (n + 1)
-
 theorem ENNReal.tendsto_atTop_zero_const_sub_iff (f : ℕ → ℝ≥0∞) (a : ℝ≥0∞) (ha : a ≠ ∞)
     (hfa : ∀ n, f n ≤ a) :
     Tendsto (fun n ↦ a - f n) atTop (𝓝 0) ↔ Tendsto (fun n ↦ f n) atTop (𝓝 a) := by
@@ -132,12 +114,12 @@ theorem Set.disjoint_accumulate {s : ℕ → Set α} (hs : Pairwise (Disjoint on
   induction' i with i hi
   · simp only [Nat.zero_eq, nonpos_iff_eq_zero, iUnion_iUnion_eq_left]
     exact hs hij.ne
-  · rw [Set.bUnion_le_succ s i]
+  · rw [Set.biUnion_le_succ s i]
     exact Disjoint.union_left (hi ((Nat.lt_succ_self i).trans hij)) (hs hij.ne)
 
 theorem Set.accumulate_succ (s : ℕ → Set α) (n : ℕ) :
     Set.Accumulate s (n + 1) = Set.Accumulate s n ∪ s (n + 1) :=
-  Set.bUnion_le_succ s n
+  Set.biUnion_le_succ s n
 
 @[simp]
 lemma accumulate_zero_nat (s : ℕ → Set α) : Set.Accumulate s 0 = s 0 := by simp [Set.accumulate_def]
