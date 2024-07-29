@@ -119,7 +119,7 @@ theorem le_sum_of_additive_aux {J : Finset (Set α)} (h_ss : ↑J ⊆ C) (h_mem 
   refine sum_le_sum fun i _ ↦ sum_le_of_additive hC m m_add ?_ ?_ ?_ ?_
   · exact hC.indexedDiff₀_subset h_ss i
   · exact hC.pairwiseDisjoint_indexedDiff₀' h_ss i
-  · exact ordered_mem' h_ss i
+  · exact h_ss (ordered_mem i)
   · exact hC.subset_of_mem_indexedDiff₀ _ _
 
 theorem le_sum_of_additive {J : Finset (Set α)} (h_ss : ↑J ⊆ C) (ht : t ∈ C) (htJ : t ⊆ ⋃₀ ↑J) :
