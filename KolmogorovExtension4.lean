@@ -7,6 +7,7 @@ import KolmogorovExtension4.CompactSystem
 import KolmogorovExtension4.Content
 import KolmogorovExtension4.IndependentFamily
 import KolmogorovExtension4.KolmogorovExtension
+import KolmogorovExtension4.Ordered
 import KolmogorovExtension4.Projective
 import KolmogorovExtension4.RegularContent
 import KolmogorovExtension4.RegularityCompacts

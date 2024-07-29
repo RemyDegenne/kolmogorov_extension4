@@ -5,6 +5,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import KolmogorovExtension4.AuxLemmas
 import Mathlib.MeasureTheory.SetSemiring
+import KolmogorovExtension4.Ordered
 
 /-! # Semirings of sets
 
@@ -24,104 +25,12 @@ variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 
 section Ordered
 
-theorem Finset.mem_map_univ_asEmbedding {α β : Type*} [Fintype α] {p : β → Prop}
-    (e : α ≃ Subtype p) {b : β} : b ∈ Finset.map e.asEmbedding univ ↔ p b := by
-  rw [mem_map]
-  simp only [Finset.mem_univ, Equiv.asEmbedding_apply, Function.comp_apply, exists_true_left,
-    true_and]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨a, rfl⟩ := h
-    exact (e a).prop
-  · suffices ∃ a, e a = ⟨b, h⟩ by
-      obtain ⟨a, ha⟩ := this
-      refine ⟨a, ?_⟩
-      rw [ha]
-    exact e.surjective _
-
-variable {J : Finset (Set α)}
-
-/-- An ordering of the elements of a finset. -/
-noncomputable def _root_.Finset.ordered (J : Finset α) : Fin J.card ↪ α :=
-  J.equivFin.symm.asEmbedding
-
-theorem map_ordered (J : Finset (Set α)) :
-    Finset.map J.ordered (univ : Finset (Fin J.card)) = J := by
-  ext1 s; simp_rw [Finset.ordered, Finset.mem_map_univ_asEmbedding]
-
-theorem ordered_mem (n : Fin J.card) : J.ordered n ∈ J := by
-  simp_rw [Finset.ordered]
-  exact coe_mem _
-
-theorem ordered_mem' (hJ : ↑J ⊆ C) (n : Fin J.card) : J.ordered n ∈ C :=
-  hJ (ordered_mem n)
-
-theorem iUnion_ordered (J : Finset (Set α)) : (⋃ i : Fin J.card, J.ordered i) = ⋃₀ J := by
-  conv_rhs => rw [← map_ordered J]
-  simp_rw [sUnion_eq_biUnion, coe_map, Set.biUnion_image]
-  simp only [mem_coe, Finset.mem_univ, iUnion_true]
-
-theorem sum_ordered {β : Type*} [AddCommMonoid β] (J : Finset (Set α)) (m : Set α → β) :
-    ∑ i : Fin J.card, m (J.ordered i) = ∑ u in J, m u := by
-  conv_rhs => rw [← map_ordered J]
-  rw [sum_map]
-
-/-- The n first sets in `J.ordered`. -/
-noncomputable def finsetLT (J : Finset (Set α)) : Fin J.card → Finset (Set α) := fun n ↦
-  (Finset.filter (fun j : Fin J.card ↦ j < n) univ).map J.ordered
-
-theorem finsetLT_zero {J : Finset (Set α)} (hJ : 0 < J.card) : finsetLT J ⟨0, hJ⟩ = ∅ := by
-  rw [finsetLT]
-  simp only [univ_eq_attach, map_eq_empty]
-  rw [filter_eq_empty_iff]
-  intro n _
-  simp only [not_lt]
-  rw [← Fin.eta n n.2, Fin.mk_le_mk]
-  exact zero_le'
-
-theorem finsetLT_mono (J : Finset (Set α)) : Monotone (finsetLT J) := by
-  intro n m hnm s
-  rw [finsetLT, mem_map]
-  rintro ⟨i, hi, rfl⟩
-  simp only [Finset.ordered, finsetLT, Equiv.asEmbedding_apply, Function.comp_apply, mem_map,
-    mem_filter, Finset.mem_univ, true_and_iff, exists_prop]
-  refine ⟨i, ?_, rfl⟩
-  rw [mem_filter] at hi
-  exact hi.2.trans_le hnm
-
-theorem finsetLT_subset (J : Finset (Set α)) (n : Fin J.card) : finsetLT J n ⊆ J := by
-  intro u; rw [finsetLT, mem_map]; rintro ⟨i, _, rfl⟩; exact ordered_mem i
-
-theorem mem_finsetLT (J : Finset (Set α)) (n : Fin J.card) {s : Set α} :
-    s ∈ finsetLT J n ↔ ∃ m < n, s = J.ordered m := by
-  rw [finsetLT, mem_map]
-  simp only [mem_filter, Finset.mem_univ, true_and_iff, Equiv.asEmbedding_apply,
-    Function.comp_apply, exists_prop]
-  simp_rw [@eq_comm _ _ s]
-
-theorem ordered_mem_finsetLT (J : Finset (Set α)) {n m : Fin J.card} (hnm : n < m) :
-    J.ordered n ∈ finsetLT J m := by rw [mem_finsetLT _ _]; exact ⟨n, hnm, rfl⟩
-
-theorem finsetLT_subset' (J : Finset (Set α)) (hJ : ↑J ⊆ C) (n : Fin J.card) :
-    ↑(finsetLT J n) ⊆ C :=
-  (Finset.coe_subset.mpr (finsetLT_subset J n)).trans hJ
-
-theorem sUnion_finsetLT_eq_bUnion (J : Finset (Set α)) (n : Fin J.card) :
-    ⋃₀ (finsetLT J n : Set (Set α)) = ⋃ i < n, J.ordered i := by
-  ext1 a
-  simp_rw [mem_sUnion, mem_coe, mem_finsetLT, mem_iUnion]
-  constructor
-  · rintro ⟨t, ⟨m, hmn, rfl⟩, hat⟩
-    exact ⟨m, hmn, hat⟩
-  · rintro ⟨m, hmn, hat⟩
-    exact ⟨J.ordered m, ⟨m, hmn, rfl⟩, hat⟩
-
 namespace IsSetSemiring
 
 section IndexedDiff₀
 
 theorem eq_add_diffFinset_of_subset (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
-    (m_add :
-      ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+    (m_add : ∀ (I : Finset (Set α)) (_ : ↑I ⊆ C) (_ : PairwiseDisjoint (I : Set (Set α)) id)
         (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
     (hs : s ∈ C) (ht : t ∈ C) (hst : s ⊆ t) [DecidableEq (Set α)] :
     m t = m s + ∑ i in hC.diffFinset ht hs, m i := by
@@ -141,7 +50,7 @@ theorem eq_add_diffFinset_of_subset (hC : IsSetSemiring C) (m : Set α → ℝ�
 `⋃₀ ↑(hC.indexedDiff₀ hJ n) = J.ordered n \ ⋃₀ finsetLT J n`. -/
 noncomputable def indexedDiff₀ (hC : IsSetSemiring C) {J : Finset (Set α)} (hJ : ↑J ⊆ C)
     (n : Fin J.card) : Finset (Set α) :=
-  hC.diffFinset₀ (ordered_mem' hJ n) (finsetLT_subset' J hJ n)
+  hC.diffFinset₀ (hJ (ordered_mem n)) (finsetLT_subset' J hJ n)
 
 theorem sUnion_indexedDiff₀ (hC : IsSetSemiring C) {J : Finset (Set α)} (hJ : ↑J ⊆ C)
     (n : Fin J.card) : ⋃₀ ↑(hC.indexedDiff₀ hJ n) = J.ordered n \ ⋃₀ finsetLT J n :=
@@ -166,7 +75,7 @@ theorem empty_not_mem_indexedDiff₀ (hC : IsSetSemiring C) {J : Finset (Set α)
 theorem subset_ordered_of_mem_indexedDiff₀ (hC : IsSetSemiring C) {J : Finset (Set α)} (hJ : ↑J ⊆ C)
     {n : Fin J.card} (h : s ∈ hC.indexedDiff₀ hJ n) : s ⊆ J.ordered n := by
   refine Subset.trans ?_
-    (hC.sUnion_diffFinset₀_subset (ordered_mem' hJ n) (finsetLT_subset' J hJ n))
+    (hC.sUnion_diffFinset₀_subset (hJ (ordered_mem n)) (finsetLT_subset' J hJ n))
   exact subset_sUnion_of_mem h
 
 theorem iUnion_sUnion_indexedDiff₀ (hC : IsSetSemiring C) {J : Finset (Set α)} (hJ : ↑J ⊆ C) :
@@ -189,7 +98,7 @@ theorem iUnion_sUnion_indexedDiff₀ (hC : IsSetSemiring C) {J : Finset (Set α)
     refine ⟨⟨i, hi⟩, ?_⟩
     rw [sUnion_indexedDiff₀, Set.mem_diff]
     refine ⟨ha_mem_i, ?_⟩
-    rw [sUnion_finsetLT_eq_bUnion]
+    rw [sUnion_finsetLT_eq_biUnion]
     simp only [mem_iUnion, exists_prop, not_exists, not_and]
     intro j hj_lt hj
     have hj_lt' : ↑j < i := by rwa [← Fin.eta j j.2, Fin.mk_lt_mk] at hj_lt
