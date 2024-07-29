@@ -111,7 +111,7 @@ lemma finsetLT_subset' (J : Finset (Set α)) (hJ : ↑J ⊆ C) (n : Fin J.card) 
 
 lemma sUnion_finsetLT_eq_biUnion (J : Finset (Set α)) (n : Fin J.card) :
     ⋃₀ (finsetLT J n : Set (Set α)) = ⋃ i < n, J.ordered i := by
-  ext1 a
+  ext
   simp_rw [mem_sUnion, mem_coe, mem_finsetLT, mem_iUnion]
   constructor
   · rintro ⟨t, ⟨m, hmn, rfl⟩, hat⟩

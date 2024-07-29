@@ -75,7 +75,7 @@ lemma surjective_proj_allProj [∀ i, Nonempty (α i)] (hs : ∀ n, s n ∈ clos
   let x := (inferInstance : Nonempty (Π i, α i)).some
   classical
   refine ⟨fun i ↦ if hi : i ∈ allProj hs then y ⟨i, hi⟩ else x i, ?_⟩
-  ext1 i
+  ext i
   simp only [Subtype.coe_prop, dite_true]
 
 end AllProj
@@ -117,7 +117,7 @@ lemma nonempty_projCylinder_iff [∀ i, Nonempty (α i)]
     let x := (inferInstance : Nonempty (∀ i, α i)).some
     classical
     refine ⟨fun i ↦ if hi : i ∈ Js (hs n) then y ⟨i, hi⟩ else x i, ?_⟩
-    ext1 i
+    ext i
     simp only [Finset.coe_mem, dite_true]
 
 theorem isClosed_projCylinder [∀ i, TopologicalSpace (α i)]
@@ -157,7 +157,7 @@ theorem piCylinderSet_eq_pi_univ (hs : ∀ n, s n ∈ closedCompactCylinders α)
       pi univ fun i ↦
         (fun a : ∀ j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
           (As (hs (indexProj hs i))) := by
-  ext1 x; simp only [piCylinderSet, mem_univ_pi]; rfl
+  ext; simp only [piCylinderSet, mem_univ_pi]; rfl
 
 theorem isClosed_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α) :
     IsClosed (piCylinderSet hs) := by
@@ -206,7 +206,7 @@ theorem nonempty_iInter_projCylinder_inter_piCylinderSet (hs : ∀ n, s n ∈ cl
           ite (indexProj hs ⟨j, subset_allProj hs i j.2⟩ ≤ n) (y ⟨j, subset_allProj hs i j.2⟩)
             (x ⟨j, subset_allProj hs i j.2⟩)) =
         fun j : Js (hs i) ↦ y ⟨j, subset_allProj hs i j.2⟩ := by
-      ext1 j
+      ext j
       rw [if_pos]
       refine le_trans (le_of_eq ?_) ((indexProj_le hs i j).trans hi)
       congr
