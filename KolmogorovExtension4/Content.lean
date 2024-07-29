@@ -15,31 +15,6 @@ namespace MeasureTheory
 
 variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 
-section Extend
-
-theorem extend_sUnion_eq_sum (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
-    (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-      (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
-    (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-    (h_mem : ⋃₀ ↑I ∈ C) : extend m (⋃₀ I) = ∑ u in I, extend m u := by
-  rw [extend_eq m h_mem, m_add I h_ss h_dis h_mem]
-  simp only [univ_eq_attach]
-  rw [← sum_attach (s := I)]
-  congr with u
-  rw [extend_eq m (h_ss u.prop)]
-
-theorem extend_sum_le (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
-    (m_sigma_subadd : ∀ ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
-      m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i))
-    ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C) :
-    extend m (⋃ i, f i) ≤ ∑' i, extend m (f i) := by
-  rw [extend_eq m hf_Union]
-  refine (m_sigma_subadd hf hf_Union).trans_eq ?_
-  congr with i : 1
-  rw [extend_eq m (hf i)]
-
-end Extend
-
 section ExtendContent
 
 /-- Build an `AddContent` from an additive function defined on a semiring. -/
