@@ -70,9 +70,9 @@ theorem indexProj_le (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ) (
   Nat.find_le i.2
 
 lemma surjective_proj_allProj [∀ i, Nonempty (α i)] (hs : ∀ n, s n ∈ closedCompactCylinders α) :
-    Function.Surjective (fun (f : (∀ i, α i)) (i : allProj hs) ↦ f (i : ι)) := by
+    Function.Surjective (fun (f : (Π i, α i)) (i : allProj hs) ↦ f (i : ι)) := by
   intro y
-  let x := (inferInstance : Nonempty (∀ i, α i)).some
+  let x := (inferInstance : Nonempty (Π i, α i)).some
   classical
   refine ⟨fun i ↦ if hi : i ∈ allProj hs then y ⟨i, hi⟩ else x i, ?_⟩
   ext1 i
@@ -268,23 +268,19 @@ lemma exists_finset_iInter_projCylinder_eq_empty [∀ i, Nonempty (α i)]
     simp only [Finset.mem_range, ne_eq, Nat.lt_succ_iff] at h_nonempty
     exact h_nonempty
 
-lemma exists_finset_iInter_eq_empty (hs : ∀ n, s n ∈ closedCompactCylinders α) (h : ⋂ n, s n = ∅) :
-    ∃ t : Finset ℕ, (⋂ i ∈ t, s i) = ∅ := by
+/-- The `closedCompactCylinders` are a compact system. -/
+theorem isCompactSystem_closedCompactCylinders : IsCompactSystem (closedCompactCylinders α) := by
+  intro s hs h
   by_cases hα : ∀ i, Nonempty (α i)
-  · have h' : ⋂ n, projCylinder hs n = ∅ := by
-      simp_rw [← preimage_projCylinder hs, ← preimage_iInter] at h
-      have h_surj : Function.Surjective (fun (f : (∀ i, α i)) (i : allProj hs) ↦ f (i : ι)) :=
-        surjective_proj_allProj hs
-      rwa [← not_nonempty_iff_eq_empty, ← Function.Surjective.nonempty_preimage h_surj,
-        not_nonempty_iff_eq_empty]
-    obtain ⟨t, ht⟩ := exists_finset_iInter_projCylinder_eq_empty hs h'
-    refine ⟨t, ?_⟩
-    simp_rw [← preimage_projCylinder hs, ← preimage_iInter₂, ht, preimage_empty]
-  · have : IsEmpty ((i : ι) → α i) := by simpa using hα
-    refine ⟨{0}, ?_⟩
-    simpa using eq_empty_of_isEmpty (s 0)
-
-theorem isCompactSystem_closedCompactCylinders : IsCompactSystem (closedCompactCylinders α) :=
-  fun _ hC hC_empty ↦ exists_finset_iInter_eq_empty hC hC_empty
+  swap; · exact ⟨∅, by simpa [not_nonempty_iff] using hα⟩
+  have h' : ⋂ n, projCylinder hs n = ∅ := by
+    simp_rw [← preimage_projCylinder hs, ← preimage_iInter] at h
+    have h_surj : Function.Surjective (fun (f : (∀ i, α i)) (i : allProj hs) ↦ f (i : ι)) :=
+      surjective_proj_allProj hs
+    rwa [← not_nonempty_iff_eq_empty, ← Function.Surjective.nonempty_preimage h_surj,
+      not_nonempty_iff_eq_empty]
+  obtain ⟨t, ht⟩ := exists_finset_iInter_projCylinder_eq_empty hs h'
+  refine ⟨t, ?_⟩
+  simp_rw [← preimage_projCylinder hs, ← preimage_iInter₂, ht, preimage_empty]
 
 end ClosedCompactCylinders
