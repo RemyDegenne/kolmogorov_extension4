@@ -36,7 +36,7 @@ theorem bInter_diff_bUnion_subset {ι α : Type*} (A B : ι → Set α) (s : Set
 lemma Finset.sUnion_disjiUnion {α β : Type*} {f : α → Finset (Set β)} (I : Finset α)
     (hf : (I : Set α).PairwiseDisjoint f) :
     ⋃₀ (I.disjiUnion f hf : Set (Set β)) = ⋃ a ∈ I, ⋃₀ ↑(f a) := by
-  ext1 b
+  ext
   simp only [coe_disjiUnion, mem_coe, Set.mem_sUnion, Set.mem_iUnion, exists_prop]
   constructor
   · rintro ⟨t, ⟨a, haI, hatf⟩, hbt⟩
@@ -85,7 +85,7 @@ lemma _root_.Pairwise.pairwiseDisjoint {α ι : Type*} [PartialOrder α] [OrderB
 
 theorem partialSups_eq_sUnion_image {α : Type*} [DecidableEq (Set α)] (f : ℕ → Set α) (n : ℕ) :
     partialSups f n = ⋃₀ ↑(Finset.image f (range (n + 1))) := by
-  ext1 s
+  ext
   simp only [partialSups_eq_biSup, iSup_eq_iUnion, Set.mem_sUnion, mem_iUnion, exists_prop, mem_coe,
   Finset.mem_image, Finset.mem_range, exists_exists_and_eq_and, Nat.lt_succ_iff]
 

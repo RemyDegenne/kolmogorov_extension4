@@ -159,11 +159,9 @@ lemma innerRegular_kolContent (hP : IsProjectiveMeasureFamily P)
       rw [Function.Surjective.preimage_subset_preimage_iff]
       · exact hK'_subset
       · intro y
-        let x := (inferInstance : Nonempty (∀ i, α i)).some
+        let x := (inferInstance : Nonempty (Π i, α i)).some
         classical
-        refine ⟨fun i ↦ if hi : i ∈ Js hs then y ⟨i, hi⟩ else x i, ?_⟩
-        ext1 i
-        simp only [Finset.coe_mem, dite_true]
+        exact ⟨fun i ↦ if hi : i ∈ Js hs then y ⟨i, hi⟩ else x i, by ext; simp⟩
     · have : (s \ cylinder (Js hs) K') = (cylinder (Js hs) (As hs) \ cylinder (Js hs) K') := by
         congr
         exact measurableCylinders.eq_cylinder hs
@@ -248,7 +246,7 @@ The projective limit is unique: see `IsProjectiveLimit.unique`. -/
 theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
     IsProjectiveLimit (projectiveLimit P hP) P := by
   intro J
-  ext1 s hs
+  ext s hs
   rw [Measure.map_apply _ hs]
   swap; · exact measurable_proj _
   have h_mem : (fun (x : ∀ i : ι, (fun i : ι ↦ α i) i) (i : ↥J) ↦ x ↑i) ⁻¹' s
