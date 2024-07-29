@@ -9,68 +9,7 @@ import Mathlib.Topology.MetricSpace.Polish
 
 open Set MeasureTheory
 
-open scoped ENNReal Topology NNReal
-
-section Misc
-
-variable {α : Type*}
-
-namespace Set
-
--- actually not used anymore
-theorem monotone_iUnion {s : ℕ → Set α} (hs : Monotone s) (n : ℕ) : (⋃ m ≤ n, s m) = s n := by
-  apply subset_antisymm
-  · exact iUnion_subset fun m ↦ iUnion_subset fun hm ↦ hs hm
-  · exact subset_iUnion_of_subset n (subset_iUnion_of_subset le_rfl subset_rfl)
-
--- actually not used anymore
-theorem antitone_iInter {s : ℕ → Set α} (hs : Antitone s) (n : ℕ) : (⋂ m ≤ n, s m) = s n := by
-  apply subset_antisymm
-  · exact iInter_subset_of_subset n (iInter_subset _ le_rfl)
-  · exact subset_iInter fun i ↦ subset_iInter fun hin ↦ hs hin
-
-theorem eq_iInter_iInter {s : ℕ → Set α} : (⋂ n, s n) = ⋂ (n : ℕ) (m : ℕ) (_ : m ≤ n), s m := by
-  ext x; simp only [Set.mem_iInter]; exact ⟨fun h _ k _ ↦ h k, fun h i ↦ h i i le_rfl⟩
-
-end Set
-
-namespace ENNReal
-
-theorem tendsto_atTop_zero_iff_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
-    Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n ≤ ε := by
-  rw [ENNReal.tendsto_atTop_zero]
-  refine ⟨fun h ↦ fun ε hε ↦ ?_, fun h ↦ fun ε hε ↦ ?_⟩
-  · obtain ⟨n, hn⟩ := h ε hε
-    exact ⟨n, hn n le_rfl⟩
-  · obtain ⟨n, hn⟩ := h ε hε
-    exact ⟨n, fun m hm ↦ (hf hm).trans hn⟩
-
-theorem tendsto_atTop_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
-    Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n < ε := by
-  rw [ENNReal.tendsto_atTop_zero_iff_of_antitone f hf]
-  constructor <;> intro h ε hε
-  have hε' : (min 1 (ε / 2)) > 0 := by
-    simp only [ge_iff_le, gt_iff_lt, lt_min_iff, zero_lt_one, div_pos_iff, ne_eq, and_true,
-      true_and]
-    simp only [two_ne_top, not_false_eq_true, and_true]
-    intro g
-    exact hε.ne g.symm
-  · obtain ⟨n, hn⟩ := h (min 1 (ε / 2)) hε'
-    · refine ⟨n, hn.trans_lt ?_⟩
-      by_cases hε_top : ε = ∞
-      · rw [hε_top]
-        exact (min_le_left _ _).trans_lt ENNReal.one_lt_top
-      refine (min_le_right _ _).trans_lt ?_
-      rw [ENNReal.div_lt_iff (Or.inr hε.ne') (Or.inr hε_top)]
-      conv_lhs => rw [← mul_one ε]
-      rw [ENNReal.mul_lt_mul_left hε.ne' hε_top]
-      norm_num
-  · obtain ⟨n, hn⟩ := h ε hε
-    exact ⟨n, hn.le⟩
-
-end ENNReal
-
-end Misc
+open scoped ENNReal Topology
 
 variable {α : Type*}
 
@@ -87,7 +26,7 @@ theorem tendsto_zero_measure_of_antitone (μ : Measure α) [IsFiniteMeasure μ] 
 
 /-- Some version of continuity of a measure in the emptyset using the intersection along a set of
 sets. -/
-theorem continuous_at_emptyset_inter (μ : Measure α) [IsFiniteMeasure μ] (S : ℕ → Set α)
+theorem exists_measure_iInter_lt (μ : Measure α) [IsFiniteMeasure μ] (S : ℕ → Set α)
     (hS2 : ∀ n, MeasurableSet (S n)) (hS3 : ⋂ n, S n = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ m, μ (⋂ n ≤ m, S n) < ε := by
   let s m := (Accumulate (fun n ↦ (S n)ᶜ) m)ᶜ
@@ -97,17 +36,14 @@ theorem continuous_at_emptyset_inter (μ : Measure α) [IsFiniteMeasure μ] (S :
     exact monotone_accumulate hij
   have hs_iInter : ⋂ n, s n = ∅ := by
     simp only [s]
-    rw [← hS3, ← compl_iUnion, iUnion_accumulate, compl_iUnion]
-    simp_rw [compl_compl]
+    simp_rw [← hS3, ← compl_iUnion, iUnion_accumulate, compl_iUnion, compl_compl]
   have hs_meas n : MeasurableSet (s n) := (MeasurableSet.accumulate (fun m ↦ (hS2 m).compl) n).compl
   suffices ∃ m, μ (s m) < ε by
     obtain ⟨m, hm⟩ := this
-    refine ⟨m, ?_⟩
-    simpa [s, accumulate_def] using hm
+    exact ⟨m, by simpa [s, accumulate_def] using hm⟩
   suffices Filter.Tendsto (fun m ↦ μ (s m)) Filter.atTop (𝓝 0) by
-    rw [ENNReal.tendsto_atTop_of_antitone] at this
-    · exact this ε hε
-    · exact fun _ _ h ↦ measure_mono (hs_anti h)
+    rw [ENNReal.tendsto_atTop_of_antitone _ (fun _ _ h ↦ measure_mono (hs_anti h))] at this
+    exact this ε hε
   convert tendsto_measure_iInter hs_meas hs_anti ⟨0, measure_ne_top μ _⟩
   simp [hs_iInter]
 
@@ -121,54 +57,43 @@ lemma _root_.MeasurableSet.ball {_ : MeasurableSpace α} (x : α)
     {s : Set (α × α)} (hs : MeasurableSet s) :
     MeasurableSet (UniformSpace.ball x s) := measurable_prod_mk_left hs
 
-/-- Given a family of sets `s' n` and a family of entourages `V n` of the diagonal, the
-intersection over `n` of the `V n`-neighborhood of `s' n`. Designed to be relatively compact
-when the `s' n` are finite and `V n` tends to the diagonal. -/
-def interUnionBalls (s' : ℕ → Set α) (V : ℕ → Set (α × α)) : Set α :=
-  ⋂ n, ⋃ x ∈ s' n, UniformSpace.ball x (Prod.swap ⁻¹' V n)
+--/-- Given a family of sets `s' n` and a family of entourages `V n` of the diagonal, the
+--intersection over `n` of the `V n`-neighborhood of `s' n`. Designed to be relatively compact
+--when the `s' n` are finite and `V n` tends to the diagonal. -/
+--def interUnionBalls (s' : ℕ → Set α) (V : ℕ → Set (α × α)) : Set α :=
+--  ⋂ n, ⋃ x ∈ s' n, UniformSpace.ball x (Prod.swap ⁻¹' V n)
 
-theorem totallyBounded_interUnionBalls [UniformSpace α] {p : ℕ → Prop} {U : ℕ → Set (α × α)}
-    (H : (uniformity α).HasBasis p U) (s' : ℕ → Finset α) :
-    TotallyBounded (interUnionBalls (fun n ↦ ↑(s' n)) U) := by
+def interUnionBalls (xs : ℕ → α) (u : ℕ → ℕ) (V : ℕ → Set (α × α)) : Set α :=
+  ⋂ n, ⋃ m ≤ u n, UniformSpace.ball (xs m) (Prod.swap ⁻¹' V n)
+
+lemma totallyBounded_interUnionBalls [UniformSpace α] {p : ℕ → Prop} {U : ℕ → Set (α × α)}
+    (H : (uniformity α).HasBasis p U) (xs : ℕ → α) (u : ℕ → ℕ) :
+    TotallyBounded (interUnionBalls xs u U) := by
   rw [Filter.HasBasis.totallyBounded_iff H]
   intro i _
-  let A := interUnionBalls (fun n ↦ (s' n : Set α)) U
-  have hA2 : A ⊆ ⋃ x ∈ s' i, UniformSpace.ball x (Prod.swap ⁻¹' U i) :=
+  have h_subset : interUnionBalls xs u U
+      ⊆ ⋃ m ≤ u i, UniformSpace.ball (xs m) (Prod.swap ⁻¹' U i) :=
     fun x hx ↦ Set.mem_iInter.1 hx i
-  refine ⟨s' i, Finset.finite_toSet (s' i), ?_⟩
-  simp only [Finset.mem_coe]
-  simp only [UniformSpace.ball] at hA2
-  intro x hx
-  let B x := Prod.mk x ⁻¹' (Prod.swap ⁻¹' U i)
-  let C x := {y : α | (y, x) ∈ U i}
-  have h : B = C := by ext x y; rfl
-  change x ∈ ⋃ x ∈ s' i, C x
-  rw [← h]
-  exact hA2 hx
+  classical
+  refine ⟨Finset.image xs (Finset.range (u i + 1)), Finset.finite_toSet _, fun x hx ↦ ?_⟩
+  simp only [Finset.coe_image, Finset.coe_range, mem_image, mem_Iio, iUnion_exists, biUnion_and',
+    iUnion_iUnion_eq_right, Nat.lt_succ_iff]
+  exact h_subset hx
 
 /-- The construction `interUnionBalls` is used to have a relatively compact set. -/
 theorem isCompact_closure_interUnionBalls [UniformSpace α] {p : ℕ → Prop} {U : ℕ → Set (α × α)}
-    (H : (uniformity α).HasBasis p U) [CompleteSpace α] (s' : ℕ → Finset α) :
-    IsCompact (closure (interUnionBalls (fun n ↦ (s' n : Set α)) U)) := by
+    (H : (uniformity α).HasBasis p U) [CompleteSpace α] (xs : ℕ → α) (u : ℕ → ℕ) :
+    IsCompact (closure (interUnionBalls xs u U)) := by
   rw [isCompact_iff_totallyBounded_isComplete]
   refine ⟨TotallyBounded.closure ?_, isClosed_closure.isComplete⟩
-  exact totallyBounded_interUnionBalls H s'
+  exact totallyBounded_interUnionBalls H xs u
 
 theorem _root_.MeasureTheory.measure_compl_interUnionBalls_le {_ : MeasurableSpace α}
-    (μ : Measure α) (s' : ℕ → Set α) (V : ℕ → Set (α × α)) :
-    μ (UniformSpace.interUnionBalls s' V)ᶜ ≤
-      ∑' n, μ (⋃ x ∈ s' n, UniformSpace.ball x (Prod.swap ⁻¹' V n))ᶜ := by
+    (μ : Measure α) (xs : ℕ → α) (u : ℕ → ℕ) (V : ℕ → Set (α × α)) :
+    μ (UniformSpace.interUnionBalls xs u V)ᶜ ≤
+      ∑' n, μ (⋃ m ≤ u n, UniformSpace.ball (xs m) (Prod.swap ⁻¹' V n))ᶜ := by
   rw [UniformSpace.interUnionBalls, Set.compl_iInter]
   exact measure_iUnion_le _
-
-theorem _root_.MeasureTheory.measure_compl_interUnionBalls_lt {_ : MeasurableSpace α} (ε : ℝ≥0∞)
-    (μ : Measure α) (s' : ℕ → Set α)
-    (V : ℕ → Set (α × α)) (δ : ℕ → ℝ≥0∞)
-    (hδ1 : ∀ n, μ (⋃ x ∈ s' n, UniformSpace.ball x (Prod.swap ⁻¹' V n))ᶜ ≤ δ n)
-    (hδ3 : ∑' n, δ n < ε) :
-    μ (UniformSpace.interUnionBalls s' V)ᶜ < ε :=
-  ((measure_compl_interUnionBalls_le μ s' V).trans
-    (ENNReal.tsum_le_tsum fun n ↦ hδ1 n)).trans_lt hδ3
 
 end UniformSpace
 
@@ -249,22 +174,20 @@ theorem inner_regular_isCompact_is_closed_of_complete_countable' [UniformSpace �
       (@uniformity_hasBasis_open_symmetric α _).exists_antitone_subbasis
     let f : ℕ → ℕ → Set α := fun n m ↦ UniformSpace.ball (seq m) (t n)
     have h_univ n : (⋃ m, f n m) = univ := hseq_dense.iUnion_uniformity_ball (hto n).1
-    have h3 n (ε : ℝ≥0∞) (hε : 0 < ε) : ∃ m, P (⋃ m' ≤ m, f n m')ᶜ < ε := by
-      simp only [compl_iUnion]
-      refine continuous_at_emptyset_inter P _ (fun m ↦ ?_) ?_ hε
+    have h3 n (ε : ℝ≥0∞) (hε : 0 < ε) : ∃ m, P (⋂ m' ≤ m, (f n m')ᶜ) < ε := by
+      refine exists_measure_iInter_lt P _ (fun m ↦ ?_) ?_ hε
       · exact ((IsOpen.measurableSet (hto n).2.1).ball _).compl
       · rw [← compl_iUnion, h_univ, compl_univ]
     choose! s' s'bound using h3
     rcases ENNReal.exists_seq_pos_lt ε hε with ⟨δ, hδ1, hδ2⟩
     classical
-    let u : ℕ → Finset α := fun n ↦ Finset.image seq (Finset.range (s' n (δ n) + 1))
-    let A := UniformSpace.interUnionBalls (fun n ↦ (u n : Set α)) t
-    refine ⟨A, UniformSpace.isCompact_closure_interUnionBalls h_basis.toHasBasis u, ?_⟩
-    refine measure_compl_interUnionBalls_lt ε P (fun n ↦ ↑(u n)) t δ (fun n ↦ ?_) hδ2
+    let u : ℕ → ℕ := fun n ↦ s' n (δ n)
+    let A := UniformSpace.interUnionBalls seq u t
+    refine ⟨A, UniformSpace.isCompact_closure_interUnionBalls h_basis.toHasBasis seq u, ?_⟩
+    refine ((measure_compl_interUnionBalls_le P seq u t).trans ?_).trans_lt hδ2
+    refine ENNReal.tsum_le_tsum (fun n ↦ ?_)
     have h'' n : Prod.swap ⁻¹' t n = t n := SymmetricRel.eq (hto n).2.2
-    simp only [Finset.mem_coe, compl_iUnion, h'', Finset.mem_image, Finset.mem_range, iInter_exists,
-      biInter_and', iInter_iInter_eq_right, ge_iff_le, u, Nat.lt_succ_iff]
-    simp only [compl_iUnion] at s'bound
+    simp only [h'', compl_iUnion, ge_iff_le]
     exact (s'bound n (δ n) (hδ1 n)).le
 
 theorem innerRegularWRT_isCompact_closure_of_complete_countable [UniformSpace α] [CompleteSpace α]
