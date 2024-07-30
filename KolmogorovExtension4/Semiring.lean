@@ -207,7 +207,7 @@ theorem iUnion_le_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ n, s n �
   induction' n with n hn
   · simp only [Nat.zero_eq, le_zero_iff, iUnion_iUnion_eq_left, exists_prop]
     exact hs 0
-  rw [Set.bUnion_le_succ]
+  rw [Set.biUnion_le_succ]
   exact hC.union_mem hn (hs _)
 
 theorem iInter_le_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ n, s n ∈ C) (n : ℕ) :
@@ -215,7 +215,7 @@ theorem iInter_le_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ n, s n �
   induction' n with n hn
   · simp only [Nat.zero_eq, le_zero_iff, iInter_iInter_eq_left, exists_prop]
     exact hs 0
-  rw [Set.bInter_le_succ]
+  rw [Set.biInter_le_succ]
   exact hC.inter_mem hn (hs _)
 
 theorem partialSups_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ n, s n ∈ C) (n : ℕ) :

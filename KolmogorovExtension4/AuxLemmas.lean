@@ -10,29 +10,6 @@ open Finset Set Filter
 
 open scoped ENNReal NNReal Topology
 
-namespace Set
-
--- not used anymore
-theorem monotone_iUnion {s : ℕ → Set α} (hs : Monotone s) (n : ℕ) : (⋃ m ≤ n, s m) = s n := by
-  apply subset_antisymm
-  · exact iUnion_subset fun m ↦ iUnion_subset fun hm ↦ hs hm
-  · exact subset_iUnion_of_subset n (subset_iUnion_of_subset le_rfl subset_rfl)
-
--- not used anymore
-theorem antitone_iInter {s : ℕ → Set α} (hs : Antitone s) (n : ℕ) : (⋂ m ≤ n, s m) = s n := by
-  apply subset_antisymm
-  · exact iInter_subset_of_subset n (iInter_subset _ le_rfl)
-  · exact subset_iInter fun i ↦ subset_iInter fun hin ↦ hs hin
-
-end Set
-
-theorem bInter_diff_bUnion_subset {ι α : Type*} (A B : ι → Set α) (s : Set ι) :
-    ((⋂ i ∈ s, A i) \ ⋃ i ∈ s, B i) ⊆ ⋂ i ∈ s, A i \ B i := by
-  intro x
-  simp only [mem_diff, mem_iInter, mem_iUnion, exists_prop, not_exists, not_and, and_imp]
-  intro h1 h2 i hi
-  exact ⟨h1 i hi, h2 i hi⟩
-
 lemma Finset.sUnion_disjiUnion {α β : Type*} {f : α → Finset (Set β)} (I : Finset α)
     (hf : (I : Set α).PairwiseDisjoint f) :
     ⋃₀ (I.disjiUnion f hf : Set (Set β)) = ⋃ a ∈ I, ⋃₀ ↑(f a) := by
@@ -93,18 +70,87 @@ theorem monotone_partialSups {α : Type*} [SemilatticeSup α] (f : ℕ → α) :
     Monotone fun n ↦ partialSups f n := fun n _ hnm ↦
   partialSups_le f n _ fun _ hm'n ↦ le_partialSups_of_le _ (hm'n.trans hnm)
 
-/-- todo: this has to be somewhere in mathlib -/
-theorem Set.bUnion_le_succ {α : Type*} (s : ℕ → Set α) (n : ℕ) :
-    (⋃ i ≤ n.succ, s i) = (⋃ i ≤ n, s i) ∪ s n.succ := by
-  simp_rw [← Nat.lt_succ_iff];
-  exact Set.biUnion_lt_succ s (n + 1)
+section Accumulate
 
-theorem Set.bInter_le_succ {α : Type*} (s : ℕ → Set α) (n : ℕ) :
-    (⋂ i ≤ n.succ, s i) = (⋂ i ≤ n, s i) ∩ s n.succ := by
-  simp_rw [← Nat.lt_succ_iff];
-  exact Set.biInter_lt_succ s (n + 1)
+variable {α : Type*}
 
-theorem ENNReal.tendsto_atTop_zero_const_sub_iff (f : ℕ → ℝ≥0∞) (a : ℝ≥0∞) (ha : a ≠ ∞)
+theorem MeasurableSet.accumulate {_ : MeasurableSpace α} {s : ℕ → Set α}
+    (hs : ∀ n, MeasurableSet (s n)) (n : ℕ) : MeasurableSet (Set.Accumulate s n) :=
+  MeasurableSet.biUnion (Set.to_countable _) fun n _ ↦ hs n
+
+theorem Set.disjoint_accumulate {s : ℕ → Set α} (hs : Pairwise (Disjoint on s)) {i j : ℕ}
+    (hij : i < j) : Disjoint (Set.Accumulate s i) (s j) := by
+  rw [Set.accumulate_def]
+  induction i with
+  | zero => simp only [Nat.zero_eq, nonpos_iff_eq_zero, iUnion_iUnion_eq_left]; exact hs hij.ne
+  | succ i hi =>
+    rw [Set.biUnion_le_succ s i]
+    exact Disjoint.union_left (hi ((Nat.lt_succ_self i).trans hij)) (hs hij.ne)
+
+theorem Set.accumulate_succ (s : ℕ → Set α) (n : ℕ) :
+    Set.Accumulate s (n + 1) = Set.Accumulate s n ∪ s (n + 1) := Set.biUnion_le_succ s n
+
+@[simp]
+lemma accumulate_zero_nat (s : ℕ → Set α) : Set.Accumulate s 0 = s 0 := by simp [Set.accumulate_def]
+
+end Accumulate
+
+namespace NNReal
+
+theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by
+  rw [← bot_eq_zero, Ico_bot]; exact isOpen_Iio
+
+/-- Given x > 0, there is a sequence of positive reals summing to x. -/
+theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :
+    ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x := by
+  have h : ∑' n : ℕ, x / 2 / 2 ^ n = x := by
+    rw [NNReal.eq_iff, NNReal.coe_tsum]
+    push_cast
+    exact tsum_geometric_two' x
+  refine ⟨fun n : ℕ ↦ x / 2 / 2 ^ n, fun n ↦ by positivity, ?_, h⟩
+  by_contra h1
+  rw [tsum_eq_zero_of_not_summable h1] at h
+  exact hx.ne h
+
+/-- Given x > 0, there is a sequence of positive reals summing to something less than x. -/
+theorem exists_seq_pos_summable_lt (x : ℝ≥0) (hx : 0 < x) :
+    ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n < x := by
+  obtain ⟨f, hf⟩ := NNReal.exists_seq_pos_summable_eq (x / 2) (half_pos hx)
+  refine ⟨f, hf.1, hf.2.1, ?_⟩
+  rw [hf.2.2]
+  exact NNReal.half_lt_self (ne_of_gt hx)
+
+end NNReal
+
+namespace ENNReal
+
+/-- Given some x > 0, there is a sequence of positive reals summing to x. -/
+theorem exists_seq_pos_eq (x : ℝ≥0∞) (hx : 0 < x) :
+    ∃ f : ℕ → ℝ≥0∞, (∀ n, 0 < f n) ∧ ∑' n, f n = x := by
+  by_cases hx_top : x = ∞
+  · use fun _ ↦ ∞
+    simp [forall_const, ENNReal.tsum_top, hx_top, and_self]
+  suffices ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x.toNNReal by
+    obtain ⟨f, hf_pos, hf_sum, hf_eq⟩ := this
+    refine ⟨fun n ↦ f n, ?_, ?_⟩
+    · exact fun n ↦ ENNReal.coe_pos.mpr (hf_pos n)
+    · rw [← ENNReal.coe_tsum hf_sum, hf_eq, coe_toNNReal hx_top]
+  exact NNReal.exists_seq_pos_summable_eq x.toNNReal (toNNReal_pos hx.ne' hx_top)
+
+/-- Given some x > 0, there is a sequence of positive reals summing to something less than x. -/
+theorem exists_seq_pos_lt (x : ℝ≥0∞) (hx : 0 < x) :
+    ∃ f : ℕ → ℝ≥0∞, (∀ n, 0 < f n) ∧ ∑' n, f n < x := by
+  by_cases hx_top : x = ∞
+  · obtain ⟨f, hf_pos, hf_eq⟩ : ∃ f : ℕ → ℝ≥0∞, (∀ n, 0 < f n) ∧ ∑' n, f n = 1 :=
+      exists_seq_pos_eq 1 zero_lt_one
+    refine ⟨f, hf_pos, ?_⟩
+    simp only [hf_eq, hx_top, one_lt_top]
+  · obtain ⟨f, hf⟩ := ENNReal.exists_seq_pos_eq (x / 2) (ENNReal.half_pos hx.ne')
+    refine ⟨f, hf.1, ?_⟩
+    rw [hf.2]
+    exact ENNReal.half_lt_self hx.ne' hx_top
+
+theorem tendsto_atTop_zero_const_sub_iff (f : ℕ → ℝ≥0∞) (a : ℝ≥0∞) (ha : a ≠ ∞)
     (hfa : ∀ n, f n ≤ a) :
     Tendsto (fun n ↦ a - f n) atTop (𝓝 0) ↔ Tendsto (fun n ↦ f n) atTop (𝓝 a) := by
   rw [ENNReal.tendsto_atTop_zero, ENNReal.tendsto_atTop ha]
@@ -118,104 +164,6 @@ theorem ENNReal.tendsto_atTop_zero_const_sub_iff (f : ℕ → ℝ≥0∞) (a : �
     rw [tsub_le_iff_right] at hN_left ⊢
     rwa [add_comm]
 
-section Accumulate
-
-variable {α : Type*}
-
-theorem MeasurableSet.accumulate {_ : MeasurableSpace α} {s : ℕ → Set α}
-    (hs : ∀ n, MeasurableSet (s n)) (n : ℕ) : MeasurableSet (Set.Accumulate s n) :=
-  MeasurableSet.biUnion (Set.to_countable _) fun n _ ↦ hs n
-
-theorem Set.disjoint_accumulate {s : ℕ → Set α} (hs : Pairwise (Disjoint on s)) {i j : ℕ}
-    (hij : i < j) : Disjoint (Set.Accumulate s i) (s j) := by
-  rw [Set.accumulate_def]
-  induction' i with i hi
-  · simp only [Nat.zero_eq, nonpos_iff_eq_zero, iUnion_iUnion_eq_left]
-    exact hs hij.ne
-  · rw [Set.bUnion_le_succ s i]
-    exact Disjoint.union_left (hi ((Nat.lt_succ_self i).trans hij)) (hs hij.ne)
-
-theorem Set.accumulate_succ (s : ℕ → Set α) (n : ℕ) :
-    Set.Accumulate s (n + 1) = Set.Accumulate s n ∪ s (n + 1) :=
-  Set.bUnion_le_succ s n
-
-@[simp]
-lemma accumulate_zero_nat (s : ℕ → Set α) : Set.Accumulate s 0 = s 0 := by simp [Set.accumulate_def]
-
-end Accumulate
-
-namespace NNReal
-
-theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by
-  rw [← bot_eq_zero, Ico_bot];
-  exact isOpen_Iio
-
-/-- Given some x > 0, there is a sequence of positive reals summing to x. -/
-theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :
-    ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x := by
-  use fun n : ℕ ↦ x / 2 / 2 ^ n
-  constructor
-  · intro n
-    positivity
-  have h : ∑' n : ℕ, x / 2 / 2 ^ n = x := by
-    rw [NNReal.eq_iff, NNReal.coe_tsum]
-    push_cast [(· ∘ ·), NNReal.coe_div]
-    rw [tsum_geometric_two' (x : ℝ)]
-  refine ⟨?_, h⟩
-  by_contra h1
-  obtain h2 := tsum_eq_zero_of_not_summable h1
-  rw [h] at h2
-  apply hx.ne
-  rw [h2]
-
-/-- Given some x > 0, there is a sequence of positive reals summing to something less than x.
-This is needed in several lemmas in measure theory. -/
-theorem exists_seq_pos_summable_lt (x : ℝ≥0) (hx : 0 < x) :
-    ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n < x := by
-  cases' NNReal.exists_seq_pos_summable_eq (x / 2) (half_pos hx) with f hf
-  refine ⟨f, hf.1, ?_, ?_⟩
-  · rcases hf with ⟨_, hf2, _⟩
-    exact hf2
-  · rcases hf with ⟨_, _, hf3⟩
-    rw [hf3]
-    exact NNReal.half_lt_self (ne_of_gt hx)
-
-end NNReal
-
-namespace ENNReal
-
-/-- Given some x > 0, there is a sequence of positive reals summing to x. -/
-theorem exists_seq_pos_eq (x : ℝ≥0∞) (hx : 0 < x) :
-    ∃ f : ℕ → ℝ≥0∞, (∀ n, 0 < f n) ∧ ∑' n, f n = x := by
-  by_cases hx_top : x = ∞
-  · use fun _ ↦ ∞
-    simp only [forall_const, ENNReal.tsum_top, hx_top, and_self]
-    simp
-  suffices ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x.toNNReal by
-    obtain ⟨f, hf_pos, hf_sum, hf_eq⟩ := this
-    refine ⟨fun n ↦ f n, ?_, ?_⟩
-    · exact fun n ↦ ENNReal.coe_pos.mpr (hf_pos n)
-    · simp only
-      rw [← ENNReal.coe_tsum hf_sum, hf_eq, coe_toNNReal hx_top]
-  exact NNReal.exists_seq_pos_summable_eq x.toNNReal (toNNReal_pos hx.ne' hx_top)
-
-/-- Given some x > 0, there is a sequence of positive reals summing to something less than x.
-This is needed in several lemmas in measure theory. -/
-theorem exists_seq_pos_lt (x : ℝ≥0∞) (hx : 0 < x) :
-    ∃ f : ℕ → ℝ≥0∞, (∀ n, 0 < f n) ∧ ∑' n, f n < x := by
-  by_cases hx_top : x = ∞
-  · obtain ⟨f, hf_pos, hf_eq⟩ : ∃ f : ℕ → ℝ≥0∞, (∀ n, 0 < f n) ∧ ∑' n, f n = 1 :=
-      exists_seq_pos_eq 1 zero_lt_one
-    refine ⟨f, hf_pos, ?_⟩
-    simp only [hf_eq, hx_top, one_lt_top]
-  have hx_half : 0 < x / 2 := by simp only [div_pos_iff, ne_eq, hx.ne', not_false_eq_true,
-    two_ne_top, and_self]
-  obtain ⟨f, hf⟩ := ENNReal.exists_seq_pos_eq (x / 2) hx_half
-  refine ⟨f, hf.1, ?_⟩
-  rcases hf with ⟨_, hf3⟩
-  rw [hf3]
-  exact ENNReal.half_lt_self hx.ne' hx_top
-
 theorem tendsto_atTop_zero_iff_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
     Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n ≤ ε := by
   rw [ENNReal.tendsto_atTop_zero]
@@ -225,7 +173,7 @@ theorem tendsto_atTop_zero_iff_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antito
   · obtain ⟨n, hn⟩ := h ε hε
     exact ⟨n, fun m hm ↦ (hf hm).trans hn⟩
 
-theorem tendsto_atTop_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
+theorem tendsto_atTop_zero_iff_of_antitone' (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
     Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n < ε := by
   rw [ENNReal.tendsto_atTop_zero_iff_of_antitone f hf]
   constructor <;> intro h ε hε
