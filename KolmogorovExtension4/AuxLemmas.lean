@@ -60,12 +60,17 @@ lemma _root_.Pairwise.pairwiseDisjoint {α ι : Type*} [PartialOrder α] [OrderB
     s.PairwiseDisjoint f :=
   Pairwise.set_pairwise h s
 
-theorem partialSups_eq_sUnion_image {α : Type*} [DecidableEq (Set α)] (f : ℕ → Set α) (n : ℕ) :
-    partialSups f n = ⋃₀ ↑(Finset.image f (range (n + 1))) := by
-  ext
-  simp only [partialSups_eq_biSup, iSup_eq_iUnion, Set.mem_sUnion, mem_iUnion, exists_prop, mem_coe,
-  Finset.mem_image, Finset.mem_range, exists_exists_and_eq_and, Nat.lt_succ_iff]
+-- PR #15291
+lemma partialSups_eq_sUnion_image [DecidableEq (Set α)] (s : ℕ → Set α) (n : ℕ) :
+    partialSups s n = ⋃₀ ↑((Finset.range (n + 1)).image s) := by
+  ext; simp [partialSups_eq_biSup, Nat.lt_succ_iff]
 
+-- PR #15291
+lemma partialSups_eq_biUnion_range (s : ℕ → Set α) (n : ℕ) :
+    partialSups s n = ⋃ i ∈ Finset.range (n + 1), s i := by
+  ext; simp [partialSups_eq_biSup, Nat.lt_succ]
+
+-- PR #15291
 theorem monotone_partialSups {α : Type*} [SemilatticeSup α] (f : ℕ → α) :
     Monotone fun n ↦ partialSups f n := fun n _ hnm ↦
   partialSups_le f n _ fun _ hm'n ↦ le_partialSups_of_le _ (hm'n.trans hnm)
