@@ -100,35 +100,25 @@ namespace NNReal
 theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by
   rw [← bot_eq_zero, Ico_bot]; exact isOpen_Iio
 
-/-- Given some x > 0, there is a sequence of positive reals summing to x. -/
+/-- Given x > 0, there is a sequence of positive reals summing to x. -/
 theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :
     ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x := by
-  use fun n : ℕ ↦ x / 2 / 2 ^ n
-  constructor
-  · intro n
-    positivity
   have h : ∑' n : ℕ, x / 2 / 2 ^ n = x := by
     rw [NNReal.eq_iff, NNReal.coe_tsum]
-    push_cast [(· ∘ ·), NNReal.coe_div]
-    rw [tsum_geometric_two' (x : ℝ)]
-  refine ⟨?_, h⟩
+    push_cast
+    exact tsum_geometric_two' x
+  refine ⟨fun n : ℕ ↦ x / 2 / 2 ^ n, fun n ↦ by positivity, ?_, h⟩
   by_contra h1
-  obtain h2 := tsum_eq_zero_of_not_summable h1
-  rw [h] at h2
-  apply hx.ne
-  rw [h2]
+  rw [tsum_eq_zero_of_not_summable h1] at h
+  exact hx.ne h
 
-/-- Given some x > 0, there is a sequence of positive reals summing to something less than x.
-This is needed in several lemmas in measure theory. -/
+/-- Given x > 0, there is a sequence of positive reals summing to something less than x. -/
 theorem exists_seq_pos_summable_lt (x : ℝ≥0) (hx : 0 < x) :
     ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n < x := by
-  cases' NNReal.exists_seq_pos_summable_eq (x / 2) (half_pos hx) with f hf
-  refine ⟨f, hf.1, ?_, ?_⟩
-  · rcases hf with ⟨_, hf2, _⟩
-    exact hf2
-  · rcases hf with ⟨_, _, hf3⟩
-    rw [hf3]
-    exact NNReal.half_lt_self (ne_of_gt hx)
+  obtain ⟨f, hf⟩ := NNReal.exists_seq_pos_summable_eq (x / 2) (half_pos hx)
+  refine ⟨f, hf.1, hf.2.1, ?_⟩
+  rw [hf.2.2]
+  exact NNReal.half_lt_self (ne_of_gt hx)
 
 end NNReal
 
@@ -139,18 +129,15 @@ theorem exists_seq_pos_eq (x : ℝ≥0∞) (hx : 0 < x) :
     ∃ f : ℕ → ℝ≥0∞, (∀ n, 0 < f n) ∧ ∑' n, f n = x := by
   by_cases hx_top : x = ∞
   · use fun _ ↦ ∞
-    simp only [forall_const, ENNReal.tsum_top, hx_top, and_self]
-    simp
+    simp [forall_const, ENNReal.tsum_top, hx_top, and_self]
   suffices ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x.toNNReal by
     obtain ⟨f, hf_pos, hf_sum, hf_eq⟩ := this
     refine ⟨fun n ↦ f n, ?_, ?_⟩
     · exact fun n ↦ ENNReal.coe_pos.mpr (hf_pos n)
-    · simp only
-      rw [← ENNReal.coe_tsum hf_sum, hf_eq, coe_toNNReal hx_top]
+    · rw [← ENNReal.coe_tsum hf_sum, hf_eq, coe_toNNReal hx_top]
   exact NNReal.exists_seq_pos_summable_eq x.toNNReal (toNNReal_pos hx.ne' hx_top)
 
-/-- Given some x > 0, there is a sequence of positive reals summing to something less than x.
-This is needed in several lemmas in measure theory. -/
+/-- Given some x > 0, there is a sequence of positive reals summing to something less than x. -/
 theorem exists_seq_pos_lt (x : ℝ≥0∞) (hx : 0 < x) :
     ∃ f : ℕ → ℝ≥0∞, (∀ n, 0 < f n) ∧ ∑' n, f n < x := by
   by_cases hx_top : x = ∞
@@ -158,13 +145,10 @@ theorem exists_seq_pos_lt (x : ℝ≥0∞) (hx : 0 < x) :
       exists_seq_pos_eq 1 zero_lt_one
     refine ⟨f, hf_pos, ?_⟩
     simp only [hf_eq, hx_top, one_lt_top]
-  have hx_half : 0 < x / 2 := by simp only [div_pos_iff, ne_eq, hx.ne', not_false_eq_true,
-    two_ne_top, and_self]
-  obtain ⟨f, hf⟩ := ENNReal.exists_seq_pos_eq (x / 2) hx_half
-  refine ⟨f, hf.1, ?_⟩
-  rcases hf with ⟨_, hf3⟩
-  rw [hf3]
-  exact ENNReal.half_lt_self hx.ne' hx_top
+  · obtain ⟨f, hf⟩ := ENNReal.exists_seq_pos_eq (x / 2) (ENNReal.half_pos hx.ne')
+    refine ⟨f, hf.1, ?_⟩
+    rw [hf.2]
+    exact ENNReal.half_lt_self hx.ne' hx_top
 
 theorem tendsto_atTop_zero_const_sub_iff (f : ℕ → ℝ≥0∞) (a : ℝ≥0∞) (ha : a ≠ ∞)
     (hfa : ∀ n, f n ≤ a) :
@@ -189,7 +173,7 @@ theorem tendsto_atTop_zero_iff_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antito
   · obtain ⟨n, hn⟩ := h ε hε
     exact ⟨n, fun m hm ↦ (hf hm).trans hn⟩
 
-theorem tendsto_atTop_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
+theorem tendsto_atTop_zero_iff_of_antitone' (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
     Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n < ε := by
   rw [ENNReal.tendsto_atTop_zero_iff_of_antitone f hf]
   constructor <;> intro h ε hε

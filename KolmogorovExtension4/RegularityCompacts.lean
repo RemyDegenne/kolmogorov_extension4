@@ -42,7 +42,8 @@ theorem exists_measure_iInter_lt (μ : Measure α) [IsFiniteMeasure μ] (S : ℕ
     obtain ⟨m, hm⟩ := this
     exact ⟨m, by simpa [s, accumulate_def] using hm⟩
   suffices Filter.Tendsto (fun m ↦ μ (s m)) Filter.atTop (𝓝 0) by
-    rw [ENNReal.tendsto_atTop_of_antitone _ (fun _ _ h ↦ measure_mono (hs_anti h))] at this
+    rw [ENNReal.tendsto_atTop_zero_iff_of_antitone' _ (fun _ _ h ↦ measure_mono (hs_anti h))]
+      at this
     exact this ε hε
   convert tendsto_measure_iInter hs_meas hs_anti ⟨0, measure_ne_top μ _⟩
   simp [hs_iInter]
