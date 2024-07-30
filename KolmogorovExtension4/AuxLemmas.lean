@@ -101,6 +101,7 @@ end Accumulate
 
 namespace NNReal
 
+-- PR #15295
 theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by
   rw [← bot_eq_zero, Ico_bot]; exact isOpen_Iio
 
