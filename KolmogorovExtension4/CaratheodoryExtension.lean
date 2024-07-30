@@ -48,12 +48,13 @@ end IsCaratheodory
 
 section OfFunction
 
-/-- Same as the definition of `of_function`, except that `f i` belongs to `C`. The hypothesis
-`m_top` applies in particular to a function of the form `extend m'`. -/
-theorem ofFunction_eq_iInf_mem (s : Set α) (m : Set α → ℝ≥0∞) (m_empty : m ∅ = 0)
-    (m_top : ∀ s ∉ C, m s = ∞) :
+/-- Same as `ofFunction_apply`, except that the sets `t i` belong to a set of sets `C`,
+out of which `m` is infinite.
+The hypothesis `m_top` applies in particular to a function of the form `extend m'`. -/
+theorem ofFunction_eq_iInf_mem {C : Set (Set α)}
+    {m : Set α → ℝ≥0∞} {m_empty : m ∅ = 0} (m_top : ∀ s ∉ C, m s = ∞) (s : Set α) :
     OuterMeasure.ofFunction m m_empty s =
-      ⨅ (f : ℕ → Set α) (_hf : ∀ i, f i ∈ C) (_ : s ⊆ ⋃ i, f i), ∑' i, m (f i) := by
+      ⨅ (t : ℕ → Set α) (_hf : ∀ i, t i ∈ C) (_ : s ⊆ ⋃ i, t i), ∑' i, m (t i) := by
   rw [OuterMeasure.ofFunction_apply]
   apply le_antisymm
   · exact le_iInf fun f ↦ le_iInf fun _ ↦ le_iInf fun h ↦ iInf₂_le _ (by exact h)
@@ -73,7 +74,7 @@ theorem ofFunction_addContent_eq (hC : IsSetSemiring C) (m : AddContent C)
     (m_top : ∀ s ∉ C, m s = ∞) {s : Set α} (hs : s ∈ C) :
     OuterMeasure.ofFunction m addContent_empty s = m s := by
   refine le_antisymm (OuterMeasure.ofFunction_le s) ?_
-  rw [ofFunction_eq_iInf_mem s m addContent_empty m_top]
+  rw [ofFunction_eq_iInf_mem m_top]
   refine le_iInf fun f ↦ le_iInf fun hf ↦ le_iInf fun hs_subset ↦ ?_
   calc m s = m (s ∩ ⋃ i, f i) := by rw [inter_eq_self_of_subset_left hs_subset]
     _ = m (⋃ i, s ∩ f i) := by rw [inter_iUnion]
@@ -87,14 +88,6 @@ theorem ofFunction_addContent_eq (hC : IsSetSemiring C) (m : AddContent C)
 end OfFunction
 
 end OuterMeasure
-
-theorem inducedOuterMeasure_eq_iInf_mem (hC : ∅ ∈ C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
-    (m_empty : m ∅ hC = 0) (s : Set α) :
-    inducedOuterMeasure m hC m_empty s =
-      ⨅ (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (_ : s ⊆ ⋃ i, f i), ∑' i, m (f i) (hf i) := by
-  rw [inducedOuterMeasure,
-    OuterMeasure.ofFunction_eq_iInf_mem s (extend m) _ fun s hs ↦ extend_eq_top m hs]
-  simp_rw [← extend_eq m]
 
 theorem inducedOuterMeasure_addContent_of_subadditive (hC : IsSetSemiring C) (m : AddContent C)
     (m_sigma_subadd : ∀ ⦃f : ℕ → Set α⦄ (_hf : ∀ i, f i ∈ C) (_hf_Union : (⋃ i, f i) ∈ C),
@@ -117,7 +110,7 @@ theorem caratheodory_semiring_extension' (hC : IsSetSemiring C) (m : AddContent 
     (OuterMeasure.ofFunction m addContent_empty).IsCaratheodory s := by
   rw [OuterMeasure.isCaratheodory_iff_le']
   intro t
-  conv_rhs => rw [OuterMeasure.ofFunction_eq_iInf_mem _ _ addContent_empty m_top]
+  conv_rhs => rw [OuterMeasure.ofFunction_eq_iInf_mem m_top]
   refine le_iInf fun f ↦ le_iInf fun hf ↦ le_iInf fun hf_subset ↦ ?_
   let A : ℕ → Finset (Set α) := fun i ↦ hC.diffFinset (hf i) (hC.inter_mem _ (hf i) _ hs)
   have h_diff_eq_sUnion i : f i \ s = ⋃₀ A i := by simp [A, IsSetSemiring.sUnion_diffFinset]
