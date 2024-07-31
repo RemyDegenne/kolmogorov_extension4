@@ -52,30 +52,30 @@ theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
     (m_empty : m ∅ = 0)
     (m_add : ∀ {s t : Set α} (_ : s ∈ C) (_ : t ∈ C), Disjoint s t → m (s ∪ t) = m s + m t)
     (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : Set.PairwiseDisjoint (I : Set (Set α)) id)
-    (h_mem : ⋃₀ ↑I ∈ C) : m (⋃₀ I) = ∑ u in I, m u := by
+    (h_mem : ⋃₀ ↑I ∈ C) :
+    m (⋃₀ I) = ∑ u in I, m u := by
   classical
-  induction' I using Finset.induction with s I hsI h
-  · simp only [Finset.coe_empty, Set.sUnion_empty, Finset.sum_empty, m_empty]
-  rw [Finset.coe_insert] at *
-  rw [Set.insert_subset_iff] at h_ss
-  rw [Set.pairwiseDisjoint_insert_of_not_mem] at h_dis
-  swap
-  · exact hsI
-  have h_sUnion_mem : ⋃₀ ↑I ∈ C :=
-    haveI : ∀ J : Finset (Set α), ↑J ⊆ C → ⋃₀ ↑J ∈ C := by
-      intro J
-      induction' J using Finset.induction with s J _ h
-      · simp only [Finset.coe_empty, Set.empty_subset, Set.sUnion_empty, forall_true_left, hC_empty]
-      · intro h_insert
-        rw [Finset.coe_insert] at h_insert ⊢
-        rw [Set.insert_subset_iff] at h_insert
-        rw [Set.sUnion_insert]
-        exact hC_union h_insert.1 (h h_insert.2)
-    this I h_ss.2
-  rw [Set.sUnion_insert, m_add h_ss.1 h_sUnion_mem (Set.disjoint_sUnion_right.mpr h_dis.2),
-    Finset.sum_insert hsI, h h_ss.2 h_dis.1]
-  rw [Set.sUnion_insert] at h_mem
-  exact h_sUnion_mem
+  induction I using Finset.induction with
+  | empty =>
+    simp only [Finset.coe_empty, Set.sUnion_empty, Finset.sum_empty, m_empty]
+  | @insert s I hsI h =>
+    rw [Finset.coe_insert] at *
+    rw [Set.insert_subset_iff] at h_ss
+    rw [Set.pairwiseDisjoint_insert_of_not_mem] at h_dis
+    swap; · exact hsI
+    have h_sUnion_mem : ⋃₀ ↑I ∈ C := by
+      have (J : Finset (Set α)) : ↑J ⊆ C → ⋃₀ ↑J ∈ C := by
+        induction J using Finset.induction with --s J _ h
+        | empty => simp only [Finset.coe_empty, Set.empty_subset, Set.sUnion_empty,
+            forall_true_left, hC_empty]
+        | @insert s I _ h =>
+          intro h_insert
+          simp only [Finset.coe_insert, Set.sUnion_insert, Set.insert_subset_iff] at h_insert ⊢
+          exact hC_union h_insert.1 (h h_insert.2)
+      exact this I h_ss.2
+    rw [Set.sUnion_insert, m_add h_ss.1 h_sUnion_mem (Set.disjoint_sUnion_right.mpr h_dis.2),
+      Finset.sum_insert hsI, h h_ss.2 h_dis.1]
+    rwa [Set.sUnion_insert] at h_mem
 
 theorem sUnion_eq_sum_of_union_eq_add' (hC_empty : ∅ ∈ C)
     (hC_union : ∀ {s t : Set α} (_ : s ∈ C) (_ : t ∈ C), s ∪ t ∈ C)
@@ -84,7 +84,7 @@ theorem sUnion_eq_sum_of_union_eq_add' (hC_empty : ∅ ∈ C)
       Disjoint s t → m (s ∪ t) (hC_union hs ht) = m s hs + m t ht)
     (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : Set.PairwiseDisjoint (I : Set (Set α)) id)
     (h_mem : ⋃₀ ↑I ∈ C) : m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.property) := by
-  have h :=
+  have h : extend m (⋃₀ ↑I) = ∑ u ∈ I, extend m u :=
     sUnion_eq_sum_of_union_eq_add hC_empty (fun hs ht ↦ hC_union hs ht) (extend m)
       (extend_empty hC_empty m_empty) ?_ I h_ss h_dis h_mem
   · rw [extend_eq m h_mem] at h
