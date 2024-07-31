@@ -12,6 +12,13 @@ import Mathlib.MeasureTheory.MeasurableSpace.Basic
 
 open MeasureTheory Set
 
+theorem continuous_cast {α β : Type u} [tα : TopologicalSpace α] [tβ : TopologicalSpace β]
+    (h : α = β) (ht : HEq tα tβ) : Continuous fun x : α ↦ cast h x := by
+  subst h
+  convert continuous_id
+  rw [← heq_iff_eq]
+  exact ht.symm
+
 variable {ι : Type*} {α : ι → Type*}
 
 section Measurable
@@ -53,29 +60,28 @@ end Continuous
 
 section isClosed_proj
 
+/-! We show that the projection of a compact closed set `s` in a product `Π i, α i` onto one of the
+spaces `α j` is a closed set.
+
+The idea of the proof is to use `isClosedMap_snd_of_compactSpace`, which is the fact that if
+`X` is a compact topological space, then `Prod.snd : X × Y → Y` is a closed map.
+In our application, `Y` is `α j` and `X` is the projection of `s` to the product over all indexes
+that are not `j`. We define `projCompl α j` for that projection map.
+
+In order to be able to use the lemma `isClosedMap_snd_of_compactSpace`, we have to make those
+`X` and `Y` appear explicitly.
+We remark that `s` belongs to the set `projCompl α j ⁻¹' (projCompl α j '' s)`, and we build
+an homeomorphism `projCompl α j ⁻¹' (projCompl α j '' s) ≃ₜ projCompl α j '' s × α j`.
+`projCompl α j` is a compact space since `s` is compact, and the lemma applies. -/
+
+-- TODO: change names
+
 variable {ι : Type*} {α : ι → Type*} [∀ i, TopologicalSpace (α i)] {s : Set (Π i, α i)} {i : ι}
 
-theorem continuous_cast {α β : Type u} [tα : TopologicalSpace α] [tβ : TopologicalSpace β]
-    (h : α = β) (ht : HEq tα tβ) : Continuous fun x : α ↦ cast h x := by
-  subst h
-  convert continuous_id
-  rw [← heq_iff_eq]
-  exact ht.symm
-
 /-- Given a dependent function of `i`, specialize it as a function on the complement of `{i}`. -/
-def projCompl (α : ι → Type*) (i : ι) (x : Π i, α i) :
-    Π j : { k // k ≠ i }, α j := fun j ↦ x j
+def projCompl (α : ι → Type*) (i : ι) (x : Π i, α i) : Π j : { k // k ≠ i }, α j := fun j ↦ x j
 
 lemma continuous_projCompl : Continuous (projCompl α i) := continuous_pi fun _ ↦ continuous_apply _
-
-/-- Given a set of dependent functions, construct the functions that coincide with one of the
-initial functions away from a given `i`. -/
-def XY (α : ι → Type*) (i : ι) (s : Set (Π j, α j)) : Set (Π j, α j) :=
-  projCompl α i ⁻¹' (projCompl α i '' s)
-
-lemma subset_xy (i : ι) : s ⊆ XY α i s := subset_preimage_image (projCompl α i) s
-
-lemma mem_xy_of_mem (i : ι) (hx : x ∈ s) : x ∈ XY α i s := subset_xy i hx
 
 open Classical in
 /-- Given a set of dependent functions, construct a function on a product space separating out
@@ -102,12 +108,12 @@ lemma continuous_fromXProd : Continuous (fromXProd α i s) := by
   · exact ((continuous_apply _).comp continuous_subtype_val).comp continuous_fst
 
 lemma fromXProd_mem_XY (p : projCompl α i '' s × α i) :
-    fromXProd α i s p ∈ XY α i s := by
+    fromXProd α i s p ∈ projCompl α i ⁻¹' (projCompl α i '' s) := by
   obtain ⟨y, hy_mem_s, hy_eq⟩ := p.1.2
   exact ⟨y, hy_mem_s, hy_eq.trans (projCompl_fromXProd p).symm⟩
 
 @[simp]
-lemma fromXProd_projCompl (x : XY α i s) :
+lemma fromXProd_projCompl (x : projCompl α i ⁻¹' (projCompl α i '' s)) :
     fromXProd α i s ⟨⟨projCompl α i x, x.2⟩, (x : Π j, α j) i⟩ = (x : Π j, α j) := by
   ext j
   simp only [fromXProd, projCompl, ne_eq, dite_eq_right_iff]
@@ -119,7 +125,7 @@ lemma fromXProd_projCompl (x : XY α i s) :
 from a given `i`, and dependent functions away from `i` times any value on `i`. -/
 noncomputable
 def XYEquiv (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : Set (Π j, α j)) :
-    XY α i s ≃ₜ projCompl α i '' s × α i where
+    projCompl α i ⁻¹' (projCompl α i '' s) ≃ₜ projCompl α i '' s × α i where
   toFun x := ⟨⟨projCompl α i x, x.2⟩, (x : Π j, α j) i⟩
   invFun p := ⟨fromXProd α i s p, fromXProd_mem_XY p⟩
   left_inv x := by ext; simp
@@ -131,7 +137,8 @@ def XYEquiv (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : S
   continuous_invFun := continuous_fromXProd.subtype_mk _
 
 lemma preimage_snd_xyEquiv :
-    Prod.snd '' (XYEquiv α i s '' ((fun (x : XY α i s) ↦ (x : Π j, α j)) ⁻¹' s))
+    Prod.snd '' (XYEquiv α i s ''
+        ((fun (x : projCompl α i ⁻¹' (projCompl α i '' s)) ↦ (x : Π j, α j)) ⁻¹' s))
       = (fun x ↦ x i) '' s := by
   ext x
   simp only [ne_eq, XYEquiv, projCompl, Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk, mem_image,
@@ -142,7 +149,7 @@ lemma preimage_snd_xyEquiv :
     exact ⟨z, hz_mem, hzx⟩
   · rintro ⟨z, hz_mem, hzx⟩
     exact ⟨projCompl α i z, mem_image_of_mem (projCompl α i) hz_mem, z, hz_mem,
-      ⟨⟨mem_xy_of_mem _ hz_mem, rfl⟩, hzx⟩⟩
+      ⟨⟨⟨z, hz_mem, rfl⟩, rfl⟩, hzx⟩⟩
 
 /-- The projection of a compact closed set onto a coordinate is closed. -/
 theorem isClosed_proj (hs_compact : IsCompact s) (hs_closed : IsClosed s) (i : ι) :
