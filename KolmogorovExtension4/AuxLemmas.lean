@@ -10,29 +10,27 @@ open Finset Set Filter
 
 open scoped ENNReal NNReal Topology
 
+-- PR #15294
 lemma Finset.sUnion_disjiUnion {α β : Type*} {f : α → Finset (Set β)} (I : Finset α)
     (hf : (I : Set α).PairwiseDisjoint f) :
     ⋃₀ (I.disjiUnion f hf : Set (Set β)) = ⋃ a ∈ I, ⋃₀ ↑(f a) := by
   ext
   simp only [coe_disjiUnion, mem_coe, Set.mem_sUnion, Set.mem_iUnion, exists_prop]
-  constructor
-  · rintro ⟨t, ⟨a, haI, hatf⟩, hbt⟩
-    exact ⟨a, haI, t, hatf, hbt⟩
-  · rintro ⟨a, haI, t, hatf, hbt⟩
-    exact ⟨t, ⟨a, haI, hatf⟩, hbt⟩
+  tauto
 
 lemma Finset.sum_image_le_of_nonneg {ι α β : Type*} [DecidableEq α]
     [OrderedAddCommMonoid β] [SMulPosMono ℕ β]
     {J : Finset ι} {g : ι → α} {f : α → β} (hf : ∀ u ∈ J.image g, 0 ≤ f u) :
     ∑ u in J.image g, f u ≤ ∑ u in J, f (g u) := by
   rw [sum_comp f g]
-  refine sum_le_sum fun a hag => ?_
+  refine sum_le_sum fun a hag ↦ ?_
   obtain ⟨i, hi, hig⟩ := Finset.mem_image.mp hag
-  conv_lhs => rw [← one_smul ℕ (f a)]
+  conv_lhs => rw [← one_nsmul (f a)]
   refine smul_le_smul_of_nonneg_right ?_ (hf a hag)
   rw [Nat.one_le_iff_ne_zero, ← Nat.pos_iff_ne_zero, card_pos]
   exact ⟨i, mem_filter.mpr ⟨hi, hig⟩⟩
 
+-- PR #15294
 @[to_additive]
 lemma Finset.prod_image_of_disjoint {α β : Type*} [PartialOrder α] [OrderBot α] [DecidableEq α]
     [CommMonoid β] {g : α → β}
@@ -55,17 +53,23 @@ lemma Finset.prod_image_of_disjoint {α β : Type*} [PartialOrder α] [OrderBot 
     rw [h] at h_dis
     exact hfn (disjoint_self.mp h_dis)
 
+-- PR #15292
 lemma _root_.Pairwise.pairwiseDisjoint {α ι : Type*} [PartialOrder α] [OrderBot α] {f : ι → α}
     (h : Pairwise (Disjoint on f)) (s : Set ι) :
     s.PairwiseDisjoint f :=
   Pairwise.set_pairwise h s
 
-theorem partialSups_eq_sUnion_image {α : Type*} [DecidableEq (Set α)] (f : ℕ → Set α) (n : ℕ) :
-    partialSups f n = ⋃₀ ↑(Finset.image f (range (n + 1))) := by
-  ext
-  simp only [partialSups_eq_biSup, iSup_eq_iUnion, Set.mem_sUnion, mem_iUnion, exists_prop, mem_coe,
-  Finset.mem_image, Finset.mem_range, exists_exists_and_eq_and, Nat.lt_succ_iff]
+-- PR #15291
+lemma partialSups_eq_sUnion_image [DecidableEq (Set α)] (s : ℕ → Set α) (n : ℕ) :
+    partialSups s n = ⋃₀ ↑((Finset.range (n + 1)).image s) := by
+  ext; simp [partialSups_eq_biSup, Nat.lt_succ_iff]
 
+-- PR #15291
+lemma partialSups_eq_biUnion_range (s : ℕ → Set α) (n : ℕ) :
+    partialSups s n = ⋃ i ∈ Finset.range (n + 1), s i := by
+  ext; simp [partialSups_eq_biSup, Nat.lt_succ]
+
+-- PR #15291
 theorem monotone_partialSups {α : Type*} [SemilatticeSup α] (f : ℕ → α) :
     Monotone fun n ↦ partialSups f n := fun n _ hnm ↦
   partialSups_le f n _ fun _ hm'n ↦ le_partialSups_of_le _ (hm'n.trans hnm)
@@ -97,6 +101,7 @@ end Accumulate
 
 namespace NNReal
 
+-- PR #15295
 theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by
   rw [← bot_eq_zero, Ico_bot]; exact isOpen_Iio
 
