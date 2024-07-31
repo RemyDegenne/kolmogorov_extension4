@@ -147,8 +147,8 @@ theorem exists_compact
 lemma innerRegular_kolContent (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
     {s : Set (∀ i, α i)} (hs : s ∈ measurableCylinders α) (ε : ℝ≥0∞) (hε : 0 < ε) :
-    ∃ (K : Set (∀ i, α i)) (_ : K ∈ closedCompactCylinders α),
-      K ⊆ s ∧ kolContent hP (s \ K) ≤ ε := by
+    ∃ (K : Set (∀ i, α i)), K ∈ closedCompactCylinders α
+      ∧ K ⊆ s ∧ kolContent hP (s \ K) ≤ ε := by
   by_cases hα : ∀ i, Nonempty (α i)
   · obtain ⟨K', hK'_compact, hK'_closed, hK'_subset, hK'⟩ := exists_compact hP_inner
       (Js hs) (As hs) (measurableCylinders.measurableSet hs) ε hε
@@ -184,16 +184,11 @@ theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamil
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
     ⦃f : ℕ → Set (∀ i, α i)⦄ (hf : ∀ i, f i ∈ measurableCylinders α)
     (hf_Union : (⋃ i, f i) ∈ measurableCylinders α) (h_disj : Pairwise (Disjoint on f)) :
-    kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
-  refine (kolContent hP).sigma_additive_of_regular isSetRing_measurableCylinders ?_
-      isCompactSystem_closedCompactCylinders
-      (fun t ht ↦ mem_cylinder_of_mem_closedCompactCylinders ht) ?_ hf hf_Union h_disj
-  · exact fun _ hx ↦ kolContent_ne_top _ hx
-  · intros t ht ε hε
-    convert innerRegular_kolContent hP hP_inner ht ε hε with u
-    refine ⟨fun h ↦ ⟨h.1, h.2.1, h.2.2⟩, fun h ↦ ?_⟩
-    obtain ⟨a, b, c⟩ := h
-    exact ⟨a, b, c⟩
+    kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) :=
+  (kolContent hP).sigma_additive_of_regular isSetRing_measurableCylinders
+    (fun _ ↦ kolContent_ne_top hP) isCompactSystem_closedCompactCylinders
+    (fun _ ↦ mem_cylinder_of_mem_closedCompactCylinders)
+    (fun _ ↦ innerRegular_kolContent hP hP_inner) hf hf_Union h_disj
 
 theorem kolContent_sigma_subadditive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
