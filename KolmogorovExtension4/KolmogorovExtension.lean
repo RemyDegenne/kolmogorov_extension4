@@ -6,7 +6,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 import KolmogorovExtension4.CaratheodoryExtension
 import KolmogorovExtension4.Projective
 import KolmogorovExtension4.RegularityCompacts
-import Mathlib.MeasureTheory.Constructions.Polish
+import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import KolmogorovExtension4.RegularContent
 
 open Set
@@ -254,7 +254,7 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
     rw [mem_measurableCylinders]; exact ⟨J, s, hs, rfl⟩
   rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr hP h_mem rfl hs]
 
-instance isFiniteMeasure_projectiveLimit [Nonempty ι] (hP : IsProjectiveMeasureFamily P) :
+instance isFiniteMeasure_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
     IsFiniteMeasure (projectiveLimit P hP) :=
   IsProjectiveLimit.isFiniteMeasure (isProjectiveLimit_projectiveLimit hP)
 

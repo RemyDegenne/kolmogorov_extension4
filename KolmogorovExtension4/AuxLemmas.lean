@@ -53,12 +53,6 @@ lemma Finset.prod_image_of_disjoint {α β : Type*} [PartialOrder α] [OrderBot 
     rw [h] at h_dis
     exact hfn (disjoint_self.mp h_dis)
 
--- PR #15292
-lemma _root_.Pairwise.pairwiseDisjoint {α ι : Type*} [PartialOrder α] [OrderBot α] {f : ι → α}
-    (h : Pairwise (Disjoint on f)) (s : Set ι) :
-    s.PairwiseDisjoint f :=
-  Pairwise.set_pairwise h s
-
 -- PR #15291
 lemma partialSups_eq_sUnion_image [DecidableEq (Set α)] (s : ℕ → Set α) (n : ℕ) :
     partialSups s n = ⋃₀ ↑((Finset.range (n + 1)).image s) := by
