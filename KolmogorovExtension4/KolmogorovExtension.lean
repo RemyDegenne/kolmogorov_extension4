@@ -157,7 +157,7 @@ lemma innerRegular_kolContent (hP : IsProjectiveMeasureFamily P)
         classical
         refine ⟨fun i ↦ if hi : i ∈ Js hs then y ⟨i, hi⟩ else x i, ?_⟩
         ext1 i
-        simp only [Finset.coe_mem, dite_true]
+        simp only [Finset.coe_mem, dite_true, proj'_eq]
     · have : (s \ cylinder (Js hs) K') = (cylinder (Js hs) (As hs) \ cylinder (Js hs) K') := by
         congr
         exact cylinders.eq_cylinder hs
@@ -242,7 +242,7 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
   ext1 s hs
   rw [Measure.map_apply _ hs]
   swap; · apply measurable_proj
-  have h_mem : (fun (x : ∀ i : ι, (fun i : ι ↦ α i) i) (i : ↥J) ↦ x ↑i) ⁻¹' s ∈ cylinders α := by
+  have h_mem : (proj' J) ⁻¹' s ∈ cylinders α := by
     rw [mem_cylinders]; exact ⟨J, s, hs, rfl⟩
   rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr hP h_mem rfl hs]
 

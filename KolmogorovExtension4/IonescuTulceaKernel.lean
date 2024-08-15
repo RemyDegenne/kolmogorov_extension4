@@ -27,14 +27,10 @@ theorem isProjectiveLimit_nat_iff' (μ : (I : Finset ℕ) → Measure ((i : I) �
     (hμ : IsProjectiveMeasureFamily μ) (ν : Measure ((n : ℕ) → X n)) (a : ℕ) :
     IsProjectiveLimit ν μ ↔ ∀ n ≥ a, ν.map (projNat' n) = μ (Iic n) := by
   refine ⟨fun h n _ ↦ h (Iic n), fun h I ↦ ?_⟩
-  conv_lhs =>
-    enter [1]
-    change (projSubset' (I.sub_Iic.trans (Iic_subset_Iic.2 (le_max_left (I.sup id) a)))) ∘
-       (projNat' (max (I.sup id) a))
-  rw [← Measure.map_map (measurable_projSubset' _) (measurable_projNat' _),
+  rw [← projSubset'_comp_proj' (I.sub_Iic.trans (Iic_subset_Iic.2 (le_max_left (I.sup id) a))),
+    ← Measure.map_map (measurable_projSubset' _) (measurable_projNat' _),
     h (max (I.sup id) a) (le_max_right _ _)]
-  refine (hμ (Iic (max (I.sup id) a)) I ?_).symm
-  exact I.sub_Iic.trans (Iic_subset_Iic.2 (le_max_left (I.sup id) a))
+  exact (hμ _ _ _).symm
 
 /-- To check that a measure `ν` is the projective limit of a projective family of measures indexed
 by `Finset ℕ`, it is enough to check on intervals of the form `Iic n`. -/
@@ -92,7 +88,6 @@ theorem isProjectiveMeasureFamily_inducedFamily (μ : (n : ℕ) → Measure ((i 
   rw [← projSubset'_comp_projSubset' J.sub_Iic (Iic_subset_Iic.2 sls), ← Measure.map_map,
     h (J.sup id) (I.sup id) sls]
   all_goals exact measurable_projSubset' _
-  exact measurable_projSubset' hJI
 
 open Kernel
 
@@ -164,7 +159,7 @@ theorem ionescuTulceaContent_eq_lmarginalPartialKernel {N : ℕ} {S : Set ((i : 
   rw [mem_cylinder]
   congrm ?_ ∈ S
   ext i
-  simp [updateFinset, i.2]
+  simp [proj'_eq, i.2, updateFinset]
 
 theorem lmarginalPartialKernel_mono (a b : ℕ) {f g : ((n : ℕ) → X n) → ℝ≥0∞} (hfg : f ≤ g)
     (x : (n : ℕ) → X n) : lmarginalPartialKernel κ a b f x ≤ lmarginalPartialKernel κ a b g x :=
@@ -176,7 +171,7 @@ theorem measurable_lmarginalPartialKernel (a b : ℕ) {f : ((n : ℕ) → X n) �
   let g : ((i : Iic b) → X i) × ((n : ℕ) → X n) → ℝ≥0∞ :=
     fun c ↦ f (updateFinset c.2 _ c.1)
   let η : Kernel ((n : ℕ) → X n) ((i : Iic b) → X i) :=
-    Kernel.comap (partialKernel κ a b) (fun x i ↦ x i) (measurable_proj _)
+    Kernel.comap (partialKernel κ a b) (projNat' a) (measurable_projNat' _)
   change Measurable fun x ↦ ∫⁻ z : (i : Iic b) → X i, g (z, x) ∂η x
   refine Measurable.lintegral_kernel_prod_left' <| hf.comp ?_
   simp only [updateFinset, measurable_pi_iff]
@@ -387,7 +382,7 @@ theorem iterate_induction_le {p : ℕ} (x₀ : (i : Iic p) → X i)
 theorem dependsOn_cylinder_indicator {ι : Type*} {α : ι → Type*} {I : Finset ι}
     (S : Set ((i : I) → α i)) :
     DependsOn ((cylinder I S).indicator (1 : ((i : ι) → α i) → ℝ≥0∞)) I :=
-  fun x y hxy ↦ indicator_const_eq _ (by simp [hxy])
+  fun x y hxy ↦ indicator_const_eq _ (by simp [hxy, proj'_eq])
 
 theorem proj_updateFinset {n : ℕ} (x : (n : ℕ) → X n) (y : (i : Iic n) → X i) :
     projNat' n (updateFinset x _ y) = y := by
@@ -395,8 +390,9 @@ theorem proj_updateFinset {n : ℕ} (x : (n : ℕ) → X n) (y : (i : Iic n) →
   simp [projNat', proj', updateFinset, mem_Iic.1 i.2]
 
 /-- This is the key theorem to prove the existence of the `ionescuTulceaKernel`:
-the `ionescuTulceaContent` of a decresaing sequence of cylinders with empty intersection converges to `0`.
-This implies the $\sigma$-additivity of `ionescuTulceaContent`
+the `ionescuTulceaContent` of a decresaing sequence of cylinders with empty intersection
+converges to `0`.
+This implies the `σ`-additivity of `ionescuTulceaContent`
 (see `sigma_additive_addContent_of_tendsto_zero`), which allows to extend it to the
 $\sigma$-algebra by Carathéodory's theorem. -/
 theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
@@ -709,19 +705,18 @@ theorem ionescuTulceaKernel_eq (n : ℕ) :
     ionescuTulceaKernel κ n =
     Kernel.map
       (Kernel.deterministic (@id ((i : Iic n) → X i)) measurable_id ×ₖ
-        Kernel.map (ionescuTulceaKernel κ n)
-          (fun x i ↦ x i : ((n : ℕ) → X n) → (i : Set.Ioi n) → X i) (measurable_proj _))
+        Kernel.map (ionescuTulceaKernel κ n) (proj (Set.Ioi n)) (measurable_proj _))
       (el' n) (el' n).measurable := by
   refine (eq_ionescuTulceaKernel' _ (n + 1) _ fun a ha ↦ ?_).symm
   ext x s ms
   rw [Kernel.map_map, Kernel.map_apply' _ _ _ ms, Kernel.deterministic_prod_apply',
     Kernel.map_apply']
   · have : (projNat' a) ∘ (el' n) ∘ (Prod.mk x) ∘
-        (fun x i ↦ x i : ((n : ℕ) → X n) → (i : Set.Ioi n) → X i) =
+        (proj (Set.Ioi n)) =
         (fun y (i : Iic a) ↦ if hi : i.1 ≤ n then x ⟨i.1, mem_Iic.2 hi⟩ else y i) ∘
         (projNat' a) := by
       ext x i
-      by_cases hi : i.1 ≤ n <;> simp [projNat', proj', hi, el']
+      by_cases hi : i.1 ≤ n <;> simp [projNat', proj', hi, el', proj]
     have aux t : {c : (i : Set.Ioi n) → X i | (id x, c) ∈ t} = Prod.mk x ⁻¹' t := rfl
     have hyp : Measurable
         (fun (y : (i : Iic a) → X i) (i : Iic a) ↦
@@ -752,10 +747,10 @@ theorem measurable_updateFinset' {ι : Type*} [DecidableEq ι] {I : Finset ι}
   exact measurable_pi_apply _
 
 theorem aux {n : ℕ} (x₀ : (i : Iic n) → X i) :
-    (el' n ∘ (Prod.mk x₀) ∘ (fun x i ↦ x i : ((n : ℕ) → X n) → (i : Set.Ioi n) → X i)) =
+    (el' n ∘ (Prod.mk x₀) ∘ (proj (Set.Ioi n))) =
       fun y ↦ updateFinset y _ x₀ := by
   ext y i
-  by_cases hi : i ≤ n <;> simp [hi, el', updateFinset]
+  by_cases hi : i ≤ n <;> simp [hi, el', updateFinset, proj]
 
 theorem ionescuTulceaKernel_eq_map_updateFinset {n : ℕ} (x₀ : (i : Iic n) → X i) :
     ionescuTulceaKernel κ n x₀ =

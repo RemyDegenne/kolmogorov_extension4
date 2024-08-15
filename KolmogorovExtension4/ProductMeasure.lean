@@ -15,7 +15,7 @@ variable {ι : Type*}
 
 theorem preimage_proj {α : ι → Type*} (I J : Finset ι) [∀ i : ι, Decidable (i ∈ I)]
     (hIJ : I ⊆ J) (s : (i : I) → Set (α i)) :
-    (fun t : (∀ j : J, α j) ↦ fun i : I ↦ t ⟨i, hIJ i.2⟩) ⁻¹' (Set.univ.pi s) =
+    (projSubset' hIJ) ⁻¹' (Set.univ.pi s) =
     (@Set.univ J).pi (fun j ↦ if h : j.1 ∈ I then s ⟨j.1, h⟩ else Set.univ) := by
   ext x
   simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies, Subtype.forall]
@@ -47,7 +47,7 @@ theorem kolContent_eq_measure_pi [Fintype ι] {s : Set ((i : ι) → X i)} (hs :
   let aux : ((i : univ) → X i) → ((i : ι) → X i) := fun x i ↦ x ⟨i, mem_univ i⟩
   have maux : Measurable aux := measurable_pi_lambda _ (fun _ ↦ measurable_pi_apply _)
   let t := aux ⁻¹' s
-  have : s = cylinder Finset.univ t := by ext x; simp [t, aux]
+  have : s = cylinder Finset.univ t := by ext x; simp [t, aux, proj']
   nth_rw 1 [this]
   rw [kolContent_congr _ ((mem_cylinders _).2 ⟨univ, t, maux hs, rfl⟩) rfl (maux hs)]
   have : Measure.pi μ = (Measure.pi (fun i : @univ ι _ ↦ μ i)).map aux := by
@@ -163,9 +163,8 @@ theorem prod_noyau_proj (N : ℕ) :
       Kernel.map ((deterministic id measurable_id) ×ₖ
           (const _ (Measure.pi (fun i : Ioc 0 N ↦ μ i))))
         (el 0 N (zero_le N)) (el 0 N (zero_le N)).measurable := by
-  rcases eq_zero_or_pos N with hN | hN
-  · cases hN
-    have : IsEmpty (Ioc 0 0) := by simp
+  rcases eq_zero_or_pos N with rfl | hN
+  · have : IsEmpty (Ioc 0 0) := by simp
     rw [partialKernel, dif_neg (lt_irrefl 0), Measure.pi_of_empty]
     ext x s ms
     rw [Kernel.map_apply, deterministic_apply, Kernel.prod_apply,
@@ -176,7 +175,7 @@ theorem prod_noyau_proj (N : ℕ) :
     apply indicator_const_eq
     simp only [id_eq, el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, mem_preimage]
     congrm (fun i ↦ ?_) ∈ s
-    simp [(mem_Iic_zero i.2).symm]
+    simp [(mem_Iic_zero i.2).symm, projSubset']
   · rw [partialKernel, dif_pos hN, kerNat_prod _ hN]
 
 theorem el_preimage {n : ℕ} (s : (i : Iic n) → Set (X i)) :
@@ -222,13 +221,13 @@ theorem isProjectiveLimit_infinitePiNat :
     IsProjectiveLimit (infinitePiNat μ) (fun I : Finset ℕ ↦ (Measure.pi (fun i : I ↦ μ i))) := by
   have _M := ProbabilityMeasure.nonempty ⟨μ 0, hμ 0⟩
   intro I
-  have sub : I ⊆ Finset.Iic (I.sup id) := fun i hi ↦ Finset.mem_Iic.2 <| Finset.le_sup (f := id) hi
-  simp_rw [isProjectiveMeasureFamily_pi μ (Finset.Iic (I.sup id)) I sub]
-  have : (fun (x : (n : ℕ) → X n) (i : I) ↦ x i) =
-      (fun x (i : I) ↦ x ⟨i.1, sub i.2⟩) ∘ (fun x (i : Iic (I.sup id)) ↦ x i) := by
-    ext x i
-    simp
-  rw [this, ← Measure.map_map (measurable_proj₂' _ _ sub) (measurable_proj' _)]
+  simp_rw [isProjectiveMeasureFamily_pi μ _ _ I.sub_Iic]
+  -- have : (fun (x : (n : ℕ) → X n) (i : I) ↦ x i) =
+  --     (fun x (i : I) ↦ x ⟨i.1, sub i.2⟩) ∘ (fun x (i : Iic (I.sup id)) ↦ x i) := by
+  --   ext x i
+  --   simp
+  rw [← projSubset'_comp_proj' I.sub_Iic,
+    ← Measure.map_map (measurable_projSubset' _) (measurable_proj' _)]
   congr
   rw [infinitePiNat, Measure.map_bind, map_bind_eq_bind_comap, ionescuTulceaKernel_proj]; swap
   · exact zer.measurable
@@ -312,10 +311,9 @@ theorem secondLemma
     fun x i ↦ cast (h i) (x (aux n i))
   -- Transfering from `ℕ` to `ι` and then projecting on `sₙ` is the same as first
   -- projecting on `uₙ` and then transfering to `ι`.
-  have test n : (fun (x : (i : ι) → X i) (i : s n) ↦ x i) ∘ f =
-      (g n) ∘ (fun (x : (k : ℕ) → X (φ k)) (k : t n) ↦ x k) := by
+  have test n : (proj' (s n)) ∘ f = (g n) ∘ (proj' (t n)) := by
     ext x
-    simp [f, g, aux]
+    simp [f, g, aux, proj']
   -- Now fe define `Bₙ` and `Tₙ` as follows. `Bₙ` is a cylinder.
   let B n := f ⁻¹' (A n)
   let T n := (g n) ⁻¹' (S n)
@@ -379,9 +377,9 @@ theorem kolContent_eq_lmarginal [DecidableEq ι]
     (∫⋯∫⁻_I, (cylinder I S).indicator 1 ∂μ) x := by
   rw [kolContent_congr (isProjectiveMeasureFamily_pi μ)
       (by rw [mem_cylinders]; exact ⟨I, S, mS, rfl⟩) rfl mS,
-    ← lintegral_indicator_one₀ mS.nullMeasurableSet]
+    ← lintegral_indicator_one mS]
   refine lintegral_congr <| fun x ↦ ?_
-  by_cases hx : x ∈ S <;> simp [hx, Function.updateFinset]
+  by_cases hx : x ∈ S <;> simp [hx, Function.updateFinset, proj'_eq]
 
 theorem thirdLemma (A : ℕ → Set ((i : ι) → X i)) (A_mem : ∀ n, A n ∈ cylinders X)
     (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅) :
@@ -415,9 +413,9 @@ theorem thirdLemma (A : ℕ → Set ((i : ι) → X i)) (A_mem : ∀ n, A n ∈ 
       left_inv := fun i ↦ by simp
       right_inv := fun i ↦ by simp }
   let g n : ((i : t n) → X i) → (i : s n) → X i := fun x i ↦ x (aux n i)
-  have test n : (fun x (i : s n) ↦ x i) ∘ f = (g n) ∘ (fun (x : (i : u) → X i) i ↦ x i) := by
+  have test n : (proj' (s n)) ∘ f = (g n) ∘ (fun (x : (i : u) → X i) i ↦ x i) := by
     ext x i
-    simp [f, g, aux, su n i.2]
+    simp [f, g, aux, su n i.2, proj']
   let B n := f ⁻¹' (A n)
   let T n := (g n) ⁻¹' (S n)
   have B_eq n : B n = cylinder (t n) (T n) := by
@@ -507,7 +505,7 @@ theorem isProjectiveLimit_productMeasure :
   ext1 s hs
   rw [Measure.map_apply _ hs]
   swap; · apply measurable_proj
-  have h_mem : (fun (x : (i : ι) → X i) (i : I) ↦ x i) ⁻¹' s ∈ cylinders X := by
+  have h_mem : (proj' I) ⁻¹' s ∈ cylinders X := by
     rw [mem_cylinders]; exact ⟨I, s, hs, rfl⟩
   rw [productMeasure, Measure.ofAddContent_eq _ _ _ _ h_mem,
     kolContent_congr (isProjectiveMeasureFamily_pi μ) h_mem rfl hs]
@@ -524,7 +522,7 @@ theorem productMeasure_boxes {s : Finset ι} {t : (i : ι) → Set (X i)}
     productMeasure μ (Set.pi s t) = ∏ i ∈ s, (μ i) (t i) := by
   have : Set.pi s t = cylinder s ((@Set.univ s).pi (fun i : s ↦ t i)) := by
     ext x
-    simp
+    simp [proj']
   rw [this, cylinder, ← Measure.map_apply, isProjectiveLimit_productMeasure μ,
     Measure.pi_pi]
   · rw [Finset.univ_eq_attach, Finset.prod_attach _ (fun i ↦ (μ i) (t i))]
@@ -537,28 +535,20 @@ theorem productMeasure_cylinder {s : Finset ι} {S : Set ((i : s) → X i)} (mS 
 
 theorem integral_dep_productMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {s : Finset ι} {f : ((i : s) → X i) → E} (hf : StronglyMeasurable f) :
-    ∫ y, f ((fun x (i : s) ↦ x i) y) ∂productMeasure μ =
+    ∫ y, f (proj' s y) ∂productMeasure μ =
     ∫ y, f y ∂Measure.pi (fun i : s ↦ μ i) := by
   rw [← integral_map (measurable_proj' _).aemeasurable hf.aestronglyMeasurable,
     isProjectiveLimit_productMeasure μ]
 
-/-- Given a dependent function, evaluate it on a point coming from a subtype associated to a
-Finset. -/
-abbrev proj (s : Finset ι) (x : (i : ι) → X i) (i : s) := x i
-
-theorem meas_proj (s : Finset ι) : Measurable (proj (X := X) s) :=
-  measurable_pi_lambda _ (fun _ ↦ measurable_pi_apply _)
-
 /-- The canonical filtration on dependent functions indexed by ι, where `𝓕 s` consists of
 measurable sets depending only on coordinates is `s`. -/
 def ℱ : @Filtration ((i : ι) → X i) (Finset ι) _ inferInstance where
-  seq s := (inferInstance : MeasurableSpace ((i : s) → X i)).comap (proj s)
+  seq s := (inferInstance : MeasurableSpace ((i : s) → X i)).comap (proj' s)
   mono' s t hst := by
     simp only
-    conv_lhs => enter [1]; change (projection hst) ∘ (proj t)
-    rw [← comap_comp]
-    exact MeasurableSpace.comap_mono (measurable_projection _).comap_le
-  le' s := (meas_proj s).comap_le
+    rw [← projSubset'_comp_proj' hst, ← comap_comp]
+    exact MeasurableSpace.comap_mono (measurable_projSubset' _).comap_le
+  le' s := (measurable_proj' s).comap_le
 
 theorem dependsOn_proj (s : Finset ι) : DependsOn (proj (X := X) s) s := by
   intro x y hxy
@@ -580,16 +570,16 @@ theorem integral_stronglyMeasurable [DecidableEq ι] {E : Type*} [NormedAddCommG
     ∫ y, f y ∂productMeasure μ =
     ∫ y, f (Function.updateFinset x s y) ∂Measure.pi (fun i : s ↦ μ i) := by
   let g : ((i : s) → X i) → E := fun y ↦ f (Function.updateFinset x _ y)
-  have this y : g ((fun z (i : s) ↦ z i) y) = f y := by
+  have this y : g (proj' s y) = f y := by
     apply stronglyMeasurable_dependsOn' mf
     intro i hi
-    simp only [Function.updateFinset, dite_eq_ite, ite_eq_left_iff]
+    simp only [Function.updateFinset, dite_eq_ite, ite_eq_left_iff, proj']
     exact fun h ↦ (h hi).elim
   rw [← integral_congr_ae <| eventually_of_forall this, integral_dep_productMeasure]
   exact mf.comp_measurable (measurable_updateFinset.mono (le_refl _) (ℱ.le s))
 
 theorem lintegral_dep {s : Finset ι} {f : ((i : s) → X i) → ℝ≥0∞} (hf : Measurable f) :
-    ∫⁻ y, f ((fun x (i : s) ↦ x i) y) ∂productMeasure μ =
+    ∫⁻ y, f (proj' s y) ∂productMeasure μ =
     ∫⁻ y, f y∂Measure.pi (fun i : s ↦ μ i) := by
   rw [← lintegral_map hf (measurable_proj' _), isProjectiveLimit_productMeasure μ]
 
@@ -605,9 +595,9 @@ theorem lintegral_measurable [DecidableEq ι] {s : Finset ι}
     {f : ((i : ι) → X i) → ℝ≥0∞} (mf : @Measurable _ _ (ℱ s) _ f)
     (x : (i : ι) → X i) : ∫⁻ y, f y ∂productMeasure μ = (∫⋯∫⁻_s, f ∂μ) x := by
   let g : ((i : s) → X i) → ℝ≥0∞ := fun y ↦ f (Function.updateFinset x _ y)
-  have this y : g ((fun z (i : s) ↦ z i) y) = f y := by
+  have this y : g (proj' s y) = f y := by
     refine measurable_dependsOn' mf fun i hi ↦ ?_
-    simp only [Function.updateFinset, dite_eq_ite, ite_eq_left_iff]
+    simp only [Function.updateFinset, dite_eq_ite, ite_eq_left_iff, proj']
     exact fun h ↦ (h hi).elim
   simp_rw [← this]
   rw [lintegral_dep]

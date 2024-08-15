@@ -77,19 +77,19 @@ theorem continuous_projSubset' {s t : Finset ι} (hst : s ⊆ t) :
 variable {X : ℕ → Type*}
 
 /-- Given a dependent function indexed by `ℕ`, specialize it as a function on `Iic n`. -/
-def projNat (n : ℕ) := proj (X := X) (Set.Iic n)
+abbrev projNat (n : ℕ) := proj (X := X) (Set.Iic n)
 
 /-- Given a dependent function indexed by `Iic n`, specialize it as a function on `Iic m` when
 `m ≤ n`. -/
-def projNat_le {m n : ℕ} (hmn : m ≤ n) := projSubset (X := X) (Set.Iic_subset_Iic.2 hmn)
+abbrev projNat_le {m n : ℕ} (hmn : m ≤ n) := projSubset (X := X) (Set.Iic_subset_Iic.2 hmn)
 
 /-- Given a dependent function indexed by `ℕ`, specialize it as a function on `Iic n`,
 `Finset` version. -/
-def projNat' (n : ℕ) := proj' (X := X) (Finset.Iic n)
+abbrev projNat' (n : ℕ) := proj' (X := X) (Finset.Iic n)
 
 /-- Given a dependent function indexed by `Iic n`, specialize it as a function on `Iic m` when
 `m ≤ n`, `Finset` version. -/
-def projNat_le' {m n : ℕ} (hmn : m ≤ n) := projSubset' (X := X) (Finset.Iic_subset_Iic.2 hmn)
+abbrev projNat_le' {m n : ℕ} (hmn : m ≤ n) := projSubset' (X := X) (Finset.Iic_subset_Iic.2 hmn)
 
 variable [∀ n, MeasurableSpace (X n)]
 
