@@ -245,7 +245,8 @@ theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
   split_ifs with h1 h2 h3 h4 h5 <;> try omega
   cases h1; rfl; rfl; rfl
 
-/-- This is an auxiliary result for `ionescuTulceaContent_tendsto_zero`. Consider `f` a sequence of bounded measurable
+/-- This is an auxiliary result for `ionescuTulceaContent_tendsto_zero`.
+Consider `f` a sequence of bounded measurable
 functions such that `f n` depends only on the first coordinates up to `N n`.
 Assume that when integrating `f n` against `partialKernel (k + 1) (N n)`,
 one gets a non-increasing sequence of functions wich converges to `l`.
@@ -392,10 +393,10 @@ theorem proj_updateFinset {n : ℕ} (x : (n : ℕ) → X n) (y : (i : Iic n) →
   simp [proj, updateFinset, mem_Iic.1 i.2]
 
 /-- This is the key theorem to prove the existence of the `ionescuTulceaKernel`:
-the `ionescuTulceaContent` of a decresaing sequence of cylinders with empty intersection converges to `0`.
-This implies the $\sigma$-additivity of `ionescuTulceaContent`
+the `ionescuTulceaContent` of a decresaing sequence of cylinders with empty intersection converges
+to `0`. This implies the `σ`-additivity of `ionescuTulceaContent`
 (see `sigma_additive_addContent_of_tendsto_zero`), which allows to extend it to the
-$\sigma$-algebra by Carathéodory's theorem. -/
+`σ`-algebra by Carathéodory's theorem. -/
 theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
     (A_mem : ∀ n, A n ∈ cylinders X) (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅)
     {p : ℕ} (x₀ : (i : Iic p) → X i) :
@@ -566,7 +567,8 @@ noncomputable def ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
 theorem isProbabilityMeasure_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     IsProbabilityMeasure (ionescuTulceaFun κ p x₀) := by
   constructor
-  rw [← cylinder_univ (Iic 0), ionescuTulceaFun, Measure.ofAddContent_eq, ionescuTulceaContent_cylinder]
+  rw [← cylinder_univ (Iic 0), ionescuTulceaFun, Measure.ofAddContent_eq,
+    ionescuTulceaContent_cylinder]
   · simp
   · exact MeasurableSet.univ
   · rw [mem_cylinders]
