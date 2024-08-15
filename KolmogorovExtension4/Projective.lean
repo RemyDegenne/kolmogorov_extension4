@@ -20,16 +20,14 @@ def IsProjective [Preorder ι] (P : ∀ j : ι, α j) (π : ∀ {i j : ι}, j �
 is the image of `P J` under restriction. -/
 def IsProjectiveMeasureFamily [∀ i, MeasurableSpace (α i)]
     (P : ∀ J : Finset ι, Measure (∀ j : J, α j)) : Prop :=
-  IsProjective P
-    (fun I _ hJI μ ↦ μ.map fun x : ∀ i : I, α i ↦ fun j ↦ x ⟨j, hJI j.2⟩ :
-      ∀ (I J : Finset ι) (_ : J ⊆ I), Measure (∀ i : I, α i) → Measure (∀ j : J, α j))
+  IsProjective P (fun hJI μ ↦ μ.map (projSubset' hJI))
 
 /-- Given a family of measures `P I` indexed by finsets, a measure on the total space is the
 projective limit of the `P I`s if for all `I` its restriction to sets depending only on `I`
 is `P I`. -/
 def IsProjectiveLimit [∀ i, MeasurableSpace (α i)] (μ : Measure (∀ i, α i))
     (P : ∀ J : Finset ι, Measure (∀ j : J, α j)) : Prop :=
-  ∀ I : Finset ι, (μ.map fun x : ∀ i, α i ↦ fun i : I ↦ x i) = P I
+  ∀ I : Finset ι, (μ.map (proj' I)) = P I
 
 variable [∀ i, MeasurableSpace (α i)] {P : ∀ J : Finset ι, Measure (∀ j : J, α j)}
 
@@ -62,7 +60,7 @@ theorem IsProjectiveMeasureFamily.congr_cylinder_aux
     P I S = P J T := by
   classical
   by_cases h : ∀ i, Nonempty (α i)
-  · have : S = (fun f : ∀ i : I, α i ↦ fun j : J ↦ f ⟨j, hJI j.prop⟩) ⁻¹' T :=
+  · have : S = (projSubset' hJI) ⁻¹' T :=
       eq_of_cylinder_eq_of_subset h_eq hJI
     rw [hP I J hJI, Measure.map_apply _ hT, this]
     rw [measurable_pi_iff]
