@@ -51,6 +51,11 @@ instance (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) [∀ n, IsFiniteMeas
   rw [inducedFamily]
   infer_instance
 
+instance (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) [∀ n, IsFiniteMeasure (μ n)] (I : Finset ℕ) :
+     IsFiniteMeasure (inducedFamily μ I) := by
+   rw [inducedFamily]
+   infer_instance
+
 private lemma Iic_pi_eq {a b : ℕ} (h : a = b) :
     ((i : Iic a) → X i) = ((i : Iic b) → X i) := by cases h; rfl
 
