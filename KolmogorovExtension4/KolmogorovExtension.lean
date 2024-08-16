@@ -157,7 +157,7 @@ lemma innerRegular_kolContent (hP : IsProjectiveMeasureFamily P)
         classical
         refine ⟨fun i ↦ if hi : i ∈ Js hs then y ⟨i, hi⟩ else x i, ?_⟩
         ext1 i
-        simp only [Finset.coe_mem, dite_true, proj'_eq]
+        simp
     · have : (s \ cylinder (Js hs) K') = (cylinder (Js hs) (As hs) \ cylinder (Js hs) K') := by
         congr
         exact cylinders.eq_cylinder hs

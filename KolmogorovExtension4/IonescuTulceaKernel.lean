@@ -150,7 +150,7 @@ theorem lmarginalPartialKernel_le {a b : ℕ} (hba : b ≤ a)
   rw [lmarginalPartialKernel, partialKernel, dif_neg (not_lt.2 hba),
     Kernel.lintegral_deterministic']
   · congr with i
-    by_cases hi : i ∈ Iic b <;> simp [updateFinset, hi, projNat_le', projSubset', projNat', proj']
+    simp [updateFinset]
   · exact mf.comp measurable_updateFinset
 
 /-- The `ionescuTulceaContent` of a cylinder is equal to the integral of its indicator function. -/
@@ -162,9 +162,8 @@ theorem ionescuTulceaContent_eq_lmarginalPartialKernel {N : ℕ} {S : Set ((i : 
   congr with y
   apply indicator_const_eq
   rw [mem_cylinder]
-  congrm ?_ ∈ S
-  ext i
-  simp [proj'_eq, i.2, updateFinset]
+  congrm (fun i ↦ ?_) ∈ S
+  simp [updateFinset, i.2]
 
 theorem lmarginalPartialKernel_mono (a b : ℕ) {f g : ((n : ℕ) → X n) → ℝ≥0∞} (hfg : f ≤ g)
     (x : (n : ℕ) → X n) : lmarginalPartialKernel κ a b f x ≤ lmarginalPartialKernel κ a b g x :=
@@ -227,8 +226,7 @@ theorem lmarginalPartialKernel_self {a b c : ℕ} (hab : a < b) (hbc : b < c)
   · congrm ∫⁻ _, ∫⁻ _, f fun i ↦ ?_ ∂(?_) ∂_
     · rw [split_eq_comap, Kernel.comap_apply]
       congr with i
-      simp only [el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, updateFinset, mem_Ioc,
-        projNat', proj']
+      simp only [proj'_def, updateFinset, mem_Ioc, el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk]
       split_ifs with h1 h2 h3 <;> try rfl
       · omega
       · have := mem_Iic.1 i.2
@@ -324,7 +322,7 @@ theorem le_lmarginalPartialKernel_succ {f : ℕ → ((n : ℕ) → X n) → ℝ�
           rw [lmarginalPartialKernel_lt _ k.lt_succ_self, kerNat_succ, Kernel.map_apply,
             lintegral_map_equiv]
           · congrm ∫⁻ z, (l fun i ↦ ?_) ∂κ k (fun i ↦ ?_)
-            · simp [i.2, updateFinset, proj']
+            · simp [i.2, updateFinset]
             · simp [update, updateFinset, e]
           · refine ENNReal.measurable_of_tendsto ?_ (tendsto_pi_nhds.2 htendsto)
             exact fun n ↦ measurable_lmarginalPartialKernel _ _ _ (mf n)
@@ -387,12 +385,12 @@ theorem iterate_induction_le {p : ℕ} (x₀ : (i : Iic p) → X i)
 theorem dependsOn_cylinder_indicator {ι : Type*} {α : ι → Type*} {I : Finset ι}
     (S : Set ((i : I) → α i)) :
     DependsOn ((cylinder I S).indicator (1 : ((i : ι) → α i) → ℝ≥0∞)) I :=
-  fun x y hxy ↦ indicator_const_eq _ (by simp [hxy, proj'_eq])
+  fun x y hxy ↦ indicator_const_eq _ (by simp [hxy])
 
 theorem proj_updateFinset {n : ℕ} (x : (n : ℕ) → X n) (y : (i : Iic n) → X i) :
     projNat' n (updateFinset x _ y) = y := by
   ext i
-  simp [projNat', proj', updateFinset, mem_Iic.1 i.2]
+  simp [updateFinset, i.2]
 
 /-- This is the key theorem to prove the existence of the `ionescuTulceaKernel`:
 the `ionescuTulceaContent` of a decresaing sequence of cylinders with empty intersection
@@ -494,7 +492,7 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
     · intro x n
       convert hpos x n
       ext i
-      simp only [projNat', proj', z]
+      simp only [proj'_def, z]
       apply iterate_induction_le
     · intro k hn h x n
       rw [← update_updateFinset_eq]
@@ -527,7 +525,7 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
       rw [this]
       convert lt_of_lt_of_le ε_pos (imp _ (le_max_left _ _) z n) using 2
       ext i
-      simp [updateFinset, projNat', proj']
+      simp [updateFinset]
     exact Set.mem_of_indicator_ne_zero (ne_of_lt this).symm
   exact (A_inter ▸ Set.mem_iInter.2 mem).elim
 
@@ -721,7 +719,7 @@ theorem ionescuTulceaKernel_eq (n : ℕ) :
         (fun y (i : Iic a) ↦ if hi : i.1 ≤ n then x ⟨i.1, mem_Iic.2 hi⟩ else y i) ∘
         (projNat' a) := by
       ext x i
-      by_cases hi : i.1 ≤ n <;> simp [projNat', proj', hi, el', proj]
+      by_cases hi : i.1 ≤ n <;> simp [hi, el']
     have aux t : {c : (i : Set.Ioi n) → X i | (id x, c) ∈ t} = Prod.mk x ⁻¹' t := rfl
     have hyp : Measurable
         (fun (y : (i : Iic a) → X i) (i : Iic a) ↦
@@ -730,8 +728,8 @@ theorem ionescuTulceaKernel_eq (n : ℕ) :
       by_cases hi : i.1 ≤ n <;> simp [hi]
       exact measurable_pi_apply _
     rw [aux, ← Set.preimage_comp, ← Set.preimage_comp, comp.assoc, this,
-      ← Kernel.map_apply' _ _ _ ms, ← Kernel.map_map _ (measurable_projNat' a) hyp, ionescuTulceaKernel_proj,
-      Kernel.map_apply' _ _ _ ms, partialKernel_lt κ (by omega),
+      ← Kernel.map_apply' _ _ _ ms, ← Kernel.map_map _ (measurable_projNat' a) hyp,
+      ionescuTulceaKernel_proj, Kernel.map_apply' _ _ _ ms, partialKernel_lt κ (by omega),
       Kernel.map_apply' _ _ _ (hyp ms), Kernel.deterministic_prod_apply',
       Kernel.map_apply' _ _ _ ms, Kernel.deterministic_prod_apply']
     · congr with y
@@ -755,7 +753,7 @@ theorem aux {n : ℕ} (x₀ : (i : Iic n) → X i) :
     (el' n ∘ (Prod.mk x₀) ∘ (proj (Set.Ioi n))) =
       fun y ↦ updateFinset y _ x₀ := by
   ext y i
-  by_cases hi : i ≤ n <;> simp [hi, el', updateFinset, proj]
+  simp [el', updateFinset]
 
 theorem ionescuTulceaKernel_eq_map_updateFinset {n : ℕ} (x₀ : (i : Iic n) → X i) :
     ionescuTulceaKernel κ n x₀ =
@@ -795,7 +793,7 @@ theorem partialKernel_comp_ionescuTulceaKernel_apply {a b : ℕ} (hab : a ≤ b)
     rw [integral_ionescuTulceaKernel]
     nth_rw 2 [integral_ionescuTulceaKernel]
     congrm ∫ y, f (fun i ↦ ?_) _ ∂_
-    simp [updateFinset, proj', i.2]
+    simp [updateFinset, i.2]
     · exact (hf.comp_measurable ((measurable_projNat' b).prod_mk measurable_id)).aestronglyMeasurable
     · exact hf.of_uncurry_left.aestronglyMeasurable
   · convert i_f
@@ -846,7 +844,7 @@ theorem condexp_ionescuTulceaKernel
         (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x), ← integral_smul]
       · rw [partialKernel_comp_ionescuTulceaKernel_apply _ hab, ← integral_indicator]
         · congr with x
-          by_cases h : projNat' b x ∈ t <;> simp [h]
+          by_cases h : projNat' b x ∈ t <;> simp [h, -proj'_def]
         · exact measurable_projNat' b mt
         · rw [uncurry_def]
           apply StronglyMeasurable.smul
@@ -877,7 +875,7 @@ theorem condexp_ionescuTulceaKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ 
   rw [← h1, h2, ← ionescuTulceaKernel_proj, Kernel.map_apply, integral_map]
   · congr with y
     apply measurable_dependsOn stronglyMeasurable_condexp
-    simp [updateFinset, proj]
+    simp [updateFinset]
     exact fun i hi ↦ (if_pos hi).symm
   · exact (measurable_projNat' c).aemeasurable
   · exact (mcf.comp_measurable measurable_updateFinset).aestronglyMeasurable

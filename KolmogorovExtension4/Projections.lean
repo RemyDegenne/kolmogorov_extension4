@@ -8,13 +8,15 @@ variable {ι : Type*} {X : ι → Type*}
 /-- Given a dependent function, restrict it to a function of variables in `s`. -/
 def proj (s : Set ι) (x : (i : ι) → X i) (i : s) : X i := x i
 
-lemma proj_eq (s : Set ι) : proj (X := X) s = fun x i ↦ x i := rfl
+@[simp]
+lemma proj_def (s : Set ι) : proj (X := X) s = fun x i ↦ x i := rfl
 
 /-- Given a dependent function of variables in `t`, restrict it to a function of variables in `s`
 when `s ⊆ t`. -/
 def projSubset {s t : Set ι} (hst : s ⊆ t) (x : (i : t) → X i) (i : s) : X i := x ⟨i.1, hst i.2⟩
 
-lemma projSubset_eq {s t : Set ι} (hst : s ⊆ t) :
+@[simp]
+lemma projSubset_def {s t : Set ι} (hst : s ⊆ t) :
     projSubset (X := X) hst = fun x i ↦ x ⟨i.1, hst i.2⟩ := rfl
 
 theorem projSubset_comp_proj {s t : Set ι} (hst : s ⊆ t) :
@@ -26,14 +28,16 @@ theorem projSubset_comp_projSubset {s t u : Set ι} (hst : s ⊆ t) (htu : t ⊆
 /-- Given a dependent function, restrict it to a function of variables in `s`, `Finset` version. -/
 def proj' (s : Finset ι) (x : (i : ι) → X i) (i : s) : X i := x i
 
-lemma proj'_eq (s : Finset ι) : proj' (X := X) s = fun x i ↦ x i := rfl
+@[simp]
+lemma proj'_def (s : Finset ι) : proj' (X := X) s = fun x i ↦ x i := rfl
 
 /-- Given a dependent function of variables in `t`, restrict it to a function of variables in `s`
 when `s ⊆ t`, `Finset` version. -/
 def projSubset' {s t : Finset ι} (hst : s ⊆ t) (x : (i : t) → X i) (i : s) : X i :=
   x ⟨i.1, hst i.2⟩
 
-lemma projSubset'_eq {s t : Finset ι} (hst : s ⊆ t) :
+@[simp]
+lemma projSubset'_def {s t : Finset ι} (hst : s ⊆ t) :
     projSubset' (X := X) hst = fun x i ↦ x ⟨i.1, hst i.2⟩ := rfl
 
 theorem projSubset'_comp_proj' {s t : Finset ι} (hst : s ⊆ t) :
