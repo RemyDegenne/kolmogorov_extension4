@@ -217,7 +217,7 @@ theorem addContent_iUnion_le_of_addContent_iUnion_eq_tsum {m : AddContent C} (hC
   have h_tendsto : Tendsto (fun n ↦ m (partialSups f n)) atTop (𝓝 (m (⋃ i, f i))) := by
     rw [← iSup_eq_iUnion, ← iSup_partialSups_eq]
     refine tendsto_atTop_addContent_iUnion_of_addContent_iUnion_eq_tsum hC m_iUnion (partialSups f)
-      (monotone_partialSups f) (hC.partialSups_mem hf) ?_
+      (partialSups_monotone f) (hC.partialSups_mem hf) ?_
     rwa [← iSup_eq_iUnion, iSup_partialSups_eq]
   have h_tendsto' : Tendsto (fun n ↦ ∑ i in range (n + 1), m (f i)) atTop (𝓝 (∑' i, m (f i))) := by
     rw [tendsto_add_atTop_iff_nat (f := (fun k ↦ ∑ i in range k, m (f i))) 1]

@@ -215,19 +215,6 @@ theorem iInter_le_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ n, s n �
   rw [Set.biInter_le_succ]
   exact hC.inter_mem hn (hs _)
 
--- PR #15291
-lemma partialSups_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ n, s n ∈ C) (n : ℕ) :
-    partialSups s n ∈ C := by
-  rw [partialSups_eq_biUnion_range]
-  exact hC.biUnion_mem _ (fun n _ ↦ hs n)
-
--- PR #15291
-lemma disjointed_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ n, s n ∈ C) (n : ℕ) :
-    disjointed s n ∈ C := by
-  cases n with
-  | zero => rw [disjointed_zero]; exact hs 0
-  | succ n => rw [disjointed_succ]; exact hC.diff_mem (hs n.succ) (hC.partialSups_mem hs n)
-
 theorem accumulate_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ i, s i ∈ C) (n : ℕ) :
     Set.Accumulate s n ∈ C := by
   induction' n with n hn
