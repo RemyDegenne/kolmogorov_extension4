@@ -46,8 +46,6 @@ theorem eq_add_diffFinset_of_subset (hC : IsSetSemiring C) (m : Set α → ℝ�
 
 section indexedDiffFinset₀
 
-variable [DecidableEq (Set α)]
-
 /-- A finite set of sets in `C` such that
 `⋃₀ ↑(hC.indexedDiffFinset₀ J hJ n) = J.ordered n \ ⋃₀ finsetLT J n`. -/
 noncomputable def indexedDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
@@ -140,6 +138,7 @@ lemma disjoint_of_mem_indexedDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (S
 lemma disjoint_indexedDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
     {n m : Fin J.card} (hnm : n ≠ m) :
     Disjoint (hC.indexedDiffFinset₀ J hJ n) (hC.indexedDiffFinset₀ J hJ m) := by
+  classical
   rw [Finset.disjoint_iff_inter_eq_empty]
   ext s
   simp only [Finset.mem_inter, Finset.not_mem_empty, iff_false_iff, not_and]
@@ -161,8 +160,6 @@ lemma pairwiseDisjoint_indexedDiffFinset₀' (hC : IsSetSemiring C) (J : Finset 
 end indexedDiffFinset₀
 
 section AllDiffFinset₀
-
-variable [DecidableEq (Set α)]
 
 /-- This is a finset of pairwise disjoint sets in the set semi-ring `C`, such that
 `⋃₀ hC.allDiffFinset₀ J hJ = ⋃₀ J`. -/

@@ -95,10 +95,6 @@ end Accumulate
 
 namespace NNReal
 
--- PR #15295
-theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by
-  rw [← bot_eq_zero, Ico_bot]; exact isOpen_Iio
-
 /-- Given x > 0, there is a sequence of positive reals summing to x. -/
 theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :
     ∃ f : ℕ → ℝ≥0, (∀ n, 0 < f n) ∧ Summable f ∧ ∑' n, f n = x := by

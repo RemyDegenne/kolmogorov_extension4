@@ -120,7 +120,7 @@ lemma nonempty_projCylinder_iff [∀ i, Nonempty (α i)]
     ext i
     simp only [Finset.coe_mem, dite_true]
 
-theorem isClosed_projCylinder [∀ i, TopologicalSpace (α i)]
+theorem isClosed_projCylinder
     (hs : ∀ n, s n ∈ closedCompactCylinders α) (hs_closed : ∀ n, IsClosed (As (hs n))) (n : ℕ) :
     IsClosed (projCylinder hs n) := by
   refine (hs_closed n).preimage ?_
@@ -146,8 +146,7 @@ lemma mem_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
       (As (hs (indexProj hs i))) := by
   simp only [piCylinderSet, mem_image, Subtype.forall, mem_setOf_eq]
 
-theorem isCompact_piCylinderSet [∀ i, TopologicalSpace (α i)]
-    (hs : ∀ n, s n ∈ closedCompactCylinders α) :
+theorem isCompact_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α) :
     IsCompact (piCylinderSet hs) :=
   isCompact_pi_infinite fun _ ↦
     (closedCompactCylinders.isCompact (hs _)).image (continuous_apply _)
