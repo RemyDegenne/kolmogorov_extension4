@@ -16,36 +16,6 @@ variable {α : Type*} {C : Set (Set α)}
 
 namespace OuterMeasure
 
-section IsCaratheodory
-
-variable {m : OuterMeasure α} {s : ℕ → Set α}
-
--- PR: #15265
-lemma isCaratheodory_diff {s t : Set α} (hs : IsCaratheodory m s) (ht : IsCaratheodory m t) :
-    IsCaratheodory m (s \ t) := m.isCaratheodory_inter hs (m.isCaratheodory_compl ht)
-
--- PR: #15265
-lemma isCaratheodory_partialSups (h : ∀ i, m.IsCaratheodory (s i)) (i : ℕ) :
-    m.IsCaratheodory (partialSups s i) := by
-  induction i with
-  | zero => exact h 0
-  | succ i hi => exact m.isCaratheodory_union hi (h (i + 1))
-
--- PR: #15265
-lemma isCaratheodory_disjointed (h : ∀ i, m.IsCaratheodory (s i)) (i : ℕ) :
-    m.IsCaratheodory (disjointed s i) := by
-  induction i with
-  | zero => exact h 0
-  | succ i _ => exact m.isCaratheodory_diff (h (i + 1)) (isCaratheodory_partialSups h i)
-
--- PR: #15265
-lemma isCaratheodory_iUnion (h : ∀ i, m.IsCaratheodory (s i)) : m.IsCaratheodory (⋃ i, s i) := by
-  rw [← iUnion_disjointed]
-  exact OuterMeasure.isCaratheodory_iUnion_nat m (isCaratheodory_disjointed h)
-    (disjoint_disjointed _)
-
-end IsCaratheodory
-
 section OfFunction
 
 -- PR #15296
@@ -195,7 +165,7 @@ theorem isCaratheodory_inducedOuterMeasure (hC : IsSetSemiring C) (m : AddConten
   · exact fun _ ↦ caratheodory_semiring_extension hC m
   · exact OuterMeasure.isCaratheodory_empty _
   · exact fun _ ↦ OuterMeasure.isCaratheodory_compl _
-  · exact fun _ hf ↦ OuterMeasure.isCaratheodory_iUnion hf
+  · exact fun _ ↦ OuterMeasure.isCaratheodory_iUnion _
   · exact hs
 
 /-- Construct a measure from a sigma-subadditive function on a semiring. This

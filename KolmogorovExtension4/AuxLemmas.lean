@@ -53,21 +53,6 @@ lemma Finset.prod_image_of_disjoint {α β : Type*} [PartialOrder α] [OrderBot 
     rw [h] at h_dis
     exact hfn (disjoint_self.mp h_dis)
 
--- PR #15291
-lemma partialSups_eq_sUnion_image [DecidableEq (Set α)] (s : ℕ → Set α) (n : ℕ) :
-    partialSups s n = ⋃₀ ↑((Finset.range (n + 1)).image s) := by
-  ext; simp [partialSups_eq_biSup, Nat.lt_succ_iff]
-
--- PR #15291
-lemma partialSups_eq_biUnion_range (s : ℕ → Set α) (n : ℕ) :
-    partialSups s n = ⋃ i ∈ Finset.range (n + 1), s i := by
-  ext; simp [partialSups_eq_biSup, Nat.lt_succ]
-
--- PR #15291
-theorem monotone_partialSups {α : Type*} [SemilatticeSup α] (f : ℕ → α) :
-    Monotone fun n ↦ partialSups f n := fun n _ hnm ↦
-  partialSups_le f n _ fun _ hm'n ↦ le_partialSups_of_le _ (hm'n.trans hnm)
-
 section Accumulate
 
 variable {α : Type*}
@@ -94,10 +79,6 @@ lemma accumulate_zero_nat (s : ℕ → Set α) : Set.Accumulate s 0 = s 0 := by 
 end Accumulate
 
 namespace NNReal
-
--- PR #15295
-theorem isOpen_Ico_zero {b : NNReal} : IsOpen (Set.Ico 0 b) := by
-  rw [← bot_eq_zero, Ico_bot]; exact isOpen_Iio
 
 /-- Given x > 0, there is a sequence of positive reals summing to x. -/
 theorem exists_seq_pos_summable_eq (x : ℝ≥0) (hx : 0 < x) :

@@ -76,12 +76,13 @@ an homeomorphism `projCompl α j ⁻¹' (projCompl α j '' s) ≃ₜ projCompl �
 
 -- TODO: change names
 
-variable {ι : Type*} {α : ι → Type*} [∀ i, TopologicalSpace (α i)] {s : Set (Π i, α i)} {i : ι}
+variable {ι : Type*} {α : ι → Type*} {s : Set (Π i, α i)} {i : ι}
 
 /-- Given a dependent function of `i`, specialize it as a function on the complement of `{i}`. -/
 def projCompl (α : ι → Type*) (i : ι) (x : Π i, α i) : Π j : { k // k ≠ i }, α j := fun j ↦ x j
 
-lemma continuous_projCompl : Continuous (projCompl α i) := continuous_pi fun _ ↦ continuous_apply _
+lemma continuous_projCompl [∀ i, TopologicalSpace (α i)] :
+    Continuous (projCompl α i) := continuous_pi fun _ ↦ continuous_apply _
 
 open Classical in
 /-- Given a set of dependent functions, construct a function on a product space separating out
@@ -100,7 +101,7 @@ lemma projCompl_fromXProd (p : projCompl α i '' s × α i) :
     projCompl α i (fromXProd α i s p) = p.1 := by
   ext j; simp only [fromXProd, projCompl, dif_neg j.2]
 
-lemma continuous_fromXProd : Continuous (fromXProd α i s) := by
+lemma continuous_fromXProd [∀ i, TopologicalSpace (α i)] : Continuous (fromXProd α i s) := by
   refine continuous_pi fun j ↦ ?_
   simp only [fromXProd]
   split_ifs with h
@@ -136,7 +137,7 @@ def XYEquiv (α : ι → Type*) [∀ i, TopologicalSpace (α i)] (i : ι) (s : S
     · exact (continuous_apply _).comp continuous_subtype_val
   continuous_invFun := continuous_fromXProd.subtype_mk _
 
-lemma preimage_snd_xyEquiv :
+lemma preimage_snd_xyEquiv [∀ i, TopologicalSpace (α i)] :
     Prod.snd '' (XYEquiv α i s ''
         ((fun (x : projCompl α i ⁻¹' (projCompl α i '' s)) ↦ (x : Π j, α j)) ⁻¹' s))
       = (fun x ↦ x i) '' s := by
@@ -152,7 +153,8 @@ lemma preimage_snd_xyEquiv :
       ⟨⟨⟨z, hz_mem, rfl⟩, rfl⟩, hzx⟩⟩
 
 /-- The projection of a compact closed set onto a coordinate is closed. -/
-theorem isClosed_proj (hs_compact : IsCompact s) (hs_closed : IsClosed s) (i : ι) :
+theorem isClosed_proj [∀ i, TopologicalSpace (α i)]
+    (hs_compact : IsCompact s) (hs_closed : IsClosed s) (i : ι) :
     IsClosed ((fun x ↦ x i) '' s) := by
   rw [← preimage_snd_xyEquiv]
   have : CompactSpace (projCompl α i '' s) :=
