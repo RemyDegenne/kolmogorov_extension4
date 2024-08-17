@@ -49,7 +49,7 @@ theorem kolContent_eq_measure_pi [Fintype ι] {s : Set ((i : ι) → X i)} (hs :
   let t := aux ⁻¹' s
   have : s = cylinder Finset.univ t := by ext x; simp [t, aux]
   nth_rw 1 [this]
-  rw [kolContent_congr _ ((mem_cylinders _).2 ⟨univ, t, maux hs, rfl⟩) rfl (maux hs)]
+  rw [kolContent_cylinder _ (maux hs)]
   have : Measure.pi μ = (Measure.pi (fun i : @univ ι _ ↦ μ i)).map aux := by
     refine Measure.pi_eq fun a ma ↦ ?_
     rw [Measure.map_apply maux (MeasurableSet.univ_pi ma)]
@@ -248,7 +248,7 @@ theorem kolContent_eq_infinitePiNat {A : Set ((n : ℕ) → X n)} (hA : A ∈ cy
     kolContent (isProjectiveMeasureFamily_pi μ) A = infinitePiNat μ A := by
   obtain ⟨s, S, mS, A_eq⟩ : ∃ s S, MeasurableSet S ∧ A = cylinder s S := by
     simpa [mem_cylinders] using hA
-  rw [kolContent_congr _ hA A_eq mS, A_eq, cylinder, ← Measure.map_apply (measurable_proj' _) mS,
+  rw [kolContent_congr _ A A_eq mS, A_eq, cylinder, ← Measure.map_apply (measurable_proj' _) mS,
     isProjectiveLimit_infinitePiNat μ]
 
 end Nat
@@ -359,10 +359,8 @@ theorem secondLemma
     · exact MeasurableSet.pi Set.countable_univ (by simp [mx])
   -- This yields the desired result: the `kolContent` of `Aₙ` is the same as the one of `Bₙ`.
   have crucial n : kolContent μ_proj (A n) = kolContent μ_proj' (B n) := by
-    simp_rw [fun n ↦ kolContent_congr μ_proj
-      (by rw [mem_cylinders]; exact ⟨s n, S n, mS n, A_eq n⟩) (A_eq n) (mS n),
-      fun n ↦ kolContent_congr μ_proj'
-      (by rw [mem_cylinders]; exact ⟨t n, T n, mT n, B_eq n⟩) (B_eq n) (mT n), T, test' n]
+    simp_rw [fun n ↦ kolContent_congr μ_proj _ (A_eq n) (mS n),
+      fun n ↦ kolContent_congr μ_proj' _ (B_eq n) (mT n), T, test' n]
     rw [Measure.map_apply (mg n) (mS n)]
   simp_rw [crucial, fun n ↦ kolContent_eq_infinitePiNat (fun k ↦ μ (φ k)) (B_mem n),
     ← measure_empty (μ := Measure.infinitePiNat (fun k ↦ μ (φ k))), ← B_inter]
@@ -375,9 +373,7 @@ theorem kolContent_eq_lmarginal [DecidableEq ι]
     (I : Finset ι) {S : Set ((i : I) → X i)} (mS : MeasurableSet S) (x : (i : ι) → X i) :
     kolContent (isProjectiveMeasureFamily_pi μ) (cylinder I S) =
     (∫⋯∫⁻_I, (cylinder I S).indicator 1 ∂μ) x := by
-  rw [kolContent_congr (isProjectiveMeasureFamily_pi μ)
-      (by rw [mem_cylinders]; exact ⟨I, S, mS, rfl⟩) rfl mS,
-    ← lintegral_indicator_one mS]
+  rw [kolContent_cylinder _ mS, ← lintegral_indicator_one mS]
   refine lintegral_congr <| fun x ↦ ?_
   by_cases hx : x ∈ S <;> simp [hx, Function.updateFinset]
 
@@ -445,10 +441,8 @@ theorem thirdLemma (A : ℕ → Set ((i : ι) → X i)) (A_mem : ∀ n, A n ∈ 
     · exact MeasurableSet.pi Set.countable_univ (by simp [mx])
   -- This yields the desired result: the `kolContent` of `Aₙ` is the same as the one of `Bₙ`.
   have crucial n : kolContent μ_proj (A n) = kolContent μ_proj' (B n) := by
-    simp_rw [fun n ↦ kolContent_congr μ_proj
-      (by rw [mem_cylinders]; exact ⟨s n, S n, mS n, A_eq n⟩) (A_eq n) (mS n),
-      fun n ↦ kolContent_congr μ_proj'
-      (by rw [mem_cylinders]; exact ⟨t n, T n, mT n, B_eq n⟩) (B_eq n) (mT n), T, test' n]
+    simp_rw [fun n ↦ kolContent_congr μ_proj _ (A_eq n) (mS n),
+      fun n ↦ kolContent_congr μ_proj' _ (B_eq n) (mT n), T, test' n]
     rw [Measure.map_apply (mg n) (mS n)]
   -- We now have two cases: if `u` is finite, then the result is simple because
   -- we have an actual measure.
@@ -507,8 +501,7 @@ theorem isProjectiveLimit_productMeasure :
   swap; · apply measurable_proj
   have h_mem : (proj' I) ⁻¹' s ∈ cylinders X := by
     rw [mem_cylinders]; exact ⟨I, s, hs, rfl⟩
-  rw [productMeasure, Measure.ofAddContent_eq _ _ _ _ h_mem,
-    kolContent_congr (isProjectiveMeasureFamily_pi μ) h_mem rfl hs]
+  rw [productMeasure, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr _ (_ ⁻¹' s) rfl hs]
 
 instance : IsProbabilityMeasure (productMeasure μ) := by
   constructor

@@ -115,9 +115,7 @@ private lemma heq_measurableSpace_Iic_pi {a b : ℕ} (h : a = b) :
 theorem ionescuTulceaContent_cylinder {a b : ℕ} (x : (i : Iic a) → X i)
     {S : Set ((i : Iic b) → X i)} (mS : MeasurableSet S) :
     ionescuTulceaContent κ x (cylinder _ S) = partialKernel κ a b x S := by
-  rw [ionescuTulceaContent,
-    kolContent_congr _ (by rw [mem_cylinders]; exact ⟨Iic b, S, mS, rfl⟩) rfl mS,
-    inducedFamily_Iic]
+  rw [ionescuTulceaContent, kolContent_cylinder _ mS, inducedFamily_Iic]
 
 /-- This function computes the integral of a function `f` against `partialKernel`,
 and allows to view it as a function depending on all the variables. -/
@@ -246,7 +244,8 @@ theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
   split_ifs with h1 h2 h3 h4 h5 <;> try omega
   cases h1; rfl; rfl; rfl
 
-/-- This is an auxiliary result for `ionescuTulceaContent_tendsto_zero`. Consider `f` a sequence of bounded measurable
+/-- This is an auxiliary result for `ionescuTulceaContent_tendsto_zero`.
+Consider `f` a sequence of bounded measurable
 functions such that `f n` depends only on the first coordinates up to `N n`.
 Assume that when integrating `f n` against `partialKernel (k + 1) (N n)`,
 one gets a non-increasing sequence of functions wich converges to `l`.
@@ -397,7 +396,7 @@ the `ionescuTulceaContent` of a decresaing sequence of cylinders with empty inte
 converges to `0`.
 This implies the `σ`-additivity of `ionescuTulceaContent`
 (see `sigma_additive_addContent_of_tendsto_zero`), which allows to extend it to the
-$\sigma$-algebra by Carathéodory's theorem. -/
+`σ`-algebra by Carathéodory's theorem. -/
 theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
     (A_mem : ∀ n, A n ∈ cylinders X) (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅)
     {p : ℕ} (x₀ : (i : Iic p) → X i) :
@@ -569,7 +568,8 @@ noncomputable def ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
 theorem isProbabilityMeasure_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     IsProbabilityMeasure (ionescuTulceaFun κ p x₀) := by
   constructor
-  rw [← cylinder_univ (Iic 0), ionescuTulceaFun, Measure.ofAddContent_eq, ionescuTulceaContent_cylinder]
+  rw [← cylinder_univ (Iic 0), ionescuTulceaFun, Measure.ofAddContent_eq,
+    ionescuTulceaContent_cylinder]
   · simp
   · exact MeasurableSet.univ
   · rw [mem_cylinders]
@@ -585,7 +585,7 @@ theorem isProjectiveLimit_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i
     have h_mem : (projNat' n) ⁻¹' s ∈ cylinders X := by
       rw [mem_cylinders]; exact ⟨Iic n, s, ms, rfl⟩
     rw [ionescuTulceaFun, Measure.ofAddContent_eq _ _ _ _ h_mem, ionescuTulceaContent,
-      kolContent_congr _ h_mem rfl ms]
+      kolContent_congr _ (_ ⁻¹' s) rfl ms]
   · exact (isProjectiveMeasureFamily_inducedFamily _ (partialKernel_proj_apply κ x₀))
 
 theorem measurable_ionescuTulceaFun (p : ℕ) : Measurable (ionescuTulceaFun κ p) := by
@@ -597,7 +597,7 @@ theorem measurable_ionescuTulceaFun (p : ℕ) : Measurable (ionescuTulceaFun κ 
   · obtain ⟨N, S, mS, t_eq⟩ : ∃ N S, MeasurableSet S ∧ t = cylinder (Iic N) S := by
       simpa [cylinders_nat] using ht
     simp_rw [ionescuTulceaFun, Measure.ofAddContent_eq _ _ _ _ ht, ionescuTulceaContent,
-      kolContent_congr _ ht t_eq mS]
+      kolContent_congr _ t t_eq mS]
     simp only [inducedFamily]
     refine Measure.measurable_measure.1 ?_ _ mS
     refine (Measure.measurable_map _ ?_).comp (Kernel.measurable _)

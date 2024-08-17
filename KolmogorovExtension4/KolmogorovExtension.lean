@@ -98,7 +98,7 @@ theorem kolContent_congr (hP : IsProjectiveMeasureFamily P) (s : Set (∀ i, α 
 
 theorem kolContent_cylinder (hP : IsProjectiveMeasureFamily P) {I : Finset ι}
     {S : Set (∀ i : I, α i)} (hS : MeasurableSet S) :
-    kolContent hP (cylinder I S) = P I S := kolContent_congr hP _ rfl hS
+  kolContent hP (cylinder I S) = P I S := kolContent_congr hP _ rfl hS
 
 theorem kolContent_mono (hP : IsProjectiveMeasureFamily P) (hs : s ∈ cylinders α)
     (ht : t ∈ cylinders α) (hst : s ⊆ t) : kolContent hP s ≤ kolContent hP t :=
@@ -249,8 +249,7 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
   swap; · apply measurable_proj
   have h_mem : (proj' J) ⁻¹' s ∈ cylinders α := by
     rw [mem_cylinders]; exact ⟨J, s, hs, rfl⟩
-  rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem,
-    kolContent_congr hP (proj' J ⁻¹' s) rfl hs]
+  rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr hP (_ ⁻¹' s) rfl hs]
 
 instance isFiniteMeasure_projectiveLimit [Nonempty ι] (hP : IsProjectiveMeasureFamily P) :
     IsFiniteMeasure (projectiveLimit P hP) :=
