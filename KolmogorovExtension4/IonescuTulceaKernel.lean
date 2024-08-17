@@ -794,7 +794,7 @@ theorem partialKernel_comp_ionescuTulceaKernel_apply {a b : ℕ} (hab : a ≤ b)
     nth_rw 2 [integral_ionescuTulceaKernel]
     congrm ∫ y, f (fun i ↦ ?_) _ ∂_
     simp [updateFinset, i.2]
-    · exact (hf.comp_measurable ((measurable_projNat' b).prod_mk measurable_id)).aestronglyMeasurable
+    · exact hf.aestronglyMeasurable.comp_measurable ((measurable_projNat' b).prod_mk measurable_id)
     · exact hf.of_uncurry_left.aestronglyMeasurable
   · convert i_f
     rw [partialKernel_comp_ionescuTulceaKernel _ hab]
