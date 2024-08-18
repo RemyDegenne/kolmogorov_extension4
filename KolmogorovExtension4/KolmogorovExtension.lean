@@ -247,7 +247,7 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
   ext1 s hs
   rw [Measure.map_apply _ hs]
   swap; · apply measurable_proj
-  have h_mem : (proj' J) ⁻¹' s ∈ cylinders α := by
+  have h_mem : (fproj J) ⁻¹' s ∈ cylinders α := by
     rw [mem_cylinders]; exact ⟨J, s, hs, rfl⟩
   rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr hP (_ ⁻¹' s) rfl hs]
 

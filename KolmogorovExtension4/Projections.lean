@@ -26,25 +26,25 @@ theorem projSubset_comp_projSubset {s t u : Set ι} (hst : s ⊆ t) (htu : t ⊆
     (projSubset (X := X) hst) ∘ (projSubset htu) = projSubset (hst.trans htu) := rfl
 
 /-- Given a dependent function, restrict it to a function of variables in `s`, `Finset` version. -/
-def proj' (s : Finset ι) (x : (i : ι) → X i) (i : s) : X i := x i
+def fproj (s : Finset ι) (x : (i : ι) → X i) (i : s) : X i := x i
 
 @[simp]
-lemma proj'_def (s : Finset ι) : proj' (X := X) s = fun x i ↦ x i := rfl
+lemma fproj_def (s : Finset ι) : fproj (X := X) s = fun x i ↦ x i := rfl
 
 /-- Given a dependent function of variables in `t`, restrict it to a function of variables in `s`
 when `s ⊆ t`, `Finset` version. -/
-def projSubset' {s t : Finset ι} (hst : s ⊆ t) (x : (i : t) → X i) (i : s) : X i :=
+def fprojSubset {s t : Finset ι} (hst : s ⊆ t) (x : (i : t) → X i) (i : s) : X i :=
   x ⟨i.1, hst i.2⟩
 
 @[simp]
-lemma projSubset'_def {s t : Finset ι} (hst : s ⊆ t) :
-    projSubset' (X := X) hst = fun x i ↦ x ⟨i.1, hst i.2⟩ := rfl
+lemma fprojSubset_def {s t : Finset ι} (hst : s ⊆ t) :
+    fprojSubset (X := X) hst = fun x i ↦ x ⟨i.1, hst i.2⟩ := rfl
 
-theorem projSubset'_comp_proj' {s t : Finset ι} (hst : s ⊆ t) :
-    (projSubset' (X := X) hst) ∘ (proj' t) = proj' s := rfl
+theorem fprojSubset_comp_fproj {s t : Finset ι} (hst : s ⊆ t) :
+    (fprojSubset (X := X) hst) ∘ (fproj t) = fproj s := rfl
 
-theorem projSubset'_comp_projSubset' {s t u : Finset ι} (hst : s ⊆ t) (htu : t ⊆ u) :
-    (projSubset' (X := X) hst) ∘ (projSubset' htu) = projSubset' (hst.trans htu) := rfl
+theorem fprojSubset_comp_fprojSubset {s t u : Finset ι} (hst : s ⊆ t) (htu : t ⊆ u) :
+    (fprojSubset (X := X) hst) ∘ (fprojSubset htu) = fprojSubset (hst.trans htu) := rfl
 
 variable [∀ i, MeasurableSpace (X i)]
 
@@ -55,11 +55,11 @@ theorem measurable_projSubset {s t : Set ι} (hst : s ⊆ t) :
     Measurable (projSubset (X := X) hst) :=
   measurable_pi_lambda _ fun _ ↦ measurable_pi_apply _
 
-theorem measurable_proj' (s : Finset ι) : Measurable (proj' (X := X) s) :=
+theorem measurable_fproj (s : Finset ι) : Measurable (fproj (X := X) s) :=
   measurable_pi_lambda _ fun _ ↦ measurable_pi_apply _
 
-theorem measurable_projSubset' {s t : Finset ι} (hst : s ⊆ t) :
-    Measurable (projSubset' (X := X) hst) :=
+theorem measurable_fprojSubset {s t : Finset ι} (hst : s ⊆ t) :
+    Measurable (fprojSubset (X := X) hst) :=
   measurable_pi_lambda _ fun _ ↦ measurable_pi_apply _
 
 variable [∀ i, TopologicalSpace (X i)]
@@ -71,11 +71,11 @@ theorem continuous_projSubset {s t : Set ι} (hst : s ⊆ t) :
     Continuous (projSubset (X := X) hst) :=
   continuous_pi fun _ ↦ continuous_apply _
 
-theorem continuous_proj' (s : Finset ι) : Continuous (proj' (X := X) s) :=
+theorem continuous_fproj (s : Finset ι) : Continuous (fproj (X := X) s) :=
   continuous_pi fun _ ↦ continuous_apply _
 
-theorem continuous_projSubset' {s t : Finset ι} (hst : s ⊆ t) :
-    Continuous (projSubset' (X := X) hst) :=
+theorem continuous_fprojSubset {s t : Finset ι} (hst : s ⊆ t) :
+    Continuous (fprojSubset (X := X) hst) :=
   continuous_pi fun _ ↦ continuous_apply _
 
 variable {X : ℕ → Type*}
@@ -89,11 +89,11 @@ abbrev projNat_le {m n : ℕ} (hmn : m ≤ n) := projSubset (X := X) (Set.Iic_su
 
 /-- Given a dependent function indexed by `ℕ`, specialize it as a function on `Iic n`,
 `Finset` version. -/
-abbrev projNat' (n : ℕ) := proj' (X := X) (Finset.Iic n)
+abbrev fprojNat (n : ℕ) := fproj (X := X) (Finset.Iic n)
 
 /-- Given a dependent function indexed by `Iic n`, specialize it as a function on `Iic m` when
 `m ≤ n`, `Finset` version. -/
-abbrev projNat_le' {m n : ℕ} (hmn : m ≤ n) := projSubset' (X := X) (Finset.Iic_subset_Iic.2 hmn)
+abbrev fprojNat_le {m n : ℕ} (hmn : m ≤ n) := fprojSubset (X := X) (Finset.Iic_subset_Iic.2 hmn)
 
 variable [∀ n, MeasurableSpace (X n)]
 
@@ -102,10 +102,10 @@ theorem measurable_projNat (n : ℕ) : Measurable (projNat (X := X) n) := measur
 theorem measurable_projNat_le {m n : ℕ} (hmn : m ≤ n) : Measurable (projNat_le (X := X) hmn) :=
   measurable_projSubset _
 
-theorem measurable_projNat' (n : ℕ) : Measurable (projNat' (X := X) n) := measurable_proj' _
+theorem measurable_fprojNat (n : ℕ) : Measurable (fprojNat (X := X) n) := measurable_fproj _
 
-theorem measurable_projNat_le' {m n : ℕ} (hmn : m ≤ n) : Measurable (projNat_le' (X := X) hmn) :=
-  measurable_projSubset' _
+theorem measurable_fprojNat_le {m n : ℕ} (hmn : m ≤ n) : Measurable (fprojNat_le (X := X) hmn) :=
+  measurable_fprojSubset _
 
 variable [∀ n, TopologicalSpace (X n)]
 
@@ -114,7 +114,7 @@ theorem continuous_projNat (n : ℕ) : Continuous (projNat (X := X) n) := contin
 theorem continuous_projNat_le {m n : ℕ} (hmn : m ≤ n) : Continuous (projNat_le (X := X) hmn) :=
   continuous_projSubset _
 
-theorem continuous_projNat' (n : ℕ) : Continuous (projNat' (X := X) n) := continuous_proj' _
+theorem continuous_fprojNat (n : ℕ) : Continuous (fprojNat (X := X) n) := continuous_fproj _
 
-theorem continuous_projNat_le' {m n : ℕ} (hmn : m ≤ n) : Continuous (projNat_le' (X := X) hmn) :=
-  continuous_projSubset' _
+theorem continuous_fprojNat_le {m n : ℕ} (hmn : m ≤ n) : Continuous (fprojNat_le (X := X) hmn) :=
+  continuous_fprojSubset _

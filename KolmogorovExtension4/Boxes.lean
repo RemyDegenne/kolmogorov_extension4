@@ -303,11 +303,11 @@ section cylinder
 
 /-- Given a set depending on finitely many coordinates, lift it to a set on all indices.
 This is called a *cylinder*. -/
-def cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) : Set ((i : ι) → α i) := (proj' s) ⁻¹' S
+def cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) : Set ((i : ι) → α i) := (fproj s) ⁻¹' S
 
 @[simp]
 theorem mem_cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) (f : (i : ι) → α i) :
-    f ∈ cylinder s S ↔ proj' s f ∈ S :=
+    f ∈ cylinder s S ↔ fproj s f ∈ S :=
   mem_preimage
 
 theorem cylinder_empty (s : Finset ι) : cylinder s (∅ : Set (∀ i : s, α i)) = ∅ := by
@@ -333,22 +333,22 @@ theorem cylinder_eq_empty_iff [h_nonempty : Nonempty ((i : ι) → α i)] (s : F
 theorem measurableSet_cylinder [∀ i, MeasurableSpace (α i)] (s : Finset ι)
     (S : Set (∀ i : s, α i)) (hS : MeasurableSet S) :
     MeasurableSet (cylinder s S) := by
-  rw [cylinder]; exact measurableSet_preimage (measurable_proj' _) hS
+  rw [cylinder]; exact measurableSet_preimage (measurable_fproj _) hS
 
 theorem inter_cylinder (s₁ s₂ : Finset ι) (S₁ : Set (∀ i : s₁, α i)) (S₂ : Set (∀ i : s₂, α i))
     [DecidableEq ι] :
     cylinder s₁ S₁ ∩ cylinder s₂ S₂ =
       cylinder (s₁ ∪ s₂)
-        ((projSubset' Finset.subset_union_left) ⁻¹' S₁ ∩
-          (projSubset' Finset.subset_union_right) ⁻¹' S₂) := by
+        ((fprojSubset Finset.subset_union_left) ⁻¹' S₁ ∩
+          (fprojSubset Finset.subset_union_right) ⁻¹' S₂) := by
   ext1 f; simp
 
 theorem union_cylinder (s₁ s₂ : Finset ι) (S₁ : Set (∀ i : s₁, α i)) (S₂ : Set (∀ i : s₂, α i))
     [DecidableEq ι] :
     cylinder s₁ S₁ ∪ cylinder s₂ S₂ =
       cylinder (s₁ ∪ s₂)
-        ((projSubset' Finset.subset_union_left) ⁻¹' S₁ ∪
-          (projSubset' Finset.subset_union_right) ⁻¹' S₂) := by
+        ((fprojSubset Finset.subset_union_left) ⁻¹' S₁ ∪
+          (fprojSubset Finset.subset_union_right) ⁻¹' S₂) := by
   ext1 f; simp
 
 theorem compl_cylinder (s : Finset ι) (S : Set (∀ i : s, α i)) :
@@ -362,7 +362,7 @@ theorem diff_cylinder_same (s : Finset ι) (S T : Set (∀ i : s, α i)) :
 theorem eq_of_cylinder_eq_of_subset [h_nonempty : Nonempty ((i : ι) → α i)] {I J : Finset ι}
     {S : Set (∀ i : I, α i)} {T : Set (∀ i : J, α i)} (h_eq : cylinder I S = cylinder J T)
     (hJI : J ⊆ I) :
-    S = (projSubset' hJI) ⁻¹' T := by
+    S = (fprojSubset hJI) ⁻¹' T := by
   rw [Set.ext_iff] at h_eq
   simp only [mem_cylinder] at h_eq
   ext1 f
@@ -375,15 +375,15 @@ theorem eq_of_cylinder_eq_of_subset [h_nonempty : Nonempty ((i : ι) → α i)] 
 theorem cylinder_eq_cylinder_union [DecidableEq ι] (I : Finset ι) (S : Set (∀ i : I, α i))
     (J : Finset ι) :
     cylinder I S =
-      cylinder (I ∪ J) ((projSubset' Finset.subset_union_left) ⁻¹' S) := by
+      cylinder (I ∪ J) ((fprojSubset Finset.subset_union_left) ⁻¹' S) := by
   ext1 f; simp
 
 theorem disjoint_cylinder_iff [Nonempty ((i : ι) → α i)] {s t : Finset ι} {S : Set (∀ i : s, α i)}
     {T : Set (∀ i : t, α i)} [DecidableEq ι] :
     Disjoint (cylinder s S) (cylinder t T) ↔
       Disjoint
-        ((projSubset' Finset.subset_union_left) ⁻¹' S)
-        ((projSubset' Finset.subset_union_right) ⁻¹' T) := by
+        ((fprojSubset Finset.subset_union_left) ⁻¹' S)
+        ((fprojSubset Finset.subset_union_right) ⁻¹' T) := by
   simp_rw [Set.disjoint_iff, subset_empty_iff, inter_cylinder, cylinder_eq_empty_iff]
 
 theorem isClosed_cylinder [∀ i, TopologicalSpace (α i)] (I : Finset ι) (s : Set (∀ i : I, α i))
@@ -433,7 +433,7 @@ theorem cylinders.eq_cylinder {t : Set ((i : ι) → α i)} (ht : t ∈ cylinder
 theorem cylinders_measurableSet {t : Set ((i : ι) → α i)} (ht : t ∈ cylinders α) :
     MeasurableSet t := by
   rw [cylinders.eq_cylinder ht, cylinder]
-  exact measurable_proj' _ (cylinders.measurableSet ht)
+  exact measurable_fproj _ (cylinders.measurableSet ht)
 
 theorem cylinder_mem_cylinders (s : Finset ι) (S : Set (∀ i : s, α i)) (hS : MeasurableSet S) :
     cylinder s S ∈ cylinders α := by rw [mem_cylinders]; exact ⟨s, S, hS, rfl⟩
@@ -445,11 +445,11 @@ theorem inter_mem_cylinders {s t : Set (∀ i : ι, α i)} (hs : s ∈ cylinders
   obtain ⟨s₂, S₂, hS₂, rfl⟩ := ht
   classical
   refine ⟨s₁ ∪ s₂,
-    (projSubset' Finset.subset_union_left) ⁻¹' S₁ ∩
-      {f | projSubset' Finset.subset_union_right f ∈ S₂}, ?_, ?_⟩
+    (fprojSubset Finset.subset_union_left) ⁻¹' S₁ ∩
+      {f | fprojSubset Finset.subset_union_right f ∈ S₂}, ?_, ?_⟩
   · refine MeasurableSet.inter ?_ ?_
-    · exact (measurable_projSubset' _) hS₁
-    · exact (measurable_projSubset' _) hS₂
+    · exact (measurable_fprojSubset _) hS₁
+    · exact (measurable_fprojSubset _) hS₂
   · exact inter_cylinder _ _ _ _
 
 theorem compl_mem_cylinders {s : Set (∀ i : ι, α i)} (hs : s ∈ cylinders α) :

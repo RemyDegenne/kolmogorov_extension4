@@ -20,14 +20,14 @@ def IsProjective [Preorder ι] (P : ∀ j : ι, α j) (π : ∀ {i j : ι}, j �
 is the image of `P J` under restriction. -/
 def IsProjectiveMeasureFamily [∀ i, MeasurableSpace (α i)]
     (P : ∀ J : Finset ι, Measure (∀ j : J, α j)) : Prop :=
-  IsProjective P (fun hJI μ ↦ μ.map (projSubset' hJI))
+  IsProjective P (fun hJI μ ↦ μ.map (fprojSubset hJI))
 
 /-- Given a family of measures `P I` indexed by finsets, a measure on the total space is the
 projective limit of the `P I`s if for all `I` its restriction to sets depending only on `I`
 is `P I`. -/
 def IsProjectiveLimit [∀ i, MeasurableSpace (α i)] (μ : Measure (∀ i, α i))
     (P : ∀ J : Finset ι, Measure (∀ j : J, α j)) : Prop :=
-  ∀ I : Finset ι, (μ.map (proj' I)) = P I
+  ∀ I : Finset ι, (μ.map (fproj I)) = P I
 
 variable [∀ i, MeasurableSpace (α i)] {P : ∀ J : Finset ι, Measure (∀ j : J, α j)}
 
@@ -44,7 +44,7 @@ theorem IsProjectiveMeasureFamily.empty_of_subset (hP : IsProjectiveMeasureFamil
       exact ⟨⟨i, i_mem⟩, hi⟩
     have : P J = 0 := (P J).eq_zero_of_isEmpty
     simp [this]
-  · exact measurable_projSubset' hIJ
+  · exact measurable_fprojSubset hIJ
 
 theorem IsProjectiveMeasureFamily.empty (hP : IsProjectiveMeasureFamily P)
     (h : ¬(∀ i, Nonempty (α i))) (I : Finset ι) : P I = 0 := by
@@ -60,7 +60,7 @@ theorem IsProjectiveMeasureFamily.congr_cylinder_aux
     P I S = P J T := by
   classical
   by_cases h : ∀ i, Nonempty (α i)
-  · have : S = (projSubset' hJI) ⁻¹' T :=
+  · have : S = (fprojSubset hJI) ⁻¹' T :=
       eq_of_cylinder_eq_of_subset h_eq hJI
     rw [hP I J hJI, Measure.map_apply _ hT, this]
     rw [measurable_pi_iff]
@@ -75,8 +75,8 @@ theorem IsProjectiveMeasureFamily.congr_cylinder
     P I S = P J T := by
   classical
   let U :=
-    (projSubset' Finset.subset_union_left) ⁻¹' S ∩
-      (projSubset' Finset.subset_union_right) ⁻¹' T
+    (fprojSubset Finset.subset_union_left) ⁻¹' S ∩
+      (fprojSubset Finset.subset_union_right) ⁻¹' T
   suffices P (I ∪ J) U = P I S ∧ P (I ∪ J) U = P J T from this.1.symm.trans this.2
   constructor
   · have h_eq_union : cylinder I S = cylinder (I ∪ J) U := by
@@ -89,11 +89,11 @@ theorem IsProjectiveMeasureFamily.congr_cylinder
 theorem IsProjectiveMeasureFamily.measure_univ_eq_of_subset (hP : IsProjectiveMeasureFamily P)
     (I J : Finset ι) (hJI : J ⊆ I) : P I univ = P J univ := by
   classical
-  have : (univ : Set (∀ i : I, α i)) = (projSubset' hJI) ⁻¹' univ := by
+  have : (univ : Set (∀ i : I, α i)) = (fprojSubset hJI) ⁻¹' univ := by
     rw [preimage_univ]
   rw [this, ← Measure.map_apply _ MeasurableSet.univ]
   · rw [hP I J hJI]
-  · exact measurable_projSubset' hJI
+  · exact measurable_fprojSubset hJI
 
 theorem IsProjectiveMeasureFamily.measure_univ_eq (hP : IsProjectiveMeasureFamily P)
     (I J : Finset ι) : P I univ = P J univ := by
