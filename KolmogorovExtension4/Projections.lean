@@ -5,6 +5,7 @@ Authors: Etienne Marion
 -/
 import Mathlib.MeasureTheory.MeasurableSpace.Basic
 import KolmogorovExtension4.Annexe
+import KolmogorovExtension4.DependsOn
 
 open MeasureTheory
 
@@ -15,6 +16,8 @@ def proj (s : Set ι) (x : (i : ι) → X i) (i : s) : X i := x i
 
 @[simp]
 lemma proj_def (s : Set ι) : @proj ι X s = fun x i ↦ x i := rfl
+
+theorem dependsOn_proj (s : Set ι) : DependsOn (@proj ι X s) s := fun _ _ h ↦ by simp [h]
 
 /-- Given a dependent function of variables in `t`, restrict it to a function of variables in `s`
 when `s ⊆ t`. -/
@@ -35,6 +38,8 @@ def fproj (s : Finset ι) (x : (i : ι) → X i) (i : s) : X i := x i
 
 @[simp]
 lemma fproj_def (s : Finset ι) : @fproj ι X s = fun x i ↦ x i := rfl
+
+theorem dependsOn_fproj (s : Finset ι) : DependsOn (@fproj ι X s) s := fun _ _ h ↦ by simp [h]
 
 /-- Given a dependent function of variables in `t`, restrict it to a function of variables in `s`
 when `s ⊆ t`, `Finset` version. -/
@@ -88,6 +93,9 @@ variable {X : ℕ → Type*}
 /-- Given a dependent function indexed by `ℕ`, specialize it as a function on `Iic n`. -/
 abbrev projNat (n : ℕ) := @proj ℕ X (Set.Iic n)
 
+theorem dependsOn_projNat (n : ℕ) : DependsOn (@projNat X n) (Set.Iic n) :=
+  dependsOn_proj _
+
 /-- Given a dependent function indexed by `Iic n`, specialize it as a function on `Iic m` when
 `m ≤ n`. -/
 abbrev projNat_le {m n : ℕ} (hmn : m ≤ n) := projSubset (X := X) (Set.Iic_subset_Iic.2 hmn)
@@ -95,6 +103,9 @@ abbrev projNat_le {m n : ℕ} (hmn : m ≤ n) := projSubset (X := X) (Set.Iic_su
 /-- Given a dependent function indexed by `ℕ`, specialize it as a function on `Iic n`,
 `Finset` version. -/
 abbrev fprojNat (n : ℕ) := @fproj ℕ X (Finset.Iic n)
+
+theorem dependsOn_fprojNat (n : ℕ) : DependsOn (@fprojNat X n) (Finset.Iic n) :=
+  dependsOn_fproj _
 
 /-- Given a dependent function indexed by `Iic n`, specialize it as a function on `Iic m` when
 `m ≤ n`, `Finset` version. -/

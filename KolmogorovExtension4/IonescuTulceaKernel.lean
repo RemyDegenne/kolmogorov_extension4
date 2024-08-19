@@ -15,11 +15,6 @@ variable {X : ℕ → Type*} [Nonempty (X 0)] [∀ n, MeasurableSpace (X n)]
 variable (κ : (k : ℕ) → Kernel ((i : Iic k) → X i) (X (k + 1)))
 variable [∀ k, IsMarkovKernel (κ k)]
 
-theorem dependsOn_proj (n : ℕ) : DependsOn (@fprojNat X n) (Iic n) := by
-  intro x y hxy
-  ext i
-  exact hxy i.1 (mem_coe.1 i.2)
-
 /-- To check that a measure `ν` is the projective limit of a projective family of measures indexed
 by `Finset ℕ`, it is enough to check on intervals of the form `Iic n`, where `n` is larger than
 a given integer. -/
@@ -679,7 +674,7 @@ theorem measurable_dependsOn {n : ℕ} {f : ((n : ℕ) → X n) → E}
     (mf : @StronglyMeasurable _ _ _ (ℱ n) f) : DependsOn f (Iic n) := by
   intro x y hxy
   apply eq_of_stronglyMeasurable_comap (fprojNat n) mf
-  exact dependsOn_proj n hxy
+  exact dependsOn_fprojNat n hxy
 
 /-- The union of `Iic n` and `Ioi n` is the whole `ℕ`, version as a measurable equivalence
 on dependent functions. -/
