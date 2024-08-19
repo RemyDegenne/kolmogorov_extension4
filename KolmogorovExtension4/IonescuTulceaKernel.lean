@@ -627,8 +627,7 @@ instance (p : ℕ) : IsMarkovKernel (ionescuTulceaKernel κ p) :=
   IsMarkovKernel.mk fun _ ↦ isProbabilityMeasure_ionescuTulceaFun ..
 
 theorem ionescuTulceaKernel_proj (a b : ℕ) :
-    Kernel.map (ionescuTulceaKernel κ a) (fprojNat b) (measurable_fprojNat b) =
-      partialKernel κ a b := by
+    (ionescuTulceaKernel κ a).map (fprojNat b) (measurable_fprojNat b) = partialKernel κ a b := by
   ext1 x₀
   rw [Kernel.map_apply, ionescuTulceaKernel_apply, isProjectiveLimit_ionescuTulceaFun,
     inducedFamily_Iic]

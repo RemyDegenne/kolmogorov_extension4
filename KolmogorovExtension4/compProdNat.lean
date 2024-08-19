@@ -9,9 +9,6 @@ open Finset ENNReal ProbabilityTheory MeasureTheory
 
 noncomputable section
 
-lemma Finset.sub_Iic (I : Finset ℕ) : I ⊆ (Iic (I.sup id)) :=
-  fun _ hi ↦ mem_Iic.2 <| le_sup (f := id) hi
-
 section compProdNat
 
 lemma measurable_cast {X Y : Type u} [mX : MeasurableSpace X] [mY : MeasurableSpace Y] (h : X = Y)
@@ -211,7 +208,8 @@ lemma compProdNat_apply' {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : 
   simp_rw [split, Kernel.comap_apply]
 
 @[simp]
-lemma compProdNat_zero_right {i j : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) (k : ℕ) :
+lemma compProdNat_zero_right {i j : ℕ}
+    (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) (k : ℕ) :
     (κ ⊗ₖ' (0 : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l))) = 0 := by
   rw [compProdNat]
   split_ifs
@@ -219,7 +217,8 @@ lemma compProdNat_zero_right {i j : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l 
   · rfl
 
 @[simp]
-lemma compProdNat_zero_left {j k : ℕ} (i : ℕ) (κ : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) :
+lemma compProdNat_zero_left {j k : ℕ} (i : ℕ)
+    (κ : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) :
     ((0 : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) ⊗ₖ' κ) = 0 := by
   rw [compProdNat]
   split_ifs
@@ -256,7 +255,8 @@ lemma compProdNat_assoc {i j k l : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l :
     exact Kernel.measurable_kernel_prod_mk_left' ((er _ _ _ _ _).measurable hs) a
   rw [compProdNat_apply' _ _ hij (hjk.trans hkl) _ hs,
     compProdNat_apply' _ _ (hij.trans hjk) hkl _ hs, compProdNat_eq _ _ hjk hkl,
-    compProdNat_eq _ _ hij hjk, map_apply, MeasureTheory.lintegral_map h_meas_comp (er _ _ _ _ _).measurable]
+    compProdNat_eq _ _ hij hjk, map_apply,
+    MeasureTheory.lintegral_map h_meas_comp (er _ _ _ _ _).measurable]
   have : ∀ b, MeasurableSet {c | (b, c) ∈ er i j l hij (hjk.trans hkl).le ⁻¹' s} :=
     fun b ↦ (@measurable_prod_mk_left _ _ inferInstance _ b) ((er _ _ _ _ _).measurable hs)
   simp_rw [Kernel.map_apply' _ _ _ (this _)]
@@ -266,11 +266,12 @@ lemma compProdNat_assoc {i j k l : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l :
   simp_rw [compProd_apply _ _ _ (this _), split, Kernel.comap_apply]
   rw [lintegral_compProd]
   swap; exact h_meas_comp.comp (er i j k hij hjk.le).measurable
-  simp only [comap_apply, el_assoc, Set.mem_preimage, Set.preimage_setOf_eq, Set.mem_setOf_eq, er_assoc]
+  simp only [comap_apply, el_assoc, Set.mem_preimage, Set.preimage_setOf_eq, Set.mem_setOf_eq,
+    er_assoc]
   simp_rw [el_assoc hij hjk.le]
 
-/-- Given a kernel taking values in `Ioc i j`, convert it to a kernel taking values in `Ioc i k` when
-`j = k`. -/
+/-- Given a kernel taking values in `Ioc i j`, convert it to a kernel taking values
+in `Ioc i k` when `j = k`. -/
 def castPath {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) (h : j = k) :
     Kernel ((l : Iic i) → X l) ((l : Ioc i k) → X l) :=
   Kernel.map κ (e_path_eq h) (MeasurableEquiv.measurable _)
@@ -472,9 +473,8 @@ theorem kerNat_proj (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))
     [∀ i, IsMarkovKernel (κ i)] {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
     Kernel.map (kerNat κ a c) (fprojSubset (Ioc_subset_Ioc_right hbc)) (measurable_fprojSubset _) =
       kerNat κ a b := by
-  rcases eq_or_lt_of_le hbc with hbc | hbc
-  · cases hbc
-    exact Kernel.map_id _
+  rcases eq_or_lt_of_le hbc with rfl | hbc
+  · exact Kernel.map_id _
   · ext x s ms
     rw [Kernel.map_apply' _ _ _ ms, ← compProdNat_kerNat κ hab hbc,
       compProdNat_apply' _ _ hab hbc _ (measurable_fprojSubset _ ms), ← one_mul (kerNat κ a b x s),
@@ -516,13 +516,13 @@ time `a`, `partialKernel κ a b` gives the distribution of the trajectory up to 
 the product of a Dirac mass along the trajectory, up to `a`, with `kerNat κ a b`. -/
 noncomputable def partialKernel (a b : ℕ) : Kernel ((i : Iic a) → X i) ((i : Iic b) → X i) :=
   if hab : a < b
-    then Kernel.map ((Kernel.deterministic id measurable_id) ×ₖ kerNat κ a b)
+    then ((Kernel.deterministic id measurable_id) ×ₖ kerNat κ a b).map
       (el a b hab.le) (el a b hab.le).measurable
     else Kernel.deterministic (fprojNat_le (not_lt.1 hab)) (measurable_fprojNat_le _)
 
 theorem partialKernel_lt {a b : ℕ} (hab : a < b) :
     partialKernel κ a b =
-      Kernel.map ((Kernel.deterministic id measurable_id) ×ₖ kerNat κ a b)
+      ((Kernel.deterministic id measurable_id) ×ₖ kerNat κ a b).map
         (el a b hab.le) (el a b hab.le).measurable := by
   rw [partialKernel, dif_pos hab]
 
@@ -543,14 +543,14 @@ instance (a b : ℕ) : IsMarkovKernel (partialKernel κ a b) := by
 /-- If `b ≤ c`, then projecting the trajectory up to time `c` on first coordinates gives the
 trajectory up to time `b`. -/
 theorem partialKernel_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
-    Kernel.map (partialKernel κ a c) (fprojNat_le hbc) (measurable_fprojNat_le _) =
+    (partialKernel κ a c).map (fprojNat_le hbc) (measurable_fprojNat_le _) =
       partialKernel κ a b := by
   unfold partialKernel
   split_ifs with h1 h2 h3
   · have : (fprojNat_le (X := X) hbc) ∘ (el a c h1.le) =
         (el a b h2.le) ∘ (Prod.map id (fprojSubset (Ioc_subset_Ioc_right hbc))) := by
       ext x i
-      simp [el, fprojSubset, fprojNat_le]
+      simp [el]
     rw [Kernel.map_map, Kernel.map_eq _ _ this, ← Kernel.map_map, Kernel.map_prod, Kernel.map_id,
       kerNat_proj _ h2 hbc]
   · have : (fprojNat_le (X := X) hbc) ∘ (el a c h1.le) =
@@ -563,7 +563,7 @@ theorem partialKernel_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
     rfl
   · omega
   · rw [Kernel.map_deterministic]
-    congr
+    rfl
 
 /-- Given the trajectory up to time `a`, first computing the distribution up to time `b`
 and then the distribution up to time `c` is the same as directly computing the distribution up

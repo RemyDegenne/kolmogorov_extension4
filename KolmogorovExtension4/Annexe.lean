@@ -284,6 +284,9 @@ theorem updateFinset_self {ι : Type*} [DecidableEq ι] {α : ι → Type*} (x :
   ext i
   simp [updateFinset, i.2]
 
+lemma Finset.sub_Iic (I : Finset ℕ) : I ⊆ (Iic (I.sup id)) :=
+  fun _ hi ↦ mem_Iic.2 <| le_sup (f := id) hi
+
 theorem Finset.Iic_subset_Iic {α : Type*} [Preorder α] [LocallyFiniteOrderBot α]
     {a b : α} : Iic a ⊆ Iic b ↔ a ≤ b := by
   rw [← coe_subset, coe_Iic, coe_Iic, Set.Iic_subset_Iic]
