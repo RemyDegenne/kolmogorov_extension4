@@ -100,6 +100,9 @@ theorem dependsOn_projNat (n : ℕ) : DependsOn (@projNat X n) (Set.Iic n) :=
 `m ≤ n`. -/
 abbrev projNat_le {m n : ℕ} (hmn : m ≤ n) := projSubset (X := X) (Set.Iic_subset_Iic.2 hmn)
 
+theorem projNat_le_comp_projNat {m n : ℕ} (hmn : m ≤ n) :
+    (projNat_le hmn) ∘ (@projNat X n) = projNat m := rfl
+
 /-- Given a dependent function indexed by `ℕ`, specialize it as a function on `Iic n`,
 `Finset` version. -/
 abbrev fprojNat (n : ℕ) := @fproj ℕ X (Finset.Iic n)
@@ -110,6 +113,9 @@ theorem dependsOn_fprojNat (n : ℕ) : DependsOn (@fprojNat X n) (Finset.Iic n) 
 /-- Given a dependent function indexed by `Iic n`, specialize it as a function on `Iic m` when
 `m ≤ n`, `Finset` version. -/
 abbrev fprojNat_le {m n : ℕ} (hmn : m ≤ n) := fprojSubset (X := X) (Finset.Iic_subset_Iic.2 hmn)
+
+theorem fprojNat_le_comp_fprojNat {m n : ℕ} (hmn : m ≤ n) :
+    (fprojNat_le hmn) ∘ (@fprojNat X n) = fprojNat m := rfl
 
 variable [∀ n, MeasurableSpace (X n)]
 
