@@ -236,8 +236,9 @@ theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
     updateFinset x (Iic (m + 1)) (fprojNat (m + 1) z) := by
   ext i
   simp only [update, updateFinset, mem_Iic, dite_eq_ite]
-  split_ifs with h1 h2 h3 h4 h5 <;> try omega
-  cases h1; rfl; rfl; rfl
+  split_ifs with h <;> try omega
+  cases h
+  all_goals rfl
 
 /-- This is an auxiliary result for `ionescuTulceaContent_tendsto_zero`.
 Consider `f` a sequence of bounded measurable
@@ -741,8 +742,7 @@ theorem measurable_updateFinset' {ι : Type*} [DecidableEq ι] {I : Finset ι}
   exact measurable_pi_apply _
 
 theorem aux {n : ℕ} (x₀ : (i : Iic n) → X i) :
-    (el' n ∘ (Prod.mk x₀) ∘ (proj (Set.Ioi n))) =
-      fun y ↦ updateFinset y _ x₀ := by
+    (el' n ∘ (Prod.mk x₀) ∘ (proj (Set.Ioi n))) = fun y ↦ updateFinset y _ x₀ := by
   ext y i
   simp [el', updateFinset]
 
@@ -782,10 +782,11 @@ theorem partialKernel_comp_ionescuTulceaKernel_apply {a b : ℕ} (hab : a ≤ b)
   rw [← partialKernel_comp_ionescuTulceaKernel κ hab, Kernel.integral_comp]
   · congr with x
     rw [integral_ionescuTulceaKernel]
-    nth_rw 2 [integral_ionescuTulceaKernel]
-    congrm ∫ y, f (fun i ↦ ?_) _ ∂_
-    simp [updateFinset, i.2]
-    · exact hf.aestronglyMeasurable.comp_measurable ((measurable_fprojNat b).prod_mk measurable_id)
+    · nth_rw 2 [integral_ionescuTulceaKernel]
+      · congrm ∫ y, f (fun i ↦ ?_) _ ∂_
+        simp [updateFinset, i.2]
+      · exact hf.aestronglyMeasurable.comp_measurable
+          ((measurable_fprojNat b).prod_mk measurable_id)
     · exact hf.of_uncurry_left.aestronglyMeasurable
   · convert i_f
     rw [partialKernel_comp_ionescuTulceaKernel _ hab]
