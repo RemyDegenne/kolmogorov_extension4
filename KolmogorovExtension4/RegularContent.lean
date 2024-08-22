@@ -49,10 +49,7 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent R)
         congr
         exact le_antisymm (le_iInf₂ fun i hi ↦ hs_anti hi)
           (iInf₂_le (κ := fun i ↦ i ≤ n) (f := fun i _ ↦ s i) n le_rfl)
-    _ = m ((⋂ i ≤ n, s i) \ (⋂ i ≤ n, t i)) := by
-        suffices ⋂ i ≤ n, t i = ∅ by
-          simp only [this, Set.diff_empty]
-        exact ht_empty' n hn
+    _ = m ((⋂ i ≤ n, s i) \ (⋂ i ≤ n, t i)) := by simp only [ht_empty' n hn, Set.diff_empty]
     _ ≤ m (⋃ i ≤ n, (s i \ t i)) := by
         refine addContent_mono hR.isSetSemiring ?_ ?_ ?_
         · exact hR.diff_mem (hR.iInter_le_mem hs n) (hR.iInter_le_mem (fun i ↦ hCR (ht_mem_C i)) n)
@@ -73,7 +70,7 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent R)
     _ ≤ ε := hδ_sum.le
 
 lemma AddContent.sigma_additive_of_regular (hR : IsSetRing R) (m : AddContent R)
-    (hm_ne_top : ∀ {s} (_ : s ∈ R), m s ≠ ∞)
+    (hm_ne_top : ∀ s ∈ R, m s ≠ ∞)
     (hC : IsCompactSystem C) (hCR : C ⊆ R)
     (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε)
     ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ R) (hUf : (⋃ i, f i) ∈ R) (h_disj : Pairwise (Disjoint on f)) :

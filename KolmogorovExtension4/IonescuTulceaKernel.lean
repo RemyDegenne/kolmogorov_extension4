@@ -22,10 +22,11 @@ theorem isProjectiveLimit_nat_iff' (μ : (I : Finset ℕ) → Measure ((i : I) �
     (hμ : IsProjectiveMeasureFamily μ) (ν : Measure ((n : ℕ) → X n)) (a : ℕ) :
     IsProjectiveLimit ν μ ↔ ∀ n ≥ a, ν.map (fprojNat n) = μ (Iic n) := by
   refine ⟨fun h n _ ↦ h (Iic n), fun h I ↦ ?_⟩
+  change Measure.map (fproj I) _ = _
   rw [← fprojSubset_comp_fproj (I.sub_Iic.trans (Iic_subset_Iic.2 (le_max_left (I.sup id) a))),
     ← Measure.map_map (measurable_fprojSubset _) (measurable_fprojNat _),
     h (max (I.sup id) a) (le_max_right _ _)]
-  exact (hμ _ _ _).symm
+  exact (hμ _ _ <| (sub_Iic I).trans (Iic_subset_Iic.mpr (le_max_left (I.sup id) a))).symm
 
 /-- To check that a measure `ν` is the projective limit of a projective family of measures indexed
 by `Finset ℕ`, it is enough to check on intervals of the form `Iic n`. -/
@@ -45,11 +46,6 @@ instance (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) [∀ n, IsFiniteMeas
     IsFiniteMeasure (inducedFamily μ I) := by
   rw [inducedFamily]
   infer_instance
-
-instance (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) [∀ n, IsFiniteMeasure (μ n)] (I : Finset ℕ) :
-     IsFiniteMeasure (inducedFamily μ I) := by
-   rw [inducedFamily]
-   infer_instance
 
 private lemma Iic_pi_eq {a b : ℕ} (h : a = b) :
     ((i : Iic a) → X i) = ((i : Iic b) → X i) := by cases h; rfl
@@ -87,7 +83,8 @@ theorem isProjectiveMeasureFamily_inducedFamily (μ : (n : ℕ) → Measure ((i 
   conv_rhs => enter [1]; change fprojSubset (hJI.trans I.sub_Iic)
   rw [← fprojSubset_comp_fprojSubset J.sub_Iic (Iic_subset_Iic.2 sls), ← Measure.map_map,
     h (J.sup id) (I.sup id) sls]
-  all_goals exact measurable_fprojSubset _
+  any_goals exact measurable_fprojSubset _
+  exact measurable_fprojSubset hJI
 
 open Kernel
 
@@ -98,7 +95,8 @@ theorem partialKernel_proj_apply {n : ℕ} (x : (i : Iic n) → X i) (a b : ℕ)
 /-- Given a family of kernels `κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1))`, and the
 trajectory up to time `n` we can construct an additive content over cylinders. It corresponds
 to composing the kernels by starting at time `n + 1`. -/
-noncomputable def ionescuTulceaContent {n : ℕ} (x : (i : Iic n) → X i) : AddContent (cylinders X) :=
+noncomputable def ionescuTulceaContent {n : ℕ} (x : (i : Iic n) → X i) :
+    AddContent (measurableCylinders X) :=
   kolContent (isProjectiveMeasureFamily_inducedFamily _ (partialKernel_proj_apply κ x))
 
 private lemma heq_measurableSpace_Iic_pi {a b : ℕ} (h : a = b) :
@@ -337,9 +335,9 @@ theorem le_lmarginalPartialKernel_succ {f : ℕ → ((n : ℕ) → X n) → ℝ�
 /-- The cylinders of a product space indexed by `ℕ` can be seen as depending on the first
 corrdinates. -/
 theorem cylinders_nat :
-    cylinders X = ⋃ (N) (S) (_ : MeasurableSet S), {cylinder (Iic N) S} := by
+    measurableCylinders X = ⋃ (N) (S) (_ : MeasurableSet S), {cylinder (Iic N) S} := by
   ext s
-  simp only [mem_cylinders, exists_prop, Set.mem_iUnion, mem_singleton]
+  simp only [mem_measurableCylinders, exists_prop, Set.mem_iUnion, mem_singleton]
   refine ⟨?_, fun ⟨N, S, mS, s_eq⟩ ↦ ⟨Iic N, S, mS, s_eq⟩⟩
   rintro ⟨t, S, mS, rfl⟩
   refine ⟨t.sup id, fprojSubset t.sub_Iic ⁻¹' S, measurable_fprojSubset _ mS, ?_⟩
@@ -394,7 +392,7 @@ This implies the `σ`-additivity of `ionescuTulceaContent`
 (see `sigma_additive_addContent_of_tendsto_zero`), which allows to extend it to the
 `σ`-algebra by Carathéodory's theorem. -/
 theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
-    (A_mem : ∀ n, A n ∈ cylinders X) (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅)
+    (A_mem : ∀ n, A n ∈ measurableCylinders X) (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅)
     {p : ℕ} (x₀ : (i : Iic p) → X i) :
     Tendsto (fun n ↦ ionescuTulceaContent κ x₀ (A n)) atTop (𝓝 0) := by
   have _ n : Nonempty (X n) := by
@@ -412,7 +410,7 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
   -- `χₙ` is measurable.
   have mχ n : Measurable (χ n) := by
     simp_rw [χ, A_eq]
-    exact (measurable_indicator_const_iff 1).2 <| measurableSet_cylinder _ _ (mS n)
+    exact (measurable_indicator_const_iff 1).2 <| (mS n).cylinder
   -- `χₙ` only depends on the first coordinates.
   have χ_dep n : DependsOn (χ n) (Iic (N n)) := by
     simp_rw [χ, A_eq]
@@ -527,8 +525,8 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
 /-- The `ionescuTulceaContent` is sigma-subadditive. -/
 theorem ionescuTulceaContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) → X i)
     ⦃f : ℕ → Set ((n : ℕ) → X n)⦄
-    (hf : ∀ n, f n ∈ cylinders X)
-    (hf_Union : (⋃ n, f n) ∈ cylinders X) :
+    (hf : ∀ n, f n ∈ measurableCylinders X)
+    (hf_Union : (⋃ n, f n) ∈ measurableCylinders X) :
     ionescuTulceaContent κ x₀ (⋃ n, f n) ≤ ∑' n, ionescuTulceaContent κ x₀ (f n) := by
   have _ n : Nonempty (X n) := by
     refine Nat.case_strong_induction_on (p := fun n ↦ Nonempty (X n)) _ inferInstance
@@ -537,13 +535,12 @@ theorem ionescuTulceaContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) →
       Nonempty.intro fun i ↦ @Classical.ofNonempty _ (hind i.1 (mem_Iic.1 i.2))
     exact ProbabilityMeasure.nonempty
       ⟨κ n Classical.ofNonempty, inferInstance⟩
-  refine (ionescuTulceaContent κ x₀).sigma_subadditive_of_sigma_additive
-    isSetRing_cylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
-  refine sigma_additive_addContent_of_tendsto_zero isSetRing_cylinders
-    (ionescuTulceaContent κ x₀) (fun h ↦ ?_) ?_ hf hf_Union hf'
-  · rename_i s
-    obtain ⟨N, S, mS, s_eq⟩ : ∃ N S, MeasurableSet S ∧ s = cylinder (Iic N) S := by
-      simpa [cylinders_nat] using h
+  refine addContent_iUnion_le_of_addContent_iUnion_eq_tsum
+    isSetRing_measurableCylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
+  refine sigma_additive_addContent_of_tendsto_zero isSetRing_measurableCylinders
+    (ionescuTulceaContent κ x₀) (fun s hs ↦ ?_) ?_ hf hf_Union hf'
+  · obtain ⟨N, S, mS, s_eq⟩ : ∃ N S, MeasurableSet S ∧ s = cylinder (Iic N) S := by
+      simpa [cylinders_nat] using hs
     let x_ : (n : ℕ) → X n := Classical.ofNonempty
     classical
     rw [s_eq, ← proj_updateFinset x_ x₀,
@@ -558,7 +555,7 @@ theorem ionescuTulceaContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) →
 /-- This function is the kernel given by the Ionescu-Tulcea theorem. -/
 noncomputable def ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     Measure ((n : ℕ) → X n) :=
-  Measure.ofAddContent isSetSemiring_cylinders generateFrom_cylinders
+  Measure.ofAddContent isSetSemiring_measurableCylinders generateFrom_measurableCylinders
     (ionescuTulceaContent κ x₀) (ionescuTulceaContent_sigma_subadditive κ x₀)
 
 theorem isProbabilityMeasure_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
@@ -568,7 +565,7 @@ theorem isProbabilityMeasure_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → 
     ionescuTulceaContent_cylinder]
   · simp
   · exact MeasurableSet.univ
-  · rw [mem_cylinders]
+  · rw [mem_measurableCylinders]
     exact ⟨Iic 0, Set.univ, MeasurableSet.univ, rfl⟩
 
 theorem isProjectiveLimit_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
@@ -578,18 +575,19 @@ theorem isProjectiveLimit_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i
   · intro n
     ext s ms
     rw [Measure.map_apply (measurable_fprojNat n) ms]
-    have h_mem : (fprojNat n) ⁻¹' s ∈ cylinders X := by
-      rw [mem_cylinders]; exact ⟨Iic n, s, ms, rfl⟩
+    have h_mem : (fprojNat n) ⁻¹' s ∈ measurableCylinders X := by
+      rw [mem_measurableCylinders]; exact ⟨Iic n, s, ms, rfl⟩
     rw [ionescuTulceaFun, Measure.ofAddContent_eq _ _ _ _ h_mem, ionescuTulceaContent,
-      kolContent_congr _ (_ ⁻¹' s) rfl ms]
+      kolContent_congr _ (fprojNat n ⁻¹' s) rfl ms]
   · exact (isProjectiveMeasureFamily_inducedFamily _ (partialKernel_proj_apply κ x₀))
 
 theorem measurable_ionescuTulceaFun (p : ℕ) : Measurable (ionescuTulceaFun κ p) := by
   apply Measure.measurable_of_measurable_coe
   refine MeasurableSpace.induction_on_inter
     (C := fun t ↦ Measurable (fun x₀ ↦ ionescuTulceaFun κ p x₀ t))
-    (s := cylinders X) generateFrom_cylinders.symm isPiSystem_cylinders
-    (by simp) (fun t ht ↦ ?cylinder) (fun t mt ht ↦ ?compl) (fun f disf mf hf ↦ ?union)
+    (s := measurableCylinders X) generateFrom_measurableCylinders.symm
+    isPiSystem_measurableCylinders (by simp) (fun t ht ↦ ?cylinder) (fun t mt ht ↦ ?compl)
+    (fun f disf mf hf ↦ ?union)
   · obtain ⟨N, S, mS, t_eq⟩ : ∃ N S, MeasurableSet S ∧ t = cylinder (Iic N) S := by
       simpa [cylinders_nat] using ht
     simp_rw [ionescuTulceaFun, Measure.ofAddContent_eq _ _ _ _ ht, ionescuTulceaContent,
@@ -625,6 +623,7 @@ instance (p : ℕ) : IsMarkovKernel (ionescuTulceaKernel κ p) :=
 theorem ionescuTulceaKernel_proj (a b : ℕ) :
     (ionescuTulceaKernel κ a).map (fprojNat b) (measurable_fprojNat b) = partialKernel κ a b := by
   ext1 x₀
+  conv_lhs => enter [1, 2]; change fun x i ↦ x i
   rw [Kernel.map_apply, ionescuTulceaKernel_apply, isProjectiveLimit_ionescuTulceaFun,
     inducedFamily_Iic]
 
@@ -632,7 +631,7 @@ theorem eq_ionescuTulceaKernel' {a : ℕ} (n : ℕ) (η : Kernel ((i : Iic a) �
     (hη : ∀ b ≥ n, Kernel.map η (fprojNat b) (measurable_fprojNat b) = partialKernel κ a b) :
     η = ionescuTulceaKernel κ a := by
   ext1 x₀
-  refine isProjectiveLimit_unique ?_ (isProjectiveLimit_ionescuTulceaFun _ _ _)
+  refine ((isProjectiveLimit_ionescuTulceaFun _ _ _).unique ?_).symm
   rw [isProjectiveLimit_nat_iff' _ _ _ n]
   · intro k hk
     rw [inducedFamily_Iic, ← Kernel.map_apply _ (measurable_fprojNat k), hη k hk]
