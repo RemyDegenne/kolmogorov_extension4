@@ -91,11 +91,11 @@ def er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k) :
   measurable_invFun := by
     refine Measurable.prod_mk ?_ ?_ <;> exact measurable_pi_lambda _ (fun a ↦ measurable_id.eval)
 
-theorem fprojSubset_er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k)
+theorem fproj₂_er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k)
     (y : (n : Ioc i j) → X n) (z : (n : Ioc j k) → X n) :
-    fprojSubset (Ioc_subset_Ioc_right hjk) (er i j k hij hjk (y, z)) = y := by
+    fproj₂ (Ioc_subset_Ioc_right hjk) (er i j k hij hjk (y, z)) = y := by
   ext n
-  simp [fprojSubset, er, (mem_Ioc.1 n.2).2]
+  simp [fproj₂, er, (mem_Ioc.1 n.2).2]
 
 lemma el_assoc {i j k : ℕ} (hij : i < j) (hjk : j ≤ k) (a : (x : Iic i) → X ↑x)
     (b : (l : Ioc i j) → X l) (c : (l : Ioc j k) → X l) :
@@ -471,24 +471,24 @@ theorem isMarkovKernel_kerNat {i j : ℕ}
 
 theorem kerNat_proj (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
     [∀ i, IsMarkovKernel (κ i)] {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
-    Kernel.map (kerNat κ a c) (fprojSubset (Ioc_subset_Ioc_right hbc)) (measurable_fprojSubset _) =
+    Kernel.map (kerNat κ a c) (fproj₂ (Ioc_subset_Ioc_right hbc)) (measurable_fproj₂ _) =
       kerNat κ a b := by
   rcases eq_or_lt_of_le hbc with rfl | hbc
   · exact Kernel.map_id _
   · ext x s ms
     rw [Kernel.map_apply' _ _ _ ms, ← compProdNat_kerNat κ hab hbc,
-      compProdNat_apply' _ _ hab hbc _ (measurable_fprojSubset _ ms), ← one_mul (kerNat κ a b x s),
+      compProdNat_apply' _ _ hab hbc _ (measurable_fproj₂ _ ms), ← one_mul (kerNat κ a b x s),
       ← lintegral_indicator_const ms]
     congr with y
     by_cases hy : y ∈ s <;> simp only [Set.mem_preimage, Set.indicator, hy, ↓reduceIte]
     · have := isMarkovKernel_kerNat κ hbc
       convert measure_univ
       · ext z
-        simpa only [Set.mem_setOf_eq, Set.mem_univ, iff_true, fprojSubset_er] using hy
+        simpa only [Set.mem_setOf_eq, Set.mem_univ, iff_true, fproj₂_er] using hy
       · infer_instance
     · convert measure_empty
       · ext z
-        simpa [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, fprojSubset_er] using hy
+        simpa [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, fproj₂_er] using hy
       · infer_instance
 
 end kerNat
@@ -548,7 +548,7 @@ theorem partialKernel_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
   unfold partialKernel
   split_ifs with h1 h2 h3
   · have : (fprojNat_le (X := X) hbc) ∘ (el a c h1.le) =
-        (el a b h2.le) ∘ (Prod.map id (fprojSubset (Ioc_subset_Ioc_right hbc))) := by
+        (el a b h2.le) ∘ (Prod.map id (fproj₂ (Ioc_subset_Ioc_right hbc))) := by
       ext x i
       simp [el]
     rw [Kernel.map_map, Kernel.map_eq _ _ this, ← Kernel.map_map, Kernel.map_prod, Kernel.map_id,
@@ -556,7 +556,7 @@ theorem partialKernel_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
   · have : (fprojNat_le (X := X) hbc) ∘ (el a c h1.le) =
         (fprojNat_le (not_lt.1 h2)) ∘ Prod.fst := by
       ext x i
-      simp [el, fprojNat_le, fprojSubset, (mem_Iic.1 i.2).trans (not_lt.1 h2)]
+      simp [el, fprojNat_le, fproj₂, (mem_Iic.1 i.2).trans (not_lt.1 h2)]
     have _ := isMarkovKernel_kerNat κ h1
     rw [Kernel.map_map, Kernel.map_eq _ _ this, ← Kernel.map_map _ _ (measurable_fprojNat_le _),
       Kernel.map_prod_fst, Kernel.map_deterministic]

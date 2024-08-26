@@ -28,9 +28,9 @@ variable [∀ i, MeasurableSpace (α i)]
 theorem measurable_proj' (I : Finset ι) : Measurable fun (f : Π i, α i) (i : I) ↦ f i := by
   rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
 
-theorem measurable_proj₂ (I J : Set ι) (hIJ : J ⊆ I) :
-    Measurable fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ := by
-  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
+-- theorem measurable_proj₂ (I J : Set ι) (hIJ : J ⊆ I) :
+--     Measurable fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ := by
+--   rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
 
 theorem measurable_proj₂' (I J : Finset ι) (hIJ : J ⊆ I) :
     Measurable fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ := by
@@ -42,9 +42,9 @@ section Continuous
 
 variable [∀ i, TopologicalSpace (α i)]
 
-theorem continuous_proj₂ (I J : Set ι) (hIJ : J ⊆ I) :
-    Continuous fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ :=
-  continuous_pi fun i : ↥J ↦ by apply continuous_apply
+-- theorem continuous_proj₂ (I J : Set ι) (hIJ : J ⊆ I) :
+--     Continuous fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ :=
+--   continuous_pi fun i : ↥J ↦ by apply continuous_apply
 
 theorem continuous_proj₂' (I J : Finset ι) (hIJ : J ⊆ I) :
     Continuous fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ :=
