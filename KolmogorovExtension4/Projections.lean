@@ -1,75 +1,103 @@
 /-
-Copyright (c) 2023 Rémy Degenne. All rights reserved.
+Copyright (c) 2024 Etienne Marion. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Etienne Marion
 -/
-import Mathlib.MeasureTheory.MeasurableSpace.Basic
 import KolmogorovExtension4.Annexe
-import KolmogorovExtension4.DependsOn
 
-open MeasureTheory
+/-!
+# Projection of a function
 
-variable {ι : Type*} {X : ι → Type*}
+Given a dependent function `f : (i : ι) → α i` and `s : Set ι`, one might want to consider
+the restriction of `f` to the variables contained in `s`.
+This is defined in this file as `Function.proj s f`.
+Similarly, if we have `s t : Set ι`, `hst : s ⊆ t` and `f : (i : ↑t) → α ↑i`,
+one might want to restrict it to variables contained in `s`.
+This is defined in this file as `Function.proj₂ hst f`.
+We also define analoguous functions when `Finset`s are provided.
+
+Having these definitions avoids heavy type ascription when manipulating these functions and allow
+some rewriting when composing them (see `Function.proj₂_comp_proj` for instance).
+
+We also define analoguous functions for sets of the form `Set.Iic n` and `Finset.Iic n`, where
+`n : ℕ`, see `Function.projNat` for instance.
+
+## Main definitions
+
+* `Function.proj s f`: Restricts the function `f` to the variables contained in `s`.
+* `Function.projNat`: Restricts the function `f` to the variables indexed by integers
+  smaller than `n`.
+-/
+
+open MeasureTheory Function
+
+section Generality
+
+variable {ι : Type*}
+
+namespace Function
+
+variable {α : ι → Type*}
 
 /-- Given a dependent function, restrict it to a function of variables in `s`. -/
 @[simp]
-def proj (s : Set ι) (x : (i : ι) → X i) (i : s) : X i := x i
-
-theorem dependsOn_proj (s : Set ι) : DependsOn (@proj ι X s) s := fun _ _ h ↦ by
-  ext; simp [proj, h]
+def proj (s : Set ι) (x : (i : ι) → α i) (i : s) : α i := x i
 
 /-- Given a dependent function of variables in `t`, restrict it to a function of variables in `s`
 when `s ⊆ t`. -/
-def proj₂ {s t : Set ι} (hst : s ⊆ t) (x : (i : t) → X i) (i : s) : X i := x ⟨i.1, hst i.2⟩
-
-theorem proj₂_comp_proj {s t : Set ι} (hst : s ⊆ t) :
-    (proj₂ (X := X) hst) ∘ (proj t) = proj s := rfl
-
-theorem proj₂_comp_proj₂ {s t u : Set ι} (hst : s ⊆ t) (htu : t ⊆ u) :
-    (proj₂ (X := X) hst) ∘ (proj₂ htu) = proj₂ (hst.trans htu) := rfl
+@[simp]
+def proj₂ {s t : Set ι} (hst : s ⊆ t) (x : (i : t) → α i) (i : s) : α i := x ⟨i.1, hst i.2⟩
 
 /-- Given a dependent function, restrict it to a function of variables in `s`, `Finset` version. -/
 @[simp]
-def fproj (s : Finset ι) (x : (i : ι) → X i) (i : s) : X i := x i
-
--- @[simp]
--- lemma fproj_def (s : Finset ι) : @fproj ι X s = fun x i ↦ x i := rfl
-
-theorem dependsOn_fproj (s : Finset ι) : DependsOn (@fproj ι X s) s := fun _ _ h ↦ by
-  ext; simp [fproj, h]
+def fproj (s : Finset ι) (x : (i : ι) → α i) (i : s) : α i := x i
 
 /-- Given a dependent function of variables in `t`, restrict it to a function of variables in `s`
 when `s ⊆ t`, `Finset` version. -/
 @[simp]
-def fproj₂ {s t : Finset ι} (hst : s ⊆ t) (x : (i : t) → X i) (i : s) : X i :=
-  x ⟨i.1, hst i.2⟩
+def fproj₂ {s t : Finset ι} (hst : s ⊆ t) (x : (i : t) → α i) (i : s) : α i := x ⟨i.1, hst i.2⟩
 
--- @[simp]
--- lemma fproj₂_def {s t : Finset ι} (hst : s ⊆ t) :
---     fproj₂ (X := X) hst = fun x i ↦ x ⟨i.1, hst i.2⟩ := rfl
+theorem fproj_eq_proj (s : Finset ι) : @fproj ι α s = proj (s : Set ι) := rfl
+
+theorem frpoj₂_eq_proj₂ {s t : Finset ι} (hst : s ⊆ t) :
+    fproj₂ (α := α) hst = fproj₂ (Finset.coe_subset.2 hst) := rfl
+
+theorem proj₂_comp_proj {s t : Set ι} (hst : s ⊆ t) :
+    (proj₂ hst) ∘ (@proj ι α t) = proj s := rfl
 
 theorem fproj₂_comp_fproj {s t : Finset ι} (hst : s ⊆ t) :
-    (fproj₂ (X := X) hst) ∘ (fproj t) = fproj s := rfl
+    (fproj₂ hst) ∘ (@fproj ι α t) = fproj s := rfl
+
+theorem proj₂_comp_proj₂ {s t u : Set ι} (hst : s ⊆ t) (htu : t ⊆ u) :
+    (proj₂ (α := α) hst) ∘ (proj₂ htu) = proj₂ (hst.trans htu) := rfl
 
 theorem fproj₂_comp_fproj₂ {s t u : Finset ι} (hst : s ⊆ t) (htu : t ⊆ u) :
-    (fproj₂ (X := X) hst) ∘ (fproj₂ htu) = fproj₂ (hst.trans htu) := rfl
+    (fproj₂ (α := α) hst) ∘ (fproj₂ htu) = fproj₂ (hst.trans htu) := rfl
+
+end Function
+
+variable {X : ι → Type*}
 
 section measurability
 
 variable [∀ i, MeasurableSpace (X i)]
 
+@[measurability, fun_prop]
 theorem measurable_proj (s : Set ι) : Measurable (@proj ι X s) :=
   measurable_pi_lambda _ fun _ ↦ measurable_pi_apply _
 
+@[measurability, fun_prop]
 theorem measurable_proj₂ {s t : Set ι} (hst : s ⊆ t) :
-    Measurable (proj₂ (X := X) hst) :=
+    Measurable (proj₂ (α := X) hst) :=
   measurable_pi_lambda _ fun _ ↦ measurable_pi_apply _
 
+@[measurability, fun_prop]
 theorem measurable_fproj (s : Finset ι) : Measurable (@fproj ι X s) :=
   measurable_pi_lambda _ fun _ ↦ measurable_pi_apply _
 
+@[measurability, fun_prop]
 theorem measurable_fproj₂ {s t : Finset ι} (hst : s ⊆ t) :
-    Measurable (fproj₂ (X := X) hst) :=
+    Measurable (fproj₂ (α := X) hst) :=
   measurable_pi_lambda _ fun _ ↦ measurable_pi_apply _
 
 end measurability
@@ -78,66 +106,103 @@ section continuity
 
 variable [∀ i, TopologicalSpace (X i)]
 
+@[fun_prop]
 theorem continuous_proj (s : Set ι) : Continuous (@proj ι X s) :=
   continuous_pi fun _ ↦ continuous_apply _
 
+@[fun_prop]
 theorem continuous_proj₂ {s t : Set ι} (hst : s ⊆ t) :
-    Continuous (proj₂ (X := X) hst) :=
+    Continuous (proj₂ (α := X) hst) :=
   continuous_pi fun _ ↦ continuous_apply _
 
+@[fun_prop]
 theorem continuous_fproj (s : Finset ι) : Continuous (@fproj ι X s) :=
   continuous_pi fun _ ↦ continuous_apply _
 
+@[fun_prop]
 theorem continuous_fproj₂ {s t : Finset ι} (hst : s ⊆ t) :
-    Continuous (fproj₂ (X := X) hst) :=
+    Continuous (fproj₂ (α := X) hst) :=
   continuous_pi fun _ ↦ continuous_apply _
 
 end continuity
 
-variable {X : ℕ → Type*}
+end Generality
 
-/-- Given a dependent function indexed by `ℕ`, specialize it as a function on `Iic n`. -/
-abbrev projNat (n : ℕ) := @proj ℕ X (Set.Iic n)
+section Nat
 
-theorem dependsOn_projNat (n : ℕ) : DependsOn (@projNat X n) (Set.Iic n) :=
-  dependsOn_proj _
+namespace Function
+
+variable {α : ℕ → Type*}
+
+/-- Given a dependent function indexed by `ℕ`, specialize it as a function on `Iic n`.
+Contrary to `Function.proj`, this is not `simp` definition to avoid unfolding it
+when it's not fully applied. -/
+def projNat (n : ℕ) := @proj ℕ α (Set.Iic n)
+
+@[simp]
+lemma projNat_def (n : ℕ) (x : Π n, α n) (i : Set.Iic n) : projNat n x i = x i := rfl
 
 /-- Given a dependent function indexed by `Iic n`, specialize it as a function on `Iic m` when
-`m ≤ n`. -/
-abbrev projNat_le {m n : ℕ} (hmn : m ≤ n) := proj₂ (X := X) (Set.Iic_subset_Iic.2 hmn)
+`m ≤ n`.
+Contrary to `Function.proj`, this is not `simp` definition to avoid unfolding it
+when it's not fully applied. -/
+def projNat₂ {m n : ℕ} (hmn : m ≤ n) := proj₂ (α := α) (Set.Iic_subset_Iic.2 hmn)
 
-theorem projNat_le_comp_projNat {m n : ℕ} (hmn : m ≤ n) :
-    (projNat_le hmn) ∘ (@projNat X n) = projNat m := rfl
+@[simp]
+lemma projNat₂_def {m n : ℕ} (hmn : m ≤ n) (x : Π i : Set.Iic n, α i) (i : Set.Iic m) :
+    projNat₂ hmn x i = x ⟨i.1, Set.Iic_subset_Iic.2 hmn i.2⟩ := rfl
 
 /-- Given a dependent function indexed by `ℕ`, specialize it as a function on `Iic n`,
-`Finset` version. -/
-@[simp]
-abbrev fprojNat (n : ℕ) := @fproj ℕ X (Finset.Iic n)
+`Finset` version.
+Contrary to `Function.proj`, this is not `simp` definition to avoid unfolding it
+when it's not fully applied. -/
+def fprojNat (n : ℕ) := @fproj ℕ α (Finset.Iic n)
 
-theorem dependsOn_fprojNat (n : ℕ) : DependsOn (@fprojNat X n) (Set.Iic n) := by
-  convert dependsOn_fproj (Finset.Iic n)
-  simp
+@[simp]
+lemma fprojNat_def (n : ℕ) (x : Π n, α n) (i : Finset.Iic n) : fprojNat n x i = x i := rfl
 
 /-- Given a dependent function indexed by `Iic n`, specialize it as a function on `Iic m` when
-`m ≤ n`, `Finset` version. -/
-@[simp]
-abbrev fprojNat_le {m n : ℕ} (hmn : m ≤ n) := fproj₂ (X := X) (Finset.Iic_subset_Iic.2 hmn)
+`m ≤ n`, `Finset` version.
+Contrary to `Function.proj`, this is not `simp` definition to avoid unfolding it
+when it's not fully applied. -/
+def fprojNat₂ {m n : ℕ} (hmn : m ≤ n) := fproj₂ (α := α) (Finset.Iic_subset_Iic.2 hmn)
 
-theorem fprojNat_le_comp_fprojNat {m n : ℕ} (hmn : m ≤ n) :
-    (fprojNat_le hmn) ∘ (@fprojNat X n) = fprojNat m := rfl
+@[simp]
+lemma fprojNat₂_def {m n : ℕ} (hmn : m ≤ n) (x : Π i : Finset.Iic n, α i) (i : Finset.Iic m) :
+    fprojNat₂ hmn x i = x ⟨i.1, Finset.Iic_subset_Iic.2 hmn i.2⟩ := rfl
+
+theorem projNat₂_comp_projNat {m n : ℕ} (hmn : m ≤ n) :
+    (projNat₂ hmn) ∘ (@projNat α n) = projNat m := rfl
+
+theorem fprojNat₂_comp_fprojNat {m n : ℕ} (hmn : m ≤ n) :
+    (fprojNat₂ hmn) ∘ (@fprojNat α n) = fprojNat m := rfl
+
+theorem projNat₂_comp_projNat₂ {m n k : ℕ} (hmn : m ≤ n) (hnk : n ≤ k) :
+    (projNat₂ (α := α) hmn) ∘ (projNat₂ hnk) = projNat₂ (hmn.trans hnk) := rfl
+
+theorem fprojNat₂_comp_fprojNat₂ {m n k : ℕ} (hmn : m ≤ n) (hnk : n ≤ k) :
+    (fprojNat₂ (α := α) hmn) ∘ (fprojNat₂ hnk) = fprojNat₂ (hmn.trans hnk) := rfl
+
+end Function
+
+variable {X : ℕ → Type*}
 
 section measurability
 
 variable [∀ n, MeasurableSpace (X n)]
 
+@[measurability, fun_prop]
 theorem measurable_projNat (n : ℕ) : Measurable (@projNat X n) := measurable_proj _
 
-theorem measurable_projNat_le {m n : ℕ} (hmn : m ≤ n) : Measurable (projNat_le (X := X) hmn) :=
+@[measurability, fun_prop]
+theorem measurable_projNat₂ {m n : ℕ} (hmn : m ≤ n) : Measurable (projNat₂ (α := X) hmn) :=
   measurable_proj₂ _
 
-theorem measurable_fprojNat (n : ℕ) : Measurable (@fprojNat X n) := measurable_fproj _
+@[measurability, fun_prop]
+theorem measurable_fprojNat (n : ℕ) : Measurable (@fprojNat X n) := measurable_proj _
 
-theorem measurable_fprojNat_le {m n : ℕ} (hmn : m ≤ n) : Measurable (fprojNat_le (X := X) hmn) :=
+@[measurability, fun_prop]
+theorem measurable_fprojNat₂ {m n : ℕ} (hmn : m ≤ n) : Measurable (fprojNat₂ (α := X) hmn) :=
   measurable_fproj₂ _
 
 end measurability
@@ -146,14 +211,20 @@ section continuity
 
 variable [∀ n, TopologicalSpace (X n)]
 
+@[fun_prop]
 theorem continuous_projNat (n : ℕ) : Continuous (@projNat X n) := continuous_proj _
 
-theorem continuous_projNat_le {m n : ℕ} (hmn : m ≤ n) : Continuous (projNat_le (X := X) hmn) :=
+@[fun_prop]
+theorem continuous_projNat₂ {m n : ℕ} (hmn : m ≤ n) : Continuous (projNat₂ (α := X) hmn) :=
   continuous_proj₂ _
 
-theorem continuous_fprojNat (n : ℕ) : Continuous (@fprojNat X n) := continuous_fproj _
+@[fun_prop]
+theorem continuous_fprojNat (n : ℕ) : Continuous (@fprojNat X n) := continuous_proj _
 
-theorem continuous_fprojNat_le {m n : ℕ} (hmn : m ≤ n) : Continuous (fprojNat_le (X := X) hmn) :=
+@[fun_prop]
+theorem continuous_fprojNat₂ {m n : ℕ} (hmn : m ≤ n) : Continuous (fprojNat₂ (α := X) hmn) :=
   continuous_fproj₂ _
 
 end continuity
+
+end Nat

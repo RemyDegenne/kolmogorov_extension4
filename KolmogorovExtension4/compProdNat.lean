@@ -5,7 +5,7 @@ Authors: Rémy Degenne, Etienne Marion
 -/
 import KolmogorovExtension4.Projections
 
-open Finset ENNReal ProbabilityTheory MeasureTheory
+open Finset ENNReal ProbabilityTheory MeasureTheory Function
 
 noncomputable section
 
@@ -518,7 +518,7 @@ noncomputable def partialKernel (a b : ℕ) : Kernel ((i : Iic a) → X i) ((i :
   if hab : a < b
     then ((Kernel.deterministic id measurable_id) ×ₖ kerNat κ a b).map
       (el a b hab.le) (el a b hab.le).measurable
-    else Kernel.deterministic (fprojNat_le (not_lt.1 hab)) (measurable_fprojNat_le _)
+    else Kernel.deterministic (fprojNat₂ (not_lt.1 hab)) (measurable_fprojNat₂ _)
 
 theorem partialKernel_lt {a b : ℕ} (hab : a < b) :
     partialKernel κ a b =
@@ -528,7 +528,7 @@ theorem partialKernel_lt {a b : ℕ} (hab : a < b) :
 
 theorem partialKernel_le {a b : ℕ} (hab : b ≤ a) :
     partialKernel κ a b =
-      Kernel.deterministic (fprojNat_le hab) (measurable_fprojNat_le _) := by
+      Kernel.deterministic (fprojNat₂ hab) (measurable_fprojNat₂ _) := by
   rw [partialKernel, dif_neg (not_lt.2 hab)]
 
 variable [∀ n, IsMarkovKernel (κ n)]
@@ -543,22 +543,22 @@ instance (a b : ℕ) : IsMarkovKernel (partialKernel κ a b) := by
 /-- If `b ≤ c`, then projecting the trajectory up to time `c` on first coordinates gives the
 trajectory up to time `b`. -/
 theorem partialKernel_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
-    (partialKernel κ a c).map (fprojNat_le hbc) (measurable_fprojNat_le _) =
+    (partialKernel κ a c).map (fprojNat₂ hbc) (measurable_fprojNat₂ _) =
       partialKernel κ a b := by
   unfold partialKernel
   split_ifs with h1 h2 h3
-  · have : (fprojNat_le (X := X) hbc) ∘ (el a c h1.le) =
+  · have : (fprojNat₂ (α := X) hbc) ∘ (el a c h1.le) =
         (el a b h2.le) ∘ (Prod.map id (fproj₂ (Ioc_subset_Ioc_right hbc))) := by
       ext x i
       simp [el]
     rw [Kernel.map_map, Kernel.map_eq _ _ this, ← Kernel.map_map, Kernel.map_prod, Kernel.map_id,
       kerNat_proj _ h2 hbc]
-  · have : (fprojNat_le (X := X) hbc) ∘ (el a c h1.le) =
-        (fprojNat_le (not_lt.1 h2)) ∘ Prod.fst := by
+  · have : (fprojNat₂ (α := X) hbc) ∘ (el a c h1.le) =
+        (fprojNat₂ (not_lt.1 h2)) ∘ Prod.fst := by
       ext x i
-      simp [el, fprojNat_le, fproj₂, (mem_Iic.1 i.2).trans (not_lt.1 h2)]
+      simp [el, fprojNat₂, fproj₂, (mem_Iic.1 i.2).trans (not_lt.1 h2)]
     have _ := isMarkovKernel_kerNat κ h1
-    rw [Kernel.map_map, Kernel.map_eq _ _ this, ← Kernel.map_map _ _ (measurable_fprojNat_le _),
+    rw [Kernel.map_map, Kernel.map_eq _ _ this, ← Kernel.map_map _ _ (measurable_fprojNat₂ _),
       Kernel.map_prod_fst, Kernel.map_deterministic]
     rfl
   · omega
