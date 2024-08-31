@@ -176,7 +176,7 @@ theorem prod_noyau_proj (N : ℕ) :
     apply indicator_const_eq
     simp only [id_eq, el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, mem_preimage]
     congrm (fun i ↦ ?_) ∈ s
-    simp [(mem_Iic_zero i.2).symm, fproj₂]
+    simp [(mem_Iic_zero i.2).symm]
   · rw [partialKernel, dif_pos hN, kerNat_prod _ hN]
 
 theorem el_preimage {n : ℕ} (s : (i : Iic n) → Set (X i)) :
@@ -225,7 +225,7 @@ theorem isProjectiveLimit_infinitePiNat :
   simp_rw [isProjectiveMeasureFamily_pi μ _ _ I.sub_Iic]
   change Measure.map (fproj I) _ = Measure.map (fproj₂ I.sub_Iic) _
   rw [← fproj₂_comp_fproj I.sub_Iic,
-    ← Measure.map_map (measurable_fproj₂ _) (measurable_fproj _)]
+    ← Measure.map_map (measurable_fproj₂ _) (measurable_fproj _), ← fprojNat]
   congr
   rw [infinitePiNat, Measure.map_bind, map_bind_eq_bind_comap, ionescuTulceaKernel_proj]; swap
   · exact zer.measurable
@@ -494,7 +494,7 @@ theorem isProjectiveLimit_productMeasure :
   intro I
   ext1 s hs
   rw [Measure.map_apply _ hs]
-  swap; · apply measurable_proj
+  swap; · apply measurable_fproj
   have h_mem : (fproj I) ⁻¹' s ∈ measurableCylinders X := by
     rw [mem_measurableCylinders]; exact ⟨I, s, hs, rfl⟩
   conv_lhs => change (productMeasure μ) ((fproj I) ⁻¹' s)
@@ -505,7 +505,7 @@ instance : IsProbabilityMeasure (productMeasure μ) := by
   constructor
   rw [← cylinder_univ ∅, cylinder, ← Measure.map_apply, isProjectiveLimit_productMeasure μ]
   · simp
-  · exact measurable_proj _
+  · exact measurable_fproj _
   · exact MeasurableSet.univ
 
 theorem productMeasure_boxes {s : Finset ι} {t : (i : ι) → Set (X i)}
@@ -517,7 +517,7 @@ theorem productMeasure_boxes {s : Finset ι} {t : (i : ι) → Set (X i)}
   rw [this, cylinder, ← Measure.map_apply, isProjectiveLimit_productMeasure μ,
     Measure.pi_pi]
   · rw [Finset.univ_eq_attach, Finset.prod_attach _ (fun i ↦ (μ i) (t i))]
-  · exact measurable_proj _
+  · exact measurable_fproj _
   · exact MeasurableSet.pi Set.countable_univ fun i _ ↦ mt i.1 i.2
 
 theorem productMeasure_cylinder {s : Finset ι} {S : Set ((i : s) → X i)} (mS : MeasurableSet S) :
