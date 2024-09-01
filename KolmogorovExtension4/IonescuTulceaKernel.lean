@@ -29,8 +29,6 @@ theorem isProjectiveLimit_nat_iff' (μ : (I : Finset ℕ) → Measure ((i : I) �
     hμ _ _ <| (sub_Iic I).trans (Iic_subset_Iic.2 (le_max_left (I.sup id) a))]
   rfl
 
-
-
 /-- To check that a measure `ν` is the projective limit of a projective family of measures indexed
 by `Finset ℕ`, it is enough to check on intervals of the form `Iic n`. -/
 theorem isProjectiveLimit_nat_iff (μ : (I : Finset ℕ) → Measure ((i : I) → X i))
