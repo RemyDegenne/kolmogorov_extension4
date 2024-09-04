@@ -45,7 +45,7 @@ lemma mem_boxI {I : Set ι} (t : (i : ι) → Set (α i)) (x : (i : I) → α i)
 @[simp]
 lemma mem_boxI' {I : Finset ι} (t : (i : ι) → Set (α i)) (x : (i : I) → α i) :
     x ∈ boxI I t ↔ ∀ (i) (hi : i ∈ I), x ⟨i, hi⟩ ∈ t i := by
-  simp only [boxI, mem_pi, mem_univ, forall_true_left, Subtype.forall]
+  simp only [boxI, mem_pi, mem_univ, forall_true_left, Subtype.forall, Finset.mem_coe]
 
 lemma boxI_univ (I : Set ι) :
     (univ : Set ((i : I) → α i)) = boxI I (fun (i : ι) ↦ (univ : Set (α i))) := by

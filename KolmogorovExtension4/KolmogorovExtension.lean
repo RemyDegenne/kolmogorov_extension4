@@ -139,7 +139,7 @@ theorem exists_compact
   have h : P J A - ε < P J A := ENNReal.sub_lt_self (measure_ne_top _ _) hPA hε.ne'
   obtain ⟨K, hKA, ⟨hK_compact, hK_closed⟩, h_lt⟩ := hP_inner J hA (P J A - ε) h
   refine ⟨K, hK_compact, hK_closed, hKA, ?_⟩
-  rw [measure_diff hKA hK_closed.measurableSet (measure_ne_top (P J) _)]
+  rw [measure_diff hKA hK_closed.nullMeasurableSet (measure_ne_top (P J) _)]
   have h_le := h_lt.le
   rw [tsub_le_iff_left] at h_le ⊢
   rwa [add_comm]
