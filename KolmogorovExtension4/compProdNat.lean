@@ -26,8 +26,7 @@ def e (n : ℕ) : (X (n + 1)) ≃ᵐ ((i : Ioc n (n + 1)) → X i) where
   toFun := fun x i ↦ (mem_Ioc_succ.1 i.2).symm ▸ x
   invFun := fun x ↦ x ⟨n + 1, right_mem_Ioc.2 n.lt_succ_self⟩
   left_inv := fun x ↦ by simp
-  right_inv := fun x ↦ by
-    ext i
+  right_inv := fun x ↦ funext fun i ↦ by
     have : ⟨n + 1, right_mem_Ioc.2 n.lt_succ_self⟩ = i := by
       simp [(mem_Ioc_succ.1 i.2).symm]
     cases this; rfl
@@ -95,7 +94,7 @@ theorem fproj₂_er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k)
     (y : (n : Ioc i j) → X n) (z : (n : Ioc j k) → X n) :
     fproj₂ (Ioc_subset_Ioc_right hjk) (er i j k hij hjk (y, z)) = y := by
   ext n
-  simp [fproj₂, er, (mem_Ioc.1 n.2).2]
+  simp [er, (mem_Ioc.1 n.2).2]
 
 lemma el_assoc {i j k : ℕ} (hij : i < j) (hjk : j ≤ k) (a : (x : Iic i) → X ↑x)
     (b : (l : Ioc i j) → X l) (c : (l : Ioc j k) → X l) :
@@ -306,6 +305,39 @@ def kerInterval (κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
   | succ k κ_k => exact if h : j = k + 1 then castPath κ₀ h else
     (κ_k ⊗ₖ' (Kernel.map (κ k) (e k) (e k).measurable))
 
+def test (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
+    Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l) := by
+  induction j with
+  | zero => exact 0
+  | succ k κ_k =>
+    exact if h : i = k then castPath ((κ i).map (e i) (e i).measurable) (h ▸ rfl)
+    else (κ_k ⊗ₖ' ((κ k).map (e k) (e k).measurable))
+
+lemma test_zero (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i : ℕ) :
+    test κ i 0 = 0 := rfl
+
+lemma test_succ (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
+    test κ i (j + 1) =
+      if h : i = j then castPath ((κ i).map (e i) (e i).measurable) (h ▸ rfl)
+        else (test κ i j) ⊗ₖ' ((κ j).map (e j) (e j).measurable) := rfl
+
+lemma test_succ_of_ne (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : i ≠ j) :
+    test κ i (j + 1) = (test κ i j) ⊗ₖ' ((κ j).map (e j) (e j).measurable) := by
+  rw [test_succ, dif_neg h]
+
+lemma test_succ_right (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : i < j) :
+    test κ i (j + 1) = (test κ i j) ⊗ₖ' ((κ j).map (e j) (e j).measurable) := by
+  rw [test_succ_of_ne κ h.ne]
+
+lemma test_of_le (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : j ≤ i) :
+    test κ i j = 0 := by
+  induction j with
+  | zero => rfl
+  | succ n ih =>
+      rw [test_succ, dif_neg (by omega), ih (by omega)]
+      simp
+
+/--/
 @[simp]
 lemma kerInterval_zero (κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
     (κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1))) :
