@@ -89,8 +89,8 @@ def zer : (X 0) ≃ᵐ ((i : Iic 0) → X i) where
 general index space-/
 noncomputable def Measure.infinitePiNat : Measure ((n : ℕ) → X n) :=
   ((μ 0).map zer).bind
-    (@ionescuTulceaKernel _ (ProbabilityMeasure.nonempty ⟨μ 0, hμ 0⟩) _
-      (fun n ↦ const _ (μ (n + 1))) _ 0)
+    (@ionescuTulceaKernel _ _
+      (fun n ↦ const _ (μ (n + 1))) _ (ProbabilityMeasure.nonempty ⟨μ 0, hμ 0⟩) 0)
 
 open Measure
 
@@ -257,7 +257,8 @@ variable {ι : Type*}
 variable {X : ι → Type*} [hX : ∀ i, MeasurableSpace (X i)]
 variable (μ : (i : ι) → Measure (X i)) [hμ : ∀ i, IsProbabilityMeasure (μ i)]
 
-lemma cast_pi_eval (s : Set ι) (x : (i : s) → X i) (i j : s) (h : i = j) (h' : X i = X j) :
+lemma cast_pi_eval {X : ι → Type*} (s : Set ι) (x : (i : s) → X i) (i j : s) (h : i = j)
+    (h' : X i = X j) :
     cast h' (x i) = x j := by
   subst h
   rfl
@@ -334,10 +335,10 @@ theorem secondLemma
       Subtype.forall, Equiv.coe_fn_symm_mk, g, aux]
     refine ⟨fun h' k hk ↦ ?_, fun h' i hi ↦ ?_⟩
     · convert h' (φ k) (e' n k hk)
-      rw [@cast_pi_eval ℕ (fun k ↦ X (φ k)) _ (t n) x ⟨φ.symm (φ k), by simp [hk]⟩ ⟨k, hk⟩]
+      rw [@cast_pi_eval ℕ (fun k ↦ X (φ k)) (t n) x ⟨φ.symm (φ k), by simp [hk]⟩ ⟨k, hk⟩]
       simp
     · convert h' (φ.symm i) (e n i hi)
-      rw [← @cast_pi_eval ι (fun i ↦ Set (X i)) _ (s n) u ⟨φ (φ.symm i), by simp [hi]⟩
+      rw [← @cast_pi_eval ι (fun i ↦ Set (X i)) (s n) u ⟨φ (φ.symm i), by simp [hi]⟩
           ⟨i, hi⟩ (by simp) _,
         cast_mem_cast (X (φ (φ.symm i))) (X i) (by simp) (x ⟨φ.symm i, e n i hi⟩)
           (u ⟨φ (φ.symm i), by simp [hi]⟩) (by simp)]

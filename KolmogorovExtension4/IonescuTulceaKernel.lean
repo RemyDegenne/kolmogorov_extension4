@@ -24,12 +24,55 @@ private lemma cast_pi {s t : Set ℕ} (h : s = t) (h' : ((i : s) → X i) = ((i 
   subst h
   rfl
 
+/-- This function takes a trajectory up to time `p` and a way of building the next step of the
+trajectory and returns a whole trajectory whose first steps correspond
+to the initial ones provided. -/
+def iterate_induction {p : ℕ} (x₀ : (i : Iic p) → X i)
+    (ind : (k : ℕ) → ((n : Iic k) → X n) → X (k + 1)) :
+    (k : ℕ) → X k := fun k ↦ by
+  cases k with
+  | zero => exact x₀ ⟨0, mem_Iic.2 <| zero_le p⟩
+  | succ q =>
+    exact if hq : q + 1 ≤ p
+      then x₀ ⟨q + 1, mem_Iic.2 hq⟩
+      else ind q (fun i ↦ iterate_induction x₀ ind i)
+  decreasing_by
+    have := mem_Iic.1 i.2
+    rename_i h
+    rw [← Nat.lt_succ, Nat.succ_eq_add_one, ← h] at this
+    exact this
+
+theorem iterate_induction_le {p : ℕ} (x₀ : (i : Iic p) → X i)
+    (ind : (k : ℕ) → ((n : Iic k) → X n) → X (k + 1)) (k : Iic p) :
+    iterate_induction x₀ ind k = x₀ k := by
+  rcases k with ⟨i, hi⟩
+  cases i with
+  | zero =>
+    rw [iterate_induction, Nat.casesAuxOn_zero]
+  | succ j =>
+    rw [iterate_induction, Nat.casesAuxOn_succ]
+    simp [mem_Iic.1 hi]
+
+theorem proj_updateFinset {n : ℕ} (x : (n : ℕ) → X n) (y : (i : Iic n) → X i) :
+    fprojNat n (updateFinset x _ y) = y := by
+  ext i
+  simp [updateFinset, i.2]
+
 variable [∀ n, MeasurableSpace (X n)]
+
+theorem aux {n : ℕ} (x₀ : (i : Iic n) → X i) :
+    (el' n ∘ (Prod.mk x₀) ∘ (proj (Set.Ioi n))) = fun y ↦ updateFinset y _ x₀ := by
+  ext y i
+  simp [el', updateFinset]
 
 private lemma measure_cast {a b : ℕ} (h : a = b) (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) :
     (μ a).map (cast (Iic_pi_eq h)) = μ b := by
   subst h
   exact Measure.map_id
+
+private lemma heq_measurableSpace_Iic_pi {a b : ℕ} (h : a = b) :
+    HEq (inferInstance : MeasurableSpace ((i : Iic a) → X i))
+    (inferInstance : MeasurableSpace ((i : Iic b) → X i)) := by cases h; rfl
 
 end castLemmas
 
@@ -98,13 +141,11 @@ end ProjectiveFamily
 
 open Kernel
 
+section definition
+
 variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
 variable (κ : (k : ℕ) → Kernel ((i : Iic k) → X i) (X (k + 1)))
 variable [∀ k, IsMarkovKernel (κ k)]
-
-theorem partialKernel_proj_apply {n : ℕ} (x : (i : Iic n) → X i) (a b : ℕ) (hab : a ≤ b) :
-    (partialKernel κ n b x).map (fprojNat₂ hab) = partialKernel κ n a x := by
-  rw [← partialKernel_proj _ _ hab, Kernel.map_apply]
 
 /-- Given a family of kernels `κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1))`, and the
 trajectory up to time `n` we can construct an additive content over cylinders. It corresponds
@@ -112,10 +153,6 @@ to composing the kernels by starting at time `n + 1`. -/
 noncomputable def ionescuTulceaContent {n : ℕ} (x : (i : Iic n) → X i) :
     AddContent (measurableCylinders X) :=
   kolContent (isProjectiveMeasureFamily_inducedFamily _ (partialKernel_proj_apply κ x))
-
-private lemma heq_measurableSpace_Iic_pi {a b : ℕ} (h : a = b) :
-    HEq (inferInstance : MeasurableSpace ((i : Iic a) → X i))
-    (inferInstance : MeasurableSpace ((i : Iic b) → X i)) := by cases h; rfl
 
 /-- The `ionescuTulceaContent κ x` of a cylinder indexed by first coordinates is given by
 `partialKernel`. -/
@@ -243,45 +280,11 @@ theorem cylinders_nat :
   rw [← Set.preimage_comp]
   rfl
 
-/-- This function takes a trajectory up to time `p` and a way of building the next step of the
-trajectory and returns a whole trajectory whose first steps correspond
-to the initial ones provided. -/
-def iterate_induction {p : ℕ} (x₀ : (i : Iic p) → X i)
-    (ind : (k : ℕ) → ((n : Iic k) → X n) → X (k + 1)) :
-    (k : ℕ) → X k := fun k ↦ by
-  cases k with
-  | zero => exact x₀ ⟨0, mem_Iic.2 <| zero_le p⟩
-  | succ q =>
-    exact if hq : q + 1 ≤ p
-      then x₀ ⟨q + 1, mem_Iic.2 hq⟩
-      else ind q (fun i ↦ iterate_induction x₀ ind i)
-  decreasing_by
-    have := mem_Iic.1 i.2
-    rename_i h
-    rw [← Nat.lt_succ, Nat.succ_eq_add_one, ← h] at this
-    exact this
-
-theorem iterate_induction_le {p : ℕ} (x₀ : (i : Iic p) → X i)
-    (ind : (k : ℕ) → ((n : Iic k) → X n) → X (k + 1)) (k : Iic p) :
-    iterate_induction x₀ ind k = x₀ k := by
-  rcases k with ⟨i, hi⟩
-  cases i with
-  | zero =>
-    rw [iterate_induction, Nat.casesAuxOn_zero]
-  | succ j =>
-    rw [iterate_induction, Nat.casesAuxOn_succ]
-    simp [mem_Iic.1 hi]
-
 /-- The indicator of a cylinder only depends on the variables whose the cylinder depends on. -/
 theorem dependsOn_cylinder_indicator {ι : Type*} {α : ι → Type*} {I : Finset ι}
     (S : Set ((i : I) → α i)) :
     DependsOn ((cylinder I S).indicator (1 : ((i : ι) → α i) → ℝ≥0∞)) I :=
   fun x y hxy ↦ indicator_const_eq _ (by simp [hxy])
-
-theorem proj_updateFinset {n : ℕ} (x : (n : ℕ) → X n) (y : (i : Iic n) → X i) :
-    fprojNat n (updateFinset x _ y) = y := by
-  ext i
-  simp [updateFinset, i.2]
 
 variable [Nonempty (X 0)]
 
@@ -556,7 +559,13 @@ theorem ionescuTulceaKernel_proj_le {a b : ℕ} (hab : a ≤ b) :
     Kernel.deterministic (fprojNat₂ hab) (measurable_fprojNat₂ _) := by
   rw [ionescuTulceaKernel_proj, partialKernel, dif_neg (not_lt.2 hab)]
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+end definition
+
+variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
+variable (κ : (k : ℕ) → Kernel ((i : Iic k) → X i) (X (k + 1)))
+variable [∀ k, IsMarkovKernel (κ k)]
+
+variable {E : Type*} [NormedAddCommGroup E]
 
 /-- The canonical filtration on dependent functions indexed by `ℕ`, where `𝓕 n` consists of
 measurable sets depending only on coordinates `≤ n`. -/
@@ -574,24 +583,7 @@ theorem stronglyMeasurable_dependsOn {n : ℕ} {f : ((n : ℕ) → X n) → E}
     (mf : @StronglyMeasurable _ _ _ (ℱ n) f) : DependsOn f (Set.Iic n) :=
   fun _ _ h ↦ eq_of_stronglyMeasurable_comap _ mf (dependsOn_fprojNat n h)
 
-/-- The union of `Iic n` and `Ioi n` is the whole `ℕ`, version as a measurable equivalence
-on dependent functions. -/
-def el' (n : ℕ) : (((i : Iic n) → X i) × ((i : Set.Ioi n) → X i)) ≃ᵐ ((n : ℕ) → X n) :=
-  { toFun := fun p i ↦ if hi : i ≤ n
-      then p.1 ⟨i, mem_Iic.2 hi⟩
-      else p.2 ⟨i, Set.mem_Ioi.2 (not_le.1 hi)⟩
-    invFun := fun x ↦ (fun i ↦ x i, fun i ↦ x i)
-    left_inv := fun p ↦ by
-      ext i
-      · simp [mem_Iic.1 i.2]
-      · simp [not_le.2 <| Set.mem_Ioi.1 i.2]
-    right_inv := fun x ↦ by simp
-    measurable_toFun := by
-      refine measurable_pi_lambda _ (fun i ↦ ?_)
-      by_cases hi : i ≤ n <;> simp only [Equiv.coe_fn_mk, hi, ↓reduceDIte]
-      · exact measurable_fst.eval
-      · exact measurable_snd.eval
-    measurable_invFun := Measurable.prod_mk (measurable_proj _) (measurable_proj _) }
+variable [Nonempty (X 0)]
 
 /-- This theorem shows that `ionescuTulceaKernel κ n` is, up to an equivalence, the product of
 a determinstic kernel with another kernel. This is an intermediate result to compute integrals
@@ -641,11 +633,6 @@ theorem measurable_updateFinset' {ι : Type*} [DecidableEq ι] {I : Finset ι}
   by_cases hi : i ∈ I <;> simp only [updateFinset, hi, ↓reduceDIte, measurable_const]
   exact measurable_pi_apply _
 
-theorem aux {n : ℕ} (x₀ : (i : Iic n) → X i) :
-    (el' n ∘ (Prod.mk x₀) ∘ (proj (Set.Ioi n))) = fun y ↦ updateFinset y _ x₀ := by
-  ext y i
-  simp [el', updateFinset]
-
 theorem ionescuTulceaKernel_eq_map_updateFinset {n : ℕ} (x₀ : (i : Iic n) → X i) :
     ionescuTulceaKernel κ n x₀ =
       (ionescuTulceaKernel κ n x₀).map (fun y ↦ updateFinset y _ x₀) := by
@@ -662,6 +649,19 @@ theorem ionescuTulceaKernel_eq_map_updateFinset {n : ℕ} (x₀ : (i : Iic n) �
   · exact (el' n).measurable
   · exact (el' n).measurable
   · exact measurable_prod_mk_left.comp (measurable_proj _)
+
+theorem integrable_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b) {f : ((n : ℕ) → X n) → E}
+    (x₀ : (i : Iic a) → X i)
+    (i_f : Integrable f (ionescuTulceaKernel κ a x₀)) :
+    ∀ᵐ x ∂ionescuTulceaKernel κ a x₀, Integrable f (ionescuTulceaKernel κ b (fprojNat b x)) := by
+  rw [← partialKernel_comp_ionescuTulceaKernel _ hab, Kernel.integrable_comp_iff] at i_f
+  · apply ae_of_ae_map (p := fun x ↦ Integrable f (ionescuTulceaKernel κ b x))
+    · exact (measurable_fprojNat b).aemeasurable
+    · convert i_f.1
+      rw [← ionescuTulceaKernel_proj, Kernel.map_apply]
+  · exact i_f.aestronglyMeasurable
+
+variable [NormedSpace ℝ E]
 
 theorem integral_ionescuTulceaKernel {n : ℕ} (x₀ : (i : Iic n) → X i) {f : ((n : ℕ) → X n) → E}
     (mf : AEStronglyMeasurable f (ionescuTulceaKernel κ n x₀)) :
@@ -691,16 +691,7 @@ theorem partialKernel_comp_ionescuTulceaKernel_apply {a b : ℕ} (hab : a ≤ b)
   · convert i_f
     rw [partialKernel_comp_ionescuTulceaKernel _ hab]
 
-theorem integrable_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b) {f : ((n : ℕ) → X n) → E}
-    (x₀ : (i : Iic a) → X i)
-    (i_f : Integrable f (ionescuTulceaKernel κ a x₀)) :
-    ∀ᵐ x ∂ionescuTulceaKernel κ a x₀, Integrable f (ionescuTulceaKernel κ b (fprojNat b x)) := by
-  rw [← partialKernel_comp_ionescuTulceaKernel _ hab, Kernel.integrable_comp_iff] at i_f
-  · apply ae_of_ae_map (p := fun x ↦ Integrable f (ionescuTulceaKernel κ b x))
-    · exact (measurable_fprojNat b).aemeasurable
-    · convert i_f.1
-      rw [← ionescuTulceaKernel_proj, Kernel.map_apply]
-  · exact i_f.aestronglyMeasurable
+variable [CompleteSpace E]
 
 theorem condexp_ionescuTulceaKernel
     {a b : ℕ} (hab : a ≤ b) (x₀ : (i : Iic a) → X i) {f : ((n : ℕ) → X n) → E}

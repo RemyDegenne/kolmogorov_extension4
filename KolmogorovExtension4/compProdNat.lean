@@ -65,6 +65,25 @@ def el (m n : ℕ) (hmn : m ≤ n) :
   measurable_invFun := by
     refine Measurable.prod_mk ?_ ?_ <;> exact measurable_pi_lambda _ (fun a ↦ measurable_id.eval)
 
+/-- The union of `Iic n` and `Ioi n` is the whole `ℕ`, version as a measurable equivalence
+on dependent functions. -/
+def el' (n : ℕ) : (((i : Iic n) → X i) × ((i : Set.Ioi n) → X i)) ≃ᵐ ((n : ℕ) → X n) :=
+  { toFun := fun p i ↦ if hi : i ≤ n
+      then p.1 ⟨i, mem_Iic.2 hi⟩
+      else p.2 ⟨i, Set.mem_Ioi.2 (not_le.1 hi)⟩
+    invFun := fun x ↦ (fun i ↦ x i, fun i ↦ x i)
+    left_inv := fun p ↦ by
+      ext i
+      · simp [mem_Iic.1 i.2]
+      · simp [not_le.2 <| Set.mem_Ioi.1 i.2]
+    right_inv := fun x ↦ by simp
+    measurable_toFun := by
+      refine measurable_pi_lambda _ (fun i ↦ ?_)
+      by_cases hi : i ≤ n <;> simp only [Equiv.coe_fn_mk, hi, ↓reduceDIte]
+      · exact measurable_fst.eval
+      · exact measurable_snd.eval
+    measurable_invFun := Measurable.prod_mk (measurable_proj _) (measurable_proj _) }
+
 /-- Gluing `Ioc i j` and `Ioc j k` into `Ioc i k`, as a measurable equiv of dependent functions. -/
 def er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k) :
     ((l : Ioc i j) → X l) × ((l : Ioc j k) → X l) ≃ᵐ ((l : Ioc i k) → X l) where
@@ -506,6 +525,10 @@ theorem partialKernel_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
   · omega
   · rw [Kernel.map_deterministic]
     rfl
+
+theorem partialKernel_proj_apply {n : ℕ} (x : (i : Iic n) → X i) (a b : ℕ) (hab : a ≤ b) :
+    (partialKernel κ n b x).map (fprojNat₂ hab) = partialKernel κ n a x := by
+  rw [← partialKernel_proj _ _ hab, Kernel.map_apply]
 
 /-- Given the trajectory up to time `a`, first computing the distribution up to time `b`
 and then the distribution up to time `c` is the same as directly computing the distribution up
