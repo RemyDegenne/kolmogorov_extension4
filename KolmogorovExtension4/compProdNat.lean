@@ -275,6 +275,12 @@ def castPath {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) →
     Kernel ((l : Iic i) → X l) ((l : Ioc i k) → X l) :=
   Kernel.map κ (e_path_eq h) (MeasurableEquiv.measurable _)
 
+theorem castPath_self {i j : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) :
+    castPath κ (rfl : j = j) = κ := by
+  simp only [castPath, e_path_eq]
+  conv_lhs => enter [2]; change id
+  simp
+
 lemma castPath_apply {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) (h : j = k)
     (a : (l : Iic i) → X l) (s : Set ((l : Ioc i k) → X l)) (hs : MeasurableSet s) :
     castPath κ h a s = κ a (e_path_eq h ⁻¹' s) := by
@@ -290,22 +296,16 @@ instance {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l
     IsFiniteKernel (castPath κ h) := by
   rw [castPath]; infer_instance
 
+instance {i j k : ℕ}
+    (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) [IsMarkovKernel κ] (hjk : j = k) :
+    IsMarkovKernel (castPath κ hjk) := by
+  rw [castPath]; infer_instance
+
 section kerNat
 
 variable {i j k : ℕ}
 
-/-- Given a kernel `κ₀` from variables in `Iic i` to `Ioc i j`, and a family of kernels `κ_k`
-from `Iic k` to `X (k + 1)`, one can compose the kernels to get a kernel from `Ici i` to `Ioc i k`
-as the composition of `κ₀` with `κ_j` then `κ_{j+1}` ... then `κ_{k-1}`. -/
-def kerInterval (κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
-    (κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1))) (k : ℕ) :
-    Kernel ((l : Iic i) → X l) ((l : Ioc i k) → X l) := by
-  induction k with
-  | zero => exact 0
-  | succ k κ_k => exact if h : j = k + 1 then castPath κ₀ h else
-    (κ_k ⊗ₖ' (Kernel.map (κ k) (e k) (e k).measurable))
-
-def test (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
+def kerNat (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
     Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l) := by
   induction j with
   | zero => exact 0
@@ -313,125 +313,46 @@ def test (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : �
     exact if h : i = k then castPath ((κ i).map (e i) (e i).measurable) (h ▸ rfl)
     else (κ_k ⊗ₖ' ((κ k).map (e k) (e k).measurable))
 
-lemma test_zero (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i : ℕ) :
-    test κ i 0 = 0 := rfl
+lemma kerNat_zero (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i : ℕ) :
+    kerNat κ i 0 = 0 := rfl
 
-lemma test_succ (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
-    test κ i (j + 1) =
+lemma kerNat_succ (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
+    kerNat κ i (j + 1) =
       if h : i = j then castPath ((κ i).map (e i) (e i).measurable) (h ▸ rfl)
-        else (test κ i j) ⊗ₖ' ((κ j).map (e j) (e j).measurable) := rfl
+        else (kerNat κ i j) ⊗ₖ' ((κ j).map (e j) (e j).measurable) := rfl
 
-lemma test_succ_of_ne (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : i ≠ j) :
-    test κ i (j + 1) = (test κ i j) ⊗ₖ' ((κ j).map (e j) (e j).measurable) := by
-  rw [test_succ, dif_neg h]
+lemma kerNat_succ_self (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i : ℕ) :
+    kerNat κ i (i + 1) = (κ i).map (e i) (e i).measurable := by
+  rw [kerNat_succ, dif_pos rfl, castPath_self]
 
-lemma test_succ_right (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : i < j) :
-    test κ i (j + 1) = (test κ i j) ⊗ₖ' ((κ j).map (e j) (e j).measurable) := by
-  rw [test_succ_of_ne κ h.ne]
-
-lemma test_of_le (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : j ≤ i) :
-    test κ i j = 0 := by
-  induction j with
-  | zero => rfl
-  | succ n ih =>
-      rw [test_succ, dif_neg (by omega), ih (by omega)]
-      simp
-
-/--/
-@[simp]
-lemma kerInterval_zero (κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
-    (κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1))) :
-    kerInterval κ₀ κ 0 = 0 := rfl
-
-lemma kerInterval_succ {κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)}
-    {κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1))} (k : ℕ) :
-    kerInterval κ₀ κ (k + 1)
-      = if h : j = k + 1 then castPath κ₀ h else
-        ((kerInterval κ₀ κ k) ⊗ₖ' (Kernel.map (κ k) (e k) (e k).measurable)) := rfl
-
-lemma kerInterval_succ_of_ne {κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)}
-    {κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1))} (h : j ≠ k + 1) :
-    kerInterval κ₀ κ (k + 1) =
-      (kerInterval κ₀ κ k) ⊗ₖ' (Kernel.map (κ k) (e k) (e k).measurable) := by
-  rw [kerInterval_succ, dif_neg h]
-
-lemma kerInterval_succ_right {κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)}
-    {κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1))} (h : j ≤ k) :
-    kerInterval κ₀ κ (k + 1) =
-      (kerInterval κ₀ κ k) ⊗ₖ' (Kernel.map (κ k) (e k) (e k).measurable) := by
-  rw [kerInterval_succ, dif_neg (by linarith)]
-
-lemma kerInterval_of_lt {κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)}
-    {κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1))} (h : k < j) :
-    kerInterval κ₀ κ k = 0 := by
-  induction k with
-  | zero => rfl
-  | succ n ih =>
-      rw [kerInterval_succ, dif_neg h.ne', ih (by linarith)]
-      simp
-
-lemma kerInterval_of_eq (κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
-    (κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1))) (hj : 0 < j) :
-    kerInterval κ₀ κ j = κ₀ := by
-  cases j with
-  | zero => exfalso; linarith
-  | succ n =>
-    rw [kerInterval_succ, dif_pos rfl]
-    ext a s hs
-    rw [castPath_apply _ _ _ _ hs]
-    rfl
-
-instance (κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) [h₀ : IsSFiniteKernel κ₀]
-    (κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1))) (k : ℕ) :
-    IsSFiniteKernel (kerInterval κ₀ κ k) := by
-  induction k with
-  | zero => rw [kerInterval_zero]; infer_instance
-  | succ n _ => rw [kerInterval_succ]; split_ifs <;> infer_instance
-
-instance (κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) [h₀ : IsFiniteKernel κ₀]
-    (κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1)))
-    [∀ k, IsFiniteKernel (κ k)] (k : ℕ) :
-    IsFiniteKernel (kerInterval κ₀ κ k) := by
-  induction k with
-  | zero => rw [kerInterval_zero]; infer_instance
-  | succ n _ => rw [kerInterval_succ]; split_ifs <;> infer_instance
-
-/-- Consider for each `k` a kernel with variables in `Iic k`, distributed in `X (k+1)`. Given any
-`i < j`, one can compose them to get a kernel from `Ici i` to `Ioc i j`. This kernel is called
-`kerNat κ i j`. -/
-def kerNat (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
-    Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l) :=
-  if i < j then kerInterval (Kernel.map (κ i) (e i) (e i).measurable) κ j else 0
-
-lemma kerNat_eq (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
-    (hij : i < j) :
-    kerNat κ i j = kerInterval (Kernel.map (κ i) (e i) (e i).measurable) κ j :=
-  dif_pos hij
-
-lemma kerNat_of_ge (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (hij : j ≤ i) :
-    kerNat κ i j = 0 :=
-  dif_neg (not_lt.mpr hij)
-
-instance (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) [∀ i, IsSFiniteKernel (κ i)] :
-    IsSFiniteKernel (kerNat κ i j) := by
-  rw [kerNat]; split_ifs <;> infer_instance
-
-instance (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) [∀ i, IsFiniteKernel (κ i)] :
-    IsFiniteKernel (kerNat κ i j) := by
-  rw [kerNat]; split_ifs <;> infer_instance
-
-lemma kerNat_succ (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i : ℕ) :
-    kerNat κ i (i + 1) = Kernel.map (κ i) (e i) (e i).measurable := by
-  rw [kerNat_eq _ (Nat.lt_succ_self _), kerInterval_of_eq _ _ (by linarith)]
+lemma kerNat_succ_of_ne (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : i ≠ j) :
+    kerNat κ i (j + 1) = (kerNat κ i j) ⊗ₖ' ((κ j).map (e j) (e j).measurable) := by
+  rw [kerNat_succ, dif_neg h]
 
 lemma kerNat_succ_right (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
     (i j : ℕ) (hij : i < j) :
     kerNat κ i (j + 1) = (kerNat κ i j) ⊗ₖ' (kerNat κ j (j + 1)) := by
-  rw [kerNat_eq _ (hij.trans (Nat.lt_succ_self _)),
-    kerInterval_succ_right (Nat.succ_le_iff.mpr hij)]
-  congr
-  · rw [kerNat_eq _ hij]
-  · rw [kerNat_succ κ j]
+  rw [kerNat_succ_of_ne κ hij.ne, kerNat_succ_self]
+
+lemma kerNat_of_ge (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : j ≤ i) :
+    kerNat κ i j = 0 := by
+  induction j with
+  | zero => rfl
+  | succ n ih =>
+      rw [kerNat_succ, dif_neg (by omega), ih (by omega)]
+      simp
+
+instance (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) [∀ i, IsSFiniteKernel (κ i)] :
+    IsSFiniteKernel (kerNat κ i j) := by
+  induction j with
+  | zero => rw [kerNat_zero]; infer_instance
+  | succ k _ => rw [kerNat_succ]; split_ifs <;> infer_instance
+
+instance (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) [∀ i, IsFiniteKernel (κ i)] :
+    IsFiniteKernel (kerNat κ i j) := by
+  induction j with
+  | zero => rw [kerNat_zero]; infer_instance
+  | succ k _ => rw [kerNat_succ]; split_ifs <;> infer_instance
 
 lemma kerNat_succ_left (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
     [∀ i, IsSFiniteKernel (κ i)] (i j : ℕ) (hij : i + 1 < j) :
@@ -475,31 +396,18 @@ theorem isMarkovKernel_compProdNat {i j k : ℕ}
   simp only [compProdNat, hij, hjk, and_self, ↓reduceDIte, split]
   infer_instance
 
-theorem isMarkovKernel_castPath {i j k : ℕ}
-    (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) [IsMarkovKernel κ] (hjk : j = k) :
-    IsMarkovKernel (castPath κ hjk) := by
-  rw [castPath]; infer_instance
-
-theorem isMarkovKernel_kerInterval {i j k : ℕ}
-    (κ₀ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) [h₀ : IsMarkovKernel κ₀]
-    (κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1))) [∀ k, IsMarkovKernel (κ k)]
-    (hij : i < j) (hjk : j ≤ k) :
-    IsMarkovKernel (kerInterval κ₀ κ k) := by
-  induction k with
-  | zero => omega
-  | succ n hn =>
-    rw [kerInterval_succ]
-    split_ifs with h
-    · exact isMarkovKernel_castPath _ _
-    · have _ := hn (by omega)
-      exact isMarkovKernel_compProdNat _ _ (by omega) n.lt_succ_self
-
 theorem isMarkovKernel_kerNat {i j : ℕ}
     (κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1)))
     [∀ k, IsMarkovKernel (κ k)] (hij : i < j) :
     IsMarkovKernel (kerNat κ i j) := by
-  simp only [kerNat, hij, ↓reduceIte]
-  exact isMarkovKernel_kerInterval _ _ i.lt_succ_self (Nat.succ_le.2 hij)
+  induction j with
+  | zero => omega
+  |succ k hk =>
+    rw [kerNat_succ]
+    split_ifs with h
+    · infer_instance
+    · have _ := hk (by omega)
+      exact isMarkovKernel_compProdNat _ _ (by omega) k.lt_succ_self
 
 theorem kerNat_proj (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
     [∀ i, IsMarkovKernel (κ i)] {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
@@ -539,7 +447,7 @@ namespace ProbabilityTheory
 namespace Kernel
 
 /-- Given a family of kernels `κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1))`, we can
-compose them : if `a < b`, then `(κ a) ⊗ₖ ... ⊗ₖ (κ (b - 1))` is a kernel from
+compose them: if `a < b`, then `(κ a) ⊗ₖ ... ⊗ₖ (κ (b - 1))` is a kernel from
 `(i : Iic a) → X i` to `(i : Ioc a b) → X i`. This composition is called `kerNat κ a b`.
 
 In order to make manipulations easier, we define
@@ -548,19 +456,19 @@ time `a`, `partialKernel κ a b` gives the distribution of the trajectory up to 
 the product of a Dirac mass along the trajectory, up to `a`, with `kerNat κ a b`. -/
 noncomputable def partialKernel (a b : ℕ) : Kernel ((i : Iic a) → X i) ((i : Iic b) → X i) :=
   if hab : a < b
-    then ((Kernel.deterministic id measurable_id) ×ₖ kerNat κ a b).map
+    then ((deterministic id measurable_id) ×ₖ kerNat κ a b).map
       (el a b hab.le) (el a b hab.le).measurable
-    else Kernel.deterministic (fprojNat₂ (not_lt.1 hab)) (measurable_fprojNat₂ _)
+    else deterministic (fprojNat₂ (not_lt.1 hab)) (measurable_fprojNat₂ _)
 
 theorem partialKernel_lt {a b : ℕ} (hab : a < b) :
     partialKernel κ a b =
-      ((Kernel.deterministic id measurable_id) ×ₖ kerNat κ a b).map
+      ((deterministic id measurable_id) ×ₖ kerNat κ a b).map
         (el a b hab.le) (el a b hab.le).measurable := by
   rw [partialKernel, dif_pos hab]
 
 theorem partialKernel_le {a b : ℕ} (hab : b ≤ a) :
     partialKernel κ a b =
-      Kernel.deterministic (fprojNat₂ hab) (measurable_fprojNat₂ _) := by
+      deterministic (fprojNat₂ hab) (measurable_fprojNat₂ _) := by
   rw [partialKernel, dif_neg (not_lt.2 hab)]
 
 variable [∀ n, IsMarkovKernel (κ n)]

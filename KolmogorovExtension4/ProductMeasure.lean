@@ -129,7 +129,7 @@ theorem kerNat_prod {N : ℕ} (hN : 0 < N) :
       Kernel.const _ (Measure.pi (fun i : Ioc 0 N ↦ μ i)) := by
   ext1 x₀
   refine Nat.le_induction ?_ (fun n hn hind ↦ ?_) N (Nat.succ_le.2 hN)
-  · rw [kerNat_succ, Kernel.const_apply]
+  · rw [kerNat_succ_self, Kernel.const_apply]
     refine (Measure.pi_eq (fun s ms ↦ ?_)).symm
     have : Subsingleton (Ioc 0 1) := by
       constructor
@@ -147,7 +147,7 @@ theorem kerNat_prod {N : ℕ} (hN : 0 < N) :
     · exact MeasurableSet.univ_pi ms
   · rw [Kernel.const_apply]
     refine (Measure.pi_eq fun s ms ↦ ?_).symm
-    rw [kerNat_succ_right _ _ _ (Nat.succ_le.1 hn), kerNat_succ, compProdNat,
+    rw [kerNat_succ_right _ _ _ (Nat.succ_le.1 hn), kerNat_succ_self, compProdNat,
       dif_pos ⟨Nat.succ_le.1 hn, n.lt_succ_self⟩,
       map_apply' _ _ _ (MeasurableSet.univ_pi ms), er_succ_preimage_pi (Nat.succ_le.1 hn),
       split, Kernel.map_const, Kernel.comap_const, Kernel.compProd_apply_prod, ← prod_Ioc,

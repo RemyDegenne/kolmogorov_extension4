@@ -313,7 +313,7 @@ theorem le_lmarginalPartialKernel_succ {f : ℕ → ((n : ℕ) → X n) → ℝ�
       ε ≤ ∫⁻ (z : X (k + 1)),
           l (update (updateFinset x_ _ y) (k + 1) z) ∂(κ k y) := by
           convert ε_le_lint x_
-          rw [lmarginalPartialKernel_lt _ k.lt_succ_self, kerNat_succ, Kernel.map_apply,
+          rw [lmarginalPartialKernel_lt _ k.lt_succ_self, kerNat_succ_self, Kernel.map_apply,
             lintegral_map_equiv]
           · congrm ∫⁻ z, (l fun i ↦ ?_) ∂κ k (fun i ↦ ?_)
             · simp [i.2, updateFinset]
