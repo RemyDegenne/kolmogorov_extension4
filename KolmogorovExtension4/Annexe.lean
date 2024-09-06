@@ -244,6 +244,13 @@ theorem Kernel.integral_deterministic_prod {f : X → Y} (mf : Measurable f)
   · exact mg.integral_prod_right'
   · rwa [Kernel.integrable_deterministic_prod _ _ _ mg]
 
+theorem Kernel.lintegral_deterministic_prod {f : X → Y} (mf : Measurable f)
+    (κ : Kernel X Z) [IsFiniteKernel κ] (x : X)
+    {g : (Y × Z) → ℝ≥0∞} (mg : Measurable g) :
+    ∫⁻ p, g p ∂((Kernel.deterministic f mf) ×ₖ κ) x = ∫⁻ z, g (f x, z) ∂κ x := by
+  rw [Kernel.lintegral_prod _ _ _ mg, Kernel.lintegral_deterministic']
+  exact mg.lintegral_prod_right'
+
 theorem Kernel.integrable_comp_iff (η : Kernel Y Z) [IsSFiniteKernel η]
     (κ : Kernel X Y) [IsSFiniteKernel κ] (x : X)
     {f : Z → E} (hf : AEStronglyMeasurable f ((η ∘ₖ κ) x)) :

@@ -11,9 +11,31 @@ import KolmogorovExtension4.KolmogorovExtension
 
 open MeasureTheory ProbabilityTheory Finset ENNReal Filter Topology Function MeasurableSpace
 
-variable {X : ℕ → Type*} [Nonempty (X 0)] [∀ n, MeasurableSpace (X n)]
-variable (κ : (k : ℕ) → Kernel ((i : Iic k) → X i) (X (k + 1)))
-variable [∀ k, IsMarkovKernel (κ k)]
+section castLemmas
+
+variable {X : ℕ → Type*}
+
+private lemma Iic_pi_eq {a b : ℕ} (h : a = b) :
+    ((i : Iic a) → X i) = ((i : Iic b) → X i) := by cases h; rfl
+
+private lemma cast_pi {s t : Set ℕ} (h : s = t) (h' : ((i : s) → X i) = ((i : t) → X i))
+    (x : (i : s) → X i) (i : t) :
+    cast h' x i = x ⟨i.1, h.symm ▸ i.2⟩ := by
+  subst h
+  rfl
+
+variable [∀ n, MeasurableSpace (X n)]
+
+private lemma measure_cast {a b : ℕ} (h : a = b) (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) :
+    (μ a).map (cast (Iic_pi_eq h)) = μ b := by
+  subst h
+  exact Measure.map_id
+
+end castLemmas
+
+section ProjectiveFamily
+
+variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
 
 /-- To check that a measure `ν` is the projective limit of a projective family of measures indexed
 by `Finset ℕ`, it is enough to check on intervals of the form `Iic n`, where `n` is larger than
@@ -48,20 +70,6 @@ instance (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) [∀ n, IsFiniteMeas
   rw [inducedFamily]
   infer_instance
 
-private lemma Iic_pi_eq {a b : ℕ} (h : a = b) :
-    ((i : Iic a) → X i) = ((i : Iic b) → X i) := by cases h; rfl
-
-private lemma measure_cast {a b : ℕ} (h : a = b) (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) :
-    (μ a).map (cast (Iic_pi_eq h)) = μ b := by
-  subst h
-  exact Measure.map_id
-
-private lemma cast_pi {s t : Set ℕ} (h : s = t) (h' : ((i : s) → X i) = ((i : t) → X i))
-    (x : (i : s) → X i) (i : t) :
-    cast h' x i = x ⟨i.1, h.symm ▸ i.2⟩ := by
-  subst h
-  rfl
-
 /-- Given a family of measures `μ : (n : ℕ) → Measure ((i : Iic n) → X i)`, the induced family
 equals `μ` over the intervals `Iic n`. -/
 theorem inducedFamily_Iic (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) (n : ℕ) :
@@ -86,7 +94,13 @@ theorem isProjectiveMeasureFamily_inducedFamily (μ : (n : ℕ) → Measure ((i 
     ← Measure.map_map (measurable_fproj₂ _) (measurable_fproj₂ _), ← fprojNat₂,
     h (J.sup id) (I.sup id) sls]
 
+end ProjectiveFamily
+
 open Kernel
+
+variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
+variable (κ : (k : ℕ) → Kernel ((i : Iic k) → X i) (X (k + 1)))
+variable [∀ k, IsMarkovKernel (κ k)]
 
 theorem partialKernel_proj_apply {n : ℕ} (x : (i : Iic n) → X i) (a b : ℕ) (hab : a ≤ b) :
     (partialKernel κ n b x).map (fprojNat₂ hab) = partialKernel κ n a x := by
@@ -110,40 +124,6 @@ theorem ionescuTulceaContent_cylinder {a b : ℕ} (x : (i : Iic a) → X i)
     ionescuTulceaContent κ x (cylinder _ S) = partialKernel κ a b x S := by
   rw [ionescuTulceaContent, kolContent_cylinder _ mS, inducedFamily_Iic]
 
-/-- This function computes the integral of a function `f` against `partialKernel`,
-and allows to view it as a function depending on all the variables. -/
-noncomputable def lmarginalPartialKernel (a b : ℕ) (f : ((n : ℕ) → X n) → ℝ≥0∞)
-    (x : (n : ℕ) → X n) : ℝ≥0∞ :=
-  ∫⁻ z : (i : Iic b) → X i, f (updateFinset x _ z) ∂(partialKernel κ a b (fprojNat a x))
-
-/-- If `a < b`, then integrating `f` against the `partialKernel κ a b` is the same as integrating
-  against `kerNat a b`. -/
-theorem lmarginalPartialKernel_lt {a b : ℕ} (hab : a < b) {f : ((n : ℕ) → X n) → ℝ≥0∞}
-    (mf : Measurable f) (x : (n : ℕ) → X n) :
-    lmarginalPartialKernel κ a b f x =
-      ∫⁻ y : (i : Ioc a b) → X i, f (updateFinset x _ y) ∂kerNat κ a b (fprojNat a x) := by
-  rw [lmarginalPartialKernel, partialKernel, dif_pos hab, Kernel.lintegral_map,
-    Kernel.lintegral_prod, Kernel.lintegral_deterministic']
-  · congrm ∫⁻ _, f (fun i ↦ ?_) ∂_
-    simp only [updateFinset, mem_Iic, el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, mem_Ioc]
-    split_ifs <;> try rfl
-    all_goals omega
-  · apply Measurable.lintegral_prod_right'
-      (f := fun p ↦ f (updateFinset x (Iic b) (el a b hab.le p)))
-    exact mf.comp <| measurable_updateFinset.comp (el a b hab.le).measurable
-  · exact mf.comp <| measurable_updateFinset.comp (el a b hab.le).measurable
-  · exact mf.comp measurable_updateFinset
-
-/-- If `b ≤ a`, then integrating `f` against the `partialKernel κ a b` does nothing. -/
-theorem lmarginalPartialKernel_le {a b : ℕ} (hba : b ≤ a)
-    {f : ((n : ℕ) → X n) → ℝ≥0∞} (mf : Measurable f) : lmarginalPartialKernel κ a b f = f := by
-  ext x
-  rw [lmarginalPartialKernel, partialKernel, dif_neg (not_lt.2 hba),
-    Kernel.lintegral_deterministic']
-  · congr with i
-    simp [updateFinset]
-  · exact mf.comp measurable_updateFinset
-
 /-- The `ionescuTulceaContent` of a cylinder is equal to the integral of its indicator function. -/
 theorem ionescuTulceaContent_eq_lmarginalPartialKernel {N : ℕ} {S : Set ((i : Iic N) → X i)}
     (mS : MeasurableSet S) (x : (n : ℕ) → X n) (n : ℕ) :
@@ -156,89 +136,6 @@ theorem ionescuTulceaContent_eq_lmarginalPartialKernel {N : ℕ} {S : Set ((i : 
   congrm (fun i ↦ ?_) ∈ S
   simp [updateFinset, i.2]
 
-theorem lmarginalPartialKernel_mono (a b : ℕ) {f g : ((n : ℕ) → X n) → ℝ≥0∞} (hfg : f ≤ g)
-    (x : (n : ℕ) → X n) : lmarginalPartialKernel κ a b f x ≤ lmarginalPartialKernel κ a b g x :=
-  lintegral_mono fun _ ↦ hfg _
-
-theorem measurable_lmarginalPartialKernel (a b : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
-    (hf : Measurable f) : Measurable (lmarginalPartialKernel κ a b f) := by
-  unfold lmarginalPartialKernel
-  let g : ((i : Iic b) → X i) × ((n : ℕ) → X n) → ℝ≥0∞ :=
-    fun c ↦ f (updateFinset c.2 _ c.1)
-  let η : Kernel ((n : ℕ) → X n) ((i : Iic b) → X i) :=
-    Kernel.comap (partialKernel κ a b) (fprojNat a) (measurable_fprojNat _)
-  change Measurable fun x ↦ ∫⁻ z : (i : Iic b) → X i, g (z, x) ∂η x
-  refine Measurable.lintegral_kernel_prod_left' <| hf.comp ?_
-  simp only [updateFinset, measurable_pi_iff]
-  intro i
-  by_cases h : i ∈ Iic b <;> simp [h]
-  · exact (measurable_pi_apply _).comp <| measurable_fst
-  · exact measurable_snd.eval
-
-theorem DependsOn.lmarginalPartialKernel_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
-    (mf : Measurable f) (hf : DependsOn f (Iic a)) (hab : a ≤ b) :
-    lmarginalPartialKernel κ b c f = f := by
-  rcases le_or_lt c b with hcb | hbc
-  · exact lmarginalPartialKernel_le κ hcb mf
-  · ext x
-    have := isMarkovKernel_kerNat κ hbc
-    rw [lmarginalPartialKernel_lt κ hbc mf, ← mul_one (f x),
-      ← measure_univ (μ := kerNat κ b c (fprojNat b x)), ← MeasureTheory.lintegral_const]
-    refine lintegral_congr fun y ↦ hf fun i hi ↦ ?_
-    simp only [updateFinset, mem_Iic, el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
-      dite_eq_right_iff, dite_eq_left_iff, not_le]
-    intro h
-    rw [mem_Ioc] at h
-    rw [mem_coe, mem_Iic] at hi
-    omega
-
-theorem dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) → ℝ≥0∞}
-    (hf : DependsOn f (Iic b)) (mf : Measurable f) :
-    DependsOn (lmarginalPartialKernel κ a b f) (Iic a) := by
-  intro x y hxy
-  rcases le_or_lt b a with hba | hab
-  · rw [lmarginalPartialKernel_le κ hba mf]
-    exact hf fun i hi ↦ hxy i (Iic_subset_Iic.2 hba hi)
-  · rw [lmarginalPartialKernel_lt _ hab mf, lmarginalPartialKernel_lt _ hab mf]
-    congrm ∫⁻ z : _, ?_ ∂kerNat κ a b (fun i ↦ ?_)
-    · exact hxy i.1 i.2
-    · refine dependsOn_updateFinset hf _ _ ?_
-      rwa [← coe_sdiff, Iic_sdiff_Ioc_same hab.le]
-
-theorem lmarginalPartialKernel_self {a b c : ℕ} (hab : a < b) (hbc : b < c)
-    {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
-    lmarginalPartialKernel κ a b (lmarginalPartialKernel κ b c f) =
-      lmarginalPartialKernel κ a c f := by
-  ext x
-  rw [lmarginalPartialKernel_lt _ (hab.trans hbc) hf, lmarginalPartialKernel_lt _ hab]
-  simp_rw [lmarginalPartialKernel_lt _ hbc hf]
-  rw [← compProdNat_kerNat _ hab hbc, compProdNat_eq _ _  hab hbc, Kernel.map_apply,
-    MeasureTheory.lintegral_map _ (er ..).measurable, Kernel.lintegral_compProd]
-  · congrm ∫⁻ _, ∫⁻ _, f fun i ↦ ?_ ∂(?_) ∂_
-    · rw [split_eq_comap, Kernel.comap_apply]
-      congr with i
-      simp only [fprojNat, fproj, updateFinset, mem_Ioc, el, MeasurableEquiv.coe_mk,
-        Equiv.coe_fn_mk]
-      split_ifs with h1 h2 h3 <;> try rfl
-      · omega
-      · have := mem_Iic.1 i.2
-        omega
-    · simp only [updateFinset, mem_Ioc, er, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk]
-      split_ifs <;> try omega
-      rfl; rfl; rfl
-  · exact hf.comp <| measurable_updateFinset.comp (er ..).measurable
-  · exact hf.comp <| measurable_updateFinset
-  · exact measurable_lmarginalPartialKernel _ _ _ hf
-
-theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
-    update (updateFinset x (Iic m) (fprojNat m z)) (m + 1) (z (m + 1)) =
-    updateFinset x (Iic (m + 1)) (fprojNat (m + 1) z) := by
-  ext i
-  simp only [update, updateFinset, mem_Iic, dite_eq_ite]
-  split_ifs with h <;> try omega
-  cases h
-  all_goals rfl
-
 /-- This is an auxiliary result for `ionescuTulceaContent_tendsto_zero`.
 Consider `f` a sequence of bounded measurable
 functions such that `f n` depends only on the first coordinates up to `N n`.
@@ -248,7 +145,7 @@ Assume then that there exists `ε` and `y : (n : Iic k) → X n` such that
 when integrating `f n` against `partialKernel k (N n)`, you get something at least
 `ε` for all. Then there exists `z` such that this remains true when integrating
 `f` against `partialKernel (k + 1) (N n) (update y (k + 1) z)`. -/
-theorem le_lmarginalPartialKernel_succ {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} {N : ℕ → ℕ}
+theorem le_lmarginalPartialKernel_succ [Nonempty (X 0)] {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} {N : ℕ → ℕ}
     (hcte : ∀ n, DependsOn (f n) (Iic (N n))) (mf : ∀ n, Measurable (f n))
     {bound : ℝ≥0∞} (fin_bound : bound ≠ ∞) (le_bound : ∀ n x, f n x ≤ bound) {k : ℕ}
     (anti : ∀ x, Antitone (fun n ↦ lmarginalPartialKernel κ (k + 1) (N n) (f n) x))
@@ -274,7 +171,7 @@ theorem le_lmarginalPartialKernel_succ {f : ℕ → ((n : ℕ) → X n) → ℝ�
     lmarginalPartialKernel κ k (k + 1) (F n) x := by
     simp_rw [F]
     rcases lt_trichotomy (k + 1) (N n) with h | h | h
-    · rw [← lmarginalPartialKernel_self κ k.lt_succ_self h (mf n)]
+    · rw [← lmarginalPartialKernel_self κ k.le_succ h.le (mf n)]
     · rw [← h, lmarginalPartialKernel_le _ (le_refl (k + 1)) (mf n)]
     · rw [lmarginalPartialKernel_le _ (by omega) (mf n),
         (hcte n).lmarginalPartialKernel_eq _ _ (mf n) (by omega),
@@ -386,6 +283,8 @@ theorem proj_updateFinset {n : ℕ} (x : (n : ℕ) → X n) (y : (i : Iic n) →
   ext i
   simp [updateFinset, i.2]
 
+variable [Nonempty (X 0)]
+
 /-- This is the key theorem to prove the existence of the `ionescuTulceaKernel`:
 the `ionescuTulceaContent` of a decresaing sequence of cylinders with empty intersection
 converges to `0`.
@@ -437,7 +336,7 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
     intro K hK hind
     rw [← hind]
     rcases lt_trichotomy k K with hkK | hkK | hkK
-    · rw [← lmarginalPartialKernel_self κ hkK K.lt_succ_self (mχ n),
+    · rw [← lmarginalPartialKernel_self κ hkK.le K.le_succ (mχ n),
         (χ_dep n).lmarginalPartialKernel_eq _ _ (mχ n) hK]
     · rw [hkK, (χ_dep n).lmarginalPartialKernel_eq _ _ (mχ n) hK,
         (χ_dep n).lmarginalPartialKernel_eq _ _ (mχ n) hK]
