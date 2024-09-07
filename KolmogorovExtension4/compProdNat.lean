@@ -588,6 +588,28 @@ noncomputable def lmarginalPartialKernel (a b : ℕ) (f : ((n : ℕ) → X n) �
     (x : (n : ℕ) → X n) : ℝ≥0∞ :=
   ∫⁻ z : (i : Iic b) → X i, f (updateFinset x _ z) ∂(partialKernel κ a b (fprojNat a x))
 
+/-- If `b ≤ a`, then integrating `f` against the `partialKernel κ a b` does nothing. -/
+theorem lmarginalPartialKernel_le {a b : ℕ} (hba : b ≤ a)
+    {f : ((n : ℕ) → X n) → ℝ≥0∞} (mf : Measurable f) : lmarginalPartialKernel κ a b f = f := by
+  ext x
+  rw [lmarginalPartialKernel, partialKernel_le κ hba, Kernel.lintegral_deterministic']
+  · congr with i
+    simp [updateFinset]
+  · exact mf.comp measurable_updateFinset
+
+theorem lmarginalPartialKernel_mono (a b : ℕ) {f g : ((n : ℕ) → X n) → ℝ≥0∞} (hfg : f ≤ g)
+    (x : (n : ℕ) → X n) : lmarginalPartialKernel κ a b f x ≤ lmarginalPartialKernel κ a b g x :=
+  lintegral_mono fun _ ↦ hfg _
+
+theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
+    update (updateFinset x (Iic m) (fprojNat m z)) (m + 1) (z (m + 1)) =
+    updateFinset x (Iic (m + 1)) (fprojNat (m + 1) z) := by
+  ext i
+  simp only [update, updateFinset, mem_Iic, dite_eq_ite]
+  split_ifs with h <;> try omega
+  cases h
+  all_goals rfl
+
 /-- If `a < b`, then integrating `f` against the `partialKernel κ a b` is the same as integrating
   against `kerNat a b`. -/
 theorem lmarginalPartialKernel_lt {a b : ℕ} (hab : a < b) {f : ((n : ℕ) → X n) → ℝ≥0∞}
@@ -602,19 +624,6 @@ theorem lmarginalPartialKernel_lt {a b : ℕ} (hab : a < b) {f : ((n : ℕ) → 
     all_goals omega
   · exact mf.comp <| measurable_updateFinset.comp (el a b hab.le).measurable
   · exact mf.comp measurable_updateFinset
-
-/-- If `b ≤ a`, then integrating `f` against the `partialKernel κ a b` does nothing. -/
-theorem lmarginalPartialKernel_le {a b : ℕ} (hba : b ≤ a)
-    {f : ((n : ℕ) → X n) → ℝ≥0∞} (mf : Measurable f) : lmarginalPartialKernel κ a b f = f := by
-  ext x
-  rw [lmarginalPartialKernel, partialKernel_le κ hba, Kernel.lintegral_deterministic']
-  · congr with i
-    simp [updateFinset]
-  · exact mf.comp measurable_updateFinset
-
-theorem lmarginalPartialKernel_mono (a b : ℕ) {f g : ((n : ℕ) → X n) → ℝ≥0∞} (hfg : f ≤ g)
-    (x : (n : ℕ) → X n) : lmarginalPartialKernel κ a b f x ≤ lmarginalPartialKernel κ a b g x :=
-  lintegral_mono fun _ ↦ hfg _
 
 theorem measurable_lmarginalPartialKernel (a b : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (hf : Measurable f) : Measurable (lmarginalPartialKernel κ a b f) := by
@@ -660,15 +669,6 @@ theorem lmarginalPartialKernel_self {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c
   · exact hf.comp <| measurable_updateFinset
   · exact measurable_lmarginalPartialKernel _ _ _ hf
 
-theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
-    update (updateFinset x (Iic m) (fprojNat m z)) (m + 1) (z (m + 1)) =
-    updateFinset x (Iic (m + 1)) (fprojNat (m + 1) z) := by
-  ext i
-  simp only [update, updateFinset, mem_Iic, dite_eq_ite]
-  split_ifs with h <;> try omega
-  cases h
-  all_goals rfl
-
 end integral
 
 end Kernel
@@ -694,6 +694,17 @@ theorem DependsOn.lmarginalPartialKernel_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ
     rw [mem_Ioc] at h
     rw [mem_coe, mem_Iic] at hi
     omega
+
+theorem DependsOn.lmarginalPartialKernel_right {a : ℕ} (b : ℕ) {c d : ℕ}
+    (mf : Measurable f) (hf : DependsOn f (Iic a)) (hac : a ≤ c) (had : a ≤ d) :
+    lmarginalPartialKernel κ b c f = lmarginalPartialKernel κ b d f := by
+  wlog hcd : c ≤ d generalizing c d
+  · rw [@this d c had hac (le_of_not_le hcd)]
+  · obtain hbc | hcb := le_or_lt b c
+    · rw [← lmarginalPartialKernel_self κ hbc hcd mf,
+        hf.lmarginalPartialKernel_eq κ d mf hac]
+    · rw [hf.lmarginalPartialKernel_eq κ c mf (hac.trans hcb.le),
+        hf.lmarginalPartialKernel_eq κ d mf (hac.trans hcb.le)]
 
 theorem dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (hf : DependsOn f (Iic b)) (mf : Measurable f) :

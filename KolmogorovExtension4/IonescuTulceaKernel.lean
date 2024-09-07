@@ -173,6 +173,21 @@ theorem ionescuTulceaContent_eq_lmarginalPartialKernel {N : ℕ} {S : Set ((i : 
   congrm (fun i ↦ ?_) ∈ S
   simp [updateFinset, i.2]
 
+/-- The cylinders of a product space indexed by `ℕ` can be seen as depending on the first
+corrdinates. -/
+theorem cylinders_nat :
+    measurableCylinders X = ⋃ (N) (S) (_ : MeasurableSet S), {cylinder (Iic N) S} := by
+  ext s
+  simp only [mem_measurableCylinders, exists_prop, Set.mem_iUnion, mem_singleton]
+  refine ⟨?_, fun ⟨N, S, mS, s_eq⟩ ↦ ⟨Iic N, S, mS, s_eq⟩⟩
+  rintro ⟨t, S, mS, rfl⟩
+  refine ⟨t.sup id, fproj₂ t.sub_Iic ⁻¹' S, measurable_fproj₂ _ mS, ?_⟩
+  unfold cylinder
+  rw [← Set.preimage_comp]
+  rfl
+
+variable [Nonempty (X 0)]
+
 /-- This is an auxiliary result for `ionescuTulceaContent_tendsto_zero`.
 Consider `f` a sequence of bounded measurable
 functions such that `f n` depends only on the first coordinates up to `N n`.
@@ -182,7 +197,7 @@ Assume then that there exists `ε` and `y : (n : Iic k) → X n` such that
 when integrating `f n` against `partialKernel k (N n)`, you get something at least
 `ε` for all. Then there exists `z` such that this remains true when integrating
 `f` against `partialKernel (k + 1) (N n) (update y (k + 1) z)`. -/
-theorem le_lmarginalPartialKernel_succ [Nonempty (X 0)] {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} {N : ℕ → ℕ}
+theorem le_lmarginalPartialKernel_succ {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} {N : ℕ → ℕ}
     (hcte : ∀ n, DependsOn (f n) (Iic (N n))) (mf : ∀ n, Measurable (f n))
     {bound : ℝ≥0∞} (fin_bound : bound ≠ ∞) (le_bound : ∀ n x, f n x ≤ bound) {k : ℕ}
     (anti : ∀ x, Antitone (fun n ↦ lmarginalPartialKernel κ (k + 1) (N n) (f n) x))
@@ -267,26 +282,11 @@ theorem le_lmarginalPartialKernel_succ [Nonempty (X 0)] {f : ℕ → ((n : ℕ) 
   rw [mem_coe, mem_Iic] at *
   omega
 
-/-- The cylinders of a product space indexed by `ℕ` can be seen as depending on the first
-corrdinates. -/
-theorem cylinders_nat :
-    measurableCylinders X = ⋃ (N) (S) (_ : MeasurableSet S), {cylinder (Iic N) S} := by
-  ext s
-  simp only [mem_measurableCylinders, exists_prop, Set.mem_iUnion, mem_singleton]
-  refine ⟨?_, fun ⟨N, S, mS, s_eq⟩ ↦ ⟨Iic N, S, mS, s_eq⟩⟩
-  rintro ⟨t, S, mS, rfl⟩
-  refine ⟨t.sup id, fproj₂ t.sub_Iic ⁻¹' S, measurable_fproj₂ _ mS, ?_⟩
-  unfold cylinder
-  rw [← Set.preimage_comp]
-  rfl
-
 /-- The indicator of a cylinder only depends on the variables whose the cylinder depends on. -/
 theorem dependsOn_cylinder_indicator {ι : Type*} {α : ι → Type*} {I : Finset ι}
     (S : Set ((i : I) → α i)) :
     DependsOn ((cylinder I S).indicator (1 : ((i : ι) → α i) → ℝ≥0∞)) I :=
   fun x y hxy ↦ indicator_const_eq _ (by simp [hxy])
-
-variable [Nonempty (X 0)]
 
 /-- This is the key theorem to prove the existence of the `ionescuTulceaKernel`:
 the `ionescuTulceaContent` of a decresaing sequence of cylinders with empty intersection
@@ -328,23 +328,14 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
     simp [updateFinset, hi]
   -- As `(Aₙ)` is non-increasing, so is `(χₙ)`.
   have χ_anti : Antitone χ := by
-    intro m n hmn y
-    apply Set.indicator_le
-    exact fun a ha ↦ by simp [χ, A_anti hmn ha]
+    refine fun m n hmn y ↦ ?_
+    apply Set.indicator_le fun a ha ↦ ?_
+    simp [χ, A_anti hmn ha]
   -- Integrating `χₙ` further than the last coordinate it depends on does nothing.
   -- This is used to then show that the integral of `χₙ` from time `k` is non-increasing.
   have lma_inv k M n (h : N n ≤ M) :
-      lmarginalPartialKernel κ k M (χ n) = lmarginalPartialKernel κ k (N n) (χ n) := by
-    refine Nat.le_induction rfl ?_ M h
-    intro K hK hind
-    rw [← hind]
-    rcases lt_trichotomy k K with hkK | hkK | hkK
-    · rw [← lmarginalPartialKernel_self κ hkK.le K.le_succ (mχ n),
-        (χ_dep n).lmarginalPartialKernel_eq _ _ (mχ n) hK]
-    · rw [hkK, (χ_dep n).lmarginalPartialKernel_eq _ _ (mχ n) hK,
-        (χ_dep n).lmarginalPartialKernel_eq _ _ (mχ n) hK]
-    · rw [lmarginalPartialKernel_le _ hkK.le (mχ n),
-        lmarginalPartialKernel_le _ (Nat.succ_le.2 hkK) (mχ n)]
+      lmarginalPartialKernel κ k M (χ n) = lmarginalPartialKernel κ k (N n) (χ n) :=
+    (χ_dep n).lmarginalPartialKernel_right κ k (mχ n) h (le_refl _)
   -- the integral of `χₙ` from time `k` is non-increasing.
   have anti_lma k x : Antitone fun n ↦ lmarginalPartialKernel κ k (N n) (χ n) x := by
     intro m n hmn
@@ -384,14 +375,12 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
   let z := iterate_induction x₀ ind
   have imp k (hk : p ≤ k) : ∀ x n,
       ε ≤ lmarginalPartialKernel κ k (N n) (χ n) (updateFinset x (Iic k) (fprojNat k z)) := by
-    refine Nat.le_induction ?_ ?_ k hk
-    · intro x n
-      convert hpos x n
+    refine Nat.le_induction (fun x n ↦ ?_) (fun k hn h x n ↦ ?_) k hk
+    · convert hpos x n
       ext i
       simp only [fprojNat, fproj, z]
-      apply iterate_induction_le
-    · intro k hn h x n
-      rw [← update_updateFinset_eq]
+      exact iterate_induction_le ..
+    · rw [← update_updateFinset_eq]
       convert hind k (fun i ↦ z i.1) h x n
       simp_rw [z]
       rw [iterate_induction, Nat.casesAuxOn_succ]
@@ -436,8 +425,7 @@ theorem ionescuTulceaContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) →
       fun n hind ↦ ?_
     have : Nonempty ((i : Iic n) → X i) :=
       Nonempty.intro fun i ↦ @Classical.ofNonempty _ (hind i.1 (mem_Iic.1 i.2))
-    exact ProbabilityMeasure.nonempty
-      ⟨κ n Classical.ofNonempty, inferInstance⟩
+    exact ProbabilityMeasure.nonempty ⟨κ n Classical.ofNonempty, inferInstance⟩
   refine addContent_iUnion_le_of_addContent_iUnion_eq_tsum
     isSetRing_measurableCylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
   refine sigma_additive_addContent_of_tendsto_zero isSetRing_measurableCylinders
@@ -445,7 +433,6 @@ theorem ionescuTulceaContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) →
   · obtain ⟨N, S, mS, s_eq⟩ : ∃ N S, MeasurableSet S ∧ s = cylinder (Iic N) S := by
       simpa [cylinders_nat] using hs
     let x_ : (n : ℕ) → X n := Classical.ofNonempty
-    classical
     rw [s_eq, ← proj_updateFinset x_ x₀,
       ionescuTulceaContent_eq_lmarginalPartialKernel κ mS (updateFinset x_ _ x₀)]
     refine ne_of_lt (lt_of_le_of_lt ?_ (by norm_num : (1 : ℝ≥0∞) < ∞))
