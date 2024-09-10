@@ -87,9 +87,15 @@ noncomputable def kolContent (hP : IsProjectiveMeasureFamily P) :
 theorem kolContent_eq (hP : IsProjectiveMeasureFamily P) (hs : s ∈ measurableCylinders α) :
     kolContent hP s = kolmogorovFun P s hs := by rw [kolContent, extendContent_eq]
 
-theorem kolContent_congr (hP : IsProjectiveMeasureFamily P) (hs : s ∈ measurableCylinders α)
+theorem kolContent_congr (hP : IsProjectiveMeasureFamily P) (s : Set (Π i, α i))
     {I : Finset ι} {S : Set (Π i : I, α i)} (hs_eq : s = cylinder I S) (hS : MeasurableSet S) :
-    kolContent hP s = P I S := by rw [kolContent_eq, kolmogorovFun_congr hP hs hs_eq hS]
+    kolContent hP s = P I S := by
+  rw [kolContent_eq,
+    kolmogorovFun_congr hP ((mem_measurableCylinders s).2 ⟨I, S, hS, hs_eq⟩) hs_eq hS]
+
+theorem kolContent_cylinder (hP : IsProjectiveMeasureFamily P)
+    {I : Finset ι} {S : Set (Π i : I, α i)} (hS : MeasurableSet S) :
+    kolContent hP (cylinder I S) = P I S := kolContent_congr _ _ rfl hS
 
 theorem kolContent_mono (hP : IsProjectiveMeasureFamily P) (hs : s ∈ measurableCylinders α)
     (ht : t ∈ measurableCylinders α) (hst : s ⊆ t) : kolContent hP s ≤ kolContent hP t :=
@@ -169,7 +175,7 @@ lemma innerRegular_kolContent (hP : IsProjectiveMeasureFamily P)
       refine (le_of_eq ?_).trans hK'
       have h_meas : MeasurableSet (As hs \ K') :=
         MeasurableSet.diff (measurableCylinders.measurableSet hs) hK'_closed.measurableSet
-      exact kolContent_congr hP (cylinder_mem_measurableCylinders _ _ h_meas) rfl h_meas
+      exact kolContent_cylinder _ h_meas
   · have : IsEmpty (Π i, α i) := isEmpty_pi.mpr (by simpa using hα)
     exact ⟨∅, empty_mem_closedCompactCylinders α, empty_subset _, by simp [eq_empty_of_isEmpty s]⟩
 
@@ -246,7 +252,7 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
   swap; · exact measurable_proj _
   have h_mem : (fun (x : Π i, α i) (i : ↥J) ↦ x ↑i) ⁻¹' s ∈ measurableCylinders α :=
     (mem_measurableCylinders _).mpr ⟨J, s, hs, rfl⟩
-  rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr hP h_mem rfl hs]
+  rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr hP (_ ⁻¹' _) rfl hs]
 
 instance isFiniteMeasure_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
     IsFiniteMeasure (projectiveLimit P hP) :=
