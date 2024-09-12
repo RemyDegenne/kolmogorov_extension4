@@ -89,8 +89,10 @@
 \newcommand{\tost}{\to_*}
 \newcommand{\ind}[1]{\mathbb{1}_{#1}}
 \newcommand{\dmu}{\mathrm{d}\mu}
+\newcommand{\mathlib}{\texttt{mathlib}}
 
 \newtheorem{thm}{Theorem}[section]
+\newtheorem{cor}{Corollary}[thm]
 \newtheorem{lem}[thm]{Lemma}
 \theoremstyle{definition}
 \newtheorem{defi}[thm]{Definition}
@@ -115,5 +117,46 @@
 
 	\section{Introduction}
 	Being able to talk about the joint distribution of an infinite family of random variables is crucial in probability theory. For example, one often requires a family of independent random variables. The existence of such a family relies on the existence of an infinite product measure. Indeed, given $(\Omega_i, \F_i, \mu_i)_{i\in\iota}$ a family of probability spaces, the existence of the product measure $\bigotimes_{i\in\iota}\mu_i$ yields a new probability space $(\prod_{i\in\iota}\Omega_i, \bigotimes_{i\in\iota}\F_i, \bigotimes_{i\in\iota}\mu_i)$, and the projections $X_i : \prod_{j\in\iota}\Omega_j \to \Omega_i$ give the desired family. For another example, consider discrete-time Markov chains. Given a measurable space $(E, \A)$ and a Markov kernel $\kappa : E \to E$, one might want to build a sequence $(X_n)_{n\in\N}$ of random variables with values in $E$ such that the conditional distribution of $X_{n+1}$ given $X_0, ..., X_n$ is $\kappa(X_n,\cdot)$. Such objects are fundamental in probability theory: families of independent variables allow to build more complicated objects, such as Brownian motion, while discrete-time Markov chains form a huge class of stochastic processes which contains random walks for instance. It so happens that those objects always exist without any restrictions on the spaces we consider. This is a direct consequence of the Ionescu-Tulcea theorem.
+
+	The goal of this contribution is to provide a formalization of the proof of the aforementioned theorem using the proof assistant Lean and the associated library \mathlib. It heavily relies on previous work done in [cite] which formalizes the Kolmogorov extension theorem. While this specific theorem is not used directly in the formalization presented here, we use the notion of measurable cylinders, projective families or additive contents which were introduced to prove the Kolmogorov extension theorem.
+
+	\section{Statement of the theorem}
+	The Ionescu-Tulcea theorem is about the existence of a certain Markov kernel. We therefore start with a reminder about those.
+
+	\begin{defi}\label{def:markov-kernel}
+		Let $(X,\A)$ and $(Y,\B)$ be two measurable spaces. A \emph{Markov kernel} from $X$ to $Y$ is a map $\kappa : X \times \B \to [0,1]$ such that:
+		\begin{itemize}
+			\item for any $x \in X$, $\kappa(x,\cdot)$ is a probability measure;
+			\item for any $B \in \B$, $\kappa(\cdot,B)$ is measurable.
+		\end{itemize}
+		One can therefore consider a Markov kernel as a measurable map which to any point in $X$ associates a probability distribution over the space $Y$.
+	\end{defi}
+
+	To ease the writing, let us give some notations.
+
+	\begin{nota}
+		If $I$ is a set of indices and $(X_i, \A_i)_{i \in I}$ a family of measurable spaces, then:
+		\begin{itemize}
+			\setstretch{1.5}
+			\item we write $X$ for $\prod_{i \in I} X_i$ and $\A$ for $\bigotimes_{i \in I} \A_i$;
+			\item if $J \subseteq I$, we write $X^J$ for $\prod_{i \in J} X_i$ and $\A^J$ for $\bigotimes_{i \in J} \A_i$;
+			\item if $I = \N$ and $n \in \N$ we write $\Xge{n}$ for $X^{\set{k \in \N \mid k \ge n}}$ and $\Age{n}$ for $\A^{\set{k \in \N \mid k \ge n}}$, with similar notations for $\le, >, <$;
+			\item if $J \subseteq I$, we write $\pi_J$ for the canonical map from $X$ to $X^J$;
+			\item if $ K \subseteq J \subseteq I$, we write $\pi_{J\to K}$ for the canonical map from $X^J$ to $X^K$.
+		\end{itemize}
+	\end{nota}
+
+	Let us now state the theorem.
+
+	\begin{thm}[Ionescu-Tulcea]\label{thm:it}
+		Let $(X_n,\A_n)_{n\in\N}$ be a family of measurable spaces. Let $(\kappa_n)_{n\in\N}$ be a family of Markov kernels such that for any $n$, $\kappa_n$ is a kernel from $X_0 \times ... \times X_n$ to $X_{n+1}$. Then there exists a unique Markov kernel $\eta : X_0 \to \prod_{n\ge1}X_n$ such that for any $n\ge1$,
+		$${\pi_n}_*\eta = \kappa_0 \otimes ... \otimes \kappa_{n-1}.$$
+	\end{thm}
+
+	Let's start by explaining why this theorem implies the existence of product measures and discrete-time Markov chains.
+
+	\begin{cor}\label{cor:product-measure}
+		Let $(X_i, \A_i, \mu_i)_{i\in\iota}$
+	\end{cor}
 
 \end{document}
