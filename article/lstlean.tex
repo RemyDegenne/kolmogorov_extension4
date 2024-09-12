@@ -1,0 +1,317 @@
+% Listing style definition for the Lean Theorem Prover.
+% Defined by Jeremy Avigad, 2015, by modifying Assia Mahboubi's SSR style.
+% Unicode replacements taken from Olivier Verdier's unixode.sty
+
+\lstdefinelanguage{lean} {
+
+% Anything betweeen $ becomes LaTeX math mode
+mathescape=false,
+% Comments may or not include Latex commands
+texcl=false,
+
+% keywords, list taken from lean-syntax.el
+morekeywords=[1]{
+import, prelude, protected, private, noncomputable, definition, meta, renaming,
+hiding, exposing, parameter, parameters, begin, conjecture, constant, constants,
+hypothesis, lemma, corollary, variable, variables, premise, premises, theory,
+print, theorem, proposition, example,
+open, as, export, override, axiom, axioms, inductive, with, without,
+structure, record, universe, universes,
+alias, help, precedence, reserve, declare_trace, add_key_equivalence,
+match, infix, infixl, infixr, notation, postfix, prefix, instance,
+%eval,
+vm_eval, check, coercion, end, this, suppose,
+using, using_well_founded, namespace, section, fields,
+attribute, local, set_option, extends, include, omit, classes, class,
+instances, coercions, attributes, raw, replacing,
+calc, have, show, suffices, by, in, at, let, forall, Pi, fun,
+exists, if, dif, then, else, assume, take, obtain, from, aliases, register_simp_ext,
+mutual, do, def, run_command, to
+},
+
+% Sorts
+morekeywords=[2]{Sort, Type, Prop, Type*, Type₀, Type₁, Type₂, Type₃},
+
+% Errors
+morekeywords=[3]{sorry, admit},
+
+% tactics, list taken from lean-syntax.el
+% morekeywords=[4]{
+% Cond, or_else, then, try, when, assumption, eassumption, rapply,
+% apply, fapply, eapply, rename, intro, intros, rintro, rintros, all_goals, fold, focus, focus_at,
+% generalize, generalizes, clear, clears, revert, reverts, back, beta, done, exact, rexact,
+% refine, repeat, whnf, rotate, rotate_left, rotate_right, inversion, cases, rcases, rewrite,
+% xrewrite, krewrite, blast, simp, esimp, simpa, unfold, change, check_expr, contradiction,
+% exfalso, split, existsi, constructor, fconstructor, left, right, injection, congruence, reflexivity,
+% symmetry, transitivity, state, induction, induction_using, fail, append,
+% substvars, now, with_options, with_attributes, with_attrs, note
+% norm_num, norm_cast, lift, library_search, suggest, abel, ring, linarith, omega, tidy, finish,
+% solve_by_elim, clarify, safe,
+% failed, infer_type, unify, return, local_context, target
+% },
+
+% modifiers, taken from lean-syntax.el
+% note: 'otherkeywords' is needed because these use a different symbol.
+% this command doesn't allow us to specify a number -- they are put with [1]
+% otherkeywords={
+% [persistent], [notation], [visible], [instance], [trans_instance],
+% [class], [parsing-only], [coercion], [unfold_full], [constructor],
+% [reducible], [irreducible], [semireducible], [quasireducible], [wf],
+% [whnf], [multiple_instances], [none], [decl], [declaration],
+% [relation], [symm], [subst], [refl], [trans], [simp], [simps], [congr], [unify],
+% [backward], [forward], [no_pattern], [begin_end], [tactic], [abbreviation],
+% [reducible], [unfold], [alias], [eqv], [intro], [intro!], [elim], [grinder],
+% [localrefinfo], [recursor], @
+% },
+
+% Various symbols
+literate=
+{α}{{\ensuremath{\mathrm{\upalpha}}}}1
+{β}{{\ensuremath{\mathrm{\upbeta}}}}1
+{γ}{{\ensuremath{\mathrm{\upgamma}}}}1
+{δ}{{\ensuremath{\mathrm{\updelta}}}}1
+{ε}{{\ensuremath{\mathrm{\varepsilon}}}}1
+{ζ}{{\ensuremath{\mathrm{\zeta}}}}1
+{η}{{\ensuremath{\mathrm{\eta}}}}1
+{θ}{{\ensuremath{\mathrm{\theta}}}}1
+{ι}{{\ensuremath{\mathrm{\iota}}}}1
+{κ}{{\ensuremath{\mathrm{\kappa}}}}1
+{μ}{{\ensuremath{\mathrm{\mu}}}}1
+{ν}{{\ensuremath{\mathrm{\nu}}}}1
+{ξ}{{\ensuremath{\mathrm{\xi}}}}1
+{π}{{\ensuremath{\mathrm{\mathnormal{\pi}}}}}1
+{ρ}{{\ensuremath{\mathrm{\rho}}}}1
+{σ}{{\ensuremath{\mathrm{\sigma}}}}1
+{τ}{{\ensuremath{\mathrm{\tau}}}}1
+{φ}{{\ensuremath{\mathrm{\varphi}}}}1
+{χ}{{\ensuremath{\mathrm{\chi}}}}1
+{ψ}{{\ensuremath{\mathrm{\psi}}}}1
+{ω}{{\ensuremath{\mathrm{\omega}}}}1
+
+{Γ}{{\ensuremath{\mathrm{\Gamma}}}}1
+{Δ}{{\ensuremath{\mathrm{\Delta}}}}1
+{Θ}{{\ensuremath{\mathrm{\Theta}}}}1
+{Λ}{{\ensuremath{\mathrm{\Lambda}}}}1
+{Σ}{{\ensuremath{\mathrm{\Sigma}}}}1
+{Φ}{{\ensuremath{\mathrm{\Phi}}}}1
+{Ξ}{{\ensuremath{\mathrm{\Xi}}}}1
+{Ψ}{{\ensuremath{\mathrm{\Psi}}}}1
+{Ω}{{\ensuremath{\mathrm{\Omega}}}}1
+
+{ℵ}{{\ensuremath{\aleph}}}1
+
+{≤}{{\color{symbolcolor}\ensuremath{\leq}}}1
+{≥}{{\color{symbolcolor}\ensuremath{\geq}}}1
+{≠}{{\color{symbolcolor}\ensuremath{\neq}}}1
+{≈}{{\color{symbolcolor}\ensuremath{\approx}}}1
+{≡}{{\color{symbolcolor}\ensuremath{\equiv}}}1
+{≃}{{\color{symbolcolor}\ensuremath{\simeq}}}1
+{≅}{{\color{symbolcolor}\ensuremath{\cong}}}1
+
+{∂}{{\color{symbolcolor}\ensuremath{\partial}}}1
+{∆}{{\color{symbolcolor}\ensuremath{\triangle}}}1 % or \laplace?
+
+{∫}{{\color{symbolcolor}\ensuremath{\int}}}1
+{∑}{{\color{symbolcolor}\ensuremath{\mathrm{\Sigma}}}}1
+%{Π}{{\ensuremath{\mathrm{\Pi}}}}1
+
+{⊥}{{\color{symbolcolor}\ensuremath{\perp}}}1
+{∞}{{\color{symbolcolor}\ensuremath{\infty}}}1
+{∂}{{\color{symbolcolor}\ensuremath{\partial}}}1
+
+{∓}{{\color{symbolcolor}\ensuremath{\mp}}}1
+{±}{{\color{symbolcolor}\ensuremath{\pm}}}1
+{×}{{\color{symbolcolor}\ensuremath{\times}}}1
+
+{∣}{{\color{symbolcolor}\ensuremath{\mid}}}1
+
+{⊕}{{\color{symbolcolor}\ensuremath{\oplus}}}1
+{⊗}{{\color{symbolcolor}\ensuremath{\otimes}}}1
+{⊞}{{\color{symbolcolor}\ensuremath{\boxplus}}}1
+
+{∇}{{\color{symbolcolor}\ensuremath{\nabla}}}1
+{√}{{\color{symbolcolor}\ensuremath{\sqrt}}}1
+
+{⬝}{{\color{symbolcolor}\ensuremath{\cdot}}}1
+{•}{{\color{symbolcolor}\ensuremath{\cdot}}}1
+{∘}{{\color{symbolcolor}\ensuremath{\circ}}}1
+{`}{{\ensuremath{{}^\backprime}}}1
+{'}{{\ensuremath{{}^\prime}}}1
+
+%{⁻}{{\ensuremath{^{\textup{\kern1pt\rule{2pt}{0.3pt}\kern-1pt}}}}}1
+{⁻}{{\ensuremath{^{-}}}}1
+{▸}{{\ensuremath{\blacktriangleright}}}1
+
+{∧}{{\color{symbolcolor}\ensuremath{\wedge}}}1
+{∨}{{\color{symbolcolor}\ensuremath{\vee}}}1
+{¬}{{\color{symbolcolor}\ensuremath{\neg}}}1
+{⊢}{{\color{symbolcolor}\ensuremath{\vdash}}}1
+
+%{⟨}{{\ensuremath{\left\langle}}}1
+%{⟩}{{\ensuremath{\right\rangle}}}1
+{⟨}{{\ensuremath{\langle}}}1
+{⟩}{{\ensuremath{\rangle}}}1
+
+{↦}{{\color{symbolcolor}\ensuremath{\mapsto}}}1
+{→}{{\color{symbolcolor}\ensuremath{\rightarrow}}}1
+{←}{{\color{symbolcolor}\ensuremath{\leftarrow}}}1
+{↔}{{\color{symbolcolor}\ensuremath{\leftrightarrow}}}1
+{⇒}{{\color{symbolcolor}\ensuremath{\Rightarrow}}}1
+{⟹}{{\color{symbolcolor}\ensuremath{\Longrightarrow}}}1
+{⇐}{{\color{symbolcolor}\ensuremath{\Leftarrow}}}1
+{⟸}{{\color{symbolcolor}\ensuremath{\Longleftarrow}}}1
+
+{∩}{{\color{symbolcolor}\ensuremath{\cap}}}1
+{∪}{{\color{symbolcolor}\ensuremath{\cup}}}1
+{⊂}{{\color{symbolcolor}\ensuremath{\subseteq}}}1
+{⊆}{{\color{symbolcolor}\ensuremath{\subseteq}}}1
+{⊄}{{\color{symbolcolor}\ensuremath{\nsubseteq}}}1
+{⊈}{{\color{symbolcolor}\ensuremath{\nsubseteq}}}1
+{⊃}{{\color{symbolcolor}\ensuremath{\supseteq}}}1
+{⊇}{{\color{symbolcolor}\ensuremath{\supseteq}}}1
+{⊅}{{\color{symbolcolor}\ensuremath{\nsupseteq}}}1
+{⊉}{{\color{symbolcolor}\ensuremath{\nsupseteq}}}1
+{∈}{{\color{symbolcolor}\ensuremath{\in}}}1
+{∉}{{\color{symbolcolor}\ensuremath{\notin}}}1
+{∋}{{\color{symbolcolor}\ensuremath{\ni}}}1
+{∌}{{\color{symbolcolor}\ensuremath{\notni}}}1
+{∅}{{\color{symbolcolor}\ensuremath{\emptyset}}}1
+{⋙}{{\color{symbolcolor}\ensuremath{\ggg}}}1
+
+{∖}{{\color{symbolcolor}\ensuremath{\setminus}}}1
+{†}{{\color{symbolcolor}\ensuremath{\dag}}}1
+
+{ℕ}{{\ensuremath{\mathbb{N}}}}1
+{ℤ}{{\ensuremath{\mathbb{Z}}}}1
+{ℝ}{{\ensuremath{\mathbb{R}}}}1
+{ℚ}{{\ensuremath{\mathbb{Q}}}}1
+{ℂ}{{\ensuremath{\mathbb{C}}}}1
+{𝕎}{{\ensuremath{\mathbb{W}}}}1
+{⌞}{{\ensuremath{\llcorner}}}1
+{⌟}{{\ensuremath{\lrcorner}}}1
+{⦃}{{\ensuremath{\{\!|}}}1
+{⦄}{{\ensuremath{|\!\}}}}1
+{∥}{{\ensuremath{\|}}}1
+
+{₁}{{\ensuremath{_1}}}1
+{₂}{{\ensuremath{_2}}}1
+{₃}{{\ensuremath{_3}}}1
+{₄}{{\ensuremath{_4}}}1
+{₅}{{\ensuremath{_5}}}1
+{₆}{{\ensuremath{_6}}}1
+{₇}{{\ensuremath{_7}}}1
+{₈}{{\ensuremath{_8}}}1
+{₉}{{\ensuremath{_9}}}1
+{₀}{{\ensuremath{_0}}}1
+{ₐ}{{\ensuremath{_a}}}1
+{ᵢ}{{\ensuremath{_i}}}1
+{ⱼ}{{\ensuremath{_j}}}1
+{ₙ}{{\ensuremath{_n}}}1
+{ₘ}{{\ensuremath{_m}}}1
+{ₖ}{{\ensuremath{_\mathrm{k}}}}1
+
+{¹}{{\ensuremath{^1}}}1
+{ᵒᵖ}{{\color{symbolcolor}\textsuperscript{op}}}1
+
+{↑}{{\color{symbolcolor}\ensuremath{\uparrow}}}1
+{↓}{{\color{symbolcolor}\ensuremath{\downarrow}}}1
+{⟶}{{\color{symbolcolor}\ensuremath{\longrightarrow}}}1
+{⥤}{{\color{symbolcolor}\ensuremath{\Rightarrow}}}1
+
+{...}{{\ensuremath{\ldots}}}1
+
+{▸}{{\ensuremath{\triangleright}}}1
+
+{𝒳}{{\ensuremath{\mathcal{X}}}}1
+{ℳ}{{\ensuremath{\mathcal{M}}}}1
+
+{⌊}{{\ensuremath{\lfloor}}}1
+{⌋}{{\ensuremath{\rfloor}}}1
+{⌈}{{\ensuremath{\lceil}}}1
+{⌉}{{\ensuremath{\rceil}}}1
+
+{‹}{{\guilsinglleft}}1
+{›}{{\guilsinglright}}1
+
+
+{Σ}{{\color{symbolcolor}\ensuremath{\Sigma}}}1
+{Π}{{\color{symbolcolor}\ensuremath{\mathrm{\Uppi}}}}1 %\mathrm{\Uppi}
+{∀}{{\color{symbolcolor}\ensuremath{\forall}}}1
+{∃}{{\color{symbolcolor}\ensuremath{\exists}}}1
+{λ}{{\color{symbolcolor}\ensuremath{\mathrm{\uplambda}}}}1
+{\$}{{\color{symbolcolor}\$}}1
+
+{:}{{\color{symbolcolor}:}}1
+{|}{{\color{symbolcolor}|}}1
+{=}{{\color{symbolcolor}=}}1
+{<}{{\color{symbolcolor}<}}1
+{>}{{\color{symbolcolor}>}}1
+{<|>}{{\color{symbolcolor}<|>}}1
+{+}{{\color{symbolcolor}+}}1
+{*}{{\color{symbolcolor}\ensuremath{{}^{*}}}}1,
+
+% Comments
+%comment=[s][\itshape \color{commentcolor}]{/-}{-/},
+morecomment=[s]{/-}{-/},
+morecomment=[l]{--},
+
+% Spaces are not displayed as a special character
+showstringspaces=false,
+
+% keep spaces
+keepspaces=true,
+
+% String delimiters
+morestring=[b]{"},
+
+% Size of tabulations
+tabsize=3,
+
+% Enables ASCII chars 128 to 255
+extendedchars=false,
+
+% Case sensitivity
+sensitive=true,
+
+% Automatic breaking of long lines
+breaklines=true,
+breakatwhitespace=true,
+
+% Default style fors listingsred
+lineskip={-1.5pt},
+basicstyle={\ttfamily\scalefont{.95}},%\relsize{.8},
+% Position of captions is bottom
+captionpos=b,
+
+% Full flexible columns
+columns=[l]fullflexible,
+
+
+% Style for (listings') identifiers
+identifierstyle={\ttfamily\color{black}},
+% Note : highlighting of Coq identifiers is done through a new
+% delimiter definition through an lstset at the begining of the
+% document. Don't know how to do better.
+
+% Style for declaration keywords
+keywordstyle=[1]{\ttfamily\color{keywordcolor}},
+
+% Style for sorts
+keywordstyle=[2]{\ttfamily\color{sortcolor}},
+
+% Style for errors
+keywordstyle=[3]{\ttfamily\color{errorcolor}},
+
+% Style for tactics keywords
+% keywordstyle=[4]{\ttfamily\color{tacticcolor}},
+
+% Style for attributes
+% keywordstyle=[5]{\ttfamily\color{attributecolor}},
+
+% Style for strings
+stringstyle={\ttfamily\color{stringcolor}},
+
+% Style for comments
+commentstyle={\ttfamily\itshape\color{commentcolor}},
+
+}

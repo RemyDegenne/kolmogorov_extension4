@@ -10,3 +10,7 @@ Manuscript/proof_outline.fls
 Manuscript/proof_outline.log
 Manuscript/proof_outline.out
 Manuscript/_minted-proof_outline/*
+article/article.aux
+article/article.log
+article/article.out
+article/article.synctex.gz
