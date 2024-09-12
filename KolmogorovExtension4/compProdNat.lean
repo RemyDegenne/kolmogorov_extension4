@@ -19,7 +19,18 @@ lemma measurable_cast {X Y : Type u} [mX : MeasurableSpace X] [mY : MeasurableSp
   subst hm
   exact measurable_id
 
-variable {X : ℕ → Type*} [∀ i, MeasurableSpace (X i)]
+variable {X : ℕ → Type*}
+
+theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
+    update (updateFinset x (Iic m) (fprojNat m z)) (m + 1) (z (m + 1)) =
+    updateFinset x (Iic (m + 1)) (fprojNat (m + 1) z) := by
+  ext i
+  simp only [update, updateFinset, mem_Iic, dite_eq_ite]
+  split_ifs with h <;> try omega
+  cases h
+  all_goals rfl
+
+variable [∀ i, MeasurableSpace (X i)]
 
 section equivs
 
@@ -467,6 +478,8 @@ variable (κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1)))
 namespace ProbabilityTheory
 namespace Kernel
 
+section Basic
+
 /-- Given a family of kernels `κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1))`, we can
 compose them: if `a < b`, then `(κ a) ⊗ₖ ... ⊗ₖ (κ (b - 1))` is a kernel from
 `(i : Iic a) → X i` to `(i : Ioc a b) → X i`. This composition is called `kerNat κ a b`.
@@ -492,14 +505,22 @@ theorem partialKernel_le {a b : ℕ} (hab : b ≤ a) :
       deterministic (fprojNat₂ hab) (measurable_fprojNat₂ _) := by
   rw [partialKernel, dif_neg (not_lt.2 hab)]
 
-variable [∀ n, IsMarkovKernel (κ n)]
+instance [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ) : IsSFiniteKernel (partialKernel κ a b) := by
+  rw [partialKernel]
+  split_ifs <;> infer_instance
 
-instance (a b : ℕ) : IsMarkovKernel (partialKernel κ a b) := by
+instance [∀ n, IsFiniteKernel (κ n)] (a b : ℕ) : IsFiniteKernel (partialKernel κ a b) := by
+  rw [partialKernel]
+  split_ifs <;> infer_instance
+
+instance [∀ n, IsMarkovKernel (κ n)] (a b : ℕ) : IsMarkovKernel (partialKernel κ a b) := by
   rw [partialKernel]
   split_ifs with hab
   · have := isMarkovKernel_kerNat κ hab
     infer_instance
   · infer_instance
+
+variable [∀ n, IsMarkovKernel (κ n)]
 
 /-- If `b ≤ c`, then projecting the trajectory up to time `c` on first coordinates gives the
 trajectory up to time `b`. -/
@@ -580,6 +601,8 @@ theorem partialKernel_comp' (a : ℕ) {b c : ℕ} (h : c ≤ b) :
       partialKernel_proj κ a (not_lt.1 hbc)]
   all_goals omega
 
+end Basic
+
 section integral
 
 /-- This function computes the integral of a function `f` against `partialKernel`,
@@ -601,18 +624,10 @@ theorem lmarginalPartialKernel_mono (a b : ℕ) {f g : ((n : ℕ) → X n) → �
     (x : (n : ℕ) → X n) : lmarginalPartialKernel κ a b f x ≤ lmarginalPartialKernel κ a b g x :=
   lintegral_mono fun _ ↦ hfg _
 
-theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
-    update (updateFinset x (Iic m) (fprojNat m z)) (m + 1) (z (m + 1)) =
-    updateFinset x (Iic (m + 1)) (fprojNat (m + 1) z) := by
-  ext i
-  simp only [update, updateFinset, mem_Iic, dite_eq_ite]
-  split_ifs with h <;> try omega
-  cases h
-  all_goals rfl
-
 /-- If `a < b`, then integrating `f` against the `partialKernel κ a b` is the same as integrating
   against `kerNat a b`. -/
-theorem lmarginalPartialKernel_lt {a b : ℕ} (hab : a < b) {f : ((n : ℕ) → X n) → ℝ≥0∞}
+theorem lmarginalPartialKernel_lt [∀ n, IsFiniteKernel (κ n)]
+    {a b : ℕ} (hab : a < b) {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (mf : Measurable f) (x : (n : ℕ) → X n) :
     lmarginalPartialKernel κ a b f x =
       ∫⁻ y : (i : Ioc a b) → X i, f (updateFinset x _ y) ∂kerNat κ a b (fprojNat a x) := by
@@ -625,7 +640,8 @@ theorem lmarginalPartialKernel_lt {a b : ℕ} (hab : a < b) {f : ((n : ℕ) → 
   · exact mf.comp <| measurable_updateFinset.comp (el a b hab.le).measurable
   · exact mf.comp measurable_updateFinset
 
-theorem measurable_lmarginalPartialKernel (a b : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
+theorem measurable_lmarginalPartialKernel [∀ n, IsSFiniteKernel (κ n)]
+    (a b : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (hf : Measurable f) : Measurable (lmarginalPartialKernel κ a b f) := by
   unfold lmarginalPartialKernel
   let g : ((i : Iic b) → X i) × ((n : ℕ) → X n) → ℝ≥0∞ :=
@@ -640,7 +656,8 @@ theorem measurable_lmarginalPartialKernel (a b : ℕ) {f : ((n : ℕ) → X n) �
   · exact (measurable_pi_apply _).comp <| measurable_fst
   · exact measurable_snd.eval
 
-theorem lmarginalPartialKernel_self {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
+theorem lmarginalPartialKernel_self [∀ n, IsFiniteKernel (κ n)] {a b c : ℕ}
+    (hab : a ≤ b) (hbc : b ≤ c)
     {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
     lmarginalPartialKernel κ a b (lmarginalPartialKernel κ b c f) =
       lmarginalPartialKernel κ a c f := by
@@ -706,7 +723,7 @@ theorem DependsOn.lmarginalPartialKernel_right {a : ℕ} (b : ℕ) {c d : ℕ}
     · rw [hf.lmarginalPartialKernel_eq κ c mf (hac.trans hcb.le),
         hf.lmarginalPartialKernel_eq κ d mf (hac.trans hcb.le)]
 
-theorem dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) → ℝ≥0∞}
+theorem DependsOn.dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (hf : DependsOn f (Iic b)) (mf : Measurable f) :
     DependsOn (lmarginalPartialKernel κ a b f) (Iic a) := by
   intro x y hxy

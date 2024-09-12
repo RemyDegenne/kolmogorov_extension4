@@ -276,7 +276,7 @@ theorem le_lmarginalPartialKernel_succ {f : ℕ → ((n : ℕ) → X n) → ℝ�
   -- This part below is just to say that this is true for any `x : (i : ι) → X i`,
   -- as `Fₙ` technically depends on all the variables, but really depends only on the first `k + 1`.
   convert this using 1
-  refine dependsOn_lmarginalPartialKernel _ _ (hcte n) (mf n) fun i hi ↦ ?_
+  refine DependsOn.dependsOn_lmarginalPartialKernel _ _ (hcte n) (mf n) fun i hi ↦ ?_
   simp only [update, updateFinset]
   split_ifs with h1 h2 <;> try rfl
   rw [mem_coe, mem_Iic] at *
@@ -322,7 +322,7 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
   have lma_const x y n :
       lmarginalPartialKernel κ p (N n) (χ n) (updateFinset x _ x₀) =
       lmarginalPartialKernel κ p (N n) (χ n) (updateFinset y _ x₀) := by
-    apply dependsOn_lmarginalPartialKernel κ p (χ_dep n) (mχ n)
+    apply (χ_dep n).dependsOn_lmarginalPartialKernel κ p (mχ n)
     intro i hi
     rw [mem_coe, mem_Iic] at hi
     simp [updateFinset, hi]
@@ -449,14 +449,12 @@ noncomputable def ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     (ionescuTulceaContent κ x₀) (ionescuTulceaContent_sigma_subadditive κ x₀)
 
 theorem isProbabilityMeasure_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
-    IsProbabilityMeasure (ionescuTulceaFun κ p x₀) := by
-  constructor
-  rw [← cylinder_univ (Iic 0), ionescuTulceaFun, Measure.ofAddContent_eq,
-    ionescuTulceaContent_cylinder]
-  · simp
-  · exact MeasurableSet.univ
-  · rw [mem_measurableCylinders]
-    exact ⟨Iic 0, Set.univ, MeasurableSet.univ, rfl⟩
+    IsProbabilityMeasure (ionescuTulceaFun κ p x₀) where
+  measure_univ := by
+    rw [← cylinder_univ (Iic 0), ionescuTulceaFun, Measure.ofAddContent_eq,
+      ionescuTulceaContent_cylinder _ _ MeasurableSet.univ]
+    · exact measure_univ
+    · exact (mem_measurableCylinders _).2 ⟨Iic 0, Set.univ, MeasurableSet.univ, rfl⟩
 
 theorem isProjectiveLimit_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     IsProjectiveLimit (ionescuTulceaFun κ p x₀)
@@ -481,11 +479,9 @@ theorem measurable_ionescuTulceaFun (p : ℕ) : Measurable (ionescuTulceaFun κ 
   · obtain ⟨N, S, mS, t_eq⟩ : ∃ N S, MeasurableSet S ∧ t = cylinder (Iic N) S := by
       simpa [cylinders_nat] using ht
     simp_rw [ionescuTulceaFun, Measure.ofAddContent_eq _ _ _ _ ht, ionescuTulceaContent,
-      kolContent_congr _ t t_eq mS]
-    simp only [inducedFamily]
+      kolContent_congr _ t t_eq mS, inducedFamily]
     refine Measure.measurable_measure.1 ?_ _ mS
-    refine (Measure.measurable_map _ ?_).comp (Kernel.measurable _)
-    exact measurable_pi_lambda _ (fun _ ↦ measurable_pi_apply _)
+    exact (Measure.measurable_map _ (measurable_fproj₂ _)).comp (Kernel.measurable _)
   · have := isProbabilityMeasure_ionescuTulceaFun κ p
     simp_rw [measure_compl mt (measure_ne_top _ _), measure_univ]
     exact Measurable.const_sub ht _
@@ -508,7 +504,7 @@ theorem ionescuTulceaKernel_apply (p : ℕ) (x₀ : (i : Iic p) → X i) :
     ionescuTulceaKernel κ p x₀ = ionescuTulceaFun κ p x₀ := rfl
 
 instance (p : ℕ) : IsMarkovKernel (ionescuTulceaKernel κ p) :=
-  IsMarkovKernel.mk fun _ ↦ isProbabilityMeasure_ionescuTulceaFun ..
+  ⟨fun _ ↦ isProbabilityMeasure_ionescuTulceaFun ..⟩
 
 theorem ionescuTulceaKernel_proj (a b : ℕ) :
     (ionescuTulceaKernel κ a).map (fprojNat b) (measurable_fprojNat b) = partialKernel κ a b := by
@@ -578,7 +574,7 @@ with respect to this kernel. -/
 theorem ionescuTulceaKernel_eq (n : ℕ) :
     ionescuTulceaKernel κ n =
     Kernel.map
-      (Kernel.deterministic (@id ((i : Iic n) → X i)) measurable_id ×ₖ
+      (deterministic (@id ((i : Iic n) → X i)) measurable_id ×ₖ
         Kernel.map (ionescuTulceaKernel κ n) (proj (Set.Ioi n)) (measurable_proj _))
       (el' n) (el' n).measurable := by
   refine (eq_ionescuTulceaKernel' _ (n + 1) _ fun a ha ↦ ?_).symm
@@ -683,7 +679,7 @@ variable [CompleteSpace E]
 theorem condexp_ionescuTulceaKernel
     {a b : ℕ} (hab : a ≤ b) (x₀ : (i : Iic a) → X i) {f : ((n : ℕ) → X n) → E}
     (i_f : Integrable f (ionescuTulceaKernel κ a x₀)) (mf : StronglyMeasurable f) :
-    ((ionescuTulceaKernel κ a) x₀)[f|ℱ b] =ᵐ[ionescuTulceaKernel κ a x₀]
+    (ionescuTulceaKernel κ a x₀)[f|ℱ b] =ᵐ[ionescuTulceaKernel κ a x₀]
       fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b (fprojNat b x) := by
   refine (ae_eq_condexp_of_forall_setIntegral_eq _ i_f ?_ ?_ ?_).symm
   · rintro s - -

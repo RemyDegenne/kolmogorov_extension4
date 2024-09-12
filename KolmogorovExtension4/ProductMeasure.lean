@@ -66,22 +66,22 @@ section Nat
 variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
 variable (μ : (n : ℕ) → Measure (X n)) [hμ : ∀ n, IsProbabilityMeasure (μ n)]
 
-lemma mem_Iic_zero {i : ℕ} (hi : i ∈ Iic 0) : i = 0 := by simpa using hi
+lemma mem_Iic_zero {i : ℕ} (hi : i ∈ Iic 0) : 0 = i := (by simpa using hi : i = 0).symm
 
 /-- `{0} = Ici 0`, version as a measurable equivalence for dependent functions. -/
 def zer : (X 0) ≃ᵐ ((i : Iic 0) → X i) where
-  toFun := fun x₀ i ↦ (mem_Iic_zero i.2).symm ▸ x₀
+  toFun := fun x₀ i ↦ mem_Iic_zero i.2 ▸ x₀
   invFun := fun x ↦ x ⟨0, mem_Iic.2 <| le_refl 0⟩
   left_inv := fun x₀ ↦ by simp
   right_inv := fun x ↦ by
     ext i
-    have : ⟨0, mem_Iic.2 <| le_refl 0⟩ = i := by simp [(mem_Iic_zero i.2).symm]
+    have : ⟨0, mem_Iic.2 <| le_refl 0⟩ = i := by simp [mem_Iic_zero i.2]
     cases this; rfl
   measurable_toFun := by
     refine measurable_pi_lambda _ (fun i ↦ ?_)
     simp_rw [eqRec_eq_cast]
     apply measurable_cast
-    have : ⟨0, mem_Iic.2 <| le_refl 0⟩ = i := by simp [(mem_Iic_zero i.2).symm]
+    have : ⟨0, mem_Iic.2 <| le_refl 0⟩ = i := by simp [mem_Iic_zero i.2]
     cases this; rfl
   measurable_invFun := measurable_pi_apply _
 
@@ -95,10 +95,10 @@ noncomputable def Measure.infinitePiNat : Measure ((n : ℕ) → X n) :=
 open Measure
 
 instance {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {κ : Kernel X Y}
-    [IsProbabilityMeasure μ] [IsMarkovKernel κ] : IsProbabilityMeasure (μ.bind κ) := by
-  constructor
-  rw [bind_apply MeasurableSet.univ (Kernel.measurable κ)]
-  simp
+    [IsProbabilityMeasure μ] [IsMarkovKernel κ] : IsProbabilityMeasure (μ.bind κ) where
+  measure_univ := by
+    rw [bind_apply MeasurableSet.univ (Kernel.measurable κ)]
+    simp
 
 instance : IsProbabilityMeasure (infinitePiNat μ) := by
   rw [infinitePiNat]
