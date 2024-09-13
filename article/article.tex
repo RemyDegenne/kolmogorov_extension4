@@ -1,5 +1,4 @@
 \documentclass{article}
-\usepackage[french]{babel}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
 \usepackage{amsthm}
@@ -105,7 +104,7 @@
 	\begin{center}
 		{\Large\bf A Formalization of the Ionescu-Tulcea Theorem in mathlib} \\
 		\vspace{1cm}
-		Auteur : Etienne Marion \\
+		Author : Etienne Marion \\
 		\vspace{1cm}
 		ENS de Lyon, 46, Allée d’Italie, 69007 Lyon, France \\
 		\texttt{etienne.marion@ens-lyon.fr}
@@ -158,123 +157,5 @@
 	\begin{cor}\label{cor:product-measure}
 		Let $(X_i, \A_i, \mu_i)_{i\in\iota}$
 	\end{cor}
-
-\end{document}\documentclass{article}
-\usepackage[french]{babel}
-\usepackage[T1]{fontenc}
-\usepackage{amsmath}
-\usepackage{amsthm}
-\usepackage{stmaryrd}
-\usepackage{amsfonts}
-\usepackage{amssymb}
-\usepackage{graphicx}
-\usepackage{subcaption}
-\usepackage[a4paper, total={\textwidth, 23cm}]{geometry}
-\usepackage{setspace}
-\usepackage{bbold}
-\usepackage{chngcntr}
-\usepackage{xcolor}
-\usepackage{hyperref}
-\hypersetup{
-	colorlinks=true,
-	linkcolor=blue,
-	citecolor=red,
-	pdftitle={Rapport de Stage},
-	pdfauthor={Etienne MARION},
-	pdfpagemode=FullScreen,
-}
-
-\newcommand{\lean}[1]{\lstinline[language=lean]{#1}}
-
-\definecolor{keywordcolor}{rgb}{0.7, 0.1, 0.1}   % red
-\definecolor{tacticcolor}{rgb}{0.0, 0.1, 0.3}    % dark blue
-\definecolor{commentcolor}{rgb}{0.4, 0.4, 0.4}   % grey
-\definecolor{stringcolor}{rgb}{0.5, 0.3, 0.2}    % brown
-\definecolor{symbolcolor}{rgb}{0.1, 0.2, 0.7}    % blue
-\definecolor{sortcolor}{rgb}{0.1, 0.5, 0.1}      % green
-\definecolor{attributecolor}{rgb}{0.7, 0.1, 0.1} % red
-\definecolor{errorcolor}{rgb}{1, 0, 0}           % bright red
-
-\usepackage{listings}
-\def\lstlanguagefiles{lstlean.tex}
-\lstloadlanguages{lean}
-\lstset{language=lean}
-\usepackage{scalefnt}
-
-\newcommand{\sorry}[0]{\lean{sorry}}
-
-\newcommand{\A}{\mathcal{A}}
-\newcommand{\B}{\mathcal{B}}
-\newcommand{\C}{\mathcal{C}}
-\newcommand{\E}{\mathbb{E}}
-\newcommand{\F}{\mathcal{F}}
-\newcommand{\N}{\mathbb{N}}
-\newcommand{\R}{\mathbb{R}}
-\newcommand{\imp}{\Rightarrow}
-\newcommand{\set}[1]{\left\{#1\right\}}
-\newcommand{\inv}{^{-1}}
-\newcommand{\eps}{\epsilon}
-\newcommand{\type}{\texttt{Type}}
-\newcommand{\prop}{\texttt{Prop}}
-\newcommand{\prun}{\texttt{pr}_1}
-\newcommand{\prde}{\texttt{pr}_2}
-\newcommand{\inl}{\texttt{inl}}
-\newcommand{\inr}{\texttt{inr}}
-\newcommand{\skl}{\vspace{\baselineskip}}
-\newcommand{\gui}[1]{\og{}#1\fg{}}
-\newcommand{\Xge}[1]{X^{\ge#1}}
-\newcommand{\Xle}[1]{X^{\le#1}}
-\newcommand{\Xgt}[1]{X^{>#1}}
-\newcommand{\Age}[1]{\mathcal{A}^{\ge#1}}
-\newcommand{\Agt}[1]{\mathcal{A}^{>#1}}
-\newcommand{\Ale}[1]{\mathcal{A}^{\le#1}}
-\newcommand{\Xgtn}{X^{>n}}
-\newcommand{\Xgtm}{X^{>m}}
-\newcommand{\Xgtk}{X^{>k}}
-\newcommand{\Xlen}{X^{\le n}}
-\newcommand{\Alen}{\mathcal{A}^{\le n}}
-\newcommand{\dx}{\mathrm{d}x}
-\newcommand{\dy}{\mathrm{d}y}
-\newcommand{\prth}[1]{\left(#1\right)}
-\renewcommand{\empty}{\varnothing}
-\newcommand{\tendl}[1]{\longrightarrow_{#1}}
-\newcommand{\dbrack}[1]{\llbracket #1 \rrbracket}
-\newcommand{\priv}{\,\backslash\,}
-\newcommand{\restr}[1]{\vert_{#1}}
-\newcommand{\mub}{\overline{\mu}}
-\newcommand{\ox}{\otimes}
-\renewcommand{\phi}{\varphi}
-\newcommand{\piun}{{\pi_{\dbrack{1,n}}}}
-\newcommand{\pizn}{{\pi_{\dbrack{0,n}}}}
-\newcommand{\Xint}[1]{X^{\dbrack{#1}}}
-\newcommand{\tost}{\to_*}
-\newcommand{\ind}[1]{\mathbb{1}_{#1}}
-\newcommand{\dmu}{\mathrm{d}\mu}
-
-\newtheorem{thm}{Theorem}[section]
-\newtheorem{lem}[thm]{Lemma}
-\theoremstyle{definition}
-\newtheorem{defi}[thm]{Definition}
-\newtheorem{eg}[thm]{Example}
-\theoremstyle{remark}
-\newtheorem*{nota}{Notation}
-
-\begin{document}
-
-	\begin{center}
-		{\Large\bf A Formalization of the Ionescu-Tulcea Theorem in mathlib} \\
-		\vspace{1cm}
-		Auteur : Etienne Marion \\
-		\vspace{1cm}
-		ENS de Lyon, 46, Allée d’Italie, 69007 Lyon, France \\
-		\texttt{etienne.marion@ens-lyon.fr}
-	\end{center}
-
-	\vspace{0.5cm}
-
-	\section*{Abstract}
-
-	\section{Introduction}
-	Being able to talk about the joint distribution of an infinite family of random variables is crucial in probability theory. For example, one often requires a family of independent random variables. The existence of such a family relies on the existence of an infinite product measure. Indeed, given $(\Omega_i, \F_i, \mu_i)_{i\in\iota}$ a family of probability spaces, the existence of the product measure $\bigotimes_{i\in\iota}\mu_i$ yields a new probability space $(\prod_{i\in\iota}\Omega_i, \bigotimes_{i\in\iota}\F_i, \bigotimes_{i\in\iota}\mu_i)$, and the projections $X_i : \prod_{j\in\iota}\Omega_j \to \Omega_i$ give the desired family. For another example, consider discrete-time Markov chains. Given a measurable space $(E, \A)$ and a Markov kernel $\kappa : E \to E$, one might want to build a sequence $(X_n)_{n\in\N}$ of random variables with values in $E$ such that the conditional distribution of $X_{n+1}$ given $X_0, ..., X_n$ is $\kappa(X_n,\cdot)$. Such objects are fundamental in probability theory: families of independent variables allow to build more complicated objects, such as Brownian motion, while discrete-time Markov chains form a huge class of stochastic processes which contains random walks for instance. It so happens that those objects always exist without any restrictions on the spaces we consider. This is a direct consequence of the Ionescu-Tulcea theorem.
 
 \end{document}
