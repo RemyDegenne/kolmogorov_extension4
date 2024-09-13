@@ -64,8 +64,31 @@ end indicator
 
 section Measure
 
-variable {X Y Z T U : Type*} [MeasurableSpace X] [MeasurableSpace Y]
+variable {X Y Z T U : Type*}
 variable [MeasurableSpace Z] [MeasurableSpace T] [MeasurableSpace U]
+
+/-- If a function `g` is measurable with respect to the pullback along some function `f`, then
+to prove `g x = g y` it is enough to prove `f x = f y`. -/
+theorem eq_of_measurable_comap [m : MeasurableSpace Y] [MeasurableSingletonClass Z]
+    (f : X → Y) {g : X → Z} (hg : @Measurable _ _ (m.comap f) _ g)
+    {x₁ x₂ : X} (h : f x₁ = f x₂) : g x₁ = g x₂ := by
+  rcases hg (measurableSet_singleton (g x₁)) with ⟨s, -, hs⟩
+  have : x₁ ∈ f ⁻¹' s := by simp [hs]
+  have : x₂ ∈ f ⁻¹' s := by rwa [Set.mem_preimage, ← h]
+  rw [hs] at this
+  exact (by simpa using this : g x₂ = g x₁).symm
+
+/-- If a function `g` is strongly measurable with respect to the pullback along some function `f`,
+then to prove `g x = g y` it is enough to prove `f x = f y`. -/
+theorem eq_of_stronglyMeasurable_comap {Z : Type*} [m : MeasurableSpace Y]
+    [TopologicalSpace Z] [TopologicalSpace.PseudoMetrizableSpace Z] [T1Space Z]
+    (f : X → Y) {g : X → Z} (hg : @StronglyMeasurable _ _ _ (m.comap f) g)
+    {x₁ x₂ : X} (h : f x₁ = f x₂) : g x₁ = g x₂ := by
+  let _ : MeasurableSpace Z := borel Z
+  have : BorelSpace Z := BorelSpace.mk rfl
+  exact eq_of_measurable_comap f hg.measurable h
+
+variable [MeasurableSpace X] [MeasurableSpace Y]
 
 theorem Kernel.compProd_apply_prod (κ : Kernel X Y) [IsSFiniteKernel κ]
     (η : Kernel (X × Y) Z) [IsSFiniteKernel η]
@@ -159,33 +182,7 @@ theorem Kernel.comap_const (μ : Measure Z) {f : X → Y} (hf : Measurable f) :
   ext1 x
   rw [Kernel.const_apply, Kernel.comap_apply, Kernel.const_apply]
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-
-theorem MeasureTheory.Filtration.condexp_condexp {ι : Type*} [Preorder ι]
-    (f : X → E) {μ : Measure X} (ℱ : @Filtration X ι _ inferInstance)
-    {i j : ι} (hij : i ≤ j) [SigmaFinite (μ.trim (ℱ.le j))] :
-    μ[μ[f|ℱ j]|ℱ i] =ᵐ[μ] μ[f|ℱ i] := condexp_condexp_of_le (ℱ.mono hij) (ℱ.le j)
-
-/-- If a function `g` is measurable with respect to the pullback along some function `f`, then
-to prove `g x = g y` it is enough to prove `f x = f y`. -/
-theorem eq_of_measurable_comap [m : MeasurableSpace Y] [MeasurableSingletonClass Z]
-    (f : X → Y) {g : X → Z} (hg : @Measurable _ _ (m.comap f) _ g)
-    {x₁ x₂ : X} (h : f x₁ = f x₂) : g x₁ = g x₂ := by
-  rcases hg (measurableSet_singleton (g x₁)) with ⟨s, -, hs⟩
-  have : x₁ ∈ f ⁻¹' s := by simp [hs]
-  have : x₂ ∈ f ⁻¹' s := by rwa [Set.mem_preimage, ← h]
-  rw [hs] at this
-  exact (by simpa using this : g x₂ = g x₁).symm
-
-/-- If a function `g` is strongly measurable with respect to the pullback along some function `f`,
-then to prove `g x = g y` it is enough to prove `f x = f y`. -/
-theorem eq_of_stronglyMeasurable_comap {Z : Type*} [m : MeasurableSpace Y]
-    [TopologicalSpace Z] [TopologicalSpace.PseudoMetrizableSpace Z] [T1Space Z]
-    (f : X → Y) {g : X → Z} (hg : @StronglyMeasurable _ _ _ (m.comap f) g)
-    {x₁ x₂ : X} (h : f x₁ = f x₂) : g x₁ = g x₂ := by
-  let _ : MeasurableSpace Z := borel Z
-  have : BorelSpace Z := BorelSpace.mk rfl
-  exact eq_of_measurable_comap f hg.measurable h
+variable {E : Type*} [NormedAddCommGroup E]
 
 theorem Kernel.integrable_prod_iff (κ : Kernel X Y) [IsFiniteKernel κ]
     (η : Kernel X Z) [IsFiniteKernel η] (x : X) {f : (Y × Z) → E}
@@ -200,13 +197,6 @@ theorem Kernel.integrable_prod_iff' (κ : Kernel X Y) [IsFiniteKernel κ]
       (∀ᵐ z ∂η x, Integrable (fun y ↦ f (y, z)) (κ x)) ∧
       Integrable (fun z ↦ ∫ y, ‖f (y, z)‖ ∂κ x) (η x) := by
   rwa [Kernel.prod_apply, MeasureTheory.integrable_prod_iff'] at *
-
-theorem Kernel.integral_prod (κ : Kernel X Y) [IsFiniteKernel κ]
-    (η : Kernel X Z) [IsFiniteKernel η] (x : X)
-    {f : (Y × Z) → E} (hf : Integrable f ((κ ×ₖ η) x)) :
-    ∫ p, f p ∂(κ ×ₖ η) x = ∫ y, ∫ z, f (y, z) ∂η x ∂κ x := by
-  rw [Kernel.prod_apply, MeasureTheory.integral_prod]
-  rwa [← Kernel.prod_apply]
 
 theorem integrable_dirac {f : X → E} (mf : StronglyMeasurable f) {x : X} :
     Integrable f (Measure.dirac x) := by
@@ -235,15 +225,6 @@ theorem Kernel.integrable_deterministic_prod {f : X → Y} (mf : Measurable f)
         exact mg.norm.integral_prod_right'
   · exact mg.aestronglyMeasurable
 
-theorem Kernel.integral_deterministic_prod {f : X → Y} (mf : Measurable f)
-    (κ : Kernel X Z) [IsFiniteKernel κ] (x : X)
-    {g : (Y × Z) → E} (mg : StronglyMeasurable g)
-    (i_g : Integrable (fun z ↦ g (f x, z)) (κ x)) :
-    ∫ p, g p ∂((Kernel.deterministic f mf) ×ₖ κ) x = ∫ z, g (f x, z) ∂κ x := by
-  rw [Kernel.integral_prod, Kernel.integral_deterministic']
-  · exact mg.integral_prod_right'
-  · rwa [Kernel.integrable_deterministic_prod _ _ _ mg]
-
 theorem Kernel.integrable_comp_iff (η : Kernel Y Z) [IsSFiniteKernel η]
     (κ : Kernel X Y) [IsSFiniteKernel κ] (x : X)
     {f : Z → E} (hf : AEStronglyMeasurable f ((η ∘ₖ κ) x)) :
@@ -255,6 +236,15 @@ theorem Kernel.integrable_comp_iff (η : Kernel Y Z) [IsSFiniteKernel η]
   · exact hf.comp_measurable measurable_snd
   · exact hf
   · exact measurable_snd.aemeasurable
+
+variable [NormedSpace ℝ E]
+
+theorem Kernel.integral_prod (κ : Kernel X Y) [IsFiniteKernel κ]
+    (η : Kernel X Z) [IsFiniteKernel η] (x : X)
+    {f : (Y × Z) → E} (hf : Integrable f ((κ ×ₖ η) x)) :
+    ∫ p, f p ∂(κ ×ₖ η) x = ∫ y, ∫ z, f (y, z) ∂η x ∂κ x := by
+  rw [Kernel.prod_apply, MeasureTheory.integral_prod]
+  rwa [← Kernel.prod_apply]
 
 theorem Kernel.integral_comp (η : Kernel Y Z) [IsFiniteKernel η]
     (κ : Kernel X Y) [IsFiniteKernel κ]
@@ -270,6 +260,29 @@ theorem Kernel.integral_comp (η : Kernel Y Z) [IsFiniteKernel η]
   · exact measurable_snd.aemeasurable
   · convert hg.aestronglyMeasurable
     rw [Kernel.comp_eq_snd_compProd, Kernel.snd_apply]
+
+variable [CompleteSpace E]
+
+theorem Kernel.integral_deterministic_prod {f : X → Y} (mf : Measurable f)
+    (κ : Kernel X Z) [IsFiniteKernel κ] (x : X)
+    {g : (Y × Z) → E} (mg : StronglyMeasurable g)
+    (i_g : Integrable (fun z ↦ g (f x, z)) (κ x)) :
+    ∫ p, g p ∂((Kernel.deterministic f mf) ×ₖ κ) x = ∫ z, g (f x, z) ∂κ x := by
+  rw [Kernel.integral_prod, Kernel.integral_deterministic']
+  · exact mg.integral_prod_right'
+  · rwa [Kernel.integrable_deterministic_prod _ _ _ mg]
+
+theorem Kernel.lintegral_deterministic_prod {f : X → Y} (mf : Measurable f)
+    (κ : Kernel X Z) [IsFiniteKernel κ] (x : X)
+    {g : (Y × Z) → ℝ≥0∞} (mg : Measurable g) :
+    ∫⁻ p, g p ∂((Kernel.deterministic f mf) ×ₖ κ) x = ∫⁻ z, g (f x, z) ∂κ x := by
+  rw [Kernel.lintegral_prod _ _ _ mg, Kernel.lintegral_deterministic']
+  exact mg.lintegral_prod_right'
+
+theorem MeasureTheory.Filtration.condexp_condexp {ι : Type*} [Preorder ι]
+    (f : X → E) {μ : Measure X} (ℱ : @Filtration X ι _ inferInstance)
+    {i j : ι} (hij : i ≤ j) [SigmaFinite (μ.trim (ℱ.le j))] :
+    μ[μ[f|ℱ j]|ℱ i] =ᵐ[μ] μ[f|ℱ i] := condexp_condexp_of_le (ℱ.mono hij) (ℱ.le j)
 
 end Measure
 

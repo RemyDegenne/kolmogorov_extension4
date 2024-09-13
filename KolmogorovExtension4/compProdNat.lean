@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Etienne Marion
 -/
 import KolmogorovExtension4.Projections
+import KolmogorovExtension4.Annexe
+import KolmogorovExtension4.DependsOn
 
 open Finset ENNReal ProbabilityTheory MeasureTheory Function
 
@@ -17,7 +19,18 @@ lemma measurable_cast {X Y : Type u} [mX : MeasurableSpace X] [mY : MeasurableSp
   subst hm
   exact measurable_id
 
-variable {X : ℕ → Type*} [∀ i, MeasurableSpace (X i)]
+variable {X : ℕ → Type*}
+
+theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
+    update (updateFinset x (Iic m) (fprojNat m z)) (m + 1) (z (m + 1)) =
+    updateFinset x (Iic (m + 1)) (fprojNat (m + 1) z) := by
+  ext i
+  simp only [update, updateFinset, mem_Iic, dite_eq_ite]
+  split_ifs with h <;> try omega
+  cases h
+  all_goals rfl
+
+variable [∀ i, MeasurableSpace (X i)]
 
 section equivs
 
@@ -62,6 +75,25 @@ def el (m n : ℕ) (hmn : m ≤ n) :
       exact measurable_snd.eval
   measurable_invFun := by
     refine Measurable.prod_mk ?_ ?_ <;> exact measurable_pi_lambda _ (fun a ↦ measurable_id.eval)
+
+/-- The union of `Iic n` and `Ioi n` is the whole `ℕ`, version as a measurable equivalence
+on dependent functions. -/
+def el' (n : ℕ) : (((i : Iic n) → X i) × ((i : Set.Ioi n) → X i)) ≃ᵐ ((n : ℕ) → X n) :=
+  { toFun := fun p i ↦ if hi : i ≤ n
+      then p.1 ⟨i, mem_Iic.2 hi⟩
+      else p.2 ⟨i, Set.mem_Ioi.2 (not_le.1 hi)⟩
+    invFun := fun x ↦ (fun i ↦ x i, fun i ↦ x i)
+    left_inv := fun p ↦ by
+      ext i
+      · simp [mem_Iic.1 i.2]
+      · simp [not_le.2 <| Set.mem_Ioi.1 i.2]
+    right_inv := fun x ↦ by simp
+    measurable_toFun := by
+      refine measurable_pi_lambda _ (fun i ↦ ?_)
+      by_cases hi : i ≤ n <;> simp only [Equiv.coe_fn_mk, hi, ↓reduceDIte]
+      · exact measurable_fst.eval
+      · exact measurable_snd.eval
+    measurable_invFun := Measurable.prod_mk (measurable_proj _) (measurable_proj _) }
 
 /-- Gluing `Ioc i j` and `Ioc j k` into `Ioc i k`, as a measurable equiv of dependent functions. -/
 def er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k) :
@@ -446,6 +478,8 @@ variable (κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1)))
 namespace ProbabilityTheory
 namespace Kernel
 
+section Basic
+
 /-- Given a family of kernels `κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1))`, we can
 compose them: if `a < b`, then `(κ a) ⊗ₖ ... ⊗ₖ (κ (b - 1))` is a kernel from
 `(i : Iic a) → X i` to `(i : Ioc a b) → X i`. This composition is called `kerNat κ a b`.
@@ -471,14 +505,22 @@ theorem partialKernel_le {a b : ℕ} (hab : b ≤ a) :
       deterministic (fprojNat₂ hab) (measurable_fprojNat₂ _) := by
   rw [partialKernel, dif_neg (not_lt.2 hab)]
 
-variable [∀ n, IsMarkovKernel (κ n)]
+instance [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ) : IsSFiniteKernel (partialKernel κ a b) := by
+  rw [partialKernel]
+  split_ifs <;> infer_instance
 
-instance (a b : ℕ) : IsMarkovKernel (partialKernel κ a b) := by
+instance [∀ n, IsFiniteKernel (κ n)] (a b : ℕ) : IsFiniteKernel (partialKernel κ a b) := by
+  rw [partialKernel]
+  split_ifs <;> infer_instance
+
+instance [∀ n, IsMarkovKernel (κ n)] (a b : ℕ) : IsMarkovKernel (partialKernel κ a b) := by
   rw [partialKernel]
   split_ifs with hab
   · have := isMarkovKernel_kerNat κ hab
     infer_instance
   · infer_instance
+
+variable [∀ n, IsMarkovKernel (κ n)]
 
 /-- If `b ≤ c`, then projecting the trajectory up to time `c` on first coordinates gives the
 trajectory up to time `b`. -/
@@ -504,6 +546,10 @@ theorem partialKernel_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
   · omega
   · rw [Kernel.map_deterministic]
     rfl
+
+theorem partialKernel_proj_apply {n : ℕ} (x : (i : Iic n) → X i) (a b : ℕ) (hab : a ≤ b) :
+    (partialKernel κ n b x).map (fprojNat₂ hab) = partialKernel κ n a x := by
+  rw [← partialKernel_proj _ _ hab, Kernel.map_apply]
 
 /-- Given the trajectory up to time `a`, first computing the distribution up to time `b`
 and then the distribution up to time `c` is the same as directly computing the distribution up
@@ -555,5 +601,139 @@ theorem partialKernel_comp' (a : ℕ) {b c : ℕ} (h : c ≤ b) :
       partialKernel_proj κ a (not_lt.1 hbc)]
   all_goals omega
 
+end Basic
+
+section integral
+
+/-- This function computes the integral of a function `f` against `partialKernel`,
+and allows to view it as a function depending on all the variables. -/
+noncomputable def lmarginalPartialKernel (a b : ℕ) (f : ((n : ℕ) → X n) → ℝ≥0∞)
+    (x : (n : ℕ) → X n) : ℝ≥0∞ :=
+  ∫⁻ z : (i : Iic b) → X i, f (updateFinset x _ z) ∂(partialKernel κ a b (fprojNat a x))
+
+/-- If `b ≤ a`, then integrating `f` against the `partialKernel κ a b` does nothing. -/
+theorem lmarginalPartialKernel_le {a b : ℕ} (hba : b ≤ a)
+    {f : ((n : ℕ) → X n) → ℝ≥0∞} (mf : Measurable f) : lmarginalPartialKernel κ a b f = f := by
+  ext x
+  rw [lmarginalPartialKernel, partialKernel_le κ hba, Kernel.lintegral_deterministic']
+  · congr with i
+    simp [updateFinset]
+  · exact mf.comp measurable_updateFinset
+
+theorem lmarginalPartialKernel_mono (a b : ℕ) {f g : ((n : ℕ) → X n) → ℝ≥0∞} (hfg : f ≤ g)
+    (x : (n : ℕ) → X n) : lmarginalPartialKernel κ a b f x ≤ lmarginalPartialKernel κ a b g x :=
+  lintegral_mono fun _ ↦ hfg _
+
+/-- If `a < b`, then integrating `f` against the `partialKernel κ a b` is the same as integrating
+  against `kerNat a b`. -/
+theorem lmarginalPartialKernel_lt [∀ n, IsFiniteKernel (κ n)]
+    {a b : ℕ} (hab : a < b) {f : ((n : ℕ) → X n) → ℝ≥0∞}
+    (mf : Measurable f) (x : (n : ℕ) → X n) :
+    lmarginalPartialKernel κ a b f x =
+      ∫⁻ y : (i : Ioc a b) → X i, f (updateFinset x _ y) ∂kerNat κ a b (fprojNat a x) := by
+  rw [lmarginalPartialKernel, partialKernel, dif_pos hab, Kernel.lintegral_map,
+    Kernel.lintegral_deterministic_prod]
+  · congrm ∫⁻ y, f (fun i ↦ ?_) ∂_
+    simp only [updateFinset, mem_Iic, el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, mem_Ioc]
+    split_ifs <;> try rfl
+    all_goals omega
+  · exact mf.comp <| measurable_updateFinset.comp (el a b hab.le).measurable
+  · exact mf.comp measurable_updateFinset
+
+theorem measurable_lmarginalPartialKernel [∀ n, IsSFiniteKernel (κ n)]
+    (a b : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
+    (hf : Measurable f) : Measurable (lmarginalPartialKernel κ a b f) := by
+  unfold lmarginalPartialKernel
+  let g : ((i : Iic b) → X i) × ((n : ℕ) → X n) → ℝ≥0∞ :=
+    fun c ↦ f (updateFinset c.2 _ c.1)
+  let η : Kernel ((n : ℕ) → X n) ((i : Iic b) → X i) :=
+    Kernel.comap (partialKernel κ a b) (fprojNat a) (measurable_fprojNat _)
+  change Measurable fun x ↦ ∫⁻ z : (i : Iic b) → X i, g (z, x) ∂η x
+  refine Measurable.lintegral_kernel_prod_left' <| hf.comp ?_
+  simp only [updateFinset, measurable_pi_iff]
+  intro i
+  by_cases h : i ∈ Iic b <;> simp [h]
+  · exact (measurable_pi_apply _).comp <| measurable_fst
+  · exact measurable_snd.eval
+
+theorem lmarginalPartialKernel_self [∀ n, IsFiniteKernel (κ n)] {a b c : ℕ}
+    (hab : a ≤ b) (hbc : b ≤ c)
+    {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
+    lmarginalPartialKernel κ a b (lmarginalPartialKernel κ b c f) =
+      lmarginalPartialKernel κ a c f := by
+  ext x
+  obtain rfl | hab := eq_or_lt_of_le hab <;> obtain rfl | hbc := eq_or_lt_of_le hbc
+  · rw [lmarginalPartialKernel_le κ (le_refl a) (measurable_lmarginalPartialKernel _ _ _ hf)]
+  · rw [lmarginalPartialKernel_le κ (le_refl a) (measurable_lmarginalPartialKernel _ _ _ hf)]
+  · rw [lmarginalPartialKernel_le κ (le_refl b) hf]
+  rw [lmarginalPartialKernel_lt _ (hab.trans hbc) hf, lmarginalPartialKernel_lt _ hab]
+  simp_rw [lmarginalPartialKernel_lt _ hbc hf]
+  rw [← compProdNat_kerNat _ hab hbc, compProdNat_eq _ _  hab hbc, Kernel.map_apply,
+    MeasureTheory.lintegral_map _ (er ..).measurable, Kernel.lintegral_compProd]
+  · congrm ∫⁻ _, ∫⁻ _, f fun i ↦ ?_ ∂(?_) ∂_
+    · rw [split_eq_comap, Kernel.comap_apply]
+      congr with i
+      simp only [fprojNat, fproj, updateFinset, mem_Ioc, el, MeasurableEquiv.coe_mk,
+        Equiv.coe_fn_mk]
+      split_ifs with h1 h2 h3 <;> try rfl
+      · omega
+      · have := mem_Iic.1 i.2
+        omega
+    · simp only [updateFinset, mem_Ioc, er, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk]
+      split_ifs <;> try omega
+      rfl; rfl; rfl
+  · exact hf.comp <| measurable_updateFinset.comp (er ..).measurable
+  · exact hf.comp <| measurable_updateFinset
+  · exact measurable_lmarginalPartialKernel _ _ _ hf
+
+end integral
+
 end Kernel
 end ProbabilityTheory
+
+open ProbabilityTheory Kernel
+
+variable [∀ n, IsMarkovKernel (κ n)]
+
+theorem DependsOn.lmarginalPartialKernel_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
+    (mf : Measurable f) (hf : DependsOn f (Iic a)) (hab : a ≤ b) :
+    lmarginalPartialKernel κ b c f = f := by
+  rcases le_or_lt c b with hcb | hbc
+  · exact lmarginalPartialKernel_le κ hcb mf
+  · ext x
+    have := isMarkovKernel_kerNat κ hbc
+    rw [lmarginalPartialKernel_lt κ hbc mf, ← mul_one (f x),
+      ← measure_univ (μ := kerNat κ b c (fprojNat b x)), ← MeasureTheory.lintegral_const]
+    refine lintegral_congr fun y ↦ hf fun i hi ↦ ?_
+    simp only [updateFinset, mem_Iic, el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
+      dite_eq_right_iff, dite_eq_left_iff, not_le]
+    intro h
+    rw [mem_Ioc] at h
+    rw [mem_coe, mem_Iic] at hi
+    omega
+
+theorem DependsOn.lmarginalPartialKernel_right {a : ℕ} (b : ℕ) {c d : ℕ}
+    (mf : Measurable f) (hf : DependsOn f (Iic a)) (hac : a ≤ c) (had : a ≤ d) :
+    lmarginalPartialKernel κ b c f = lmarginalPartialKernel κ b d f := by
+  wlog hcd : c ≤ d generalizing c d
+  · rw [@this d c had hac (le_of_not_le hcd)]
+  · obtain hbc | hcb := le_or_lt b c
+    · rw [← lmarginalPartialKernel_self κ hbc hcd mf,
+        hf.lmarginalPartialKernel_eq κ d mf hac]
+    · rw [hf.lmarginalPartialKernel_eq κ c mf (hac.trans hcb.le),
+        hf.lmarginalPartialKernel_eq κ d mf (hac.trans hcb.le)]
+
+theorem DependsOn.dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) → ℝ≥0∞}
+    (hf : DependsOn f (Iic b)) (mf : Measurable f) :
+    DependsOn (lmarginalPartialKernel κ a b f) (Iic a) := by
+  intro x y hxy
+  rcases le_or_lt b a with hba | hab
+  · rw [lmarginalPartialKernel_le κ hba mf]
+    exact hf fun i hi ↦ hxy i (Iic_subset_Iic.2 hba hi)
+  · rw [lmarginalPartialKernel_lt _ hab mf, lmarginalPartialKernel_lt _ hab mf]
+    congrm ∫⁻ z : _, ?_ ∂kerNat κ a b (fun i ↦ ?_)
+    · exact hxy i.1 i.2
+    · refine dependsOn_updateFinset hf _ _ ?_
+      rwa [← coe_sdiff, Iic_sdiff_Ioc_same hab.le]
+
+end partialKernel
