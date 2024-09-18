@@ -8,7 +8,6 @@ import KolmogorovExtension4.Projective
 import KolmogorovExtension4.RegularityCompacts
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import KolmogorovExtension4.RegularContent
-import KolmogorovExtension4.Projections
 
 open Set
 
