@@ -118,7 +118,7 @@ lemma nonempty_projCylinder_iff [∀ i, Nonempty (α i)]
     classical
     refine ⟨fun i ↦ if hi : i ∈ Js (hs n) then y ⟨i, hi⟩ else x i, ?_⟩
     ext i
-    simp only [Finset.coe_mem, dite_true]
+    simp only [Finset.restrict_def, Finset.coe_mem, dite_true]
 
 theorem isClosed_projCylinder
     (hs : ∀ n, s n ∈ closedCompactCylinders α) (hs_closed : ∀ n, IsClosed (As (hs n))) (n : ℕ) :

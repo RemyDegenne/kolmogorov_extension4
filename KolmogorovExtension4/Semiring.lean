@@ -141,7 +141,7 @@ lemma disjoint_indexedDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α))
   classical
   rw [Finset.disjoint_iff_inter_eq_empty]
   ext s
-  simp only [Finset.mem_inter, Finset.not_mem_empty, iff_false_iff, not_and]
+  simp only [Finset.mem_inter, Finset.not_mem_empty, iff_false, not_and]
   intro hsn hsm
   have : Disjoint s s := hC.disjoint_of_mem_indexedDiffFinset₀ J hJ hnm hsn hsm
   rw [Set.disjoint_iff_inter_eq_empty, Set.inter_self] at this

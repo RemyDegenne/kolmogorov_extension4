@@ -63,7 +63,7 @@ noncomputable def finsetLT (J : Finset α) : Fin J.card → Finset α :=
 lemma mem_finsetLT (J : Finset α) (n : Fin J.card) (s : α) :
     s ∈ finsetLT J n ↔ ∃ m < n, s = J.ordered m := by
   rw [finsetLT, mem_map]
-  simp only [mem_filter, Finset.mem_univ, true_and_iff, Equiv.asEmbedding_apply,
+  simp only [mem_filter, Finset.mem_univ, true_and, Equiv.asEmbedding_apply,
     Function.comp_apply, exists_prop]
   simp_rw [@eq_comm _ _ s]
 
