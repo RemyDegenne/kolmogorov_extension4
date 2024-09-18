@@ -249,8 +249,8 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
   intro J
   ext s hs
   rw [Measure.map_apply _ hs]
-  swap; · exact measurable_proj _
-  have h_mem : (fun (x : Π i, α i) (i : ↥J) ↦ x ↑i) ⁻¹' s ∈ measurableCylinders α :=
+  swap; · exact J.measurable_restrict
+  have h_mem : J.restrict ⁻¹' s ∈ measurableCylinders α :=
     (mem_measurableCylinders _).mpr ⟨J, s, hs, rfl⟩
   rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr hP (_ ⁻¹' _) rfl hs]
 
