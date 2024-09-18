@@ -6,7 +6,7 @@ Authors: Etienne Marion
 
 import Mathlib.MeasureTheory.Integral.Marginal
 import Mathlib.Data.Finset.Update
-import KolmogorovExtension4.Projections
+import Mathlib.Order.Restriction
 
 /-!
 # Functions depending only on some variables
@@ -38,7 +38,7 @@ the set `s`, then `f x = f y`. This is then used to prove some properties about 
 depends on, updateFinset, update, lmarginal
 -/
 
-open MeasureTheory ENNReal Set Finset symmDiff Function
+open MeasureTheory ENNReal Set Finset symmDiff Preorder
 
 variable {ι : Type*} {α : ι → Type*} {β : Type*}
 variable {f : ((i : ι) → α i) → β}
@@ -60,13 +60,14 @@ theorem dependsOn_const (b : β) : DependsOn (fun _ : (i : ι) → α i ↦ b) �
 /-- A function which depends on the empty set is constant. -/
 theorem dependsOn_empty (hf : DependsOn f ∅) (x y : (i : ι) → α i) : f x = f y := hf (by simp)
 
-theorem dependsOn_fproj (s : Finset ι) : DependsOn (@fproj ι α s) s := by
+theorem Finset.dependsOn_restrict (s : Finset ι) : DependsOn (s.restrict (π := α)) s := by
   refine fun x y hxy ↦ funext fun i ↦ hxy i.1 ?_
   rw [mem_coe]
   exact i.2
 
-theorem dependsOn_fprojNat {α : ℕ → Type*} (n : ℕ) : DependsOn (@fprojNat α n) (Set.Iic n) := by
-  convert dependsOn_fproj (Finset.Iic n)
+theorem Preorder.dependsOn_frestrict [Preorder ι] [LocallyFiniteOrderBot ι] (i : ι) :
+    DependsOn (frestrictLe (π := α) i) (Set.Iic i) := by
+  convert dependsOn_restrict (Finset.Iic i)
   rw [coe_Iic]
 
 variable [DecidableEq ι]
