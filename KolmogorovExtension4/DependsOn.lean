@@ -65,7 +65,7 @@ theorem Finset.dependsOn_restrict (s : Finset ι) : DependsOn (s.restrict (π :=
   rw [mem_coe]
   exact i.2
 
-theorem Preorder.dependsOn_frestrict [Preorder ι] [LocallyFiniteOrderBot ι] (i : ι) :
+theorem Preorder.dependsOn_frestrictLe [Preorder ι] [LocallyFiniteOrderBot ι] (i : ι) :
     DependsOn (frestrictLe (π := α) i) (Set.Iic i) := by
   convert dependsOn_restrict (Finset.Iic i)
   rw [coe_Iic]
