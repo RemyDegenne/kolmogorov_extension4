@@ -146,7 +146,7 @@ theorem exists_compact
   have h : P J A - ε < P J A := ENNReal.sub_lt_self (measure_ne_top _ _) hPA hε.ne'
   obtain ⟨K, hKA, ⟨hK_compact, hK_closed⟩, h_lt⟩ := hP_inner J hA (P J A - ε) h
   refine ⟨K, hK_compact, hK_closed, hKA, ?_⟩
-  rw [measure_diff hKA hK_closed.measurableSet (measure_ne_top (P J) _)]
+  rw [measure_diff hKA hK_closed.nullMeasurableSet (measure_ne_top (P J) _)]
   have h_le := h_lt.le
   rw [tsub_le_iff_left] at h_le ⊢
   rwa [add_comm]
@@ -176,7 +176,7 @@ lemma innerRegular_kolContent (hP : IsProjectiveMeasureFamily P)
       refine (le_of_eq ?_).trans hK'
       have h_meas : MeasurableSet (As hs \ K') :=
         MeasurableSet.diff (measurableCylinders.measurableSet hs) hK'_closed.measurableSet
-      exact kolContent_cylinder hP h_meas
+      exact kolContent_cylinder _ h_meas
   · have : IsEmpty (Π i, α i) := isEmpty_pi.mpr (by simpa using hα)
     exact ⟨∅, empty_mem_closedCompactCylinders α, empty_subset _, by simp [eq_empty_of_isEmpty s]⟩
 
@@ -250,8 +250,8 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
   intro J
   ext s hs
   rw [Measure.map_apply _ hs]
-  swap; · exact measurable_proj _
-  have h_mem : (fun (x : Π i, α i) (i : ↥J) ↦ x ↑i) ⁻¹' s ∈ measurableCylinders α :=
+  swap; · exact J.measurable_restrict
+  have h_mem : J.restrict ⁻¹' s ∈ measurableCylinders α :=
     (mem_measurableCylinders _).mpr ⟨J, s, hs, rfl⟩
   rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr hP (_ ⁻¹' _) rfl hs]
 

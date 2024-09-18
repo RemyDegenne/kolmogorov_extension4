@@ -21,7 +21,8 @@ variable [MeasurableSpace α]
 theorem tendsto_zero_measure_of_antitone (μ : Measure α) [IsFiniteMeasure μ] {s : ℕ → Set α}
     (hs1 : ∀ n, MeasurableSet (s n)) (hs2 : Antitone s) (hs3 : (⋂ n, s n) = ∅) :
     Filter.Tendsto (fun n ↦ μ (s n)) Filter.atTop (𝓝 0) := by
-  convert MeasureTheory.tendsto_measure_iInter hs1 hs2 ⟨0, measure_ne_top μ _⟩
+  convert MeasureTheory.tendsto_measure_iInter (fun n ↦ (hs1 n).nullMeasurableSet) hs2
+    ⟨0, measure_ne_top μ _⟩
   simp [hs3]
 
 /-- Some version of continuity of a measure in the emptyset using the intersection along a set of
@@ -45,7 +46,8 @@ theorem exists_measure_iInter_lt (μ : Measure α) [IsFiniteMeasure μ] (S : ℕ
     rw [ENNReal.tendsto_atTop_zero_iff_of_antitone' _ (fun _ _ h ↦ measure_mono (hs_anti h))]
       at this
     exact this ε hε
-  convert tendsto_measure_iInter hs_meas hs_anti ⟨0, measure_ne_top μ _⟩
+  convert tendsto_measure_iInter (fun n ↦ (hs_meas n).nullMeasurableSet) hs_anti
+    ⟨0, measure_ne_top μ _⟩
   simp [hs_iInter]
 
 end MeasureTheory
