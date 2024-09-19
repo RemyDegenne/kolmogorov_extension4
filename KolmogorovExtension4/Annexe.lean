@@ -15,9 +15,6 @@ New lemmas for mathlib
 
 open MeasureTheory ProbabilityTheory MeasurableSpace ENNReal Finset Function
 
-@[simp] lemma restrict_apply {α : Type*} {π : α → Type*} (s : Set α) (f : (a : α) → π a) (i : s) :
-    s.restrict f i = f i := rfl
-
 section indicator
 
 lemma indicator_one_mul_const {α M : Type*} [MonoidWithZero M] (s : Set α) (c : M) (a : α) :

@@ -549,7 +549,7 @@ theorem partialKernel_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
       simp [el, frestrictLe₂, restrict₂, (mem_Iic.1 i.2).trans (not_lt.1 h2)]
     have _ := isMarkovKernel_kerNat κ h1
     rw [Kernel.map_map, this, ← Kernel.map_map _ _ (measurable_frestrictLe₂ _),
-      Kernel.map_prod_fst, Kernel.map_deterministic]
+      ← Kernel.fst_eq, Kernel.fst_prod, Kernel.map_deterministic]
     · rfl
     any_goals measurability
   · omega
