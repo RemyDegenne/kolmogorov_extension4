@@ -3,10 +3,11 @@ Copyright (c) 2024 Etienne Marion. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Etienne Marion
 -/
+import Mathlib.Data.Finset.Basic
+import Mathlib.MeasureTheory.Constructions.Prod.Integral
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 import Mathlib.Probability.Kernel.Composition
 import Mathlib.Probability.Kernel.MeasureCompProd
-import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
-import Mathlib.MeasureTheory.Constructions.Prod.Integral
 import Mathlib.Probability.Process.Filtration
 
 /-!
@@ -314,29 +315,31 @@ theorem Finset.Iic_sdiff_Ioc_same {α : Type*} [LinearOrder α] [OrderBot α] [L
 theorem Finset.right_mem_Iic {α : Type*} [Preorder α] [LocallyFiniteOrderBot α] (a : α) :
     a ∈ Iic a := mem_Iic.2 <| le_refl a
 
+theorem Finset.Iic_union_Ioc_eq_Iic {α : Type*} [LinearOrder α] [LocallyFiniteOrder α] [OrderBot α]
+    {a b : α} (h : a ≤ b) : Iic a ∪ Ioc a b = Iic b := by
+  rw [← coe_inj, coe_union, coe_Iic, coe_Iic, coe_Ioc, Set.Iic_union_Ioc_eq_Iic h]
+
+theorem Finset.disjoint_Iic_Ioc {α : Type*} [Preorder α] [LocallyFiniteOrder α] [OrderBot α]
+    {a b c : α} (h : a ≤ b) : Disjoint (Iic a) (Ioc b c) :=
+  disjoint_left.2 fun _ hax hbcx ↦ (mem_Iic.1 hax).not_lt <| lt_of_le_of_lt h (mem_Ioc.1 hbcx).1
+
 end Finset
 
 section Product
 
-theorem prod_Iic {M : Type*} [CommMonoid M] (n : ℕ) (f : (Iic n) → M) :
-    (∏ i : Ioc 0 n, f ⟨i.1, Ioc_subset_Iic_self i.2⟩) * f ⟨0, mem_Iic.2 <| zero_le _⟩ =
-    ∏ i : Iic n, f i := by
-  let g : ℕ → M := fun k ↦ if hk : k ∈ Iic n then f ⟨k, hk⟩ else 1
-  have h1 : ∏ i : Ioc 0 n, f ⟨i.1, Ioc_subset_Iic_self i.2⟩ = ∏ i : Ioc 0 n, g i := by
-    refine prod_congr rfl ?_
-    simp only [mem_univ, mem_Ioc, true_implies, Subtype.forall, g]
-    rintro k ⟨hk1, hk2⟩
-    rw [dif_pos <| mem_Iic.2 hk2]
-  have h2 : ∏ i : Iic n, f i = ∏ i : Iic n, g i := by
-    refine prod_congr rfl ?_
-    simp only [mem_univ, mem_Ioc, Subtype.coe_eta, dite_eq_ite, true_implies, Subtype.forall,
-      g]
-    intro k hk
-    simp [hk]
-  rw [h1, h2, prod_coe_sort, prod_coe_sort]
-  have : f ⟨0, mem_Iic.2 <| zero_le _⟩ = g 0 := by simp [g]
-  rw [this]
-  exact prod_Ioc_mul_eq_prod_Icc (zero_le n)
+theorem Finset.prod_congr' {α M : Type*} [CommMonoid M] {s t : Finset α} (hst : s = t)
+    (f : t → M) : ∏ i : s, f ⟨i.1, hst ▸ i.2⟩ = ∏ i : t, f i := by cases hst; rfl
+
+theorem Finset.prod_union' {α M : Type*} [DecidableEq α] [CommMonoid M] {s t : Finset α}
+    (hst : Disjoint s t) (f : ↑(s ∪ t) → M) :
+    (∏ i : s, f ⟨i.1, subset_union_left i.2⟩) * ∏ i : t, f ⟨i.1, subset_union_right i.2⟩ =
+    ∏ i : ↑(s ∪ t), f i := by
+  let g : α → M := fun a ↦ if ha : a ∈ s ∪ t then f ⟨a, ha⟩ else 1
+  have h1 : ∏ i : s, f ⟨i.1, subset_union_left i.2⟩ = ∏ i : s, g i := by simp [g]
+  have h2 : ∏ i : t, f ⟨i.1, subset_union_right i.2⟩ = ∏ i : t, g i := by simp [g]
+  have h3 : ∏ i : ↑(s ∪ t), f i = ∏ i : ↑(s ∪ t), g i := by simp [g, -mem_union]
+  rw [h1, h2, h3, prod_coe_sort, prod_coe_sort, prod_coe_sort, ← disjUnion_eq_union _ _ hst,
+    prod_disjUnion hst]
 
 theorem prod_Ioc {M : Type*} [CommMonoid M] (n : ℕ) (f : (Ioc 0 (n + 1)) → M) :
     (f ⟨n + 1, mem_Ioc.2 ⟨n.succ_pos, le_refl _⟩⟩) *

@@ -33,7 +33,6 @@ theorem isProjectiveMeasureFamily_pi :
     IsProjectiveMeasureFamily (fun I : Finset ι ↦ (Measure.pi (fun i : I ↦ μ i))) := by
   refine fun I J hJI ↦ Measure.pi_eq (fun s ms ↦ ?_)
   classical
-  change Measure.map (restrict₂ hJI) _ _ = _
   rw [Measure.map_apply (measurable_restrict₂ hJI) (MeasurableSet.univ_pi ms),
     preimage_proj J I hJI, Measure.pi_pi]
   let g := fun i ↦ (μ i) (if hi : i ∈ J then s ⟨i, hi⟩ else Set.univ)
@@ -86,9 +85,9 @@ def zer : (X 0) ≃ᵐ ((i : Iic 0) → X i) where
   measurable_invFun := measurable_pi_apply _
 
 /-- Infinite product measure indexed by `ℕ`. Use instead `Measure.productMeasure` for the case of a
-general index space-/
+general index space. -/
 noncomputable def Measure.infinitePiNat : Measure ((n : ℕ) → X n) :=
-  ((μ 0).map zer).bind
+  (Measure.pi (fun i : Iic 0 ↦ μ i)).bind
     (@ionescuTulceaKernel _ _
       (fun n ↦ const _ (μ (n + 1))) _ (ProbabilityMeasure.nonempty ⟨μ 0, hμ 0⟩) 0)
 
@@ -102,8 +101,6 @@ instance {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} 
 
 instance : IsProbabilityMeasure (infinitePiNat μ) := by
   rw [infinitePiNat]
-  have : IsProbabilityMeasure ((μ 0).map zer) :=
-    isProbabilityMeasure_map zer.measurable.aemeasurable
   infer_instance
 
 theorem er_succ_preimage_pi {n : ℕ} (hn : 0 < n) (s : (i : Ioc 0 (n + 1)) → Set (X i)) :
@@ -179,27 +176,28 @@ theorem prod_noyau_proj (N : ℕ) :
     simp only [id_eq, el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, mem_preimage]
     congrm (fun i ↦ ?_) ∈ s
     simp [(mem_Iic_zero i.2).symm]
-
   · rw [partialKernel, dif_pos hN, kerNat_prod _ hN]
 
 theorem el_preimage {n : ℕ} (s : (i : Iic n) → Set (X i)) :
     (el 0 n (zero_le n)) ⁻¹' (Set.univ.pi s) =
-      (zer '' s ⟨0, mem_Iic.2 (zero_le n)⟩) ×ˢ
+      (Set.univ.pi fun i : Iic 0 ↦ s ⟨i.1, Iic_subset_Iic.2 (zero_le n) i.2⟩) ×ˢ
       (Set.univ.pi fun i : Ioc 0 n ↦ s ⟨i.1, Ioc_subset_Iic_self i.2⟩) := by
   ext p
   simp only [el, nonpos_iff_eq_zero, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage,
-    Set.mem_pi, Set.mem_univ, true_implies, Subtype.forall, mem_Iic, Set.mem_prod, Set.mem_image,
-    mem_Ioc]
-  refine ⟨fun h ↦ ⟨⟨p.1 ⟨0, mem_Iic.2 (_root_.le_refl 0)⟩, h 0 (zero_le n), zer.apply_symm_apply _⟩,
-      fun i ⟨hi1, hi2⟩ ↦ ?_⟩,
-    fun ⟨⟨x, hx1, hx2⟩, h⟩ i hi ↦ ?_⟩
-  · convert h i hi2
-    rw [dif_neg hi1.ne.symm]
-  · split_ifs with hi'
-    · cases hi'
-      rw [← hx2]
-      convert hx1
-    · exact h i ⟨Nat.pos_of_ne_zero hi', hi⟩
+    Set.mem_pi, Set.mem_univ, true_implies, Subtype.forall, mem_Iic, Set.mem_prod, mem_Ioc]
+  constructor
+  · intro h
+    constructor
+    · rintro - rfl
+      exact h 0 (zero_le n)
+    · rintro a ⟨h1, h2⟩
+      convert h a h2
+      rw [dif_neg h1.ne']
+  · intro h a ha
+    obtain rfl | ha' := eq_zero_or_pos a
+    · exact h.1 0 rfl
+    · rw [dif_neg ha'.ne']
+      exact h.2 a ⟨ha', ha⟩
 
 theorem Measure.map_bind {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     [MeasurableSpace Z]
@@ -229,22 +227,21 @@ theorem isProjectiveLimit_infinitePiNat :
   rw [← restrict₂_comp_restrict I.sub_Iic,
     ← Measure.map_map (measurable_restrict₂ _) (measurable_restrict _), ← frestrictLe]
   congr
-  rw [infinitePiNat, Measure.map_bind, map_bind_eq_bind_comap, ionescuTulceaKernel_proj]; swap
-  · exact zer.measurable
+  rw [infinitePiNat, Measure.map_bind, ionescuTulceaKernel_proj]; swap
+  · exact measurable_frestrictLe _
   refine (Measure.pi_eq fun s ms ↦ ?_).symm
   have mpis := MeasurableSet.univ_pi ms
-  rw [Measure.bind_apply mpis (Kernel.measurable _), ← prod_Iic,
-    ← setLIntegral_const, ← lintegral_indicator _ (ms _)]
+  rw [Measure.bind_apply mpis (Kernel.measurable _),
+    ← prod_congr' (Iic_union_Ioc_eq_Iic (zero_le _)), ← prod_union' (disjoint_Iic_Ioc (zero_le _)),
+    mul_comm, ← Measure.pi_pi (ι := Iic 0), ← setLIntegral_const,
+    ← lintegral_indicator _ (MeasurableSet.univ_pi (fun _ ↦ ms _))]
   congr with x₀
-  rw [Kernel.comap_apply, prod_noyau_proj, Kernel.map_apply', Kernel.prod_apply, el_preimage,
-    Measure.prod_prod, deterministic_apply', Kernel.const_apply, indicator_one_mul_const',
-    zer.image_eq_preimage, preimage_indicator]
+  rw [prod_noyau_proj, Kernel.map_apply', Kernel.prod_apply, el_preimage,
+    Measure.prod_prod, deterministic_apply', Kernel.const_apply, indicator_one_mul_const']
   · simp
-  · rw [zer.image_eq_preimage]
-    exact zer.measurable_invFun (ms _)
+  · exact MeasurableSet.univ_pi fun _ ↦ ms _
   · exact (el ..).measurable
   · exact mpis
-  · exact measurable_frestrictLe _
 
 theorem kolContent_eq_infinitePiNat {A : Set ((n : ℕ) → X n)} (hA : A ∈ measurableCylinders X) :
     kolContent (isProjectiveMeasureFamily_pi μ) A = infinitePiNat μ A := by
