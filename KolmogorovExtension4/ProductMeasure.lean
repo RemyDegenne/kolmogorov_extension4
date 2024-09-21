@@ -360,7 +360,7 @@ theorem secondLemma
   simp_rw [crucial, fun n ↦ kolContent_eq_infinitePiNat (fun k ↦ μ (φ k)) (B_mem n),
     ← measure_empty (μ := Measure.infinitePiNat (fun k ↦ μ (φ k))), ← B_inter]
   exact tendsto_measure_iInter
-    (fun n ↦ (measurableSet_measurableCylinders (B_mem n)).nullMeasurableSet)
+    (fun n ↦ (MeasurableSet.of_mem_measurableCylinders (B_mem n)).nullMeasurableSet)
     B_anti ⟨0, measure_ne_top _ _⟩
 
 /-- The `kolContent` of `cylinder I S` can be computed by integrating the indicator of
@@ -446,10 +446,10 @@ theorem thirdLemma (A : ℕ → Set ((i : ι) → X i)) (A_mem : ∀ n, A n ∈ 
   · have := Fintype.ofFinite u
     simp_rw [crucial,
       fun n ↦ kolContent_eq_measure_pi (fun i : u ↦ μ i)
-        (measurableSet_measurableCylinders (B_mem n)),
+        (MeasurableSet.of_mem_measurableCylinders (B_mem n)),
       ← measure_empty (μ := Measure.pi (fun i : u ↦ μ i)), ← B_inter]
     exact tendsto_measure_iInter
-      (fun n ↦ (measurableSet_measurableCylinders (B_mem n)).nullMeasurableSet)
+      (fun n ↦ (MeasurableSet.of_mem_measurableCylinders (B_mem n)).nullMeasurableSet)
       B_anti ⟨0, measure_ne_top _ _⟩
   · -- If `u` is infinite, then we have an equivalence with `ℕ` so we can apply `secondLemma`.
     have count_u : Countable u := Set.countable_iUnion (fun n ↦ (s n).countable_toSet)

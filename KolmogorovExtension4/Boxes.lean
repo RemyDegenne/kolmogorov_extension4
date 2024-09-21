@@ -20,11 +20,6 @@ section measurableCylinders
 
 variable [∀ i, MeasurableSpace (α i)]
 
-theorem measurableSet_measurableCylinders {s : Set (Π i, α i)} (hs : s ∈ measurableCylinders α) :
-    MeasurableSet s := by
-  obtain ⟨I, t, mt, rfl⟩ := (mem_measurableCylinders s).1 hs
-  exact mt.cylinder
-
 theorem isSetField_measurableCylinders : IsSetField (measurableCylinders α) where
   empty_mem := empty_mem_measurableCylinders α
   univ_mem := univ_mem_measurableCylinders α

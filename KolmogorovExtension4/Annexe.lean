@@ -7,6 +7,7 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.MeasureTheory.Constructions.Prod.Integral
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 import Mathlib.Probability.Kernel.Composition
+import Mathlib.Probability.Kernel.Integral
 import Mathlib.Probability.Kernel.MeasureCompProd
 import Mathlib.Probability.Process.Filtration
 
