@@ -37,15 +37,12 @@ theorem addContent_iUnion_eq_sum_of_tendsto_zero (hC : IsSetRing C) (m : AddCont
     rw [addContent_diff_of_ne_top m hC hm_ne_top hUf (hC.accumulate_mem hf n)
       (Set.accumulate_subset_iUnion _), addContent_accumulate m hC h_disj hf n]
   simp_rw [hmsn] at h_tendsto
-  have h_tendsto' :
-      Tendsto (fun n ↦ ∑ i in Finset.range n, m (f i)) atTop (𝓝 (m (⋃ i, f i))) := by
-    refine (Filter.tendsto_add_atTop_iff_nat 1).mp ?_
-    rwa [ENNReal.tendsto_atTop_zero_const_sub_iff _ _ (hm_ne_top _ hUf)] at h_tendsto
-    intro n
-    rw [← addContent_accumulate m hC h_disj hf]
-    exact addContent_mono hC.isSetSemiring (hC.accumulate_mem hf n) hUf
-      (Set.accumulate_subset_iUnion _)
-  exact tendsto_nhds_unique h_tendsto' (ENNReal.tendsto_nat_tsum fun i ↦ m (f i))
+  refine tendsto_nhds_unique ?_ (ENNReal.tendsto_nat_tsum fun i ↦ m (f i))
+  refine (Filter.tendsto_add_atTop_iff_nat 1).mp ?_
+  rwa [ENNReal.tendsto_atTop_zero_const_sub_iff _ _ (hm_ne_top _ hUf) (fun n ↦ ?_)] at h_tendsto
+  rw [← addContent_accumulate m hC h_disj hf]
+  exact addContent_mono hC.isSetSemiring (hC.accumulate_mem hf n) hUf
+    (Set.accumulate_subset_iUnion _)
 
 theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
     (hC_union : ∀ {s t : Set α}, s ∈ C → t ∈ C → s ∪ t ∈ C)
