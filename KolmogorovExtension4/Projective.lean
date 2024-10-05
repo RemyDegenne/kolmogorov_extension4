@@ -17,7 +17,7 @@ variable {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 -- def IsProjective [Preorder ι] (P : ∀ j : ι, α j) (π : ∀ {i j : ι}, j ≤ i → α i → α j) : Prop :=
 --   ∀ (i j) (hji : j ≤ i), P j = π hji (P i)
 
-lemma IsProjectiveMeasureFamily.of_isEmpty
+lemma IsProjectiveMeasureFamily.eq_zero_of_isEmpty
     {P : ∀ J : Finset ι, Measure (Π j : J, α j)} [h : IsEmpty (Π i, α i)]
     (hP : IsProjectiveMeasureFamily P) (I : Finset ι) :
     P I = 0 := by

@@ -63,7 +63,7 @@ theorem kolmogorovFun_union (hP : IsProjectiveMeasureFamily P) (hs : s ∈ measu
   rw [kolmogorovFun_congr hP hs h_eq1 hS', kolmogorovFun_congr hP ht h_eq2 hT',
     kolmogorovFun_congr hP _ h_eq3 (hS'.union hT')]
   cases isEmpty_or_nonempty (Π i, α i) with
-  | inl h => simp [hP.of_isEmpty]
+  | inl h => simp [hP.eq_zero_of_isEmpty]
   | inr h =>
     rw [measure_union _ hT']
     rwa [hs_eq, ht_eq, disjoint_cylinder_iff] at hst
