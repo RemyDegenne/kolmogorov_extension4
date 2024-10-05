@@ -17,17 +17,14 @@ variable {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 -- def IsProjective [Preorder ι] (P : ∀ j : ι, α j) (π : ∀ {i j : ι}, j ≤ i → α i → α j) : Prop :=
 --   ∀ (i j) (hji : j ≤ i), P j = π hji (P i)
 
-theorem IsProjectiveMeasureFamily.empty
-    {P : ∀ J : Finset ι, Measure (Π j : J, α j)} (hP : IsProjectiveMeasureFamily P)
-    (h : ∃ i, IsEmpty (α i)) (I : Finset ι) : P I = 0 := by
+lemma IsProjectiveMeasureFamily.eq_zero_of_isEmpty
+    {P : ∀ J : Finset ι, Measure (Π j : J, α j)} [h : IsEmpty (Π i, α i)]
+    (hP : IsProjectiveMeasureFamily P) (I : Finset ι) :
+    P I = 0 := by
   classical
-  rcases h with ⟨i, hi⟩
+  obtain ⟨i, hi⟩ := isEmpty_pi.mp h
   rw [hP (insert i I) I (I.subset_insert i)]
-  have : IsEmpty ((j : ↑(insert i I)) → α j) := by
-    rw [← not_nonempty_iff, Classical.nonempty_pi]
-    push_neg
-    simp_rw [not_nonempty_iff]
-    exact ⟨⟨i, I.mem_insert_self i⟩, hi⟩
+  have : IsEmpty (Π j : ↑(insert i I), α j) := by simp [hi]
   rw [(P (insert i I)).eq_zero_of_isEmpty]
   simp
 
