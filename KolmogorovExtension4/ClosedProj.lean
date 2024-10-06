@@ -12,7 +12,9 @@ import Mathlib.MeasureTheory.MeasurableSpace.Basic
 
 open MeasureTheory Set
 
--- unused
+/-
+-- Commented out since unused. We should use continuous_restrict and measurable_restrict instead.
+
 theorem continuous_cast {α β : Type u} [tα : TopologicalSpace α] [tβ : TopologicalSpace β]
     (h : α = β) (ht : HEq tα tβ) : Continuous fun x : α ↦ cast h x := by
   subst h
@@ -58,6 +60,7 @@ theorem continuous_proj₂' (I J : Finset ι) (hIJ : J ⊆ I) :
   continuous_pi fun i : ↥J ↦ by apply continuous_apply
 
 end Continuous
+-/
 
 section isClosed_proj
 

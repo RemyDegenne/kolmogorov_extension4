@@ -183,12 +183,14 @@ theorem proj' (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)]
   · exact @isPiSystem_boxesI_of_measurable ι α _ J
   · intros s hs
     rcases (mem_boxesI s C hu).1 hs with ⟨t, ⟨rfl, _⟩⟩
-    rw [Measure.map_apply (measurable_proj₂' I J hJI) (box_measurable J hs)]
+    rw [Measure.map_apply _ (box_measurable J hs)]
+    swap; · exact measurable_restrict₂ hJI
     classical
     change Measure.subset_pi P J (boxI J t) = Measure.subset_pi P I
       ((fun f (i : J) ↦ f ⟨i, hJI i.prop⟩) ⁻¹' boxI J t)
     rw [Measure.subset_pi_eval_boxI, preimage_boxI', Measure.subset_pi_eval_boxI' _ _ hJI]
-  · rw [Measure.map_apply (measurable_proj₂' I J hJI) (box_measurable J _)]
+  · rw [Measure.map_apply _ (box_measurable J _)]
+    swap; · exact measurable_restrict₂ hJI
     simp only [measure_univ, preimage_univ]
     change univ ∈ boxesI J C
     rw [mem_boxesI univ C hu]
