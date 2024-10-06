@@ -4,10 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import KolmogorovExtension4.CaratheodoryExtension
-import KolmogorovExtension4.Projective
-import KolmogorovExtension4.RegularityCompacts
-import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import KolmogorovExtension4.RegularContent
+import KolmogorovExtension4.RegularityCompacts
+import Mathlib.MeasureTheory.Constructions.Projective
 
 open Set
 
