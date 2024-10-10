@@ -52,46 +52,42 @@ variable (α)
 
 /-- The set of all cylinders based on closed compact sets. Note that such a set is closed, but
 not compact in general (for instance, the whole space is always a closed compact cylinder). -/
-def closedCompactCylinders : Set (Set ((i : ι) → α i)) :=
+def closedCompactCylinders : Set (Set (Π i, α i)) :=
   ⋃ (s) (S) (_ : IsClosed S) (_ : IsCompact S), {cylinder s S}
 
 theorem empty_mem_closedCompactCylinders : ∅ ∈ closedCompactCylinders α := by
   simp_rw [closedCompactCylinders, mem_iUnion, mem_singleton_iff]
   exact ⟨∅, ∅, isClosed_empty, isCompact_empty, (cylinder_empty _).symm⟩
 
-variable {α}
+variable {α} {t : Set (Π i, α i)}
 
 @[simp]
-theorem mem_closedCompactCylinders (t : Set ((i : ι) → α i)) :
+theorem mem_closedCompactCylinders (t : Set (Π i, α i)) :
     t ∈ closedCompactCylinders α
       ↔ ∃ (s S : _) (_ : IsClosed S) (_ : IsCompact S), t = cylinder s S := by
   simp_rw [closedCompactCylinders, mem_iUnion, mem_singleton_iff]
 
 /-- Given a closed compact cylinder, choose a finset of variables such that it only depends on
 these variables. -/
-noncomputable def closedCompactCylinders.finset {t : Set ((i : ι) → α i)}
-    (ht : t ∈ closedCompactCylinders α) :
+noncomputable def closedCompactCylinders.finset (ht : t ∈ closedCompactCylinders α) :
     Finset ι :=
   ((mem_closedCompactCylinders t).mp ht).choose
 
 /-- Given a closed compact cylinder, choose a set depending on finitely many variables of which it
 is a lift. -/
-def closedCompactCylinders.set {t : Set ((i : ι) → α i)} (ht : t ∈ closedCompactCylinders α) :
+def closedCompactCylinders.set (ht : t ∈ closedCompactCylinders α) :
     Set (∀ i : closedCompactCylinders.finset ht, α i) :=
   ((mem_closedCompactCylinders t).mp ht).choose_spec.choose
 
-theorem closedCompactCylinders.isClosed {t : Set ((i : ι) → α i)}
-    (ht : t ∈ closedCompactCylinders α) :
+theorem closedCompactCylinders.isClosed (ht : t ∈ closedCompactCylinders α) :
     IsClosed (closedCompactCylinders.set ht) :=
   ((mem_closedCompactCylinders t).mp ht).choose_spec.choose_spec.choose
 
-theorem closedCompactCylinders.isCompact {t : Set ((i : ι) → α i)}
-    (ht : t ∈ closedCompactCylinders α) :
+theorem closedCompactCylinders.isCompact (ht : t ∈ closedCompactCylinders α) :
     IsCompact (closedCompactCylinders.set ht) :=
   ((mem_closedCompactCylinders t).mp ht).choose_spec.choose_spec.choose_spec.choose
 
-theorem closedCompactCylinders.eq_cylinder {t : Set ((i : ι) → α i)}
-    (ht : t ∈ closedCompactCylinders α) :
+theorem closedCompactCylinders.eq_cylinder (ht : t ∈ closedCompactCylinders α) :
     t = cylinder (closedCompactCylinders.finset ht) (closedCompactCylinders.set ht) :=
   ((mem_closedCompactCylinders t).mp ht).choose_spec.choose_spec.choose_spec.choose_spec
 
@@ -103,7 +99,6 @@ theorem cylinder_mem_closedCompactCylinders (s : Finset ι) (S : Set (∀ i : s,
 
 theorem mem_cylinder_of_mem_closedCompactCylinders [∀ i, MeasurableSpace (α i)]
     [∀ i, SecondCountableTopology (α i)] [∀ i, OpensMeasurableSpace (α i)]
-    {t : Set ((i : ι) → α i)}
     (ht : t ∈ closedCompactCylinders α) :
     t ∈ measurableCylinders α := by
   rw [mem_measurableCylinders]

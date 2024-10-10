@@ -16,7 +16,7 @@ variable {α : Type*} {C : Set (Set α)}
 /-- In a ring of sets, continuity of an additive content at `∅` implies σ-additivity.
 This is not true in general in semirings, or without the hypothesis that `m` is finite. See the
 examples 7 and 8 in Halmos' book Measure Theory (1974), page 40. -/
-theorem sigma_additive_addContent_of_tendsto_zero (hC : IsSetRing C) (m : AddContent C)
+theorem addContent_iUnion_eq_sum_of_tendsto_zero (hC : IsSetRing C) (m : AddContent C)
     (hm_ne_top : ∀ s ∈ C, m s ≠ ∞)
     (hm_tendsto : ∀ ⦃s : ℕ → Set α⦄ (_ : ∀ n, s n ∈ C),
       Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n ↦ m (s n)) atTop (𝓝 0))
@@ -37,27 +37,23 @@ theorem sigma_additive_addContent_of_tendsto_zero (hC : IsSetRing C) (m : AddCon
     rw [addContent_diff_of_ne_top m hC hm_ne_top hUf (hC.accumulate_mem hf n)
       (Set.accumulate_subset_iUnion _), addContent_accumulate m hC h_disj hf n]
   simp_rw [hmsn] at h_tendsto
-  have h_tendsto' :
-      Tendsto (fun n ↦ ∑ i in Finset.range n, m (f i)) atTop (𝓝 (m (⋃ i, f i))) := by
-    refine (Filter.tendsto_add_atTop_iff_nat 1).mp ?_
-    rwa [ENNReal.tendsto_atTop_zero_const_sub_iff _ _ (hm_ne_top _ hUf)] at h_tendsto
-    intro n
-    rw [← addContent_accumulate m hC h_disj hf]
-    exact addContent_mono hC.isSetSemiring (hC.accumulate_mem hf n) hUf
-      (Set.accumulate_subset_iUnion _)
-  exact tendsto_nhds_unique h_tendsto' (ENNReal.tendsto_nat_tsum fun i ↦ m (f i))
+  refine tendsto_nhds_unique ?_ (ENNReal.tendsto_nat_tsum fun i ↦ m (f i))
+  refine (Filter.tendsto_add_atTop_iff_nat 1).mp ?_
+  rwa [ENNReal.tendsto_atTop_zero_const_sub_iff _ _ (hm_ne_top _ hUf) (fun n ↦ ?_)] at h_tendsto
+  rw [← addContent_accumulate m hC h_disj hf]
+  exact addContent_mono hC.isSetSemiring (hC.accumulate_mem hf n) hUf
+    (Set.accumulate_subset_iUnion _)
 
 theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
-    (hC_union : ∀ {s t : Set α} (_ : s ∈ C) (_ : t ∈ C), s ∪ t ∈ C) (m : Set α → ℝ≥0∞)
-    (m_empty : m ∅ = 0)
+    (hC_union : ∀ {s t : Set α}, s ∈ C → t ∈ C → s ∪ t ∈ C)
+    (m : Set α → ℝ≥0∞) (m_empty : m ∅ = 0)
     (m_add : ∀ {s t : Set α} (_ : s ∈ C) (_ : t ∈ C), Disjoint s t → m (s ∪ t) = m s + m t)
     (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : Set.PairwiseDisjoint (I : Set (Set α)) id)
     (h_mem : ⋃₀ ↑I ∈ C) :
     m (⋃₀ I) = ∑ u in I, m u := by
   classical
   induction I using Finset.induction with
-  | empty =>
-    simp only [Finset.coe_empty, Set.sUnion_empty, Finset.sum_empty, m_empty]
+  | empty => simp only [Finset.coe_empty, Set.sUnion_empty, Finset.sum_empty, m_empty]
   | @insert s I hsI h =>
     rw [Finset.coe_insert] at *
     rw [Set.insert_subset_iff] at h_ss
@@ -65,9 +61,8 @@ theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
     swap; · exact hsI
     have h_sUnion_mem : ⋃₀ ↑I ∈ C := by
       have (J : Finset (Set α)) : ↑J ⊆ C → ⋃₀ ↑J ∈ C := by
-        induction J using Finset.induction with --s J _ h
-        | empty => simp only [Finset.coe_empty, Set.empty_subset, Set.sUnion_empty,
-            forall_true_left, hC_empty]
+        induction J using Finset.induction with
+        | empty => simp [hC_empty]
         | @insert s I _ h =>
           intro h_insert
           simp only [Finset.coe_insert, Set.sUnion_insert, Set.insert_subset_iff] at h_insert ⊢
@@ -78,12 +73,13 @@ theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
     rwa [Set.sUnion_insert] at h_mem
 
 theorem sUnion_eq_sum_of_union_eq_add' (hC_empty : ∅ ∈ C)
-    (hC_union : ∀ {s t : Set α} (_ : s ∈ C) (_ : t ∈ C), s ∪ t ∈ C)
-    (m : ∀ s : Set α, s ∈ C → ℝ≥0∞) (m_empty : m ∅ hC_empty = 0)
+    (hC_union : ∀ {s t : Set α}, s ∈ C → t ∈ C → s ∪ t ∈ C)
+    {m : ∀ s : Set α, s ∈ C → ℝ≥0∞} (m_empty : m ∅ hC_empty = 0)
     (m_add : ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
       Disjoint s t → m (s ∪ t) (hC_union hs ht) = m s hs + m t ht)
     (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : Set.PairwiseDisjoint (I : Set (Set α)) id)
-    (h_mem : ⋃₀ ↑I ∈ C) : m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.property) := by
+    (h_mem : ⋃₀ ↑I ∈ C) :
+    m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.property) := by
   have h : extend m (⋃₀ ↑I) = ∑ u ∈ I, extend m u :=
     sUnion_eq_sum_of_union_eq_add hC_empty (fun hs ht ↦ hC_union hs ht) (extend m)
       (extend_empty hC_empty m_empty) ?_ I h_ss h_dis h_mem
@@ -93,5 +89,15 @@ theorem sUnion_eq_sum_of_union_eq_add' (hC_empty : ∅ ∈ C)
     exact (Finset.sum_attach _ _).symm
   · simp_rw [← extend_eq m] at m_add
     exact m_add
+
+lemma IsSetRing.sUnion_eq_sum_of_union_eq_add (hC : IsSetRing C)
+    {m : ∀ s : Set α, s ∈ C → ℝ≥0∞} (m_empty : m ∅ hC.empty_mem = 0)
+    (m_add : ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
+      Disjoint s t → m (s ∪ t) (hC.union_mem hs ht) = m s hs + m t ht)
+    (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : Set.PairwiseDisjoint (I : Set (Set α)) id)
+    (h_mem : ⋃₀ ↑I ∈ C) :
+    m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.property) :=
+  sUnion_eq_sum_of_union_eq_add' hC.empty_mem (fun hs ht ↦ hC.union_mem hs ht) m_empty m_add I
+    h_ss h_dis h_mem
 
 end MeasureTheory
