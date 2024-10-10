@@ -592,7 +592,7 @@ theorem ionescuTulceaKernel_eq (n : ℕ) :
       refine measurable_pi_lambda _ (fun i ↦ ?_)
       by_cases hi : i.1 ≤ n <;> simp [hi]
       exact measurable_pi_apply _
-    rw [aux, ← Set.preimage_comp, ← Set.preimage_comp, comp.assoc, this,
+    rw [aux, ← Set.preimage_comp, ← Set.preimage_comp, Function.comp_assoc, this,
       ← Kernel.map_apply' _ _ _ ms, ← Kernel.map_map _ (measurable_frestrictLe a) hyp,
       ionescuTulceaKernel_proj, Kernel.map_apply' _ _ _ ms, partialKernel_lt κ (by omega),
       Kernel.map_apply' _ _ _ (hyp ms), Kernel.deterministic_prod_apply',
