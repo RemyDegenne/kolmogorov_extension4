@@ -425,7 +425,7 @@ theorem ionescuTulceaContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) →
     exact ProbabilityMeasure.nonempty ⟨κ n Classical.ofNonempty, inferInstance⟩
   refine addContent_iUnion_le_of_addContent_iUnion_eq_tsum
     isSetRing_measurableCylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
-  refine sigma_additive_addContent_of_tendsto_zero isSetRing_measurableCylinders
+  refine addContent_iUnion_eq_sum_of_tendsto_zero isSetRing_measurableCylinders
     (ionescuTulceaContent κ x₀) (fun s hs ↦ ?_) ?_ hf hf_Union hf'
   · obtain ⟨N, S, mS, s_eq⟩ : ∃ N S, MeasurableSet S ∧ s = cylinder (Iic N) S := by
       simpa [cylinders_nat] using hs
@@ -633,11 +633,11 @@ theorem ionescuTulceaKernel_eq_map_updateFinset {n : ℕ} (x₀ : (i : Iic n) �
   · exact measurable_prod_mk_left
   · exact (el' n).measurable ms
   · exact measurable_prod_mk_left
-  · exact measurable_proj _
+  · exact Set.measurable_restrict _
   · exact (el' n).measurable ms
   · exact (el' n).measurable
   · exact (el' n).measurable
-  · exact measurable_prod_mk_left.comp (measurable_proj _)
+  · exact measurable_prod_mk_left.comp (Set.measurable_restrict _)
   · exact (el' n).measurable
 
 theorem integrable_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b) {f : ((n : ℕ) → X n) → E}
