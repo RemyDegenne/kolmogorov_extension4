@@ -122,9 +122,8 @@ lemma nonempty_projCylinder_iff [∀ i, Nonempty (α i)]
 
 theorem isClosed_projCylinder
     (hs : ∀ n, s n ∈ closedCompactCylinders α) (hs_closed : ∀ n, IsClosed (As (hs n))) (n : ℕ) :
-    IsClosed (projCylinder hs n) := by
-  refine (hs_closed n).preimage ?_
-  exact continuous_pi (fun i ↦ continuous_apply _)
+    IsClosed (projCylinder hs n) :=
+  (hs_closed n).preimage (by exact continuous_pi (fun i ↦ continuous_apply _))
 
 end projCylinder
 
@@ -161,9 +160,8 @@ theorem piCylinderSet_eq_pi_univ (hs : ∀ n, s n ∈ closedCompactCylinders α)
 theorem isClosed_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α) :
     IsClosed (piCylinderSet hs) := by
   rw [piCylinderSet_eq_pi_univ]
-  exact isClosed_set_pi fun i _ ↦
-    (isClosed_proj (closedCompactCylinders.isCompact (hs _))
-      (closedCompactCylinders.isClosed (hs _)) _)
+  exact isClosed_set_pi fun i _ ↦ IsClosed.isClosed_image_restrict_singleton _
+    (closedCompactCylinders.isCompact (hs _)) (closedCompactCylinders.isClosed (hs _))
 
 theorem nonempty_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
     (hs_nonempty : ∀ i, (s i).Nonempty) :

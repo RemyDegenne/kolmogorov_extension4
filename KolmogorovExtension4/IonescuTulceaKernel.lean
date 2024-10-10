@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Etienne Marion
 -/
 import KolmogorovExtension4.compProdNat
-import KolmogorovExtension4.Projective
 import KolmogorovExtension4.DependsOn
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import KolmogorovExtension4.KolmogorovExtension
