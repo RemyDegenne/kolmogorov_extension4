@@ -1,0 +1,1461 @@
+% please run using
+% lualatex --shell-escape proof_outline.tex
+
+\documentclass[sigplan,screen]{acmart}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+%\usepackage{amsmath}
+
+\pdfoutput=1
+
+\usepackage{minted}
+\setminted{encoding=utf-8}
+\usepackage{fontspec}
+%\setmainfont{dejavu-serif}
+\setmonofont[Scale=0.833]{dejavu-sans}
+%\setmainfont{FreeSerif}
+%\setmonofont{FreeMono}
+\usepackage{xcolor, graphics}
+\definecolor{mygray}{rgb}{0.97,0.97,0.97}
+\newcommand{\leanline}{\mintinline[breaklines, breakafter=., breaklines]{Lean}}
+%\usepackage{refcheck}
+
+% Definitions and packages for Lean code
+\usepackage{color}
+\definecolor{keywordcolor}{rgb}{0.7, 0.1, 0.1}   % red
+\definecolor{commentcolor}{rgb}{0.4, 0.4, 0.4}   % grey
+\definecolor{symbolcolor}{rgb}{0.0, 0.1, 0.6}    % blue
+\definecolor{sortcolor}{rgb}{0.1, 0.5, 0.1}      % green
+
+\usepackage{enumitem}
+\setlist[enumerate]{%
+align=left, itemsep=0pt, leftmargin=0pt, labelindent=0pt, listparindent=0pt, labelwidth=0pt, itemindent=!
+}
+%\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+%\newtheorem{theorem}[proposition]{Theorem}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[proposition]{Lemma}
+\newtheorem{corollary}[proposition]{Korollar}
+\newtheorem{definition}[proposition]{Definition}
+\newtheorem{remark}[proposition]{Remark}
+
+\author{Rémy Degenne}
+\affiliation{%
+   \institution{Univ. Lille, Inria, CNRS, Centrale Lille, UMR 9189-CRIStAL}
+   \city{Lille}
+   \country{France}}
+\email{remy.degenne@inria.fr}
+
+\author{Peter Pfaffelhuber}
+\affiliation{%
+   \institution{University of Freiburg}
+   \city{Freiburg}
+   \country{Germany}}
+\email{p.p@stochastik.uni-freiburg.de}
+
+\title{Formalizing the Kolmogorov extension Theorem in mathlib4}
+
+\keywords{probability, measure theory, Lean4, formal mathematics, proof assistant, mathlib4}
+
+% Tool to generate below available at http://dl.acm.org/ccs.cfm.
+%\begin{CCSXML}
+%<ccs2012>
+%<concept>
+%<concept_id>10002950.10003648</concept_id>
+%<concept_desc>Mathematics of computing~Probability and statistics</concept_desc>
+%<concept_significance>500</concept_significance>
+%</concept>
+%<concept>
+%<concept_id>10003752.10003790.10002990</concept_id>
+%<concept_desc>Theory of computation~Logic and verification</concept_desc>
+%<concept_significance>500</concept_significance>
+%</concept>
+%</ccs2012>
+%\end{CCSXML}
+
+%\ccsdesc[500]{Mathematics of computing~Probability and statistics}
+%\ccsdesc[500]{Theory of computation~Logic and verification}
+
+%%% If you see 'ACMUNKNOWN' in the 'setcopyright' statement below,
+%%% please first submit your publishing-rights agreement with ACM (follow link on submission page).
+%%% Then please reload our instructions page and copy-and-paste the NEW commands into your article.
+%%% Please contact us in case of questions; allow up to 10 min for the system to propagate the information.
+%%%
+%%% The following is specific to CPP '23 and the paper
+%%% 'A Formalization of Doob's Martingale Convergence Theorems in Mathlib'
+%%% by Kexing Ying and Rémy Degenne.
+%%%
+%\setcopyright{licensedothergov}
+%\acmPrice{15.00}
+%\acmDOI{10.1145/3573105.3575675}
+%\acmYear{2023}
+%\copyrightyear{2023}
+%\acmSubmissionID{poplws23cppmain-p22-p}
+%\acmISBN{979-8-4007-0026-2/23/01}
+%\acmConference[CPP '23]{Proceedings of the 13th ACM SIGPLAN International Conference on Certified Programs and Proofs}{January 13--14, 2024}{London, UK}
+%\acmBooktitle{Proceedings of the 13th ACM SIGPLAN International Conference on Certified Programs and Proofs (CPP '24), January 13--14, 2024, London, UK}
+%\received{2023-09-18}
+%\received[accepted]{??}
+
+\usepackage{environ}
+\NewEnviron{killcontents}{}
+\let\proof\killcontents
+\let\endproof\endkillcontents
+
+\begin{document}
+
+\begin{abstract}
+    xxx
+\end{abstract}
+
+\maketitle
+
+{\color{blue}
+  \noindent
+  TODO
+  \begin{itemize}
+  \item Translate to Lean 4 and change all code in the manuscript
+  \item Make sure that the line of argument for code and mauscript are in line.
+  \end{itemize}
+
+}
+
+
+\section{Introduction}
+One of the main building blocks of modern probability theory are stochastic processes, which are usually defined as any collection of random variables -- $(X_t)_{t\in \iota}$ with $X_t$ taking values in some $\alpha_t$, say -- defined on some joint probability space $(\Omega, \mathcal A, \mathbf P)$. In order to study such processes, it is fundamental to talk about their distribution, i.e.\ a probability distribution on the product set $\prod_{t\in\iota} \alpha_t$. The usual approach to construct (the distribution of) a stochastic process works as follows: describe properties of the distribution of the stochastic process $P_J$ at some finite number of times $J = \{t_1,...,t_n\} \subseteq \iota$. The resulting family of probability measures $(P_J)_{J \subseteq \iota \text{ finite}}$ has to be {\em projective} in the sense that the projection of $P_J$ to $H\subseteq J$ has to be equal to $P_H$. In other words, when describing the distribution of the stochastic process at all times in $J$, and then forgetting (i.e.\ projecting) all properties for times in $J\setminus H$, results in the description of properties at times in $H$. One may then ask if this already gives a complete description of the process for all times. For uncountable $\iota$, e.g. $\iota = [0,\infty)$, one is tempted to be pessimistic at first sight since measures -- which describe the distribution of the stochastic process -- usually only deal well with a countable number of measurable events. However, it is the achievement of Kolmogorov that the finite-dimensional distributions in fact provide a unique description of the distribution of a stochastic process, as long as the underlying family of state spaces $(\alpha_t)_{t\in\iota}$ is nice enough. This means that these spaces are usually required to be complete and separable metric (in particular topological) spaces. This distrubution is a measure on the product-$\sigma$-field $\mathcal F :=\bigotimes_{t\in\iota} \mathcal B(\alpha_t)$ (assuming that $\mathcal B(\alpha_t)$ is the Borel $\sigma$-algebra on $\alpha_t$). Here, $\mathcal F$ is generated by finite projections and hence any element of $\mathcal F$ may only depend on at most countably many $t\in \iota$, making this a rather coarse $\sigma$-algebra. (In particular, note that this is not the Borel $\sigma$-algebra of the product topology.) The result responsible for this insight is usually denoted the {\em Kolmogorov extension theorem}, formulated in \cite{kolmogoroff1933grundbegriffe}. We note that a version of the extension result was proved by Daniell in the 1930s, but this paper was not acknowledged by the probabilists of that time \cite{aldrich2007but}. Due to his contribution, the theorem is often called the {\em Daniell-Kolmogorov extension}. 
+  
+The goal of our contribution is a formalization of the proof of that theorem in {\tt mathlib4}, the mathematical library of {\tt Lean3} \cite{mathlib2020lean}. The Kolmogorov extension theorem is on the interface between measure theory and probability theory. Here, we rely on a decent amount of formalized mathematics in the measure-theory part of {\tt mathlib4} (outer measures, above all), while not requiring any specific previous formalization of probability theory. (In fact, most of our results are formulated in terms of finite rather than probability measures.)
+
+At first sight, it might be surprising that martingales, a certain class of stochastic process, have already been formalized in Lean \cite{ying2023formalization}, although the Kolmogorov extension theorem (on the existence of stochastic processes) is only available by our contribution. Note, however, that a martingale $(X_t)_{t\in \iota}$ is defined as a family of random variables (satisfying some properties) on a fixed probability space $(\Omega, \mathcal F, \mathbf P)$, while the Kolmogorov extension theorem is on the construction of a probability (or finite) measure $\mathbf P$, on which we can define random variables (with certain properties). So, our work complements \cite{ying2023formalization} in the sense that probability spaces $(\Omega, \mathcal F, \mathbf P)$ on which you can define a martingale exist. However, we do not give any specific example for the construction of a specific instance of such a space.
+
+The main steps in our construction, which were previously missing in {\tt mathlib4}, are (more mathematical details are below):
+\begin{enumerate}
+\item a formalization of (the set-system of) semi-rings (see Definition~\ref{def:semi} below); 
+\item adding some main lemmas to measure theory, e.g.\ continuity of a measure at the emptyset (see e.g.\ Lemma~\ref{l:halbextRing}, Proposition~\ref{P:stetigmass}, Lemma~\ref{l:stetigcompact} below);
+\item a proof that single probability measures on a Polish space is inner regular with respect to compact sets (see Definition~\ref{def:innerreg} for a definition; in fact, we proved a slight generalization using pseudo-metric spaces, found in Lemma~\ref{L:relcoPol} below); 
+\item the classical Carathéodory extension theorem, providing us a candidate for the measure which we want to construct (see Theorem~\ref{T:masseind}); 
+\item the Kolmogorov extension theorem, as based on the previous steps.
+\end{enumerate}
+The Kolmogorov extension theorem has been previously formalized in Isabelle/HOL \cite{Immler2012}. However, this formalization only works on Polish spaces (rather than on spaces where every finite measure is inner regular with respect to compact sets, see below), and only in the case where all $\alpha_i$'s are identical. However, type theory as the basis of the formalization, as well as several mathematical concepts (e.g.\ projective families of measures or the continuity of a measure in the emptyset) are the same in both formalisations in these two interactive theorem provers.
+
+\subsubsection*{Possible future work}
+Let us describe some future projects extending {\tt mathlib4} which become possible by our contribution.
+
+\noindent
+{\em Instances of stochastic processes:} An obvious application of Kolmogorov's extension theorem is the construction of basic stochastic processes like Markov chains \cite[Section~11]{Kallenberg2020}, the Poisson process \cite[Section~13]{Kallenberg2020} and Brownian motion \cite[Section~14]{Kallenberg2020}. (Note that other Gaussian processes -- indexed by $[0, \infty)$ or $\mathbb R$ might as well be constructed the same way. In addition, fields like the Gaussien free field indexed by $\mathbb R^d$ \cite{sheffield2007gaussian} can also be given.) For these tasks, we would have to define the finite-dimensional distributions (Poisson and normally distributed, respectively), and apply the extension theorem. This task requires the formalization of multi-dimensional Poisson and normal distributions, which -- in textbooks -- is usually done using characteristic functions. Since these are not yet part of {\tt mathlib4}, we postpone this task to the future. 
+
+\noindent
+{\em Sample-path properties:} The Kolmogorov extension gives the existence of a distribution of a stochastic process $(X_t)_{t\in\iota}$ with certain properties. Extra work is needed in order to show that -- on the same probability space -- we can as well define a version (i.e.\ another process $(Y_t)_{t\in\iota}$ with $\mathbf P(X_t = Y_t) = 1$ for all $t\in\iota$) which is right-continuous with left limits (for the Poisson process) or continuous (for Brownian motion), respectively. For the former, this follows at least from some general principles of Markov processes (e.g.\ \cite[Theorem 4.3.6]{EthierKurtz1986}). For the latter, this requires formalization of the Kolmogorov-Chentsov criterion 
+\cite[Theorem~4.23]{Kallenberg2020}.
+
+
+\section{Formalization of the Daniell-Kolmogorov extension}
+We start by stating the exact result. We are going to formulate the main result in a modern fashion, as e.g.\ found in Theorem 2.2 of \cite{rao1971projective}, Theorem 7.7.1 of Volume~2 of \cite{bogachev2007measure}, Theorem 15.26 of \cite{guide2006infinite}, or \cite{border1998expository}. Note that these formulations split general assumptions on the underlying space(s) (e.g.\ a metric property) from the property which is needed in the proof (inner regularity with respect to compact sets). Other -- highly readable -- references such as \cite{Billingsley1995} state the extension theorem only in special cases such as $\alpha_t = \mathbb R$ for all $t$. 
+%In addition, there are still new proofs found for the general extension theorem \cite{chin2019new}, but they require some results not yet formalized in mathlib4 (Borel isomorphism of $\mathbb R$ to $\{0,1\}^{\mathbb N}$), so we do not follow this route.  
+Whenever we feel necessary, we rely on a standard textbooks on Probability Theory \cite{Klenke2013, Kallenberg2020} for general purpose. 
+
+Before we can state the result, we begin with some mathematical notions. We start off slowly from metric spaces, but quickly introduce projective families of measures. In all definitions, $\alpha$ will be some set (or type, since {\tt Lean4} is a dependently typed language, \leanline{α : Type _}). 
+
+\begin{definition}[Metric and topological spaces]
+  \begin{enumerate}
+  \item \sloppy A pseudo-metric on $\alpha$ is a symmetric map $r : \alpha
+    \times \alpha \to [0,\infty)$ satisfying the triangle inequality,
+      i.e.\ $r(x,z) \leq r(x,y) + r(y,z)$ for all $x,y,z\in\alpha$.
+      \\ If $r$ also satisfies $r(x,y) = 0$ iff $x=y$, we call it a
+      metric.  \\ If $r : \alpha \times \alpha \to [0,\infty]$
+      (i.e.\ $r(x,y) = \infty$ is allowed), we call $r$ an extended
+      (pseudo-)metric.
+    \item Let $r$ be an (extended pseudo-)metric. A sequence $x_1,
+      x_2,... \in \alpha$ is called Cauchy if for all $\varepsilon>0$
+      there is $N\in\mathbb N$ such that $r(x_n, x_m) < \varepsilon$
+      for all $m,n > N$. The (pseudo-extended) metric is called
+      complete if every Cauchy-sequency has a limit in
+      $\alpha$.
+    \item Some\footnote{We denote by $2^\alpha$ the power set of
+      $\alpha$, i.e.\ the set of all subsets of $\alpha$.} $\mathcal O
+      \subseteq 2^\alpha$ is called a topology, if it satisfies (i)
+      $\emptyset, \alpha \in \mathcal O$, (ii) $\mathcal O$ is stable
+      under arbitrary unions, i.e.\ if $A_i \in \mathcal O$ for all
+      $i\in\iota$ and $\iota$ is arbitrary, then $\bigcup_{i\in \iota}
+      A_i \in \mathcal O$, (iii) $\mathcal O$ is stable under finite
+      intersections, i.e.\ if $A_1,...,A_n \in \mathcal O$, then
+      $\bigcap_{i\in \iota} A_i \in \mathcal O$.
+  \end{enumerate}
+\end{definition}
+
+\begin{remark}[Metric and topological spaces in {\tt mathlib4}] \mbox{}
+  \begin{enumerate}
+    \item \sloppy In \leanline{Lean4}, we have the \leanline{class
+      PseudoEMetricSpace (α : Type u) extends EDist}, which comes with
+      the components, \leanline{edist_self}, \leanline{edist_comm},
+      \leanline{edist_triangle} providing the properties of the
+      pseudo-metric, and \leanline{toUniformSpace},
+      \leanline{uniformity_edist} defining a uniform space from the
+      extended pseudo-metric. Such a space does not come with a
+      metric, but with a filter on $\alpha \times \alpha$, which
+      describes which points in $\alpha$ are near. For example, the
+      diagonal of $\alpha \times \alpha$ is a subset of all sets in
+      the uniformity; see \cite{james2013topologies} for details. We
+      note that uniform spaces with a countably generated uniformity
+      filter is pseudometrizable, i.e.\ there exists a
+      pseudo-metric-space structure that generates the same
+      uniformity; see \leanline{UniformSpace.pseudoMetrizableSpace},
+      which formalizes a result stated in
+      \cite{melikhov2011metrizable}.
+    \item \sloppy As for topological spaces, we have \leanline{class
+      TopologicalSpace(α : Type u) : Type u}, which comes with
+      \leanline{isOpen}, \leanline{isOpen_univ},
+      \leanline{isOpen_inter} and \leanline{isOpen_sUnion}, which are
+      exactly the properties of a topological space described above.
+    \item Any (extended pseudo-)metric on $\alpha$ defines a topology,
+      namely the topology generated by $\mathcal H := \{\{y:
+      r(x,y)<\varepsilon\}: x \in \alpha, \varepsilon \in
+      (0,\infty)\}$. Actually, in \leanline{mathlib4}, as we saw
+      above, every extended pseudo-metric defines a uniform space, and
+      a uniform space is a \leanline{class UniformSpace(α : Type u)
+        extends TopologicalSpace , UniformSpace.Core} with xxx
+      \leanline{to_topological_space} giving a topological space,
+      \leanline{to_core} which stores the uniformity filter, and
+      \leanline{is_open_uniformity}, which gives all open sets. In
+      particular, a uniform space defines a topological space, which
+      can be used by the typeclass system.
+  \end{enumerate}
+\end{remark}
+
+\begin{remark}[Generated topology]
+  \begin{enumerate}
+  \item The intersection of any number of topologies is again a
+    topology. For this reason, if $\mathcal H \subseteq 2^\alpha$, we
+    define the topology $\mathcal O := \bigcap_{\mathcal F \supseteq
+      \mathcal H \text{ topology}} \mathcal F$; see
+    \leanline{TopologicalSpace.generateFrom}. This is called the
+    topology generated by $\mathcal H$. If $\mathcal H$ is closed
+    under finite intersections, we call $\mathcal H$ a basis for
+    $\mathcal O$; see \leanline{TopologicalSpace.IsTopologicalBasis}.
+  \item \sloppy We call the topology (generated from an extended
+    pseudo-metric) separable (see
+    \leanline{TopologicalSpace.SeparableSpace}) if there is a
+    countable $s \subseteq \iota$ such that $\inf\{r(x,y) : y \in s\}
+    = 0$ for all $x\in\alpha$. \\ If there is a countable basis of the
+    topology, it is separable; see
+    \leanline{TopologicalSpace.SecondCountableTopology.to_separableSpace}.
+  \end{enumerate}
+\end{remark}
+
+\noindent
+Finally, we can introduce measures. Still, we need even more
+set-systems, i.e.\ $\sigma$-algebras.
+
+\begin{definition}[$\sigma$-algebras and measures]
+  \begin{enumerate}
+  \item 
+    We call $\mathcal F \subseteq 2^\alpha$ a $\sigma$-algebra (on
+    $\alpha$) if (i) $\alpha \in \mathcal F$, (ii) $\mathcal F$ is
+    stable under complements, i.e.\ $A \in \mathcal F \Rightarrow A^c
+    \in \mathcal F$, (iii) $\mathcal F$ is stable under countable
+    unions, i.e.\ $A_1, A_2,... \in \mathcal F \Rightarrow
+    \bigcup_{n=1}^\infty A_n \in \mathcal F$. We call $(\alpha,
+    \mathcal F)$ a measurable space.
+  \item For some $\sigma$-algebra $\mathcal F$ on $\alpha$, a function
+    $\mu : \mathcal F \to [0, \infty]$ is called a measure,
+    if\footnote{Since $\alpha \in \mathcal F$ and $\mathcal F$ is
+      stable under complements, we also have that $\emptyset \in
+      \mathcal F$} (i) $\mu(\emptyset) = 0$, (ii) $\mu$ is countably
+    additive, i.e.\ for $A_1, A_2,... \in \mathcal F$ pairwise
+    disjoint, we have $\mu\Big( \bigcup_{n=1}^\infty A_n\Big) =
+    \sum_{n=1}^\infty \mu(A_n)$. We call $(\alpha, \mathcal F, \mu)$ a
+    measure space. \\ In addition, $\mu$ is called finite if
+    $\mu(\alpha) < \infty$ and a probability measure if
+    $\mu(\alpha)=1$.
+  \end{enumerate}
+\end{definition}
+
+\begin{remark}[Measur(abl)e spaces in \leanline{mathlib4}]
+  \begin{enumerate}
+  \item \sloppy The \leanline{class MeasurableSpace(α : Type u_7) :
+    Type u_7} is very similar to a topological space in
+    \leanline{mathlib4}, since it comes with
+    \leanline{MeasurableSet'}, \leanline{measurableSet_empty},
+    \leanline{measurableSet_compl}, and
+    \leanline{measurableSet_iUnion}.
+  \item For a measure space, we require a measurable space as a
+    variable, and add the set function: \leanline{structure
+      MeasureTheory.Measure(α : Type u_6) [inst : MeasurableSpace α]
+      extends MeasureTheory.OuterMeasure}. Here $\sigma$-additivity of
+    a \leanline{Measure α} reads xxx note on outer measures
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  m_iUnion : ∀ ⦃f : ℕ → Set α⦄,
+    (∀ (i : ℕ), MeasurableSet (f i)) →
+    Pairwise (Disjoint on f) →
+    ↑toOuterMeasure (⋃ (i : ℕ), f i) =
+    ∑' (i : ℕ), ↑toOuterMeasure (f i)
+\end{minted}    
+  \end{enumerate}
+\end{remark}
+
+\noindent
+
+
+\begin{remark}[Generated $\sigma$-algebra, image measure]
+  We will frequently need two basic results: 
+  \begin{enumerate}
+  \item The intersection of any number of $\sigma$-algebras is again a
+    $\sigma$-algebra. For this reason, if $\mathcal H \subseteq
+    2^\alpha$, we define the $\sigma$-algebra $\sigma(\mathcal H) :=
+    \bigcap_{\mathcal F \supseteq \mathcal H \text{ $\sigma$-algebra}}
+    \mathcal F$. This is called the $\sigma$-algebra generated from
+    $\mathcal H$; see \leanline{MeasurableSpace.generateFrom}.  \\ In
+    particular, if $\mathcal O$ is a topology on $\alpha$, we call
+    $\mathcal B := \sigma(\mathcal O)$ the Borel $\sigma$-algebra on
+    $\alpha$. In \leanline{mathlib4}, this is
+    \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+      def borel (α : Type u) [TopologicalSpace α] :
+        MeasurableSpace α :=
+        generateFrom { s : Set α | IsOpen s }
+    \end{minted}
+    In addition, \leanline{mathlib4} provides a similar notion, which is
+    \begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+      class OpensMeasurableSpace (α : Type*)
+        [TopologicalSpace α] [h : MeasurableSpace α] :
+        Prop where borel_le : borel α ≤ h
+    \end{minted}
+    Here, all open sets are measurable, so the $\sigma$-algebra defining
+    \leanline{h} might be larger than the Borel $\sigma$-algebra. We will
+    need both notions in our proofs.
+  \item Let $(\alpha, \mathcal F)$ and $(\beta, \mathcal G)$ be
+    measurable spaces. Some $f : \alpha \to \beta$ is called
+    measurable (with respect to $\mathcal F$ and $\mathcal G$) if
+    $f^{-1} \mathcal G \subseteq \mathcal F$.  \\ In this case, if
+    $\mu$ is a measure on $\mathcal F$, the measure $\nu: \mathcal G
+    \to [0, \infty], \nu(B) := \mu (f^{-1}(B))$ is called the image
+    (or push-forward) measure of $\mu$ under $f$. We write $\nu :=
+    f_\ast \mu$; see \leanline{MeasureTheory.Measure.map}.
+  \end{enumerate}
+\end{remark}
+
+The extension theorem is on finite measures on product spaces. In
+particular, the product is taken over a set of arbitrary
+cardinality. The next definition covers the important concept of a
+projective family of measures. In short term, we define measures on
+any finite subset of indices in a consistent way. Recall that finite
+sets (of some type \leanline{ι} are formalized with \leanline{Finset
+  ι}. Such a \leanline{Finset} is defined as a \leanline{Multiset} (a
+quotient type of the \leanline{List}-type with respect to permutations
+of the list) together with a proof that it contains no duplicates.
+
+\begin{definition}[Projective family and projective limit] \mbox{}
+  \begin{enumerate}
+  \item For some set $\iota$, we will write $J\subseteq_f \iota$ if
+    $J\subseteq \iota$ and $J$ is finite.
+    %We will write $J\subseteq_c \iota$ if $J\subseteq \iota$ and $J$
+    %is countable.
+  \item Let $\iota$ be some (index) set and $(\alpha_i)_{i\in\iota}$ a
+    family of sets. For $J\subseteq \iota$, we denote $\alpha_J :=
+    \prod_{j \in J} \alpha_j$ and $\pi_J : \alpha_\iota \to \alpha_J$
+    the projection. For $H\subseteq J \subseteq \iota$, we write
+    $\pi_H^J$ for the projection $\alpha_J \to \alpha_H$.
+  \item Let $\mathcal F_i$ be a $\sigma$-algebra in $\alpha_i$,
+    $i\in\iota$. For $J\subseteq_f \iota$, let $\mathcal F_J$ be the
+    product-$\sigma$-algebra on $\alpha_J$, and $\mathcal F_\iota$ be
+    the $\sigma$-algebra generated by cylinder sets
+    $\{\pi_J^{-1}\prod_{j\in J} A_j: J \subseteq_f \iota, A_j \in
+    \sigma(E_j), j\in J\}$.
+  \item A family $(P_J)_{J\subseteq_f I}$, where $P_J$ is a finite
+    measure on $\mathcal F^J$, is called projective if
+    $$P_H = (\pi_H^{J})_\ast P_J$$ for all
+    $H\subseteq J \subseteq_f I$. (Recall that $A \mapsto
+    (\pi_H^{J})_\ast P_J(A) := P_J((\pi_H^{J})^{-1}A)$
+    is called the image measure of $P_J$ under $\pi_H^{J}$.)
+  \item If, for some projective family $(P_J)_{J\subseteq_f \iota}$,
+    there is a finite measure $P_\iota$ on $\mathcal F_\iota$ with
+    $P_J = (\pi_J)_\ast P_\iota$ for all $J\subseteq_f \iota$, then we
+    call $P_\iota$ projective limit of $(P_J)_{J\subseteq_f \iota}$.
+  \end{enumerate}
+\end{definition}
+
+In the formalization, we use \leanline{variable {ι : Type _} {α : ι →
+    Type _} }, which fixes the index set $\iota$ and all spaces
+$\alpha_t, t\in\iota$. In addition, note that the projective property
+we use here works as long as we have a preorder (which is the subset
+relation on \leanline{Finset ι} below).
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def IsProjective [Preorder ι]
+    (P : ∀ j : ι, α j) (π : ∀ {i j : ι}, j ≤ i → α i → α j) : Prop :=
+    ∀ (i j) (hji : j ≤ i), P j = π hji (P i)
+\end{minted}
+
+\noindent
+With this, we can define the projetive family as follows. Note that
+\leanline{Lean4} automatically uses the subset relation as
+\leanline{[Preorder (Finset ι)]} when \leanline{isProjective} is
+called.
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def IsProjectiveMeasureFamily
+    [∀ i, MeasurableSpace (α i)]
+    (P : ∀ J : Finset ι, Measure (∀ j : J, α j)) :
+    Prop :=
+    IsProjective P (fun I _ hJI μ => μ.map
+    fun x : ∀ i : I, α i => fun j => x ⟨j, hJI j.2⟩ :
+    ∀ (I J : Finset ι) (_ : J ⊆ I), Measure (∀ i : I, α i)
+    → Measure (∀ j : J, α j))
+\end{minted}
+
+\noindent
+It is worth understanding the precise connection ot
+\leanline{isProjective} and \leanline{isProjectiveMeasureFamily}. In
+the latter, the first variable of \leanline{isProjective} is the
+family \leanline{P} of finite measures for all finite subsets of
+\leanline{ι}. The second variable is the functions which maps two sets
+\leanline{I J : Finset ι} and a proof \leanline{hJI} of \leanline{J ⊆
+  I} together with \leanline{P I} to the image measure on
+\leanline{J}, which is \leanline{μ.map (fun x : ∀ i : I, α i => fun j
+  => x ⟨j, hJI j.2⟩)}. The map defined by the \leanline{=>}-notation
+maps every $(x_i)_{i\in I}$ to a function of \leanline{j}, whose type
+is the subtype of \leanline{I}, consisting of a value and a proof of
+\leanline{J ⊆ I}. In other words, this is $(x_j)_{j\in J}$.
+
+\noindent
+Now we are ready to formulate the Kolmogorov extension theorem:
+
+xxx stopped here
+
+\begin{theorem}[Kolmogorov extension]\label{T1}
+  For all $t\in\iota$, let $\alpha_t$ be a separable, complete
+  pseudo-extended-metric space and $\mathcal F_t$ the Borel
+  $\sigma$-algebra generated by its topology. Let $(P_J)_{J\subseteq_f
+    \iota}$ be a projective family of finite measures and $P$ be
+  defined on $\mathcal A := \bigcup_{J \subseteq_f \iota} \mathcal
+  F_J$ given by $P(A) = P_J(A)$ for $A\in\mathcal F_J$. Then, there is
+  a unique extension of $P$ to $\sigma(\mathcal A)$.
+\end{theorem}
+
+Rather than giving the formalization of this theorem, we give the
+definition of the resulting measure (which is the projective
+limit). We give the formalized proof at the end of this section, since
+we first have to provide a formalization of all tools needed in the
+proof.
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+def projective_limit_with_weakest_hypotheses
+  [∀ i, pseudo_emetric_space (α i)]
+  [∀ i, borel_space (α i)]
+  [∀ i, topological_space.second_countable_topology (α i)]
+  [∀ i, complete_space (α i)] [nonempty (Π i, α i)] 
+  (P : Π J : finset ι, measure (Π j : J, α j))
+  [∀ i, is_finite_measure (P i)]
+  (hP : is_projective_measure_family P) :
+  measure (Π i, α i) 
+\end{minted}
+
+
+We note that we extend the standard assumption that all $\alpha_t$ are
+separable, complete metric spaces (or Polish, i.e.\ separable and
+metrizable through a complete metric) to cover the case of extended
+pseude-metric spaces. Such spaces do not satisfy the frequently used
+Hausdorff (or t2) property, i.e.\ there can be $x\neq y$ such that all
+open balls around $x$ and $y$ overlap.
+
+
+\subsection{Extending a set function}
+In the formulation of Theorem~\ref{T1}, we extend $P$, which is
+defined on a union of $\sigma$-algebras. However, unions of
+$\sigma$-algebras in general are not $\sigma$-algebras, but they can
+be used to define the $\sigma$-algebra generated by the union. So, we
+need to extend $P$ to the $\sigma$-algebra generated by $\mathcal
+A$. This is exactly what Carathéodory's extension theorem is made
+for. In fact, we implemented this result in greater generality than
+needed for the proof of the extension theorem. Note that $\mathcal A$
+in Theorem~\ref{T1} is a ring of sets (see the next definition)
+containing the whole set. We will work with the weaker semi-ring as
+introduced next in the formulation of Carathéodory's extension
+theorem.
+
+
+\begin{definition}[Semi-ring, ring]\label{def:semi}
+  Let $\alpha$ be some set. We call $\mathcal H \subseteq 2^\alpha$ a
+  \emph{semi-ring}, if it is (i) a $\pi$-system (i.e.\ closed under
+  $\cap$) and (ii) for all $A, B \in\mathcal H$ there is $\mathcal K
+  \subseteq_f \mathcal H$ with\footnote{We write $A\uplus B$ for
+    $A\cup B$ if $A\cap B=\emptyset$.}  $B\setminus A = \biguplus_{K
+    \in \mathcal K} K$.  \\ We call $\mathcal H \subseteq 2^\alpha$ a
+  \emph{ring}, if it is closed under $\cup$ and under set-differences.
+\end{definition}
+
+Using \leanline{variables {α : Type*} {C : set (set α)} {s t : set
+    α}}, we define a semi-ring as follows:
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  structure set_semiring (C : set (set α)) : Prop :=
+  (empty_mem : ∅ ∈ C)
+  (inter_mem : ∀ s t ∈ C, s ∩ t ∈ C)
+  (diff_eq_Union' : ∀ s t ∈ C, ∃ (I : finset (set α))
+  (h_ss : ↑I ⊆ C)
+  (h_dis : pairwise_disjoint (I : set (set α)) id), t \ s = ⋃₀ I)
+\end{minted}
+
+Recall that \leanline{Lean4} indicates a coercion by \leanline{↑},
+which in this case is from \leanline{finset} to \leanline{set}.
+
+\noindent
+We do not show the formalization of rings here. Note, however, that
+any ring is a semi-ring since $A\cap B = A \setminus (A \setminus B)$,
+i.e.\ every ring is a $\pi$-system. In our formlaization, we also use
+the notion of a field $\mathcal H$, which is a ring with $\alpha \in
+\mathcal H$. Since we a re dealing with product spaces, we will use
+cylinders, which are defined as follows:
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def cylinder (s : finset ι) (S : set (Π i : s, α i)) :
+  set (Π i, α i) :=
+  (λ f : Π i, α i, (λ i : s, f i)) ⁻¹' S 
+\end{minted}
+
+In this definition, \leanline{s} is a finite subset of the index set
+\leanline{ι}, and for some $S$ in the finite product $\prod_{i \in s}
+\alpha_i$, consider the projection $\pi_s : \prod_{i \in \iota}
+\alpha_i \to \prod_{i \in s} \alpha_i$, and consider the preimage of
+$S$. (This is what the last line in previous definition gives.) From
+this, we can defined the set of all measurable cylinders.
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+def cylinders : set (set (Π i, α i)) :=
+⋃ s S (hS : measurable_set S), {cylinder s S}
+\end{minted}
+
+The set-system of cylinders is in fact a field, hence a ring and hence
+a semi-ring:
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  lemma set_field_cylinders : set_field (cylinders α) :=
+  { empty_mem := empty_mem_cylinders α,
+    univ_mem := univ_mem_cylinders α,
+    union_mem := λ s t, union_mem_cylinders,
+    diff_mem := λ s t, diff_mem_cylinders, }
+\end{minted}
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  lemma set_ring_cylinders :
+  measure_theory.set_ring (cylinders α) :=
+  set_field_cylinders.to_set_ring
+\end{minted}
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  lemma set_semiring_cylinders :
+  measure_theory.set_semiring (cylinders α) :=
+  set_field_cylinders.set_semiring
+\end{minted}
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  lemma generate_from_cylinders :
+  measurable_space.generate_from (cylinders α)
+  = measurable_space.pi 
+\end{minted}
+
+measurable product space
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  instance measurable_space.pi
+  [m : Π a, measurable_space (π a)] :
+  measurable_space (Π a, π a) :=
+  ⨆ a, (m a).comap (λ b, b a)
+\end{minted}
+
+Let us state an important lemms on semi-rings: 
+
+\begin{lemma}\label{l1}
+  Let $\mathcal H$ be a semiring, $\mathcal I \subseteq_f \mathcal H$,
+  $A \in \mathcal H$. Then, there is $\mathcal K \subseteq_f \mathcal
+  H$ such that all sets in $\mathcal K$ are pairwise disjoint and $A
+  \setminus \bigcup_{I \in \mathcal I} I = \biguplus_{K\in \mathcal K}
+  K$.
+\end{lemma}
+
+The formalization of the proof is somewhat straight-forward, but
+requires induction over finite sets. 
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  lemma exists_disjoint_finset_diff_eq
+  (hC : set_semiring C) (hs : s ∈ C)
+  (I : finset (set α)) (hI : ↑I ⊆ C) :
+  ∃ (J : finset (set α)) (h_ss : ↑J ⊆ C)
+  (h_dis : pairwise_disjoint (J : set (set α)) id),
+  s \ ⋃₀ I = ⋃₀ J 
+\end{minted}
+
+\noindent
+Thes existance-statement of the above lemma actually gives rise to a
+definition:
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def diff₀ (hC : set_semiring C) (hs : s ∈ C)
+  (I : finset (set α)) (hI : ↑I ⊆ C) [decidable_eq (set α)] :
+  finset (set α) :=
+  (hC.exists_disjoint_finset_diff_eq hs I hI).some \ {∅}
+\end{minted}    
+
+Complementing Lemma~\ref{l1}, we actually need another result for some
+constructions needed in the proofs: For some $A_1,...,A_m$ and $n\neq
+m$, we need finite sets $\mathcal K_1,...,\mathcal K_m$ such that $A_n
+\setminus \bigcup_{i=1}^{n-1} A_i = \biguplus_{K \in \mathcal K_n} K$
+for $n=1,...,m$. Using this, we can write
+$$ \bigcup_{n=1}^m A_n = A_1 \uplus (A_2 \setminus A_1) \uplus \cdots
+\uplus \Big(A_m \setminus \bigcup_{i=1}^{m-1}A_i\Big) =
+\bigcup_{n=1}^m \biguplus_{K \in \mathcal K_n} K,$$ i.e.\ we can write
+a union of sets in the semi-ring as a disjoint union of sets in the
+semi-ring. The formalized version is as follows:
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def indexed_diff₀ (hC : set_semiring C)
+  (J : finset (set α)) (hJ : ↑J ⊆ C) (n : fin J.card) :
+  finset (set α) :=
+  hC.diff₀ (ordered_mem' hJ n) (finset_lt J n)
+  (finset_lt_subset' J hJ n)
+\end{minted}
+
+\begin{proof}
+  We proceed by induction on $\mathcal I$. If $\mathcal I$ is a
+  singleton, the assertion is true by the definition of a semiring. If
+  it holds for some $\mathcal I$ (i.e.\ there is $\mathcal K
+  \subseteq_f \mathcal H$ with $A \setminus \bigcup_{I \in \mathcal I}
+  I = \biguplus_{K\in \mathcal K} K$), let us consider $\mathcal I' =
+  \{J\} \cup \mathcal I$ for some $J \notin \mathcal I$. For each $K
+  \in \mathcal K$, Write $K \setminus J = \biguplus_{J_K \in \mathcal
+    J_K} J_K$ for some $\mathcal J_K \subseteq_f \mathcal H$ (which
+  exists by the definition of a semi-ring). Then, write
+  \begin{align*}
+    A \setminus \bigcup_{I' \in \mathcal I'} I & = \Big(A \setminus
+    \bigcup_{I \in \mathcal I} I\Big) \setminus J = \biguplus_{K\in
+      \mathcal K} K \setminus J = \biguplus_{K\in \mathcal K}
+    \biguplus_{J_K \in \mathcal J_K} J_K.
+  \end{align*}
+  This concludes the proof, since the latter disjoint union is over a
+  finite set.
+\end{proof}
+
+\noindent
+\subsection{Carathéodory's extension theorem}
+Measures are set functions defined on a $\sigma$-algebra (i.e.\ an
+algebra stable under countable unions), satisfying some properties
+which we recall below. Mostly, defining such a measure on the full
+$\sigma$-algebra is not possible, but defining a set function on a
+semi-ring is possible. As an example, consider Lebesgue-measure on
+$\mathbb R$, with the Borel $\sigma$-algebra on $\mathbb R$, which is
+$\sigma(\mathcal O)$, where $\mathcal O$ is the set of open sets, and
+$\sigma(\mathcal O)$ is the smallest $\sigma$-algebra containing all
+open sets. Since this set system is defined only abstractly, it is
+hard to know which volume each of these sets should be assigned to at
+first sight. However, the volume of an interval is easy, since it may
+be defined by the length of the interval. So, in order to construct
+measures from a set function $m$ on a (semi-)ring $\mathcal H$
+(e.g.\ the set of all semi-open intervals), it has been a fundamental
+insight of Carathéodory that one may start by defining a set function
+(outer measure) $\mu$ on $2^\alpha$, and then show $\mu$ extends $m$
+and defines a measure on $\sigma(\mathcal H)$. (Note that the set of
+semi-open intervals generates the Borel $\sigma$-algebra on $\mathbb
+R$.) We will follow this construction, and start by stating some basic
+concepts.
+
+\begin{definition}
+  For some set $\alpha$, let $\mathcal H \subseteq 2^\alpha$ and $m :
+  \mathcal H \to [0,\infty]$.
+  \begin{enumerate}
+  \item $m$ is called additive if for $\mathcal K \subseteq_f \mathcal
+    H$ pariwise disjoint and $\bigcup_{K \in \mathcal K} K \in
+    \mathcal H$, we have $m \Big(\bigcup_{K \in \mathcal K} K \Big) =
+    \sum_{K \in \mathcal K} m(K)$. If the same holds for\footnote {We
+      write $A \subseteq_c B$ if $A$ is a countable subset of
+      $B$.}$\mathcal K \subseteq_c \mathcal H$ pariwise disjoint, we
+    say that $m$ is $\sigma$-additive.
+  \item The set-function $m$ is called sub-additive if for $\mathcal K
+    \subseteq_f \mathcal H$ and $\bigcup_{K \in \mathcal K} K \in
+    \mathcal H$, we have $m \Big(\bigcup_{K \in \mathcal K} K \Big)
+    \leq \sum_{K \in \mathcal K} m(K)$. (Note that elements of
+    $\mathcal K$ need not be disjoint.) Here, $\sigma$-sub-additivity
+    is defined in the obvious way using $\mathcal K\subseteq_c
+    \mathcal H$.
+  \item If $m(A) \leq m(B)$ for $A\subseteq B$ and $A,B\in\mathcal H$,
+    we say that $m$ is monotone.
+  \item If $\mathcal H$ is a $\sigma$-algebra and $m$ is
+    $\sigma$-additive, we call $m$ a measure.
+  \item If $\mathcal H = 2^\alpha$ and $m$ is monotone and
+    $\sigma$-sub-additive with $m(\emptyset)=0$, we call $m$ an outer
+    measure.
+  \end{enumerate}
+\end{definition}
+
+\noindent
+An additive $m : \mathcal H \to [0,\infty]$ is formalized as follows:
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  structure add_content (C : set (set α)) :=
+  (to_fun : set α → ℝ≥0∞)
+  (empty' : to_fun ∅ = 0)
+  (add' : ∀ (I : finset (set α)) (h_ss : ↑I ⊆ C)
+  (h_dis : pairwise_disjoint (I : set (set α)) id)
+  (h_mem : (⋃₀ ↑I) ∈ C), to_fun (⋃₀ I) = ∑ u in I, to_fun u)
+\end{minted}
+
+\noindent
+In this formalization, we introduced $m(\emptyset)=0$ as a separate
+hypothesis with \leanline{empty'}. Note that this also follows
+formally from $m(\emptyset) = m(\emptyset \cup \emptyset) = 2
+m(\emptyset)$. However, sicne \leanline{finset}s are assumed to have
+distinct elements, we cannot have $\emptyset$ twice in $I$.
+
+% extend_content put $\infty$ outside the set system
+
+For the concrete application we have in mind, we need to be more
+specific which semiring to use, based on a projective family of
+probability measures. We do this using \leanline{kol_content}, which
+is based on the following function, we takes a family of measures and
+a cylinder set as input:
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def kolmogorov_fun
+  (P : Π J : finset ι, measure (Π j : J, α j))
+  (s : set (Π i, α i)) (hs : s ∈ cylinders α) :
+  ℝ≥0∞ :=
+  P (cylinders.finset hs) (cylinders.set hs)
+\end{minted}
+
+\noindent
+With this, we define an \leanline{add_content} on cylinders. (Note
+that \leanline{extend_content} in fact defines an additive content on
+a semiring.)
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def kol_content (hP : is_projective_measure_family P) :
+  add_content (cylinders α) :=
+  extend_content set_semiring_cylinders
+  (kolmogorov_fun P) (kolmogorov_fun_empty hP)
+  (kolmogorov_fun_additive hP)
+\end{minted}
+
+\noindent
+From the next lemma, we will need monotonicity and sub-additivity, as
+well as $\sigma$-additive $\Rightarrow$ $\sigma$-sub-additive in the
+proof of the Carathéodory extension, Theorem~\ref{T:masseind}. 
+
+\begin{lemma}[Set-functions on semi-rings]\label{l:halbextRing}
+  Let $\mathcal H$ be a semi-ring and $m: \mathcal H\to [0,\infty]$
+  additive. Then, $m$ is monotone and sub-additive. In addition, $m$
+  is $\sigma$-additive iff it is $\sigma$-sub-additive.
+\end{lemma}
+
+\begin{proof}
+  We start by monotonicity. Let $A, B\in\mathcal H$ with $A\subseteq
+  B$ and $\mathcal K \subseteq_f \mathcal H$ with $B \setminus A =
+  \biguplus_{K\in\mathcal K} K$. Therefore, we can write $m(A) \leq
+  m(A) + \sum_{K\in\mathcal K} m(K) = m(B)$.
+
+  Next, we claim that for $\biguplus_{I\in\mathcal I} I \subseteq A$
+  (and all sets belong to $\mathcal H$, we have $\sum_{I \in \mathcal
+    I} m(I) \leq m(A)$. For this, write $A \setminus \biguplus_{I\in
+    \mathcal I} I = \biguplus_{K\in\mathcal K} K$ as in
+  Lemma~\ref{l1}. Then,
+  $$ m(A) = m\Big(\biguplus_{I\in\mathcal I} I \uplus
+  \biguplus_{K\in\mathcal K} K\Big) = \sum_{I\in\mathcal I} m(I) +
+  \sum_{K\in\mathcal K} m(K) \geq \sum_{I\in\mathcal I} m(I). $$
+  
+  For sub-additivity, let $\mathcal I \subseteq_f \mathcal H$ with
+  $\bigcup_{I \in \mathcal I} I \in \mathcal H$. Without loss of
+  generality, we write $\mathcal I = \{I_1,...,I_n\}$ for some $n$. We
+  need to show $m\Big(\bigcup_{k=1}^n I_i\Big) \leq \sum_{k=1}^n
+  m(I_k)$. For $k=2,...,n$, we write
+  $$ \bigcup_{k=1}^n I_k = \biguplus_{k=1}^n \Big(I_k \setminus
+  \bigcup_{j=1}^{k-1} I_j\Big) = \biguplus_{k=1}^n \biguplus_{K_k \in
+    \mathcal K_k} K_k$$ with $\mathcal K_k$ as in Lemma~\ref{l1}. So,
+  since $\biguplus_{K_k \in \mathcal K_k} K_k \subseteq I_k \in
+  \mathcal H$,
+  $$ m\Big(\bigcup_{k=1}^n I_i\Big) = \sum_{k=1}^n \sum_{K_k \in
+    \mathcal K_k} m(K_k) \leq \sum_{k=1}^n m(I_k).$$
+
+  \noindent
+  Now, we show that $m$ is $\sigma$-additive $\iff$ it is
+  $\sigma$-sub-additive.
+
+  \noindent
+  '$\Rightarrow$': Here, just copy the proof of sub-additivity, but
+  using countable $\mathcal I$, i.e.\ $n=\infty$. For '$\Leftarrow$',
+  let $\mathcal I \subseteq_c \mathcal H$ and consist of
+  disjoint sets with $A = \biguplus_{I \in \mathcal I} I \in\mathcal
+  H$. Since $m$ is monotone and for any $\mathcal I' \subseteq_f
+  \mathcal I$, we have $\biguplus_{I\in\mathcal I'} I \subseteq A$
+  (hence $\sum_{I \in \mathcal I'} m(I') \leq m(A)$),
+  $$ \sum_{I \in \mathcal I} m(I) = \sup_{\mathcal I' \subseteq_f
+    \mathcal I} \sum_{I \in \mathcal I'} m(I) \leq m(A) \leq \sum_{I
+    \in \mathcal I} m(I)$$ by $\sigma$-sub-additivity. So,
+  $\sigma$-additivity follows.
+\end{proof}
+
+\noindent
+Although some material on outer measures was covered in {\tt mathlib4}
+already, the classical extension theorem (extending a set function $m$
+on a semiring $\mathcal H$)) was not provided yet. In particular, this
+result states that the outer measure coincides with $m$ on $\mathcal
+H$. All statements on equality of $\mu$ and $m$ present in {\tt
+  mathlib4} at the time of writing have too many requirements.
+
+The next result talks about an \leanline{induced_outer_measure} in
+terms of {\tt mathlib4}.
+
+Theorem 2.5
+
+\begin{proposition}[Outer measure induced by a set function on a semi-ring] %\mbox{}
+  Let \label{P:auss} $\mathcal H$ be a semi-ring and $m: \mathcal
+  H\to\mathbb R_+$ additiv. For $A\subseteq E$ let
+  $$ \mu(A) := \inf_{\mathcal G \in \mathcal U(A)}
+    \sum_{G\in\mathcal G} m(G)$$ where
+  $$ \mathcal U(A) := \big\{\mathcal G \subseteq_c \mathcal H,
+    A\subseteq \bigcup_{G\in\mathcal G} G\big\}$$ is the set of
+    countable coverings of $A$. Then, $\mu$ is an outer measure.
+\end{proposition}
+
+\sloppy
+Let us now formulate the classical results by Carathéodory. The first
+leads to the definition of the measurable space
+\leanline{outer_measure.caratheodory}, covered in {\tt mathlib4}. See
+e.g.\ \cite[Theorem 2.1]{Kallenberg2020}
+
+\begin{theorem}[\boldmath $\mu$-measurable sets are a
+    $\sigma$-algebra]\label{T:cara} Let $\mu$ be an outer measure on
+  $E$ and $\mathcal F$ the set of $\mu$-measurable sets,
+  i.e.\ the set of sets $A$ satisfying
+  \begin{align}
+    \label{eq:mumess}
+    \mu(B) = \mu(B\cap A) + \mu(B\cap A^c), \qquad B \subseteq E.
+  \end{align}
+  Then, $\mathcal F$ is a $\sigma$-Algebra and $\mu|_{\mathcal F}$ is
+  a measure. In addition, $\mathcal N:=\{N\subseteq \Omega:
+  \mu(N)=0\}\subseteq \mathcal F$, i.e.\ $\mathcal F$ is complete.
+\end{theorem}
+
+\noindent
+\sloppy The second result, is not yet covered in {\tt
+  mathlib4}. However, for product spaces, in
+\leanline{measure_theory.constructions.pi}, there is
+\leanline{pi_caratheodory}, which shows that $\sigma(\mathcal H)
+\subseteq \mathcal F$ in a special case. In addition, there is
+\leanline{pi_pi_aux}, which shows that $\mu$ extends $m$ on $\mathcal
+H$ in the same special case. See also \cite[Theorem
+  2.5]{Kallenberg2020}.
+
+\begin{theorem}[Carathéodory extension]\label{T:masseind}
+  Let $\mathcal H$ be a semiring and $m: \mathcal H\to\mathbb R_+$
+  $\sigma$-finite and $\sigma$-additive. Furthermore, let $\mu$ be the
+  induced outer measure from Proposition~\ref{P:auss} and $\mathcal F$
+  the $\sigma$-algebra from Theorem~\ref{T:cara}. Then,
+  $\sigma(\mathcal H)\subseteq\mathcal F$ and $\mu$ coincides with $m$
+  on $\mathcal H$.
+\end{theorem}
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def measure.of_add_subadd_caratheodory
+  (hC : set_semiring C) (m : Π s : set α, s ∈ C → ℝ≥0∞)
+  (m_empty : m ∅ hC.empty_mem = 0)
+  (m_add : ∀ (I : finset (set α)) (h_ss : ↑I ⊆ C)
+    (h_dis : pairwise_disjoint (I : set (set α)) id)
+    (h_mem : (⋃₀ ↑I) ∈ C),
+    m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
+  (m_sigma_subadd : ∀ ⦃f : ℕ → set α⦄
+    (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
+    m (⋃ i, f i) hf_Union ≤ ∑' i, m (f i) (hf i)) :
+  @measure α (induced_outer_measure m
+       hC.empty_mem m_empty).caratheodory 
+\end{minted}
+
+\noindent
+Here, \leanline{measure_theory.outer_measure.caratheodory} is already
+implemented and gives the assertion that $\sigma(\mathcal
+H)\subseteq\mathcal F$.
+
+\noindent
+In the proof of Kolmogorov's extension theorem, we use the following
+definition, which is based on
+\leanline{measure.of_add_subadd_caratheodory}.
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def measure.of_add_content
+  [mα : measurable_space α] (hC : set_semiring C)
+  (hC_gen : measurable_space.generate_from C = mα)
+  (m : add_content C)
+  (m_sigma_subadd : ∀ ⦃f : ℕ → set α⦄
+    (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C),
+    m (⋃ i, f i) ≤ ∑' i, m (f i)) :
+  measure α 
+\end{minted}
+
+
+\begin{proof}
+  First, note that $m$ is $\sigma$-sub-additive by
+  Lemma~\ref{l:halbextRing}.
+
+  ~
+
+  \noindent\emph{Step 1: $\mu|_{\mathcal H} = m$:} Let $A\in\mathcal
+  H$. Choose $\mathcal K \subseteq_c \mathcal H$ with
+  $A\subseteq \bigcup_{K\in\mathcal K} K$ and
+  $$\mu(A) \geq \sum_{K\in\mathcal K} m(K) - \varepsilon.$$ By $ A =
+  \bigcup_{K\in\mathcal K} K\cap A$,
+  \begin{align*}
+    \mu(A) \leq m(A) \leq \sum_{K\in\mathcal K} m(K\cap A) \leq
+    \sum_{K\in\mathcal K} m(K) \leq \mu(A) + \varepsilon,
+  \end{align*}
+  where we have used $\sigma$-sub-additivity of $m$ in the second and
+  monotonicity of $m$ in the third $\leq$ (see
+  Lemma~\ref{l:halbextRing}).  With $\varepsilon\to 0$ we find that
+  $\mu(A) = m(A)$.
+
+  ~
+
+  \noindent\emph{Step 2: $\sigma(\mathcal H)\subseteq \mathcal F$:}
+  Let $B \subseteq E$, $A\in\mathcal H$ and $\varepsilon>0$. Choose
+  $\mathcal K \subseteq_c \mathcal H$ such that $B \subseteq
+  \bigcup_{K \in \mathcal K} K$ and $\mu(B) \geq \sum_{K\in\mathcal K}
+  m(K) - \varepsilon.$ Then, by additivity of $m$,
+  \begin{align*}
+    \mu(B)+\varepsilon & \geq \sum_{K\in\mathcal K} \mu(K) =
+    \sum_{K\in\mathcal K} \mu(K\cap A) + \sum_{K\in\mathcal K}
+    \mu(K\cap A^c) \\ & \geq \mu(B\cap A) + \mu(B\cap A^c).
+  \end{align*}
+  By sub-additivity of $\mu$, we find that $\mu(B) \leq \mu(B\cap A) +
+  \mu(B \cap A)$, so letting $\varepsilon\to 0$ leads to $\mu(A) =
+  \mu(E\cap A) + \mu(E\cap A^c)$. This implies that $A$ is $\mathcal
+  F$-measurable, and we have shown $\sigma(\mathcal H) \subseteq
+  \mathcal F$, since $\mathcal F$ is a $\sigma$-algebra.
+
+\end{proof}
+
+\subsection{$\sigma$-additivity of set functions}
+For the proof of Theorem~\ref{T1}, note that $P$ as given in the
+result is a finite additive set function on the ring $\mathcal A$. In
+order to use Theorem~\ref{T:masseind}, we therefore have to show
+$\sigma$-additivity. For this, we will use Lemma~\ref{l:stetigcompact}
+below, i.e.\ inner regularity of $P$ with respect to compact
+sets. Before, we will show useful alternative conditions for
+$\sigma$-additivity, which do not make use of any topological
+structure of the underlying space.
+
+\begin{lemma}[$\sigma$-additivity and continuity at $\emptyset$]\label{P:stetigmass}
+  Let $\mathcal R$ be a ring and $m:\mathcal R\to \mathbb R_+$
+  additive. Then, the following are equivalent:
+  \begin{enumerate}
+    \item $m$ is $\sigma$-additive;
+    \item $m$ is $\sigma$-sub-additive;
+    \item $m$ is continuous from below, i.e.\ for $A, A_1, A_2,... \in
+      \mathcal R$ with $A_1 \subseteq A_2 \subseteq \cdots$, we have
+      $m(A) = \lim_{n\to\infty} m(A_n)$.
+    \item $m$ is continuous from above in $\emptyset$, i.e.\ for $A_1,
+      A_2,...\in\mathcal R$ with $A_1 \supseteq A_2 \supseteq ...$ and
+      $\bigcap_{n=1}^\infty A_n = \emptyset$, we have
+      $\lim_{n\to\infty} m(A_n)=0$.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  1.$\Leftrightarrow$2.\ was already shown in
+  Lemma~\ref{l:halbextRing}, since $\mathcal R$ is a semiring.
+
+  ~
+
+  \noindent 1.$\Rightarrow$3.: For $A_1, A_2,...$ as in 3., we write
+  (with $A_0 := \emptyset$)
+  $$ m(A) = m\Big( \biguplus_{n=1}^\infty A_n \setminus
+  \Big(\bigcup_{l=1}^{k-1} A_l\Big)\Big) = \lim_{n\to\infty} m\Big(
+  \biguplus_{k=1}^n A_k \setminus \Big(\bigcup_{l=1}^{k-1}
+  A_l\Big)\Big) = \lim_{n\to\infty} m(A_n).$$
+
+  
+  ~
+  
+  \noindent 3.$\Rightarrow$1.: Let $A_1, A_2,... \in \mathcal R$ be
+  disjoint and $A = \biguplus_{n=1}^\infty A_n$. Set $B_n :=
+  \bigcup_{k=1}^n A_k$, such that $B_1, B_2,...$ satisfy 3. Hence,
+  $$ m\Big( \biguplus_{n=1}^\infty A_n\Big) = m\Big(
+  \bigcup_{n=1}^\infty B_n\Big) = \lim_{n\to\infty} m\Big(
+  \bigcup_{k=1}^n B_n\Big) = \lim_{n\to\infty} m\Big(
+  \biguplus_{k=1}^n A_n\Big) = \sum_{n=1}^\infty m(A_n).$$
+
+  \noindent 3.$\Rightarrow$4.: Let $A_1, A_2,\dots \in\mathcal R$ as
+  in 4. Set $B_n := A_1\setminus A_n$. Then, $B=A_1,B_1,B_2,\dots
+  \in\mathcal R$ satisfy 3., and therefore
+  $$m(A_1) = \lim_{n\to\infty} m(B_n) = m(A_1) -
+  \lim_{n\to\infty}m(A_n),$$ and 4.\ follows.
+
+  ~
+
+  \noindent 4.$\Rightarrow$3.: Let $A,A_1,A_2,\dots \in\mathcal R$ as
+  in 3. Let $B_n := A\setminus A_n \in \mathcal R, n\in\mathbb
+  N$. Then, $\bigcap_{n=1}^\infty B_n = \emptyset$, so $$0 =
+  \lim_{n\to\infty} \mu(B_n) = \mu(A) - \lim_{n\to\infty} \mu(A_n),$$
+  and 3.\ follows.
+\end{proof}
+
+\noindent
+As an example, we give the formalization of $4.\Rightarrow 1.$:
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  lemma countably_additive_of_todo (hC : set_ring C)
+  (m : Π (s : set α), s ∈ C → ℝ≥0∞)
+  (hm_ne_top : ∀ {s} (hs : s ∈ C), m s hs ≠ ∞)
+  (hm_add : ∀ {s t : set α} (hs : s ∈ C) (ht : t ∈ C),
+    disjoint s t →
+    m (s ∪ t) (hC.union_mem hs ht) = m s hs + m t ht)
+  (hm : ∀ ⦃s : ℕ → set α⦄ (hs : ∀ n, s n ∈ C),
+    antitone s → (⋂ n, s n) = ∅ →
+    tendsto (λ n, m (s n) (hs n)) at_top (𝓝 0))
+  ⦃f : ℕ → set α⦄ (h : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C)
+    (h_disj : pairwise (disjoint on f)) :
+  m (⋃ i, f i) hUf = ∑' i, m (f i) (h i)
+\end{minted}
+
+\noindent
+Next, we will be extending our analysis to the case of a topological
+space. We define inner (and outer) regularity of set functions.
+
+\begin{definition}[Inner regularity] \label{def:innerreg}
+  Let $\alpha$ be some set, equipped with a topology, and $m$ be a
+  set-function on some $\mathcal H \subseteq 2^\alpha$.
+  \begin{enumerate}
+  \item Let $p, q : 2^\alpha \to \{\text{true, false}\}$. Then, $m$ is
+    called inner regular with respect to $p$ and $q$, if 
+    $$ m(A) = \sup\{m(F) : p(F) = \text{true}, F \subseteq A\}$$ for
+    all $A \in \mathcal H$ with $q(A) = \text{true}$.
+  \item If $q(A) = \text{true}$ iff $A$ is measurable, we neglect the
+    {\em and $q$}. If $p(A) = \text{true}$ iff $A$ is closed (ompact,
+    closed and compact), we say that $m$ is inner regular with respect
+    to closed (compact, compact and closed) sets.
+  \end{enumerate}
+\end{definition}
+
+The above definition closely resembles its formalization in \leanline{mathlib4}:
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  def measure_theory.measure.inner_regular
+  {α : Type u_1} {m : measurable_space α}
+  (μ : measure_theory.measure α)
+  (p q : set α → Prop) :
+  Prop :=
+  ∀ ⦃U⦄, q U → ∀ r < μ U, ∃ K ⊆ U, p K ∧ r < μ K
+\end{minted}
+
+For the next result, recall that for compact sets $C_1, C_2,...$ with
+$\bigcap_{n=1}^\infty C_n = \emptyset$, there is some $N$ with
+$\bigcap_{n=1}^N C_n = \emptyset$.
+
+\begin{lemma}\label{l:stetigcompact}
+  Let $\alpha$ be a topological space and $\mu$ be an additive set
+  function on a ring $\mathcal R$ contained by the Borel
+  $\sigma$-algebra, and which is inner regular with respect to compact
+  sets. Then, $\mu$ is $\sigma$-additive.
+\end{lemma}
+
+\begin{proof}
+  According to Lemma~\ref{P:stetigmass}, we need to show continuity of
+  $\mu$ in $\emptyset$, so let $A_1 \supseteq A_2 \supseteq... \in
+  \mathcal R$ satisfy $\bigcap_{n=1}^\infty = \emptyset$ and
+  $\varepsilon>0$. Let $\delta_1, \delta_2,..>0$ with
+  $\sum_{n=1}^\infty \delta_n < \varepsilon$. For each $n$, let $C_n
+  \subseteq A_n \in \mathcal R$ be compact with $\mu(A_n) \leq
+  \mu(C_n) + \delta_n$. We have that $\bigcap_{n=1}^\infty C_n
+  \subseteq \bigcap_{n=1}^\infty A_n = \emptyset$, so there is $N \in
+  \mathbb N$ with $\bigcap_{n=1}^N C_n = \emptyset$. So, for any
+  $m>N$, we have that
+  $$ \mu(A_m) = \mu\Big( \Big(\bigcap_{n=1}^m A_n\Big) \setminus
+  \Big(\bigcap_{n=1}^m C_n\Big)\Big) \leq \sum_{n=1}^m \mu(A_n
+  \setminus C_n) \leq \sum_{n=1}^m \delta_n < \varepsilon.$$ This
+  concludes the proof.
+\end{proof}
+
+Here is the formalization using a \leanline{kol_content}:
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  lemma kol_content_sigma_additive_of_inner_regular
+  (hP : is_projective_measure_family P)
+  (hP_inner : ∀ J,
+  (P J).inner_regular (λ s, is_compact s ∧ is_closed s)
+      measurable_set)
+  ⦃f : ℕ → set (Π i, α i)⦄ (hf : ∀ i, f i ∈ cylinders α)
+  (hf_Union : (⋃ i, f i) ∈ cylinders α)
+  (h_disj : pairwise (disjoint on f)) :
+  kol_content hP (⋃ i, f i) = ∑' i, kol_content hP (f i) 
+\end{minted}
+
+\sloppy Using this, we also have
+\leanline{kol_content_countably_subadditive_of_inner_regular} by using
+\leanline{countably_subadditive_of_countably_additive}.
+
+Recall that a finite measure on the Borel $\sigma$-algebra is inner
+regular with respect to closed sets, but also outer regular with
+respect to open sets.
+
+\begin{lemma}\label{l:pseude1}
+  Let $r$ be an extended pseudo-metric on $\alpha$, and the topology
+  on $\alpha$ be given by $r$. If $\mu$ is a finite measure on the
+  Borel $\sigma$-algebra $\mathcal B$ on $\alpha$, it is inner regular
+  with respect to closed sets. In fact, we have also outer regularity
+  with respect to open sets, i.e.
+  $$ \mu(A) = \inf \{ \mu(O) : A \subseteq O \text{ open}\}.$$
+\end{lemma}
+
+\begin{proof}
+  It suffices to prove that
+  $$ \mathcal A := \Big\{A \in \mathcal B : \mu(B) = \sup_{F\subseteq
+    B \text{ closed}} \mu(F) = \sup_{B\subseteq O \text{ open}}
+  \mu(O)\Big\} $$ is a $\sigma$-algebra containing all closed
+  sets. So, we proceed in two steps.  \\ {\em Step 1: $\mathcal A$ is
+    a $\sigma$-algebra:} Since $\mu$ is finite, we have that $\mu(A^c)
+  = \mu(\alpha) - \mu(A)$ for all $A$. Using this, we already have
+  that $\mathcal A$ is closed under complements. So, we are left with
+  showing that $\mathcal A$ is closed under countable unions. For
+  this, let $A_1, A_2,... \in \mathcal A$ and $A :=
+  \bigcup_{n=1}^\infty A_n$. Fix $\varepsilon > 0$ and a sequence
+  $\delta_1, \delta_2,... > 0$ with $\sum_{n=1}^\infty \delta_n <
+  \varepsilon$. For each $n$, let $F_n \subseteq A_n \subseteq O_n$
+  with $F_n$ closed, $O_n$ open and $\mu(O_n \setminus F_n) \leq
+  \delta_n$. Then, $O := \bigcup_{n=1}^\infty O_n$ is open and
+  $$ 0 \leq \mu(O \setminus A) = \mu(O) - \mu(A) \leq
+  \sum_{n=1}^\infty \mu(O_n \setminus A) \leq \sum_{n=1}^\infty
+  \mu(O_n \setminus A_n) < \varepsilon.$$ This shows outer regularity
+  of $\mu$ with respect to open sets at $A$. It remains to show inner
+  regularity with respect to closed sets. For this, note that
+  $\bigcup_{n=1}^N F_n$ is closed for all $N$ and recall from
+  Proposition~\ref{P:stetigmass} that $\mu$ is continuous from
+  below. Therefore, setting $F := \bigcup_{n=1}^\infty F_n$,
+  $$ 0 \leq \mu(A) - \lim_{N\to\infty} \mu\Big(\bigcup_{n=1}^N
+  F_n\Big) = \mu(A \setminus F) \leq \sum_{n=1}^\infty \mu(A_n
+  \setminus F) \leq \sum_{n=1}^\infty \mu(A_n \setminus F_n) <
+  \varepsilon.$$ This shows inner regularity of $\mu$ with respect to
+  closed sets at $A$. 
+
+
+  \noindent
+      {\em Step 2: $\mathcal A$ contains all closed sets:} Let
+  $\varepsilon_ n\downarrow 0$ and, for $\varepsilon>0$ and some $A
+  \subseteq \alpha$, $A^\varepsilon := \{x : \exists y \in A,
+  r(x,y<\varepsilon\}$. Then, for $A$ closed, we have that $A =
+  \bigcap_{n=1}^\infty A^{\varepsilon_n}$ and $A^{\varepsilon_n}$ is
+  open for all $n$. Clearly, $\mu(A) = \sup\{\mu(F): F\text{ closed},
+  F \subseteq A\}$. By continuity of $\mu$, we find that
+  $\mu(A^{\varepsilon_n}) \xrightarrow{n\to\infty} \mu(A)$, therefore
+  $\mu(A) = \inf\{\mu(O): F\text{ open}, A \subseteq O\}$, and we have
+  shown that $A \in \mathcal A$.
+\end{proof}
+
+For the formalization, we use a new result: \leanline{P.inner_regular
+  (λ s, is_compact s ∧ is_closed s) is_closed}, which holds for every
+second countable extended pseudo metric space, which is
+\leanline{opens_measurable}. Then, from \leanline{mathlib4}, we use
+\leanline{measure.inner_regular.of_pseudo_emetric_space} in order to
+show that every open set is inner regular with respect to closed sets,
+and \leanline{measure.inner_regular.measurable_set_of_open} to show
+the above lemma.
+
+%xxx From Remy: For \leanline{inner_regular_etc} we already do it in
+%three parts: our result shows \leanline{P.inner_regular (λ s,
+%is_compact s ∧ is_closed s) is_closed}, then we go from closed to
+%open sets thanks to
+%\leanline{docs3#measure_theory.measure.inner_regular.of_pseudo_emetric_space},
+%and finally to measurable sets with
+%\leanline{docs3#measure_theory.measure.inner_regular.measurable_set_of_open}. That
+%last step uses the borel space assumption in the typeclass inference
+%process to get its \leanline{outer_regular} argument.
+
+In the next lemma, we will need that a closed subset of a compact set
+is compact. (See \leanline{is_compact_of_is_closed_subset}.) 
+
+\begin{lemma}\label{l:tight}
+  Let $r$ be an extended pseudo-metric on $\alpha$, and the topology
+  on $\alpha$ be given by $r$. If $\mu$ is a finite measure on the
+  Borel $\sigma$-algebra $\mathcal B$ on $\alpha$, the following are
+  equivalent:
+  \begin{enumerate}
+    \item For all $\varepsilon>0$, there is some closed and compact
+      $K$ with $\mu(K^c) < \varepsilon$.
+    \item For all $\varepsilon>0$ and $A \in \mathcal B$, there is
+      some closed and compact $K\subseteq A$ with $\mu(A \setminus K)
+      < \varepsilon$.
+  \end{enumerate}
+\end{lemma}
+
+\begin{proof}
+  2. $\Rightarrow$ 1.: This is clear since $\alpha \in \mathcal B$.
+  1. $\Rightarrow$ 2.: Fix $\varepsilon>0$ and $A \in \mathcal B$. Let
+  $K$ be closed and compact with $\mu(K^c) < \varepsilon/2$. By
+  Lemma~\ref{l:pseude1}, there is some closed $F \subseteq A$
+  with $\mu(A) < \mu(F) + \varepsilon/2$. Now, we have that $F \cap K
+  \subseteq A$ is closed and compact, and with $A \setminus (F\cap K)
+  = (A \setminus F) \cup (A \setminus K)$,
+  $$\mu(A \setminus (F\cap K)) \leq \mu(A \setminus F) + \mu(A
+  \setminus K) < \varepsilon/2 + \mu(K^c) < \varepsilon. $$
+\end{proof}
+
+We apply this result by using that 1.\ is satisfied for complete and
+separable extended pseudo-metric spaces:
+
+\begin{lemma}\label{L:relcoPol}
+  Let $\alpha$ be a complete and separable, extended pseudo-metric
+  space, and $\mu$ a finite measure on its Borel $\sigma$-algebra
+  $\mathcal B$. Then, for any $\varepsilon>0$, there is some
+  $K\subseteq \alpha$ with compact closure and\footnote{We write $\bar
+    K$ for the closure of $K$.}  $\mu((\bar K)^c)<\varepsilon$.
+\end{lemma}
+
+\begin{proof}
+ Since $\alpha$ is separable, there is a subset $\{x_1, x_2,...\}
+ \subseteq_c \alpha$ with closure $\alpha$. By separability, for each
+ $n\in \mathbb N$, $\alpha = \bigcup_{k=1}^\infty
+ B_{\varepsilon_n}(x_k)$. Since $\mu$ is continuous from above in
+ $\emptyset$ (see Lemma~\ref{P:stetigmass})
+  \[
+  0 = \mu\Big(\Big(\bigcup_{k=1}^\infty B_{\varepsilon_n}(x_k)\Big)^c
+  \Big) = \lim_{N\to\infty} \mu\Big( \Big(\bigcup_{k=1}^N
+  B_{\varepsilon_n}(x_k)\Big)^c\Big).
+  \]
+  Let $\delta_n\downarrow 0$ be summable with $\sum_{n=1}^\infty
+  \delta_n = 1$ (e.g.\ $\delta_n = 2^{-n}$). Then, there is some
+  $N_n\in\mathbb N$ with $\mu\Big( E\setminus \bigcup_{k=1}^{N_n}
+  B_{\varepsilon_n}(x_k)\Big) < \varepsilon \delta_n$. Now take
+  \[
+    A := \bigcap_{n=1}^\infty \bigcup_{k=1}^{N_n}
+    B_{\varepsilon_n}(x_k),
+  \]
+  which by construction is totally bounded (for $r>0$ take $n$ such
+  that $\varepsilon_n < r$, such that $B_r(x_1),...,B_r(x_{N_n})$
+  cover $A$), and therefore has a compact closure as noted before the
+  lemma. In addition, by $\sigma$-sub-additivity of $\mu$,
+  $$ \mu((\overline A)^c) \leq \mu(A^c) = \mu\Big(
+  \bigcup_{n=1}^\infty \Big(\Big(\bigcup_{k=1}^{N_n}
+  B_{\varepsilon_n}(x_k)\Big)^c\Big)\Big) \leq \sum_{n=1}^\infty
+  \mu\Big( \Big(\bigcup_{k=1}^{N_n}
+  B_{\varepsilon_n}(x_k)\Big)^c\Big)< \varepsilon,$$ and we are done.
+\end{proof}
+
+Let us combine the last two results in one combined formalized result:
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+  lemma inner_regular_is_compact_is_closed_
+    measurable_set_of_complete_countable
+  [pseudo_emetric_space α] [complete_space α]
+  [topological_space.second_countable_topology α]
+  [borel_space α] (P : measure α) [is_finite_measure P] :
+  P.inner_regular (λ s, is_compact s ∧ is_closed s)
+    measurable_set 
+\end{minted}
+
+\noindent
+With the above results, the strategy of the proof of Theorem~\ref{T1}
+is as follows: We have to show that under the given conditions,
+condition~1 of Lemma~\ref{l:tight} holds. By the equivalent~2., we
+find that $P$ is inner regular with respect to closed compact sets. In
+particular, the conditions of Lemma~\ref{l:stetigcompact} are
+satisfied, showing that $P$ is $\sigma$-additive. Then, we proceed as
+described right before Proposition~\ref{P:stetigmass}. So, it remains
+to show condition~1 of Lemma~\ref{l:tight} for complete and separable
+extended pseudo-metric spaces. Note that -- as a special case of
+\leanline{is_compact_iff_totally_bounded_is_complete} from {\tt
+  mathlib4}, any subset of such a space is compact iff it is complete
+and totally bounded. Since closed subsets of a complete space are
+complete, the closure of a totally bounded set is (still totally
+bounded, hence) compact.
+
+%\begin{lemma}\label{l:totalBoundcompact}
+%  Let $E$ be a uniform topologocal space\footnote{This is more general
+%    than a metric space, i.e.\ every metric space is uniform.} Then,
+%  $A\subseteq E$ is compact iff it is totally bounded\footnote{In a
+%    metric space, this means that forall $\varepsilon>0$ you find a
+%    finite number of balls covering the set} and
+%  complete\footnote{i.e.,\ Cauchy filters converge.}.
+%\end{lemma}
+
+%\noindent
+%The usual way to apply this result is in a Polish space. Here, $A$ is
+%relatively compact iff it is totally bounded.
+
+%\noindent
+%Although, regularity of measures is covered in {\tt mathlib}, the next
+%statement is not yet part of the library. Similar constructions will
+%be important for Prohorov's theorem in the theory of weak convergence.
+%In Lean, we can use \verb+ measure_theory.measure.inner_regular+ for
+%the statement of this result. In the proof of the lemma, we will be
+%using the last fact
+
+\subsection{Proof of Kolmogorov's extension theorem}
+Now we can put everything together: According to
+Lemma~\ref{L:relcoPol}, condition~1 of Lemma~\ref{l:tight} is
+satisfied for the set function $P$ on the ring $\mathcal A$ from
+Theorem~\ref{T1}. The same lemma shows that the conditions for
+Lemma~\ref{l:stetigcompact} are satisfied, so $P$ is $\sigma$-additive
+on $\mathcal A$. As a consequence, we can use the Carathéodory
+extension from Theorem~\ref{T:masseind}. This shows all other
+assertions. The formalization of this proof resembles these
+arguments. We leave out all instances in the reformulation of the
+result and its proof (see below Theorem~\ref{T1} for a full
+formulation):
+
+\begin{minted}[mathescape, numbersep=5pt, framesep=5mm, bgcolor=mygray]{Lean}
+def projective_limit_with_weakest_hypotheses  
+  (P : Π J : finset ι, measure (Π j : J, α j))
+  (hP : is_projective_measure_family P) :
+  measure (Π i, α i) :=
+  measure.of_add_content set_semiring_cylinders
+  generate_from_cylinders (kol_content hP)
+  (kol_content_countably_subadditive_of_inner_regular hP
+  (λ J, inner_regular_is_compact_is_closed_measurable_
+    set_of_complete_countable (P J)))
+\end{minted}
+
+
+
+\section{Concluding thoughts}
+{\em Using semi-rings in measure theory:} Frequently, the construction of measures on some $\sigma$-algebra $\mathcal F$ (on some space $\alpha$) uses outer measures, which can be defined on $2^\alpha$ (the set of all subsets of $\alpha$). We provide a general framework using Carathéodory's extension theorem, which states an extension of a set-function on a semi-ring by an outer measure, not previously implemented in mathlib4. This could also be used to re-define Stieltjes measures (in particular Lebesgue measure) on $\mathbb R$, as well as product measures (on finite products). More precisely, e.g.\ \leanline{measure_theory.stieltjes.outer_Ioc} and \leanline{measure_theory.constructions.pi.pi_pi_aux} are specific examples of the more general statement, that the outer measure extends the set function a the semi-ring. (In the first case, it would be the semi-ring of half-open intervals, in the second case, it would be the semi-ring of cylinder sets on a product space.) 
+
+\noindent
+{\em Prohorovs theorem:} The proof that single finite measures on a Polish space is tight (i.e.\ inner regular with respect to compact sets) is a special case of Prohorov's theorem, which states that a set $\mathcal M$ of finite measures is relatively compact (in the weak topology on the set of finite measures, i.e.\ every sequence of measures in the set has a weakly convergent sub-sequence) if and only if $\mathcal M$ is tight (i.e.\ for all $\varepsilon>0$ there is some compact $K$ such that $\sup_{m \in \mathcal M} m(K^c) < \varepsilon$). We treat here the special case of $\mathcal M$ being a singleton (hence is a compact set). 
+
+xxx design decisions?
+
+\section*{Acknowledgements}
+
+
+
+\bibliographystyle{plain}
+\bibliography{main}
+
+
+
+
+\end{document}
+
+
+
+
+Our formalization broadly follows the procedure described in \cite{hytonen2016analysis} and leads to a definition with the following type.
+\begin{lstlisting}
+def condexp (ℬ : measurable_space Ω)
+  { : measurable_space Ω}
+  (μ : measure Ω) (f : Ω → E) : Ω → E :=
+if hm : ℬ ≤ 
+  then if h : sigma_finite (μ.trim hm) ∧ integrable f μ
+    then if strongly_measurable[ℬ] f then f
+      else (@ae_strongly_measurable'_condexp_L1 _ _ _ _ _ ℬ  μ hm h.1 _).mk (@condexp_L1 _ _ _ _ _ _ _ hm μ h.1 f)
+    else 0
+  else 0
+\end{lstlisting}
+\begin{definition}\label{def:condexp}
+Let $(\Omega, \mathscr A, \mu)$ be a measure space and let $\mathscr B$ be a sub-$\sigma$-algebra of $\mathscr A$. Let $E$ be a Banach space (complete normed vector space) and $f : \Omega \to E$ be an i\
+ntegrable function (with respect to $\mu$). Then a function $g : \Omega \to E$ is said to be a \emph{conditional expectation} of $f$ with respect to $\mathscr B$ if it is integrable, $\mathscr B$-strong\
+ly measurable and for all $\mathscr B$-measurable sets $s$,
+\begin{align*}
+\int_{x \in s} g(x) d\mu(x) = \int_{x \in s} f(x) d\mu(x) \: .
+\end{align*}
+\end{definition}
+
+
+%\documentclass[sigplan,10pt,anonymous,review]{acmart}
+\documentclass[sigplan,10pt,screen]{acmart}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\setlist[enumerate]{%
+align=left, itemsep=0pt, leftmargin=0pt, labelindent=0pt, listparindent=0pt, labelwidth=0pt, itemindent=!
+}
+
+
+%\theoremstyle{plain}
+%
+\newtheorem{proposition}{Proposition}[section]
+%\newtheorem{theorem}[proposition]{Theorem}
+\newtheorem{lemma}[proposition]{Lemma}
+\newtheorem{corollary}[proposition]{Korollar}
+\newtheorem{definition}[proposition]{Definition}
+\newtheorem{remark}[proposition]{Remark}
+
+\pdfoutput=1
+
+% Definitions and packages for Lean code
+\usepackage{color}
+\definecolor{keywordcolor}{rgb}{0.7, 0.1, 0.1}   % red
+\definecolor{commentcolor}{rgb}{0.4, 0.4, 0.4}   % grey
+\definecolor{symbolcolor}{rgb}{0.0, 0.1, 0.6}    % blue
+\definecolor{sortcolor}{rgb}{0.1, 0.5, 0.1}      % green
+
+\usepackage{listings}
+\def\lstlanguagefiles{lstlean.tex}
+\lstset{language=lean, basicstyle=\small}
+
+% Other packages
+\usepackage[shortlabels]{enumitem}
+\usepackage{tikz}
+
+\input{quiver.tex}
+
+
+
+
+
+
+
+\documentclass{article}
+\usepackage[utf8x]{inputenc}
+
+\usepackage{hyperref}
+\usepackage{refcheck}
+\usepackage[centertags]{amsmath} 
+\usepackage{amssymb, amsthm}
+
+\usepackage{enumitem}
+\setlist[enumerate]{%
+align=left, itemsep=0pt, leftmargin=0pt, labelindent=0pt, listparindent=0pt, labelwidth=0pt, itemindent=!
+}
+
+\theoremstyle{plain}
+%
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{theorem}[proposition]{Theorem}
+\newtheorem{lemma}[proposition]{Lemma}
+\newtheorem{corollary}[proposition]{Korollar}
+\newtheorem{definition}[proposition]{Definition}
+\newtheorem{remark}[proposition]{Remark}
+
+
+\title{The Kolmogorov Extension Theorem in Lean} \author{Rémy Degenne,
+  Peter Pfaffelhuber}
+
+\begin{document}
+
+\maketitle
+
+The goal of the project is to state and prove the Kolmogorov extension
+theorem in {\tt Lean 4} and make a PR to {\tt mathlib4}.
+
+\input{formalization}
+
+\bibliographystyle{alpha}
+\bibliography{main}
+
+\end{document}
+
+\begin{thebibliography}{EPW06b}
+\bibitem[Bil95]{Billingsley1995} P.~Billingsley.  \newblock {\em
+  {Probability and Measure. 3rd ed.}}  \newblock {Wiley Series in
+  Probability and Statistics.}, 1995.
+\bibitem[Imm12]{Immler2012} F.~Immler.  \newblock {\em {Generic
+    Construction of Probability Spaces for Paths of Stochastic
+    Processes in Isabelle/HOL.}} \newblock {Master’s Thesis in
+  Informatik, TU Munich},
+  \url{https://saloranta.de/immler/fabian/mastersthesis/thesis.pdf},
+  2012.
+\bibitem[Kal20]{Kallenberg2020} O.~Kallenberg.  \newblock {\em
+  {Foundations of modern probability. 3rd ed.}}  \newblock
+  {Probability and Its Applications. New York, NY: Springer.}, 2020.
+\bibitem[Kle13]{Klenke2013} A.~Klenke.  \newblock {\em {Probability
+    Theory. A Comprehensive Course. 2nd ed.}}  \newblock {Springer.},
+  2013.
+\end{thebibliography}
+
+
+

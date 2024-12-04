@@ -3,11 +3,13 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
-import KolmogorovExtension4.Semiring
+
+import KolmogorovExtension4.testSemiring
+import KolmogorovExtension4.AuxLemmas
 import Mathlib.MeasureTheory.OuterMeasure.Induced
 import Mathlib.MeasureTheory.Measure.AddContent
 
-open Set Finset Filter
+open Set Finset Filter MeasureTheory
 
 open scoped ENNReal Topology
 
@@ -89,12 +91,16 @@ lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
     (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
     m (⋃₀ ↑J) ≤ ∑ u in J, m u := by
   classical
-  rw [← hC.sUnion_allDiffFinset₀ J h_ss, addContent_sUnion]
+  rw [←  hC.sUnion_allDiffFinset₀ J h_ss, addContent_sUnion]
   rotate_left
   · exact hC.allDiffFinset₀_subset J h_ss
   · exact hC.pairwiseDisjoint_allDiffFinset₀ J h_ss
   · rwa [hC.sUnion_allDiffFinset₀ J h_ss]
-  rw [IsSetSemiring.allDiffFinset₀, sum_disjiUnion, ← sum_ordered J]
+
+  -- rw [IsSetSemiring.allDiffFinset₀]
+  obtain h : PairwiseDisjoint (hC.allDiffFinset₀ J h_ss : Set (Set α)) id := hC.pairwiseDisjoint_allDiffFinset₀ J h_ss
+
+  rw [sum_disjiUnion _ _ h, ← sum_ordered J]
   refine sum_le_sum fun i _ ↦ sum_addContent_le_of_subset hC ?_ ?_ ?_ ?_
   · exact hC.indexedDiffFinset₀_subset J h_ss i
   · exact hC.pairwiseDisjoint_indexedDiffFinset₀' J h_ss i
@@ -169,7 +175,7 @@ lemma addContent_accumulate (m : AddContent C) (hC : IsSetRing C)
   | succ n hn =>
     rw [Finset.sum_range_succ, ← hn, Set.accumulate_succ, addContent_union hC _ (hsC _)]
     · exact Set.disjoint_accumulate hs_disj (Nat.lt_succ_self n)
-    · exact hC.accumulate_mem hsC n
+    · exact MeasureTheory.IsSetRing.accumulate_mem hC hsC n
 
 /-- If an additive content is σ-additive on a set ring, then the content of a monotone sequence of
 sets tends to the content of the union. -/
