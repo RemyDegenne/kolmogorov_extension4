@@ -19,7 +19,9 @@ variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 
 section ExtendContent
 
-/-- Build an `AddContent` from an additive function defined on a semiring. -/
+variable {m : ∀ s : Set α, s ∈ C → ℝ≥0∞}
+
+/-- Build an `AddContent` from an additive function defined on a semiring of sets. -/
 noncomputable def extendContent (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
     (m_empty : m ∅ hC.empty_mem = 0)
     (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
@@ -29,31 +31,30 @@ noncomputable def extendContent (hC : IsSetSemiring C) (m : ∀ s : Set α, s �
   empty' := extend_empty hC.empty_mem m_empty
   sUnion' I h_ss h_dis h_mem := by
     simp_rw [← extend_eq m] at m_add
-    rw [m_add I h_ss h_dis h_mem, univ_eq_attach]
-    exact sum_attach _ _
+    rw [m_add I h_ss h_dis h_mem, univ_eq_attach, sum_attach]
 
-theorem extendContent_eq_extend (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
-    (m_empty : m ∅ hC.empty_mem = 0)
+theorem extendContent_eq_extend (hC : IsSetSemiring C) (m_empty : m ∅ hC.empty_mem = 0)
     (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
       (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop)) :
     extendContent hC m m_empty m_add = extend m := rfl
 
-theorem extendContent_eq (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
-    (m_empty : m ∅ hC.empty_mem = 0)
+theorem extendContent_eq (hC : IsSetSemiring C) (m_empty : m ∅ hC.empty_mem = 0)
     (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
       (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
     (hs : s ∈ C) :
     extendContent hC m m_empty m_add s = m s hs := by
   rw [extendContent_eq_extend, extend_eq]
 
-theorem extendContent_eq_top (hC : IsSetSemiring C) (m : ∀ s : Set α, s ∈ C → ℝ≥0∞)
-    (m_empty : m ∅ hC.empty_mem = 0)
+theorem extendContent_eq_top (hC : IsSetSemiring C) (m_empty : m ∅ hC.empty_mem = 0)
     (m_add : ∀ (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
       (h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.prop))
     (hs : s ∉ C) :
     extendContent hC m m_empty m_add s = ∞ := by
   rw [extendContent_eq_extend, extend_eq_top m hs]
 
+-- todo: change name?
+/-- An additive content obtained from another one on the same semiring of sets by setting the value
+of each set not in the semiring at `∞`. -/
 protected noncomputable
 def AddContent.extend (hC : IsSetSemiring C) (m : AddContent C) : AddContent C where
   toFun := extend (fun x (_ : x ∈ C) ↦ m x)

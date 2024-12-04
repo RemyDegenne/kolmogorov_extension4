@@ -69,13 +69,13 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent R)
     _ ≤ ∑' i, δ i := ENNReal.sum_le_tsum _
     _ ≤ ε := hδ_sum.le
 
-lemma AddContent.sigma_additive_of_regular (hR : IsSetRing R) (m : AddContent R)
+lemma addContent_iUnion_eq_sum_of_regular (hR : IsSetRing R) (m : AddContent R)
     (hm_ne_top : ∀ s ∈ R, m s ≠ ∞)
     (hC : IsCompactSystem C) (hCR : C ⊆ R)
-    (h_reg : ∀ A (_ : A ∈ R) (ε : ℝ≥0∞) (_ : 0 < ε), ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε)
+    (h_reg : ∀ A ∈ R, ∀ ε, 0 < ε → ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε)
     ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ R) (hUf : (⋃ i, f i) ∈ R) (h_disj : Pairwise (Disjoint on f)) :
     m (⋃ i, f i) = ∑' i, m (f i) := by
-  refine sigma_additive_addContent_of_tendsto_zero hR m hm_ne_top ?_ hf hUf h_disj
+  refine addContent_iUnion_eq_sum_of_tendsto_zero hR m hm_ne_top ?_ hf hUf h_disj
   intro s hs hs_anti hs_iInter
   exact tendsto_zero_of_regular_addContent hR m hs hs_anti hs_iInter hC hCR h_reg
 
