@@ -95,12 +95,14 @@ lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
   · exact hC.allDiffFinset₀_subset J h_ss
   · exact hC.pairwiseDisjoint_allDiffFinset₀ J h_ss
   · rwa [hC.sUnion_allDiffFinset₀ J h_ss]
-  rw [IsSetSemiring.allDiffFinset₀, sum_disjiUnion, ← sum_ordered J]
-  refine sum_le_sum fun i _ ↦ sum_addContent_le_of_subset hC ?_ ?_ ?_ ?_
-  · exact hC.indexedDiffFinset₀_subset J h_ss i
-  · exact hC.pairwiseDisjoint_indexedDiffFinset₀' J h_ss i
-  · exact h_ss (ordered_mem i)
-  · exact Set.sUnion_subset_iff.mp (hC.sUnion_indexedDiffFinset₀_subset J h_ss i)
+  rw [IsSetSemiring.allDiffFinset₀]
+  sorry
+  --, sum_disjiUnion, ← sum_ordered J]
+  --refine sum_le_sum fun i _ ↦ sum_addContent_le_of_subset hC ?_ ?_ ?_ ?_
+  --· exact hC.indexedDiffFinset₀_subset J h_ss i
+  --· exact hC.pairwiseDisjoint_indexedDiffFinset₀' J h_ss i
+  --· exact h_ss (ordered_mem i)
+  --· exact Set.sUnion_subset_iff.mp (hC.sUnion_indexedDiffFinset₀_subset J h_ss i)
 
 lemma addContent_le_sum_of_subset_sUnion {m : AddContent C} (hC : IsSetSemiring C)
     (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈ C) (htJ : t ⊆ ⋃₀ ↑J) :

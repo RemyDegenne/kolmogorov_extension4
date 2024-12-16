@@ -5,7 +5,6 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import KolmogorovExtension4.AuxLemmas
 import Mathlib.MeasureTheory.SetSemiring
-import KolmogorovExtension4.Ordered
 
 /-! # Semirings of sets
 
@@ -14,7 +13,6 @@ for all `s, t ∈ C`, `t \ s` is equal to a disjoint union of finitely many sets
 
 -/
 
-
 open Finset Set MeasureTheory Order
 
 open scoped NNReal Topology ENNReal
@@ -22,8 +20,6 @@ open scoped NNReal Topology ENNReal
 namespace MeasureTheory
 
 variable {α : Type*} {C : Set (Set α)} {s t : Set α}
-
-section Ordered
 
 namespace IsSetSemiring
 
@@ -44,158 +40,73 @@ theorem eq_add_diffFinset_of_subset (hC : IsSetSemiring C) (m : Set α → ℝ�
   · rw [coe_insert]
     rwa [hC.sUnion_insert_diffFinset ht hs hst]
 
-section indexedDiffFinset₀
+section AllDiffFinset₀Exist
 
-/-- A finite set of sets in `C` such that
-`⋃₀ ↑(hC.indexedDiffFinset₀ J hJ n) = J.ordered n \ ⋃₀ finsetLT J n`. -/
-noncomputable def indexedDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-    (n : Fin J.card) : Finset (Set α) :=
-  hC.diffFinset₀ (hJ (ordered_mem n)) (finsetLT_subset' J hJ n)
+lemma allDiffFinset₀_props (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
+  [DecidableEq (Set α)] : ∃ K : Finset (Set α), (↑K ⊆ C) ∧ (PairwiseDisjoint
+  (K : Set (Set α)) id) ∧ (⋃₀ (J : Set (Set α))) = (⋃₀ (K : Set (Set α))) := by
+  revert hJ
+  apply @Finset.cons_induction (Set α) (fun (J : Finset (Set α)) => (↑J ⊆ C) → (∃ K : Finset (Set α), (↑K ⊆ C) ∧ (PairwiseDisjoint (K : Set (Set α)) id) ∧ (⋃₀ J) = (⋃₀ (K : Set (Set α))))) _ _ J
+  · intro _
+    use ∅
+    simp only [coe_empty, Set.empty_subset, pairwiseDisjoint_empty, sUnion_empty, and_self]
+  · intros j J hj hJ h
+    simp only [coe_cons] at h
+    obtain h' := (@Set.insert_subset_iff (Set α) j ↑J C).1 h
+    specialize hJ h'.2
+    rcases hJ with ⟨K, h1, h2, h3⟩
+    let K' := hC.diffFinset₀ h'.1 h'.2
+    simp [IsSetSemiring.diffFinset₀] at K'
+    obtain hK'1 := hC.diffFinset₀_subset h'.1 h'.2
+    obtain hK'2 := hC.pairwiseDisjoint_diffFinset₀ h'.1 h'.2
+    obtain hK'3 := hC.diff_sUnion_eq_sUnion_diffFinset₀ h'.1 h'.2
+    use K ∪ K'
+    constructor
+    · simp only [coe_union, Set.union_subset_iff]
+      refine ⟨h1, hK'1⟩
+    · constructor
+      · simp only [coe_union]
+        apply Set.PairwiseDisjoint.union h2 hK'2
+        intros i hi i' hi' _
+        simp only [id_eq]
+        obtain h'i : i ⊆ ⋃₀ ↑J := by
+          rw [h3]
+          exact subset_sUnion_of_subset (↑K) i (fun ⦃a⦄ a => a) hi
+        obtain h'i' : i' ⊆ (⋃₀ ↑J)ᶜ := by
+          apply le_trans _ (diff_subset_compl j (⋃₀ ↑J))
+          rw [hK'3]
+          exact subset_sUnion_of_subset (↑K') i' (fun ⦃a⦄ a => a) hi'
+        exact Disjoint.mono h'i h'i' (disjoint_compl_right_iff_subset.mpr fun ⦃a⦄ a => a)
+      · simp only [cons_eq_insert, coe_insert, sUnion_insert, coe_union]
+        rw [← diff_union_self, Set.union_comm, sUnion_union ↑K (K' : Set (Set α)), hK'3, h3]
 
-lemma sUnion_indexedDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-    (n : Fin J.card) : ⋃₀ ↑(hC.indexedDiffFinset₀ J hJ n) = J.ordered n \ ⋃₀ finsetLT J n :=
-  (hC.diff_sUnion_eq_sUnion_diffFinset₀ _ _).symm
-
-lemma indexedDiffFinset₀_subset (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-    (n : Fin J.card) : ↑(hC.indexedDiffFinset₀ J hJ n) ⊆ C :=
-  hC.diffFinset₀_subset _ _
-
-lemma sUnion_indexedDiffFinset₀_subset (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-    (n : Fin J.card) :
-    ⋃₀ ↑(hC.indexedDiffFinset₀ J hJ n) ⊆ J.ordered n :=
-  subset_trans (hC.sUnion_indexedDiffFinset₀ J hJ n).subset Set.diff_subset
-
-lemma empty_not_mem_indexedDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-    (n : Fin J.card) :
-    ∅ ∉ hC.indexedDiffFinset₀ J hJ n := by
-  rw [indexedDiffFinset₀]; exact hC.empty_not_mem_diffFinset₀ _ _
-
-lemma subset_ordered_of_mem_indexedDiffFinset₀ (hC : IsSetSemiring C)
-    (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-    {n : Fin J.card} (h : s ∈ hC.indexedDiffFinset₀ J hJ n) :
-    s ⊆ J.ordered n :=
-  (subset_sUnion_of_mem h).trans
-    (hC.sUnion_diffFinset₀_subset (hJ (ordered_mem n)) (finsetLT_subset' J hJ n))
-
-lemma iUnion_sUnion_indexedDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
-    (⋃ i, ⋃₀ (hC.indexedDiffFinset₀ J hJ i : Set (Set α))) = ⋃₀ J := by
-  rw [← iUnion_ordered]
-  refine subset_antisymm (fun a ↦ ?_) (fun a ↦ ?_)
-  · simp_rw [mem_iUnion, mem_sUnion]
-    rintro ⟨i, t, ht, hat⟩
-    exact ⟨i, subset_ordered_of_mem_indexedDiffFinset₀ hC J hJ ht hat⟩
-  · simp_rw [mem_iUnion]
-    intro h
-    have h' : ∃ (i : ℕ) (hi : i < J.card), a ∈ J.ordered ⟨i, hi⟩ := by
-      obtain ⟨i, hai⟩ := h
-      refine ⟨i.1, i.2, ?_⟩
-      convert hai
-    classical
-    let i : ℕ := Nat.find h'
-    have hi : i < J.card := (Nat.find_spec h').choose
-    have ha_mem_i : a ∈ J.ordered ⟨i, hi⟩ := (Nat.find_spec h').choose_spec
-    refine ⟨⟨i, hi⟩, ?_⟩
-    rw [sUnion_indexedDiffFinset₀, Set.mem_diff]
-    refine ⟨ha_mem_i, ?_⟩
-    rw [sUnion_finsetLT_eq_biUnion]
-    simp only [mem_iUnion, exists_prop, not_exists, not_and]
-    intro j hj_lt hj
-    have hj_lt' : ↑j < i := by rwa [← Fin.eta j j.2, Fin.mk_lt_mk] at hj_lt
-    refine (Nat.lt_find_iff h' j).mp hj_lt' j le_rfl ⟨hj_lt'.trans hi, ?_⟩
-    convert hj
-
-lemma disjoint_sUnion_finsetLT_of_mem_indexedDiffFinset₀
-    (hC : IsSetSemiring C) (J : Finset (Set α))
-    (hJ : ↑J ⊆ C) {n : Fin J.card} (h : s ∈ hC.indexedDiffFinset₀ J hJ n) :
-    Disjoint s (⋃₀ finsetLT J n) := by
-  refine Disjoint.mono_left (subset_sUnion_of_mem h : s ⊆ ⋃₀ ↑(hC.indexedDiffFinset₀ J hJ n)) ?_
-  rw [sUnion_indexedDiffFinset₀ hC J hJ n, Set.disjoint_iff_inter_eq_empty, Set.inter_comm,
-    inter_diff_self]
-
-lemma disjoint_ordered_of_mem_indexedDiffFinset₀ (hC : IsSetSemiring C)
-    (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-    {n m : Fin J.card} (h : s ∈ hC.indexedDiffFinset₀ J hJ n) (hnm : m < n) :
-    Disjoint s (J.ordered m) := by
-  refine Disjoint.mono_right ?_ (hC.disjoint_sUnion_finsetLT_of_mem_indexedDiffFinset₀ J hJ h)
-  exact subset_sUnion_of_mem (ordered_mem_finsetLT J hnm)
-
-lemma disjoint_of_mem_indexedDiffFinset₀_of_lt (hC : IsSetSemiring C)
-    (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-    {n m : Fin J.card} (hnm : n < m) (hs : s ∈ hC.indexedDiffFinset₀ J hJ n)
-    (ht : t ∈ hC.indexedDiffFinset₀ J hJ m) : Disjoint s t := by
-  have hs_subset : s ⊆ J.ordered n := hC.subset_ordered_of_mem_indexedDiffFinset₀ J hJ hs
-  have hs_disj : Disjoint t (J.ordered n) :=
-    hC.disjoint_ordered_of_mem_indexedDiffFinset₀ J hJ ht hnm
-  exact Disjoint.mono_left hs_subset hs_disj.symm
-
-lemma disjoint_of_mem_indexedDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-    {n m : Fin J.card} (hnm : n ≠ m) (hs : s ∈ hC.indexedDiffFinset₀ J hJ n)
-    (ht : t ∈ hC.indexedDiffFinset₀ J hJ m) : Disjoint s t := by
-  cases' lt_or_lt_iff_ne.mpr hnm with h h
-  · exact hC.disjoint_of_mem_indexedDiffFinset₀_of_lt J hJ h hs ht
-  · exact (hC.disjoint_of_mem_indexedDiffFinset₀_of_lt J hJ h ht hs).symm
-
-lemma disjoint_indexedDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-    {n m : Fin J.card} (hnm : n ≠ m) :
-    Disjoint (hC.indexedDiffFinset₀ J hJ n) (hC.indexedDiffFinset₀ J hJ m) := by
-  classical
-  rw [Finset.disjoint_iff_inter_eq_empty]
-  ext s
-  simp only [Finset.mem_inter, Finset.not_mem_empty, iff_false, not_and]
-  intro hsn hsm
-  have : Disjoint s s := hC.disjoint_of_mem_indexedDiffFinset₀ J hJ hnm hsn hsm
-  rw [Set.disjoint_iff_inter_eq_empty, Set.inter_self] at this
-  rw [this] at hsn
-  exact hC.empty_not_mem_indexedDiffFinset₀ _ _ _ hsn
-
-lemma pairwiseDisjoint_indexedDiffFinset₀ (hC : IsSetSemiring C)
-    (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
-    PairwiseDisjoint (↑(univ : Finset (Fin J.card))) (hC.indexedDiffFinset₀ J hJ) :=
-  fun _ _ _ _ hnm ↦ hC.disjoint_indexedDiffFinset₀ J hJ hnm
-
-lemma pairwiseDisjoint_indexedDiffFinset₀' (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-    (n : Fin J.card) : PairwiseDisjoint ↑(hC.indexedDiffFinset₀ J hJ n) (id : Set α → Set α) :=
-  hC.pairwiseDisjoint_diffFinset₀ _ _
-
-end indexedDiffFinset₀
+end AllDiffFinset₀Exist
 
 section AllDiffFinset₀
 
 /-- This is a finset of pairwise disjoint sets in the set semi-ring `C`, such that
 `⋃₀ hC.allDiffFinset₀ J hJ = ⋃₀ J`. -/
-noncomputable def allDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
-    Finset (Set α) :=
-  Finset.disjiUnion univ (hC.indexedDiffFinset₀ J hJ) (hC.pairwiseDisjoint_indexedDiffFinset₀ J hJ)
+noncomputable def allDiffFinset₀ [DecidableEq (Set α)] (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) := (allDiffFinset₀_props hC J hJ).choose
 
-lemma pairwiseDisjoint_allDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
-    PairwiseDisjoint ↑(hC.allDiffFinset₀ J hJ) (id : Set α → Set α) := by
-  intro u hu v hv huv
-  simp_rw [Function.onFun]
-  simp_rw [allDiffFinset₀, mem_coe, Finset.mem_disjiUnion] at hu hv
-  obtain ⟨n, _, huBn⟩ := hu
-  obtain ⟨m, _, hvBm⟩ := hv
-  by_cases hnm : n = m
-  · rw [← hnm] at hvBm
-    exact hC.pairwiseDisjoint_indexedDiffFinset₀' _ _ n huBn hvBm huv
-  · exact hC.disjoint_of_mem_indexedDiffFinset₀ J hJ hnm huBn hvBm
+lemma props_allDiffFinset₀ [DecidableEq (Set α)] (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) : (↑(allDiffFinset₀ hC J hJ) ⊆ C) ∧ (PairwiseDisjoint ((allDiffFinset₀ hC J hJ) : Set (Set α)) id) ∧ (⋃₀ (J : Set (Set α))) = (⋃₀ ((allDiffFinset₀ hC J hJ) : Set (Set α)))
+ := by
+  simp_rw [allDiffFinset₀]
+  apply Exists.choose_spec (allDiffFinset₀_props hC J hJ)
 
-lemma allDiffFinset₀_subset (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
-    ↑(hC.allDiffFinset₀ J hJ) ⊆ C := by
-  intro s
-  rw [mem_coe, allDiffFinset₀, mem_disjiUnion]
-  rintro ⟨n, _, h_mem⟩
-  exact hC.indexedDiffFinset₀_subset J hJ n h_mem
+lemma pairwiseDisjoint_allDiffFinset₀ [DecidableEq (Set α)]  (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
+    PairwiseDisjoint ↑(allDiffFinset₀ hC J hJ) (id : Set α → Set α) := (props_allDiffFinset₀ hC J hJ).2.1
 
-lemma sUnion_allDiffFinset₀ (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
-    ⋃₀ (hC.allDiffFinset₀ J hJ : Set (Set α)) = ⋃₀ J := by
-  simp only [allDiffFinset₀, Finset.sUnion_disjiUnion, Finset.mem_univ, iUnion_true,
-    iUnion_sUnion_indexedDiffFinset₀]
+lemma allDiffFinset₀_subset [DecidableEq (Set α)] (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
+    ↑(allDiffFinset₀ hC J hJ) ⊆ C :=
+    (props_allDiffFinset₀ hC J hJ).1
+
+lemma sUnion_allDiffFinset₀ [DecidableEq (Set α)] (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
+    ⋃₀ (allDiffFinset₀ hC J hJ : Set (Set α)) = ⋃₀ J :=
+    (props_allDiffFinset₀ hC J hJ).2.2.symm
 
 end AllDiffFinset₀
 
 end IsSetSemiring
-
-end Ordered
 
 namespace IsSetRing
 
