@@ -1,3 +1,22 @@
+/-
+  The goal is to avoid indexed things. We have shown: For J : Finset (Set α) and hJ : J ⊆ C, there is K : Finset (Set α) with K ⊆ C and (PairwiseDisjoint K id) such that ⋃₀ J = ⋃₀ K.
+
+  However, we need a bit more (in Content.lean for additivity): For J : Finset (Set α) and hJ : J ⊆ C, there is K : J → Finset (Set α) with ⋃ j ∈ J, K j ⊆ C and (PairwiseDisjoint ⋃ j ∈ J, K j id) such that ⋃₀ K j ⊆ j and ⋃₀ J = ⋃ j ∈ J, ⋃₀ K j.
+  Proof should be by Finset induction: If J = {s}, the statement is clear by using K s = {s}.
+  If it is proved for J, then we know s \ ⋃₀ J = ⋃₀ K' for some disjoint K'. We then set K j as before for j ∈ J and K s = K'. Then,
+  ⋃₀ J ∪ {s} = s ∪ ⋃₀ J = (s \ ⋃₀ J) ⊎ ⋃₀ J = (⋃₀ K s) ⊎ ⋃ j ∈ J, ⋃₀ K j.
+  In addition, ⋃₀ K s ⊆ s by construction and ⋃₀ K j ⊆ j by induction hypothesis.
+
+  Using this result, additivity is as follows:
+  First, if ⋃₀ J ⊆ s (for disjoint J), then ∑ u ∈ ⋃₀ J, m u ≤ m s since by additivity
+  m s = ∑ u ∈ ⋃₀ J, m u + ∑ u ∈ ⋃₀ K, m u ∑ u ∈ ⋃₀ J, m u
+  for s \ ⋃₀ J = ⋃₀ K.
+  From this, directly,
+  m ⋃ J = m ⋃ j ∈ J, ⋃ K j = ∑ j ∈ J, ∑ u in ⋃ K j, m u ≤ ∑ j ∈ J, m j.
+-/
+
+
+
 import KolmogorovExtension4.AuxLemmas
 import Mathlib.MeasureTheory.SetSemiring
 
