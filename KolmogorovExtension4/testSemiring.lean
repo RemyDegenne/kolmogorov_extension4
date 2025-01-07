@@ -2,7 +2,7 @@
   The goal is to avoid indexed things. We have shown: For J : Finset (Set α) and hJ : J ⊆ C, there is K : Finset (Set α) with K ⊆ C and (PairwiseDisjoint K id) such that ⋃₀ J = ⋃₀ K.
 
   However, we need a bit more (in Content.lean for additivity): For J : Finset (Set α) and hJ : J ⊆ C, there is K : J → Finset (Set α) with ⋃ j ∈ J, K j ⊆ C and (PairwiseDisjoint ⋃ j ∈ J, K j id) such that ⋃₀ K j ⊆ j and ⋃₀ J = ⋃ j ∈ J, ⋃₀ K j.
-  Proof should be by Finset induction: If J = {s}, the statement is clear by using K s = {s}.
+  Proof should be by Finset induction: If J = {}, the statement is clear.
   If it is proved for J, then we know s \ ⋃₀ J = ⋃₀ K' for some disjoint K'. We then set K j as before for j ∈ J and K s = K'. Then,
   ⋃₀ J ∪ {s} = s ∪ ⋃₀ J = (s \ ⋃₀ J) ⊎ ⋃₀ J = (⋃₀ K s) ⊎ ⋃ j ∈ J, ⋃₀ K j.
   In addition, ⋃₀ K s ⊆ s by construction and ⋃₀ K j ⊆ j by induction hypothesis.
@@ -86,6 +86,58 @@ lemma sUnion_allDiffFinset₀ (hC : IsSetSemiring C) [DecidableEq (Set α)] (J :
     ⋃₀ (allDiffFinset₀ hC J hJ : Set (Set α)) = ⋃₀ J :=
     (props_allDiffFinset₀ hC J hJ).2.2.symm
 
+lemma allDiffFinset₀₀_props (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
+  [DecidableEq (Set α)] : ∃ K : Set α → Finset (Set α), (↑ (J.biUnion K) ⊆ C) ∧ (PairwiseDisjoint (J.biUnion K : Set (Set α)) id) ∧ (∀ j ∈ J, ⋃₀ K j ⊆ j ) ∧ (⋃₀ J = ⋃₀  (J.biUnion K : Set (Set α))) := by
+  revert hJ
+  apply @Finset.cons_induction (Set α) (fun (J : Finset (Set α)) => (↑J ⊆ C) → (∃ K : Set α → Finset (Set α), (↑ (J.biUnion K) ⊆ C) ∧ (PairwiseDisjoint (J.biUnion K : Set (Set α)) id)  ∧ (∀ j ∈ J, ⋃₀ K j ⊆ j ) ∧ (⋃₀ J = ⋃₀ (J.biUnion K : Set (Set α))))) _ _ J
+  · simp only [coe_empty, Set.empty_subset, Finset.biUnion_empty, pairwiseDisjoint_empty,
+    Finset.not_mem_empty, sUnion_subset_iff, mem_coe, IsEmpty.forall_iff, implies_true,
+    sUnion_empty, and_self, exists_const, imp_self]
+  · intro s J hJ hind h1
+    rw [cons_eq_insert, coe_insert, Set.insert_subset_iff] at h1
+    obtain hind2 := hind h1.2
+    clear hind
+    let ⟨K, hK⟩ := hind2
+    clear hind2
+    let K' := hC.diffFinset₀ h1.1 h1.2
+    -- let K1 (t : Set α) : Finset (Set α) := match t with
+    let K1 := fun (t : Set α) => ite (t == s) K' (K t)
+    have ht1 : (if (s == s) = true then K' else K s) = K' := by
+      simp only [beq_self_eq_true, ↓reduceIte]
+    have ht2 : ∀ x ∈ J, (if (x == s) = true then K' else K x) = K x := by
+      intro x hx
+      simp only [beq_iff_eq, ite_eq_right_iff]
+      intro g
+      exfalso
+      rw [g] at hx
+      exact hJ hx
+    use K1
+    constructor
+    · simp only [cons_eq_insert, Finset.biUnion_insert, coe_union, coe_biUnion, mem_coe, Set.union_subset_iff, iUnion_subset_iff, K1, beq_self_eq_true, ↓reduceIte, beq_iff_eq, K1]
+      constructor
+      · exact hC.diffFinset₀_subset h1.1 h1.2
+      · intros i hi
+        split
+        exact hC.diffFinset₀_subset h1.1 h1.2
+        sorry
+    · constructor
+      · simp only [cons_eq_insert, Finset.biUnion_insert, coe_union, coe_biUnion, mem_coe, K1, ht1, ht2]
+        sorry
+      · constructor
+        · simp only [cons_eq_insert, Finset.mem_insert, sUnion_subset_iff, mem_coe,
+          forall_eq_or_imp, K1]
+          sorry
+        · simp only [cons_eq_insert, coe_insert, sUnion_insert, Finset.biUnion_insert, coe_union, coe_biUnion, mem_coe, K1, ht1, ht2]
+          sorry
+
+
+-- For J : Finset (Set α) and hJ : J ⊆ C, there is K : J → Finset (Set α) with ⋃ j ∈ J, K j ⊆ C and (PairwiseDisjoint ⋃ j ∈ J, K j id) such that ⋃₀ K j ⊆ j and ⋃₀ J = ⋃ j ∈ J, ⋃₀ K j.
+--  If it is proved for J, then we know s \ ⋃₀ J = ⋃₀ K' for some disjoint K'. We then set K j as before for j ∈ J and K s = K'. Then,
+--  ⋃₀ J ∪ {s} = s ∪ ⋃₀ J = (s \ ⋃₀ J) ⊎ ⋃₀ J = (⋃₀ K s) ⊎ ⋃ j ∈ J, ⋃₀ K j.
+--  In addition, ⋃₀ K s ⊆ s by construction and ⋃₀ K j ⊆ j by induction hypothesis.
+
+example : (if 1 < 2 then 1 else 2) ≤ 3 := by
+  simp only [Nat.one_lt_ofNat, ↓reduceIte, Nat.one_le_ofNat]
 
 end IsSetSemiring
 
