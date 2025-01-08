@@ -104,14 +104,28 @@ lemma allDiffFinset₀₀_props (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ
     let K1 := fun (t : Set α) => ite (t == s) K' (K t)
     have ht1 : (if (s == s) = true then K' else K s) = K' := by
       simp only [beq_self_eq_true, ↓reduceIte]
-    have ht2 : ∀ x ∈ J, (if (x == s) = true then K' else K x) = K x := by
+    have ht2 : ∀ x ∈ J, ((if (x == s) = true then K' else K x) : Set (Set α)) = (K x : Set (Set α)) := by
       intro x hx
       simp only [beq_iff_eq, ite_eq_right_iff]
       intro g
       exfalso
       rw [g] at hx
       exact hJ hx
+    have ht2' : ∀ x ∈ J, ((if (x == s) = true then K' else K x) ) = (K x) := by
+      simp only [beq_iff_eq, ite_eq_right_iff]
+      intros t b2 b3
+      exfalso
+      apply hJ
+      rw [← b3]
+      exact b2
+    have ht3 : ⋃ x ∈ J, (((if (x == s) = true then K' else K x)) : Set (Set α)) = J.biUnion K := by
+      simp only [beq_iff_eq, coe_biUnion, mem_coe]
+      refine iUnion₂_congr ?_
+      simp only [coe_biUnion, mem_coe, iUnion_subset_iff, sUnion_subset_iff, beq_self_eq_true,
+        ↓reduceIte, beq_iff_eq, ite_eq_right_iff, coe_inj] at *
+      exact ht2
     use K1
+    rcases hK with ⟨hK1, hK2, hK3, hK4⟩
     constructor
     · simp only [cons_eq_insert, Finset.biUnion_insert, coe_union, coe_biUnion, mem_coe, Set.union_subset_iff, iUnion_subset_iff, K1, beq_self_eq_true, ↓reduceIte, beq_iff_eq, K1]
       constructor
@@ -119,17 +133,60 @@ lemma allDiffFinset₀₀_props (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ
       · intros i hi
         split
         exact hC.diffFinset₀_subset h1.1 h1.2
-        sorry
+        simp only [coe_biUnion, mem_coe, iUnion_subset_iff, K1] at hK1
+        simp only [hi, hK1, K1]
     · constructor
       · simp only [cons_eq_insert, Finset.biUnion_insert, coe_union, coe_biUnion, mem_coe, K1, ht1, ht2]
-        sorry
+        refine pairwiseDisjoint_union.mpr ?_
+        constructor
+        · exact hC.pairwiseDisjoint_diffFinset₀ h1.1 h1.2
+        · constructor
+          · simp_rw [apply_ite]
+            rw [ht3]
+            exact hK2
+          · simp only [mem_coe, mem_iUnion, exists_prop, ne_eq, id_eq,
+            forall_exists_index, and_imp, K1]
+            intros i hi j x hx h3 h4
+            rw [ht2' x hx]  at h3
+            -- i ⊆ s \ ⋃₀ J
+            -- j ∈ K x ⊆ x ∈ J
+            have ki : i ⊆ s \ ⋃₀ J :=
+              by
+              rw [hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2]
+              exact
+                subset_sUnion_of_subset (↑(hC.diffFinset₀ h1.1 h1.2)) i (fun ⦃a⦄ a => a) hi
+            have hx2 : j ⊆ x := by
+              apply le_trans _ (hK3 x hx)
+              simp only [Set.le_eq_subset, K1]
+              exact subset_sUnion_of_subset (↑(K x)) j (fun ⦃a⦄ a => a) h3
+            have kj : j ⊆ ⋃₀ J := by
+              apply le_trans hx2
+              exact subset_sUnion_of_subset (↑J) x (fun ⦃a⦄ a => a) hx
+            apply disjoint_of_subset ki kj
+            exact disjoint_sdiff_left
+
       · constructor
         · simp only [cons_eq_insert, Finset.mem_insert, sUnion_subset_iff, mem_coe,
           forall_eq_or_imp, K1]
-          sorry
+          constructor
+          · simp only [beq_self_eq_true, ↓reduceIte, K1]
+            change ∀ t' ∈ (K' : Set (Set α)), t' ⊆ s
+            rw [← sUnion_subset_iff]
+            exact hC.sUnion_diffFinset₀_subset h1.1 h1.2
+          · intros a ha t ht
+            rw [ht2' a ha] at ht
+            revert t ht
+            change ∀ t ∈ (K a : Set (Set α)), t ⊆ a
+            rw [← sUnion_subset_iff]
+            exact hK3 a ha
         · simp only [cons_eq_insert, coe_insert, sUnion_insert, Finset.biUnion_insert, coe_union, coe_biUnion, mem_coe, K1, ht1, ht2]
-          sorry
+          simp_rw [apply_ite, ht3]
+          rw [sUnion_union]
+          rw [← hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2, ← hK4]
+          simp only [diff_union_self, K1]
 
+example ( i j a b : Set α ) (hi : i ⊆ a) (hj : j ⊆ b) (hd : Disjoint a b) : (Disjoint i j) := by
+  exact disjoint_of_subset hi hj hd
 
 -- For J : Finset (Set α) and hJ : J ⊆ C, there is K : J → Finset (Set α) with ⋃ j ∈ J, K j ⊆ C and (PairwiseDisjoint ⋃ j ∈ J, K j id) such that ⋃₀ K j ⊆ j and ⋃₀ J = ⋃ j ∈ J, ⋃₀ K j.
 --  If it is proved for J, then we know s \ ⋃₀ J = ⋃₀ K' for some disjoint K'. We then set K j as before for j ∈ J and K s = K'. Then,
