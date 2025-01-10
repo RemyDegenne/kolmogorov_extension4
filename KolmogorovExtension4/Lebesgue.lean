@@ -1,6 +1,6 @@
 import KolmogorovExtension4.AdditiveOfContinuous
 import KolmogorovExtension4.CaratheodoryExtension
-import KolmogorovExtension4.Projective
+-- import KolmogorovExtension4.Projective
 import KolmogorovExtension4.RegularityCompacts
 import Mathlib.MeasureTheory.Constructions.Polish
 
@@ -27,15 +27,15 @@ lemma emptyset_is_halfOpenInterval : ∅ ∈ halfOpenIntervals := by
 lemma halfOpenIntervals_mem {a b : ℝ} : Ioc a b ∈ halfOpenIntervals := by
   rw [halfOpenIntervals]
   simp only [gt_iff_lt, not_lt, ge_iff_le, iUnion_singleton_eq_range, mem_iUnion, mem_range]
-  refine ⟨a, b, by rfl⟩ 
+  refine ⟨a, b, by rfl⟩
 
 theorem IsPiSystem.halfOpenIntervals :  ∀ (s : Set ℝ), s ∈ halfOpenIntervals → ∀ (t : Set ℝ), t ∈ halfOpenIntervals → s ∩ t ∈ halfOpenIntervals := by
   intros s hs t ht
   rw [halfOpenIntervals, mem_iUnion₂] at *
-  rcases hs with ⟨a, b, hs⟩ 
-  rcases ht with ⟨c, d, ht⟩ 
-  simp only [gt_iff_lt, not_lt, ge_iff_le, mem_singleton_iff] at hs ht 
-  refine ⟨max a c, min b d, ?_⟩ 
+  rcases hs with ⟨a, b, hs⟩
+  rcases ht with ⟨c, d, ht⟩
+  simp only [gt_iff_lt, not_lt, ge_iff_le, mem_singleton_iff] at hs ht
+  refine ⟨max a c, min b d, ?_⟩
   rw [hs, ht]
   simp only [gt_iff_lt, not_lt, ge_iff_le, lt_min_iff, max_lt_iff, not_and, and_imp, le_max_iff, min_le_iff,
     mem_singleton_iff]
@@ -47,16 +47,16 @@ theorem IsPiSystem.halfOpenIntervals :  ∀ (s : Set ℝ), s ∈ halfOpenInterva
 lemma some {A B C : Set ℝ} (hA : C ⊆ A) (hB : C ⊆ B) (hAB : A ∩ B = ∅) : C ⊆ ∅ := by
   intros x hx
   rw [← hAB, mem_inter_iff]
-  exact ⟨hA hx, hB hx⟩ 
+  exact ⟨hA hx, hB hx⟩
 
 
 theorem diff_eq_Union_halfOpenIntervals : ∀ (s) (_ : s ∈ halfOpenIntervals) (t) (_ : t ∈ halfOpenIntervals), ∃ (I : Finset (Set ℝ)) (_h_ss : ↑I ⊆ halfOpenIntervals) (_h_dis : PairwiseDisjoint (I : Set (Set ℝ)) id),
         t \ s = ⋃₀ I := by
-  classical 
+  classical
   intros s hs t ht
   rw [halfOpenIntervals, mem_iUnion₂] at *
-  rcases hs with ⟨a, b, hs⟩ 
-  rcases ht with ⟨c, d, ht⟩ 
+  rcases hs with ⟨a, b, hs⟩
+  rcases ht with ⟨c, d, ht⟩
   simp only [gt_iff_lt, not_lt, ge_iff_le, mem_singleton_iff] at hs ht
   by_cases hab : b ≤ a
   · obtain h : s = ∅ := by
@@ -68,7 +68,7 @@ theorem diff_eq_Union_halfOpenIntervals : ∀ (s) (_ : s ∈ halfOpenIntervals) 
       simp only [List.toFinset_cons, gt_iff_lt, not_lt, ge_iff_le, List.toFinset_nil, insert_emptyc_eq,
           Finset.coe_singleton, singleton_subset_iff]
       rw [halfOpenIntervals]
-      simp only [gt_iff_lt, not_lt, ge_iff_le, iUnion_singleton_eq_range, mem_iUnion, mem_range]        
+      simp only [gt_iff_lt, not_lt, ge_iff_le, iUnion_singleton_eq_range, mem_iUnion, mem_range]
       use c
       use d
     use h_ss
@@ -99,7 +99,7 @@ theorem diff_eq_Union_halfOpenIntervals : ∀ (s) (_ : s ∈ halfOpenIntervals) 
         List.toFinset_cons, List.toFinset_nil, insert_emptyc_eq, Finset.mem_singleton, Finset.coe_insert,
         Finset.coe_singleton, mem_singleton_iff, mem_insert_iff] at hA hB
       cases' hA with hA1 hA2
-      · have hB' : B = Ioc (max b c) d := by 
+      · have hB' : B = Ioc (max b c) d := by
           cases' hB with hB1 hB2
           · exfalso
             apply hnot
@@ -139,7 +139,7 @@ theorem diff_eq_Union_halfOpenIntervals : ∀ (s) (_ : s ∈ halfOpenIntervals) 
     · push_neg at h
       left
       exact h
-    rcases h with (⟨h1, ⟨h2, h3⟩⟩ | ⟨⟨h1, h2⟩, h3⟩ ) 
+    rcases h with (⟨h1, ⟨h2, h3⟩⟩ | ⟨⟨h1, h2⟩, h3⟩ )
     simp only [h1, h2, h3, and_true, true_and]
     intro h
     linarith
@@ -149,4 +149,3 @@ theorem setSemiring_halfOpenIntervals : SetSemiring halfOpenIntervals :=
   { empty_mem := emptyset_is_halfOpenInterval
     inter_mem := IsPiSystem.halfOpenIntervals
     diff_eq_Union' := diff_eq_Union_halfOpenIntervals}
-

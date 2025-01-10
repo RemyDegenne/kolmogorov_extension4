@@ -3,6 +3,7 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
+import Mathlib.Logic.Function.Defs
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.MeasurableSpace.Defs
 
@@ -61,7 +62,7 @@ theorem MeasurableSet.accumulate {_ : MeasurableSpace α} {s : ℕ → Set α}
     (hs : ∀ n, MeasurableSet (s n)) (n : ℕ) : MeasurableSet (Set.Accumulate s n) :=
   MeasurableSet.biUnion (Set.to_countable _) fun n _ ↦ hs n
 
-theorem Set.disjoint_accumulate {s : ℕ → Set α} (hs : Pairwise (Disjoint on s)) {i j : ℕ}
+theorem Set.disjoint_accumulate {s : ℕ → Set α} (hs : Pairwise (Function.onFun Disjoint s)) {i j : ℕ}
     (hij : i < j) : Disjoint (Set.Accumulate s i) (s j) := by
   rw [Set.accumulate_def]
   induction i with

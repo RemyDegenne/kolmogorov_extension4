@@ -92,15 +92,13 @@ lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
     (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
     m (⋃₀ ↑J) ≤ ∑ u in J, m u := by
   classical
-  rw [←  hC.sUnion_allDiffFinset₀ J h_ss, addContent_sUnion]
+  rw [←  hC.allDiffFinset₀_sUnion J h_ss, addContent_sUnion]
   rotate_left
-  · exact hC.allDiffFinset₀_subset J h_ss
-  · exact hC.pairwiseDisjoint_allDiffFinset₀ J h_ss
-  · rwa [hC.sUnion_allDiffFinset₀ J h_ss]
+  · exact hC.allDiffFinset₀_subset_semiring J h_ss
+  · exact hC.allDiffFinset₀_pairwiseDisjoint J h_ss
+  · rwa [hC.allDiffFinset₀_sUnion J h_ss]
+  · simp_rw [IsSetSemiring.allDiffFinset₀]
 
-  rw [IsSetSemiring.allDiffFinset₀]
-  obtain h : PairwiseDisjoint (hC.allDiffFinset₀ J h_ss : Set (Set α)) id := hC.pairwiseDisjoint_allDiffFinset₀ J h_ss
-  sorry
 --  rw [sum_disjiUnion _ _ h, ← sum_ordered J]
 --  refine sum_le_sum fun i _ ↦ sum_addContent_le_of_subset hC ?_ ?_ ?_ ?_
 --  · exact hC.indexedDiffFinset₀_subset J h_ss i
