@@ -3,9 +3,9 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
-import Mathlib.Logic.Function.Defs
-import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.MeasureTheory.MeasurableSpace.Defs
+import Mathlib
+
+#min_imports
 
 open Finset Set Filter
 

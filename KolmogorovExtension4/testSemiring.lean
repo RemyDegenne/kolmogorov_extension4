@@ -21,17 +21,17 @@ namespace MeasureTheory
 namespace IsSetSemiring
 
 variable {α : Type*} {C : Set (Set α)} {s t : Set α}
+    [DecidableEq (Set α)] {J : Finset (Set α)}
+
 
 /- In a `hC : IsSetSemiring C`, for a `J : Finset (Set α)` with `J ⊆ C`, there is for every `x in J` some `K x ⊆ C` finite, such that
     * `⋃ x ∈ J, K x` are pairwise disjoint,
     * `⋃ s ∈ K x, s ⊆ x`,
     * `⋃ x ∈ J, x = ⋃ x ∈ J, ⋃ s ∈ K x, s`.
 -/
-
-theorem allDiffFinset₀_props (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C)
-[DecidableEq (Set α)] : ∃ K : Set α → Finset (Set α), ((J.biUnion K).toSet ⊆ C) ∧
-(PairwiseDisjoint (J.biUnion K).toSet id) ∧ (∀ j ∈ J, ⋃₀ K j ⊆ j ) ∧
-((⋃₀ J.toSet) = ⋃₀ (J.biUnion K).toSet) := by
+theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ K : Set α → Finset (Set α), ((J.biUnion K).toSet ⊆ C) ∧
+    (PairwiseDisjoint (J.biUnion K).toSet id) ∧ (∀ j ∈ J, ⋃₀ K j ⊆ j ) ∧
+    ((⋃₀ J.toSet) = ⋃₀ (J.biUnion K).toSet) := by
   revert hJ
   apply @Finset.cons_induction (Set α) (fun (J : Finset (Set α)) => (↑J ⊆ C) → (∃ K : Set α → Finset (Set α), (↑ (J.biUnion K) ⊆ C) ∧ (PairwiseDisjoint (J.biUnion K : Set (Set α)) id)  ∧ (∀ j ∈ J, ⋃₀ K j ⊆ j ) ∧ (⋃₀ J = ⋃₀ (J.biUnion K : Set (Set α))))) _ _ J
   · simp only [coe_empty, Set.empty_subset, Finset.biUnion_empty, pairwiseDisjoint_empty,
@@ -98,30 +98,32 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ 
       rw [← hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2, ← hK4]
       simp only [diff_union_self, K1]
 
-noncomputable def allDiffFinset₀ (hC : IsSetSemiring C) [DecidableEq (Set α)] (J : Finset (Set α)) (hJ : ↑J ⊆ C) := (allDiffFinset₀_props hC J hJ).choose
+noncomputable def allDiffFinset₀ (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :=
+  (hC.allDiffFinset₀_props hJ).choose
 
-lemma props_allDiffFinset₀ [DecidableEq (Set α)] (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) : ((J.biUnion (allDiffFinset₀ hC J hJ)).toSet ⊆ C) ∧
-(PairwiseDisjoint (J.biUnion (allDiffFinset₀ hC J hJ)).toSet id) ∧ (∀ j ∈ J, ⋃₀ (allDiffFinset₀ hC J hJ) j ⊆ j ) ∧
-((⋃₀ J.toSet) = ⋃₀ (J.biUnion (allDiffFinset₀ hC J hJ)).toSet)
- := by
+lemma props_allDiffFinset₀ (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+    ((J.biUnion (hC.allDiffFinset₀ hJ)).toSet ⊆ C) ∧
+    (PairwiseDisjoint (J.biUnion (allDiffFinset₀ hC hJ)).toSet id) ∧
+    (∀ j ∈ J, ⋃₀ (hC.allDiffFinset₀ hJ) j ⊆ j ) ∧
+    ((⋃₀ J.toSet) = ⋃₀ (J.biUnion (allDiffFinset₀ hC hJ)).toSet) := by
   simp_rw [allDiffFinset₀]
-  apply Exists.choose_spec (allDiffFinset₀_props hC J hJ)
+  apply Exists.choose_spec (hC.allDiffFinset₀_props hJ)
 
 
-lemma allDiffFinset₀_subset_semiring (hC : IsSetSemiring C) [DecidableEq (Set α)] (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
-    (J.biUnion (allDiffFinset₀ hC J hJ)).toSet ⊆ C :=
-    (props_allDiffFinset₀ hC J hJ).1
+lemma allDiffFinset₀_subset_semiring (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+    (J.biUnion (allDiffFinset₀ hC hJ)).toSet ⊆ C :=
+    (hC.props_allDiffFinset₀ hJ).1
 
-lemma allDiffFinset₀_pairwiseDisjoint (hC : IsSetSemiring C) [DecidableEq (Set α)] (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
-    (PairwiseDisjoint (J.biUnion (allDiffFinset₀ hC J hJ)).toSet id) := (props_allDiffFinset₀ hC J hJ).2.1
+lemma allDiffFinset₀_pairwiseDisjoint (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+    (PairwiseDisjoint (J.biUnion (hC.allDiffFinset₀ hJ)).toSet id) := (hC.props_allDiffFinset₀ hJ).2.1
 
-lemma allDiffFinset₀_subset (hC : IsSetSemiring C) [DecidableEq (Set α)] (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
-    ∀ j ∈ J, ⋃₀ (allDiffFinset₀ hC J hJ) j ⊆ j
-    := (props_allDiffFinset₀ hC J hJ).2.2.1
+lemma allDiffFinset₀_subset (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+    ∀ j ∈ J, ⋃₀ (hC.allDiffFinset₀ hJ) j ⊆ j
+    := (hC.props_allDiffFinset₀ hJ).2.2.1
 
-lemma allDiffFinset₀_sUnion (hC : IsSetSemiring C) [DecidableEq (Set α)] (J : Finset (Set α)) (hJ : ↑J ⊆ C) :
-    ⋃₀ (J.biUnion (allDiffFinset₀ hC J hJ)).toSet = ⋃₀ J.toSet :=
-    (props_allDiffFinset₀ hC J hJ).2.2.2.symm
+lemma allDiffFinset₀_sUnion (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+    ⋃₀ (J.biUnion (hC.allDiffFinset₀ hJ)).toSet = ⋃₀ J.toSet :=
+    (hC.props_allDiffFinset₀ hJ).2.2.2.symm
 
 end IsSetSemiring
 
