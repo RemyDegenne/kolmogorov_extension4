@@ -3,9 +3,9 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
-import Mathlib
-
-#min_imports
+import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.MeasureTheory.MeasurableSpace.Defs
+import Mathlib.Order.CompletePartialOrder
 
 open Finset Set Filter
 
@@ -178,3 +178,4 @@ theorem tendsto_atTop_zero_iff_of_antitone' (f : ℕ → ℝ≥0∞) (hf : Antit
     exact ⟨n, hn.le⟩
 
 end ENNReal
+#min_imports

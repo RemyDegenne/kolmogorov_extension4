@@ -5,11 +5,10 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 
 import KolmogorovExtension4.testSemiring
-import KolmogorovExtension4.AuxLemmas
 import Mathlib.MeasureTheory.OuterMeasure.Induced
 import Mathlib.MeasureTheory.Measure.AddContent
 
-open Set Finset Filter MeasureTheory
+open Set Finset Filter MeasureTheory Function
 
 open scoped ENNReal Topology
 
@@ -88,23 +87,23 @@ variable (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
   (m_add : ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
     (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
 
+example (J : Finset α) (f g : α → ℝ≥0∞) (hfg : ∀ x ∈ J, f x ≤ g x) : ∑ x ∈ J, f x ≤ ∑ x ∈ J, g x := by
+  exact sum_le_sum hfg
+
 lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
     (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
     m (⋃₀ ↑J) ≤ ∑ u in J, m u := by
   classical
-  rw [←  hC.allDiffFinset₀_sUnion J h_ss, addContent_sUnion]
+  rw [←  hC.allDiffFinset₀'_sUnion h_ss, addContent_sUnion (hC.allDiffFinset₀'_subset_semiring h_ss)
+    (hC.allDiffFinset₀'_pairwiseDisjoint h_ss)]
   rotate_left
-  · exact hC.allDiffFinset₀_subset_semiring J h_ss
-  · exact hC.allDiffFinset₀_pairwiseDisjoint J h_ss
-  · rwa [hC.allDiffFinset₀_sUnion J h_ss]
-  · simp_rw [IsSetSemiring.allDiffFinset₀]
+  · exact hC.allDiffFinset₀'_sUnion h_ss ▸ h_mem
+  · have h : (J.toSet).PairwiseDisjoint (hC.allDiffFinset₀' h_ss) := by sorry
+    rw [sum_biUnion h]
+    apply sum_le_sum
+    intro x hx
+    exact sum_addContent_le_of_subset hC (hC.allDiffFinset₀'_subsets_semiring h_ss x hx) (hC.allDiffFinset₀'_pairwiseDisjoints h_ss x hx) (h_ss hx) (hC.allDiffFinset₀'_subsets h_ss x hx)
 
---  rw [sum_disjiUnion _ _ h, ← sum_ordered J]
---  refine sum_le_sum fun i _ ↦ sum_addContent_le_of_subset hC ?_ ?_ ?_ ?_
---  · exact hC.indexedDiffFinset₀_subset J h_ss i
---  · exact hC.pairwiseDisjoint_indexedDiffFinset₀' J h_ss i
---  · exact h_ss (ordered_mem i)
---  · exact Set.sUnion_subset_iff.mp (hC.sUnion_indexedDiffFinset₀_subset J h_ss i)
 
 lemma addContent_le_sum_of_subset_sUnion {m : AddContent C} (hC : IsSetSemiring C)
     (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈ C) (htJ : t ⊆ ⋃₀ ↑J) :

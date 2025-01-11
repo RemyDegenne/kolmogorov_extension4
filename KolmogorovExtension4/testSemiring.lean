@@ -9,7 +9,7 @@ import Mathlib.MeasureTheory.SetSemiring
 /-
   ## Main results
 
-  * `allDiffFinset₀_props`: In a semiring, write a union of elements of the semiring as a disjoint union of elements of the semiring.
+  * `allDiffFinset₀'_props`: In a semiring, write a union of elements of the semiring as a disjoint union of elements of the semiring.
 -/
 
 open Finset Set MeasureTheory Order
@@ -98,31 +98,55 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ K 
       rw [← hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2, ← hK4]
       simp only [diff_union_self, K1]
 
-noncomputable def allDiffFinset₀ (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :=
+noncomputable def allDiffFinset₀' (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :=
   (hC.allDiffFinset₀_props hJ).choose
 
 lemma props_allDiffFinset₀ (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
-    ((J.biUnion (hC.allDiffFinset₀ hJ)).toSet ⊆ C) ∧
-    (PairwiseDisjoint (J.biUnion (allDiffFinset₀ hC hJ)).toSet id) ∧
-    (∀ j ∈ J, ⋃₀ (hC.allDiffFinset₀ hJ) j ⊆ j ) ∧
-    ((⋃₀ J.toSet) = ⋃₀ (J.biUnion (allDiffFinset₀ hC hJ)).toSet) := by
-  simp_rw [allDiffFinset₀]
+    ((J.biUnion (hC.allDiffFinset₀' hJ)).toSet ⊆ C) ∧
+    (PairwiseDisjoint (J.biUnion (allDiffFinset₀' hC hJ)).toSet id) ∧
+    (∀ j ∈ J, ⋃₀ (hC.allDiffFinset₀' hJ) j ⊆ j ) ∧
+    ((⋃₀ J.toSet) = ⋃₀ (J.biUnion (allDiffFinset₀' hC hJ)).toSet) := by
+  simp_rw [allDiffFinset₀']
   apply Exists.choose_spec (hC.allDiffFinset₀_props hJ)
 
 
-lemma allDiffFinset₀_subset_semiring (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
-    (J.biUnion (allDiffFinset₀ hC hJ)).toSet ⊆ C :=
+lemma allDiffFinset₀'_subset_semiring (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+    (J.biUnion (allDiffFinset₀' hC hJ)).toSet ⊆ C :=
     (hC.props_allDiffFinset₀ hJ).1
 
-lemma allDiffFinset₀_pairwiseDisjoint (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
-    (PairwiseDisjoint (J.biUnion (hC.allDiffFinset₀ hJ)).toSet id) := (hC.props_allDiffFinset₀ hJ).2.1
+lemma biUnion_subset_iff {J : Finset (Set α)} {t : Set α} :
+  ⋃₀ J ⊆ t ↔ ∀ x ∈ J, x ⊆ t := by
+  exact sUnion_subset_iff
 
-lemma allDiffFinset₀_subset (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
-    ∀ j ∈ J, ⋃₀ (hC.allDiffFinset₀ hJ) j ⊆ j
+lemma allDiffFinset₀'_subsets_semiring (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∀ j ∈ J,
+    (allDiffFinset₀' hC hJ j).toSet ⊆ C := by
+  intros j hj s hs
+  apply hC.allDiffFinset₀'_subset_semiring hJ
+  simp only [coe_biUnion, mem_coe, mem_iUnion, exists_prop]
+  use j
+  exact ⟨hj, hs⟩
+
+lemma allDiffFinset₀'_pairwiseDisjoint (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+    (PairwiseDisjoint (J.biUnion (hC.allDiffFinset₀' hJ)).toSet id) := (hC.props_allDiffFinset₀ hJ).2.1
+
+lemma allDiffFinset₀'_pairwiseDisjoints (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∀ j ∈ J,
+    (PairwiseDisjoint (hC.allDiffFinset₀' hJ j).toSet id) := by
+  sorry
+
+
+lemma allDiffFinset₀'_subset (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+    ∀ j ∈ J, ⋃₀ (hC.allDiffFinset₀' hJ) j ⊆ j
     := (hC.props_allDiffFinset₀ hJ).2.2.1
 
-lemma allDiffFinset₀_sUnion (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
-    ⋃₀ (J.biUnion (hC.allDiffFinset₀ hJ)).toSet = ⋃₀ J.toSet :=
+
+lemma allDiffFinset₀'_subsets (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+    ∀ j ∈ J, ∀ x ∈ (hC.allDiffFinset₀' hJ) j, x ⊆ j := by
+  intro j hj
+  rw [← biUnion_subset_iff]
+  exact hC.allDiffFinset₀'_subset hJ j hj
+
+lemma allDiffFinset₀'_sUnion (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+    ⋃₀ (J.biUnion (hC.allDiffFinset₀' hJ)).toSet = ⋃₀ J.toSet :=
     (hC.props_allDiffFinset₀ hJ).2.2.2.symm
 
 end IsSetSemiring
@@ -158,3 +182,4 @@ theorem accumulate_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ i, s i 
 end IsSetRing
 
 end MeasureTheory
+#min_imports
