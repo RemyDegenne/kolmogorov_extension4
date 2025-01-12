@@ -90,19 +90,41 @@ variable (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
 example (J : Finset α) (f g : α → ℝ≥0∞) (hfg : ∀ x ∈ J, f x ≤ g x) : ∑ x ∈ J, f x ≤ ∑ x ∈ J, g x := by
   exact sum_le_sum hfg
 
+example [DecidableEq (Set α)] (J : Set (Set α)) (K : Set α → Set (Set α)) : PairwiseDisjoint (⋃ x ∈ J, K x) id → PairwiseDisjoint J K := by
+  nth_rewrite 2 [← id_comp K]
+  rw [← InjOn.pairwiseDisjoint_image]
+  change PairwiseDisjoint (⋃ x ∈ J, K x) id → PairwiseDisjoint (K '' J) id
+  intro h
+  have h2 : (K '' J) ⊆ (⋃ x ∈ J, K x) := by sorry
+  refine PairwiseDisjoint.subset
+
+
+--  simp [PairwiseDisjoint, Pairwise, Disjoint]
+--  have h1 : K '' J.toSet = (J.biUnion K).toSet := by sorry
+
+  rw [PairwiseDisjoint_im]
+  intro h a ha b hb hab
+  have h2 : (K a) ⊆ (J.biUnion K) := by sorry
+  obtain h1 := h h2
+
+
+  refine pairwiseDisjoint_coe.mp ?_
+  simp only [pairwiseDisjoint_coe]
+  apply?
+  sorry
+
 lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
     (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
     m (⋃₀ ↑J) ≤ ∑ u in J, m u := by
   classical
   rw [←  hC.allDiffFinset₀'_sUnion h_ss, addContent_sUnion (hC.allDiffFinset₀'_subset_semiring h_ss)
     (hC.allDiffFinset₀'_pairwiseDisjoint h_ss)]
-  rotate_left
-  · exact hC.allDiffFinset₀'_sUnion h_ss ▸ h_mem
   · have h : (J.toSet).PairwiseDisjoint (hC.allDiffFinset₀' h_ss) := by sorry
     rw [sum_biUnion h]
     apply sum_le_sum
     intro x hx
     exact sum_addContent_le_of_subset hC (hC.allDiffFinset₀'_subsets_semiring h_ss x hx) (hC.allDiffFinset₀'_pairwiseDisjoints h_ss x hx) (h_ss hx) (hC.allDiffFinset₀'_subsets h_ss x hx)
+  · exact hC.allDiffFinset₀'_sUnion h_ss ▸ h_mem
 
 
 lemma addContent_le_sum_of_subset_sUnion {m : AddContent C} (hC : IsSetSemiring C)
