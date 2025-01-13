@@ -36,7 +36,8 @@ lemma sUnion_diffFinset₀_subsets (hC : IsSetSemiring C) {I : Finset (Set α)} 
   rw [← sUnion_subset_iff]
   exact hC.sUnion_diffFinset₀_subset hs hI
 
-theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K : Set α → Finset (Set α)) (hK : (J.toSet).PairwiseDisjoint K), ((disjiUnion J K hK).toSet ⊆ C) ∧
+theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K : Set α → Finset (Set α))
+    (hK : (J.toSet).PairwiseDisjoint K), ((disjiUnion J K hK).toSet ⊆ C) ∧
     (PairwiseDisjoint (disjiUnion J K hK).toSet id) ∧ (∀ j ∈ J, ⋃₀ K j ⊆ j ) ∧
     ((⋃₀ J.toSet) = ⋃₀ (disjiUnion J K hK).toSet) := by
   revert hJ
@@ -62,12 +63,14 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K
     have ht1 : ∀ x ∈ J, ((if x = s then K'.toSet else (K x).toSet) = (K x).toSet) := by
       simp only [beq_iff_eq, ite_eq_right_iff]
       exact fun x hx g => False.elim (hJ (g ▸ hx))
+    have ht1' : ∀ x ∈ J, ((if x = s then K' else (K x)) = (K x)) := by
+      simp only [beq_iff_eq, ite_eq_right_iff]
+      exact fun x hx g => False.elim (hJ (g ▸ hx))
     have ht2 : (⋃ x ∈ J, if x = s then K'.toSet else (K x).toSet) = ⋃ x ∈ J, (K x).toSet := by
       apply iUnion₂_congr
       intros x hx
       exact if_neg (ne_of_mem_of_not_mem hx hJ)
-    have ht3 : (fun t => if t = s then hC.diffFinset₀ h1.1 h1.2 else K t) = K := by sorry
-    simp only [↓reduceIte, K1, K']
+    simp only [↓reduceIte, K1]
     refine ⟨⟨?_,?_⟩, ?_, ?_, ?_, ?_⟩
     · refine hC.diffFinset₀_subset h1.1 h1.2
     · intros i hi
@@ -91,9 +94,11 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K
           rw [hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2]
           exact
             subset_sUnion_of_subset (↑(hC.diffFinset₀ h1.1 h1.2)) i (fun ⦃a⦄ a => a) hi
-        -- We show j ∈ K x ⊆ x ∈ J
+        -- We show j ⊆ ⋃₀ K x ⊆ x ∈ J
         have hx2 : j ⊆ x := by
-          sorry -- apply le_trans (by rfl) (hK3 x hx j h3)
+          rw [ht1' x hx] at h3
+          apply le_trans (?_) (hK3 x hx)
+          exact subset_sUnion_of_subset (↑(K x)) j (fun ⦃a⦄ a => a) h3
         have kj : j ⊆ ⋃₀ J := by
           apply le_trans hx2
           exact subset_sUnion_of_subset (↑J) x (fun ⦃a⦄ a => a) hx
@@ -109,13 +114,24 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K
         rw [← sUnion_subset_iff]
         exact hK3 a ha
     · apply Set.Pairwise.insert
-      ·
+      · intro j hj i hi hij
+        rw [Function.onFun, ht1' j hj, ht1' i hi]
+        exact hK0 hj hi hij
+      · intro i hi hsi
+        constructor
+        · refine Finset.disjoint_iff_inter_eq_empty.mpr ?_
+          have h4 : (fun t => if t = s then K' else K t) i = K i := by
+            exact ht1' i hi
+          rw [h4]
+          simp only [↓reduceIte, ite_cond_eq_false hsi.symm, K', K1]
+
+          sorry
+        · sorry
+
         sorry
-      · sorry
     · simp only [↓reduceIte, K1, ht2, sUnion_union, apply_ite]
-      rw [← hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2]
-      sorry
-      -- simp only [diff_union_self, K1]
+      rw [← hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2, ← hK4]
+      simp only [diff_union_self, K1]
 
 example (s : Set α) (J : Finset (Set α)) : (∀ t ∈ J, t ⊆ s) ↔ ⋃₀ J ⊆ s := by
   exact Iff.symm sUnion_subset_iff
