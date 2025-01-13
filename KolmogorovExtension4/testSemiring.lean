@@ -20,16 +20,10 @@ namespace MeasureTheory
 
 namespace IsSetSemiring
 
+-- Goes in SetSemiring.lean
+
 variable {α : Type*} {C : Set (Set α)} {s t : Set α}
-    [DecidableEq (Set α)] {J : Finset (Set α)}
-
-
-/- In a `hC : IsSetSemiring C`, for a `J : Finset (Set α)` with `J ⊆ C`, there is for every `x in J` some `K x ⊆ C` finite, such that
-    * `⋃ x ∈ J, K x` are pairwise disjoint,
-    * `⋃ s ∈ K x, s ⊆ x`,
-    * `⋃ x ∈ J, x = ⋃ x ∈ J, ⋃ s ∈ K x, s`.
--/
-set_option trace.split.failure true
+    {J : Finset (Set α)}
 
 lemma sUnion_diffFinset₀_subsets (hC : IsSetSemiring C) {I : Finset (Set α)} (hs : s ∈ C) (hI : ↑I ⊆ C) :
     ∀ t ∈ (hC.diffFinset₀ hs hI : Set (Set α)), t ⊆ s \ ⋃₀ I := by
@@ -40,41 +34,69 @@ lemma sUnion_diffFinset₀_subsets' (hC : IsSetSemiring C) {I : Finset (Set α)}
   rw [← sUnion_subset_iff]
   exact hC.sUnion_diffFinset₀_subset hs hI
 
-lemma l2 (x : Set α) (hx : x ≠ ∅) : ¬ (Disjoint x x) := by
-  refine Set.Nonempty.not_disjoint ?_
-  simp only [Set.inter_self, hx, Set.nonempty_iff_ne_empty]
-  exact hx
+end IsSetSemiring
+
+end MeasureTheory
 
 
-lemma l3 {a b : Set α} {J K : Set (Set α)} (ha : ∀ c ∈ J, c ⊆ a) (hb : ∀ d ∈ K, d ⊆ b) (hJ : ∅ ∉ J) (hcd : Disjoint a b) : Disjoint J K := by
+
+
+
+
+namespace MeasureTheory
+
+namespace IsSetSemiring
+
+variable {α : Type*} {C : Set (Set α)} {s t : Set α}
+    {J : Finset (Set α)}
+
+/- In a `hC : IsSetSemiring C`, for a `J : Finset (Set α)` with `J ⊆ C`, there is for every `x in J` some `K x ⊆ C` finite, such that
+    * `⋃ x ∈ J, K x` are pairwise disjoint and do not contan ∅,
+    * `⋃ s ∈ K x, s ⊆ x`,
+    * `⋃ x ∈ J, x = ⋃ x ∈ J, ⋃ s ∈ K x, s`.
+-/
+set_option trace.split.failure true
+
+-- goes to Mathlib.Order.Disjoint
+
+@[simp]
+lemma not_disjoint_self [PartialOrder α] [OrderBot α] {x : α} : ¬ (Disjoint x x) ↔ (x ≠ ⊥) := not_iff_not.mpr disjoint_self
+
+lemma disjointSets_of_disjoint [PartialOrder α] [OrderBot α] {a b : α} {J K : Set α} (ha : ∀ c ∈ J, c ≤ a) (hb : ∀ d ∈ K, d ≤ b) (hJK : ⊥ ∉ J ∨ ⊥ ∉ K) (hcd : Disjoint a b) : Disjoint J K := by
   rw [disjoint_iff_forall_ne]
   intros x hx y hy hxy
   obtain h1 : Disjoint x y := by
-    refine disjoint_of_subset (ha x hx) (hb y hy) hcd
-  obtain h2 : x ≠ ∅ := by exact ne_of_mem_of_not_mem hx hJ
-  rw [← hxy] at h1
+    exact Disjoint.mono (ha x hx) (hb y hy) hcd
   revert h1
-  exact l2 x h2
+  cases' hJK with hJ hK
+  · rw [← hxy]
+    exact not_disjoint_self.mpr (ne_of_mem_of_not_mem hx hJ)
+  · rw [hxy]
+    exact not_disjoint_self.mpr (ne_of_mem_of_not_mem hy hK)
 
-example (a b : Set α) : (Disjoint a (b \ a)) := by exact disjoint_sdiff_right
 
-theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K : Set α → Finset (Set α))
+variable [DecidableEq (Set α)]
+
+
+theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K : Set α → Finset (Set α)), ∃
     (hK : (J.toSet).PairwiseDisjoint K), ((disjiUnion J K hK).toSet ⊆ C) ∧
     (PairwiseDisjoint (disjiUnion J K hK).toSet id) ∧ (∀ j ∈ J, ⋃₀ K j ⊆ j ) ∧
-    ((⋃₀ J.toSet) = ⋃₀ (disjiUnion J K hK).toSet) := by
+    ( ∀ j ∈ J, ∅ ∉ K j ) ∧ ((⋃₀ J.toSet) = ⋃₀ (disjiUnion J K hK).toSet) := by
   revert hJ
-  apply @Finset.cons_induction (Set α) (fun (J : Finset (Set α)) => (↑J ⊆ C) → ∃ (K : Set α → Finset (Set α)) (hK : (J.toSet).PairwiseDisjoint K), ((disjiUnion J K hK).toSet ⊆ C) ∧
-    (PairwiseDisjoint (disjiUnion J K hK).toSet id) ∧ (∀ j ∈ J, ⋃₀ K j ⊆ j ) ∧
-    ((⋃₀ J.toSet) = ⋃₀ (disjiUnion J K hK).toSet)) _ _ J
+  apply @Finset.cons_induction (Set α) (fun (J : Finset (Set α)) => (↑J ⊆ C) →
+  ∃ (K : Set α → Finset (Set α)) (hK : (J.toSet).PairwiseDisjoint K),
+  ((disjiUnion J K hK).toSet ⊆ C) ∧ (PairwiseDisjoint (disjiUnion J K hK).toSet id) ∧
+  (∀ j ∈ J, ⋃₀ K j ⊆ j ) ∧ ( ∀ j ∈ J, ∅ ∉ K j ) ∧
+  ((⋃₀ J.toSet) = ⋃₀ (disjiUnion J K hK).toSet)) _ _ J
   · simp only [coe_empty, Set.empty_subset, disjiUnion_eq_biUnion, Finset.biUnion_empty,
     pairwiseDisjoint_empty, Finset.not_mem_empty, sUnion_subset_iff, mem_coe, IsEmpty.forall_iff,
     implies_true, sUnion_empty, and_self, exists_const, imp_self]
   · intro s J hJ hind h1
     rw [cons_eq_insert, coe_insert, Set.insert_subset_iff] at h1
-    obtain ⟨K, hK0, ⟨hK1, hK2, hK3, hK4⟩⟩ := hind h1.2
+    obtain ⟨K, hK0, ⟨hK1, hK2, hK3, hK4, hK5⟩⟩ := hind h1.2
     clear hind
-    rw [disjiUnion_eq_biUnion] at hK1 hK2 hK4
-    simp only [coe_biUnion, mem_coe, iUnion_subset_iff] at hK1 hK2 hK4
+    rw [disjiUnion_eq_biUnion] at hK1 hK2 hK5
+    simp only [coe_biUnion, mem_coe, iUnion_subset_iff] at hK1 hK2 hK5
     let K' := hC.diffFinset₀ h1.1 h1.2
     let K1 := fun (t : Set α) => ite (t = s) K' (K t)
     use K1
@@ -93,7 +115,7 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K
       intros x hx
       exact if_neg (ne_of_mem_of_not_mem hx hJ)
     simp only [↓reduceIte, K1]
-    refine ⟨⟨?_,?_⟩, ?_, ?_, ?_, ?_⟩
+    refine ⟨⟨?_,?_⟩, ?_, ?_, ?_, ?_, ?_⟩
     · refine hC.diffFinset₀_subset h1.1 h1.2
     · intros i hi
       split
@@ -135,14 +157,19 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K
         change ∀ t' ∈ (K a).toSet, t' ⊆ a
         rw [← sUnion_subset_iff]
         exact hK3 a ha
+    · refine ⟨hC.empty_not_mem_diffFinset₀ h1.1 h1.2, ?_⟩
+      intros a ha
+      rw [ht1' a ha]
+      exact hK4 a ha
     · apply Set.Pairwise.insert
       · intro j hj i hi hij
         rw [Function.onFun, ht1' j hj, ht1' i hi]
         exact hK0 hj hi hij
       · intro i hi hsi
         have h7 : Disjoint K'.toSet (K i).toSet := by
-          refine l3 (hC.sUnion_diffFinset₀_subsets h1.1 h1.2) ?_ (hC.empty_not_mem_diffFinset₀ h1.1 h1.2) (@disjoint_sdiff_left (α) (⋃₀ J) s)
-          rw [← sUnion_subset_iff]
+          refine disjointSets_of_disjoint (hC.sUnion_diffFinset₀_subsets h1.1 h1.2) ?_ (Or.inl (hC.empty_not_mem_diffFinset₀ h1.1 h1.2)) (@disjoint_sdiff_left (α) (⋃₀ J) s)
+          simp only [mem_coe, Set.le_eq_subset, K', K1]
+          apply sUnion_subset_iff.mp
           apply le_trans (hK3 i hi)
           apply subset_sUnion_of_subset J i (by rfl) hi
         have h8 : Function.onFun Disjoint (fun t => if t = s then K' else K t) s i := by
@@ -157,28 +184,62 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K
           exact h7
         refine ⟨h8, Disjoint.symm h8⟩
     · simp only [↓reduceIte, K1, ht2, sUnion_union, apply_ite]
-      rw [← hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2, ← hK4]
+      rw [← hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2, ← hK5]
       simp only [diff_union_self, K1]
 
-example (s i : Set α) (f : Set α → Set α) (hf : Function.onFun Disjoint f s i) : Function.onFun Disjoint f i s := by
-  exact Disjoint.symm hf
+variable {β : Type}
 
-set_option diagnostics true
-example (a : Finset (Set α)) : a = ∅ ↔ a.toSet = ∅ := by
-  exact Iff.symm coe_eq_empty
+axiom ex (a : α) (b : β) (P : α → β → Prop) : ∃ a b, P a b
+
+noncomputable def e (a : α) (b : β) (P : α → β → Prop) := (ex a b P).choose
+
+#check e
+
+lemma l : ∃ (m : ℕ) (f : ℕ → ℕ), m < f m := by
+  use 2
+  use fun n => n+1
+  linarith
 
 
-example (i : Set α) (J : Set (Set α)) (hi : i ∈ J) : i ⊆ ⋃₀ J := by
-  apply subset_sUnion_of_subset J i (by rfl) hi
 
-example (i : Set α) : i ⊆ i := by rfl
-example (s : Set α) (J : Finset (Set α)) : (∀ t ∈ J, t ⊆ s) ↔ ⋃₀ J ⊆ s := by
-  exact Iff.symm sUnion_subset_iff
+noncomputable def a := l.choose
+noncomputable def b := (Exists.choose_spec l).choose
 
-noncomputable def allDiffFinset₀' (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :=
-  (hC.allDiffFinset₀_props hJ).choose
+#check b
 
-lemma props_allDiffFinset₀ (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+lemma l1 : a < b a := by
+  rw [a,b]
+  refine (Exists.choose_spec l).choose_spec
+
+
+
+
+#check a
+
+noncomputable def allDiffFinset₀' (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) := (hC.allDiffFinset₀_props hJ).choose
+
+lemma allDiffFinset₀_disjoint (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ((J.toSet).PairwiseDisjoint (hC.allDiffFinset₀' hJ)) := by
+  exact (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).choose
+
+lemma allDiffFinset₀'_subset_semiring (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
+    (disjiUnion J (hC.allDiffFinset₀' hJ) (hC.allDiffFinset₀_disjoint hJ)).toSet ⊆ C := by
+    exact (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).choose_spec.1
+
+
+
+
+
+
+
+
+
+lemma props_allDiffFinset₀ (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) := by
+
+    ((J.toSet).PairwiseDisjoint (hC.allDiffFinset₀' hJ)) ∧  ((disjiUnion J (hC.allDiffFinset₀' hJ) hK).toSet ⊆ C) ∧
+    (PairwiseDisjoint (disjiUnion J (hC.allDiffFinset₀' hJ) hK).toSet id) ∧ (∀ j ∈ J, ⋃₀ K j ⊆ j ) ∧
+    ( ∀ j ∈ J, ∅ ∉ K j ) ∧ ((⋃₀ J.toSet) = ⋃₀ (disjiUnion J K hK).toSet)
+
+
     ((J.biUnion (hC.allDiffFinset₀' hJ)).toSet ⊆ C) ∧
     (PairwiseDisjoint (J.biUnion (allDiffFinset₀' hC hJ)).toSet id) ∧
     (∀ j ∈ J, ⋃₀ (hC.allDiffFinset₀' hJ) j ⊆ j ) ∧

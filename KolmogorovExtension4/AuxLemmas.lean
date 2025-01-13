@@ -7,7 +7,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.MeasurableSpace.Defs
 import Mathlib.Order.CompletePartialOrder
 
-open Finset Set Filter
+open Finset Set MeasureTheory Order Filter
 
 open scoped ENNReal NNReal Topology
 
