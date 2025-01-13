@@ -32,9 +32,31 @@ variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 set_option trace.split.failure true
 
 lemma sUnion_diffFinset₀_subsets (hC : IsSetSemiring C) {I : Finset (Set α)} (hs : s ∈ C) (hI : ↑I ⊆ C) :
+    ∀ t ∈ (hC.diffFinset₀ hs hI : Set (Set α)), t ⊆ s \ ⋃₀ I := by
+  rw [← sUnion_subset_iff, hC.diff_sUnion_eq_sUnion_diffFinset₀ hs hI]
+
+lemma sUnion_diffFinset₀_subsets' (hC : IsSetSemiring C) {I : Finset (Set α)} (hs : s ∈ C) (hI : ↑I ⊆ C) :
     ∀ t ∈ (hC.diffFinset₀ hs hI : Set (Set α)), t ⊆ s := by
   rw [← sUnion_subset_iff]
   exact hC.sUnion_diffFinset₀_subset hs hI
+
+lemma l2 (x : Set α) (hx : x ≠ ∅) : ¬ (Disjoint x x) := by
+  refine Set.Nonempty.not_disjoint ?_
+  simp only [Set.inter_self, hx, Set.nonempty_iff_ne_empty]
+  exact hx
+
+
+lemma l3 {a b : Set α} {J K : Set (Set α)} (ha : ∀ c ∈ J, c ⊆ a) (hb : ∀ d ∈ K, d ⊆ b) (hJ : ∅ ∉ J) (hcd : Disjoint a b) : Disjoint J K := by
+  rw [disjoint_iff_forall_ne]
+  intros x hx y hy hxy
+  obtain h1 : Disjoint x y := by
+    refine disjoint_of_subset (ha x hx) (hb y hy) hcd
+  obtain h2 : x ≠ ∅ := by exact ne_of_mem_of_not_mem hx hJ
+  rw [← hxy] at h1
+  revert h1
+  exact l2 x h2
+
+example (a b : Set α) : (Disjoint a (b \ a)) := by exact disjoint_sdiff_right
 
 theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K : Set α → Finset (Set α))
     (hK : (J.toSet).PairwiseDisjoint K), ((disjiUnion J K hK).toSet ⊆ C) ∧
@@ -91,9 +113,9 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K
         -- We show i ⊆ s \ ⋃₀ J
         have ki : i ⊆ s \ ⋃₀ J :=
           by
-          rw [hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2]
-          exact
-            subset_sUnion_of_subset (↑(hC.diffFinset₀ h1.1 h1.2)) i (fun ⦃a⦄ a => a) hi
+          apply hC.sUnion_diffFinset₀_subsets h1.1 h1.2
+          simp
+          exact hi
         -- We show j ⊆ ⋃₀ K x ⊆ x ∈ J
         have hx2 : j ⊆ x := by
           rw [ht1' x hx] at h3
@@ -107,7 +129,7 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K
         exact disjoint_sdiff_left
 
     · constructor
-      · exact hC.sUnion_diffFinset₀_subsets h1.1 h1.2
+      · apply hC.sUnion_diffFinset₀_subsets' h1.1 h1.2
       · intros a ha
         rw [if_neg (ne_of_mem_of_not_mem ha hJ)]
         change ∀ t' ∈ (K a).toSet, t' ⊆ a
@@ -118,21 +140,38 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) : ∃ (K
         rw [Function.onFun, ht1' j hj, ht1' i hi]
         exact hK0 hj hi hij
       · intro i hi hsi
-        constructor
-        · refine Finset.disjoint_iff_inter_eq_empty.mpr ?_
+        have h7 : Disjoint K'.toSet (K i).toSet := by
+          refine l3 (hC.sUnion_diffFinset₀_subsets h1.1 h1.2) ?_ (hC.empty_not_mem_diffFinset₀ h1.1 h1.2) (@disjoint_sdiff_left (α) (⋃₀ J) s)
+          rw [← sUnion_subset_iff]
+          apply le_trans (hK3 i hi)
+          apply subset_sUnion_of_subset J i (by rfl) hi
+        have h8 : Function.onFun Disjoint (fun t => if t = s then K' else K t) s i := by
+          refine Finset.disjoint_iff_inter_eq_empty.mpr ?_
           have h4 : (fun t => if t = s then K' else K t) i = K i := by
             exact ht1' i hi
           rw [h4]
           simp only [↓reduceIte, ite_cond_eq_false hsi.symm, K', K1]
-
-          sorry
-        · sorry
-
-        sorry
+          rw [disjoint_iff_inter_eq_empty] at h7
+          simp [K'] at h7
+          rw [← coe_inter, coe_eq_empty] at h7
+          exact h7
+        refine ⟨h8, Disjoint.symm h8⟩
     · simp only [↓reduceIte, K1, ht2, sUnion_union, apply_ite]
       rw [← hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2, ← hK4]
       simp only [diff_union_self, K1]
 
+example (s i : Set α) (f : Set α → Set α) (hf : Function.onFun Disjoint f s i) : Function.onFun Disjoint f i s := by
+  exact Disjoint.symm hf
+
+set_option diagnostics true
+example (a : Finset (Set α)) : a = ∅ ↔ a.toSet = ∅ := by
+  exact Iff.symm coe_eq_empty
+
+
+example (i : Set α) (J : Set (Set α)) (hi : i ∈ J) : i ⊆ ⋃₀ J := by
+  apply subset_sUnion_of_subset J i (by rfl) hi
+
+example (i : Set α) : i ⊆ i := by rfl
 example (s : Set α) (J : Finset (Set α)) : (∀ t ∈ J, t ⊆ s) ↔ ⋃₀ J ⊆ s := by
   exact Iff.symm sUnion_subset_iff
 
