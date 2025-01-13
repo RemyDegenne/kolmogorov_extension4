@@ -66,3 +66,19 @@ revert hJ
     · simp only [↓reduceIte, K1, ht2, sUnion_union]
       rw [← hC.diff_sUnion_eq_sUnion_diffFinset₀ h1.1 h1.2, ← hK4]
       simp only [diff_union_self, K1]
+example (s : Set (Set α)) (hs : s.PairwiseDisjoint id) (x y : Set α) (hx : x ∈ s) (hy : y ∈ s) (hxy : x ≠ y) : Disjoint x y := by
+  exact hs hx hy hxy
+
+lemma l1 {J : Finset (Set α)} {K : Set α → Finset (Set α)} {x : Set α} {j : Set α} (hK : (J.toSet).PairwiseDisjoint K) (hj : j ∈ J) (hx : x ∈ K j) : x ∈ (disjiUnion J K hK).toSet := by
+  simp only [disjiUnion_eq_biUnion, coe_biUnion, mem_coe, mem_iUnion, exists_prop]
+  use j
+
+example (J : Finset (Set α)) (K : Set α → Finset (Set α)) (hK : (J.toSet).PairwiseDisjoint K) (hs : PairwiseDisjoint (disjiUnion J K hK).toSet id) (x y : Set α) (hx : x ∈ (disjiUnion J K hK).toSet) (hy : y ∈ (disjiUnion J K hK).toSet) (hxy : x ≠ y) : Disjoint x y := by
+  exact hs hx hy hxy
+
+example (J : Finset (Set α)) (K : Set α → Finset (Set α)) (hK : PairwiseDisjoint J.toSet K) (hs : PairwiseDisjoint (disjiUnion J K hK).toSet id) (x y : Set α) (i j : Set α) (hi : i ∈ J.toSet) (hj : j ∈ J.toSet) (hij : i ≠ j) (hx : x ∈ K i) (hy : y ∈ K j) : Disjoint x y := by
+  apply hs (l1 hK hi hx) (l1 hK hj hy)
+  intro h
+  apply hij
+  rw [h] at hx
+  exact PairwiseDisjoint.elim_finset hK hi hj y hx hy
