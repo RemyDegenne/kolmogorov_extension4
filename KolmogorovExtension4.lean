@@ -8,11 +8,8 @@ import KolmogorovExtension4.Content
 import KolmogorovExtension4.Independent
 import KolmogorovExtension4.IndependentFamily
 import KolmogorovExtension4.KolmogorovExtension
-import KolmogorovExtension4.Lebesgue
-import KolmogorovExtension4.Ordered
 import KolmogorovExtension4.RegularContent
 import KolmogorovExtension4.RegularityCompacts
 import KolmogorovExtension4.Semiring
-import KolmogorovExtension4.misc
 import KolmogorovExtension4.mwe
 import KolmogorovExtension4.testSemiring
