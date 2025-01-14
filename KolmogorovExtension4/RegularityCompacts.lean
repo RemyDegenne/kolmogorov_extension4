@@ -5,7 +5,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import KolmogorovExtension4.AuxLemmas
 import Mathlib.MeasureTheory.Measure.Regular
-import Mathlib.Topology.MetricSpace.Polish
+import Mathlib.Topology.MetricSpace.Polish.Basic
 
 open Set MeasureTheory
 
@@ -24,7 +24,7 @@ theorem tendsto_zero_measure_of_antitone (μ : Measure α) [IsFiniteMeasure μ] 
   convert MeasureTheory.tendsto_measure_iInter (fun n ↦ (hs1 n).nullMeasurableSet) hs2
     ⟨0, measure_ne_top μ _⟩
   simp [hs3]
-
+-- MeasureTheory.tendsto_measure_iInter_atTop
 /-- Some version of continuity of a measure in the emptyset using the intersection along a set of
 sets. -/
 theorem exists_measure_iInter_lt (μ : Measure α) [IsFiniteMeasure μ] (S : ℕ → Set α)
