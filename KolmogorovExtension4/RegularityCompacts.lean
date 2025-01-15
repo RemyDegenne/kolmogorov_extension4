@@ -181,5 +181,3 @@ theorem PolishSpace.innerRegular_isCompact_measurableSet [TopologicalSpace α] [
   exact innerRegular_isCompact_isClosed_measurableSet_of_complete_countable μ
 
 end MeasureTheory
-
-#min_imports

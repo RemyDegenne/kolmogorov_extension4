@@ -8,7 +8,7 @@ import KolmogorovExtension4.RegularContent
 import KolmogorovExtension4.RegularityCompacts
 import Mathlib.MeasureTheory.Constructions.Projective
 
-open Set Function
+open Set
 
 open scoped ENNReal
 
