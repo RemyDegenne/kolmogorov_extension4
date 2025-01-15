@@ -5,7 +5,6 @@ import KolmogorovExtension4.CaratheodoryExtension
 import KolmogorovExtension4.ClosedProj
 import KolmogorovExtension4.CompactSystem
 import KolmogorovExtension4.Content
-import KolmogorovExtension4.Independent
 import KolmogorovExtension4.IndependentFamily
 import KolmogorovExtension4.KolmogorovExtension
 import KolmogorovExtension4.RegularContent
