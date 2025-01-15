@@ -99,11 +99,9 @@ theorem exists_isCompact_closure_measure_lt_of_complete_countable [UniformSpace 
     have h_univ n : (⋃ m, f n m) = univ := hseq_dense.iUnion_uniformity_ball (hto n).1
     have h3 n (ε : ℝ≥0∞) (hε : 0 < ε) : ∃ m, P (⋂ m' ≤ m, (f n m')ᶜ) < ε := by
       refine exists_measure_iInter_lt (fun m ↦ ?_) hε ?_ ?_
-      · simp only [NullMeasurableSet.compl_iff]
-        refine MeasurableSet.nullMeasurableSet (MeasurableSet.ball (seq m) (IsOpen.measurableSet (hto n).2.1))
-      · simp only [ne_eq, measure_ne_top, not_false_eq_true, exists_const]
-      · simp only [iInter_eq_compl_iUnion_compl, compl_compl, compl_empty_iff]
-        exact h_univ n
+      · exact ((IsOpen.measurableSet (hto n).2.1).ball _).compl.nullMeasurableSet
+      · simp
+      · rw [← compl_iUnion, h_univ, compl_univ]
     choose! s' s'bound using h3
     rcases ENNReal.exists_seq_pos_lt ε hε with ⟨δ, hδ1, hδ2⟩
     classical
