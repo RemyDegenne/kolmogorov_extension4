@@ -120,9 +120,9 @@ lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
   · rw [sum_disjiUnion]
     apply sum_le_sum
     intro x hx
-    exact sum_addContent_le_of_subset hC (hC.allDiffFinset₀'_subsets_semiring h_ss x hx) (hC.allDiffFinset₀'_pairwiseDisjoints h_ss x hx) (h_ss hx) (hC.allDiffFinset₀'_subsets h_ss x hx)
+    exact sum_addContent_le_of_subset hC (hC.allDiffFinset₀'_subsets_semiring h_ss hx)
+      (hC.allDiffFinset₀'_pairwiseDisjoints h_ss hx) (h_ss hx) (hC.allDiffFinset₀'_subsets h_ss hx)
   · exact hC.allDiffFinset₀'_sUnion h_ss ▸ h_mem
-
 
 lemma addContent_le_sum_of_subset_sUnion {m : AddContent C} (hC : IsSetSemiring C)
     (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈ C) (htJ : t ⊆ ⋃₀ ↑J) :
