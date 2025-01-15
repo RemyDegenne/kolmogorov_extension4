@@ -5,8 +5,8 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 
 import KolmogorovExtension4.testSemiring
-import Mathlib.MeasureTheory.OuterMeasure.Induced
 import Mathlib.MeasureTheory.Measure.AddContent
+import Mathlib.MeasureTheory.OuterMeasure.Induced
 
 open Set Finset Filter MeasureTheory Function
 
