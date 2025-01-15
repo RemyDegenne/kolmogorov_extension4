@@ -94,9 +94,6 @@ lemma preimage_boxI' [DecidableEq ι] {J I : Finset ι} (hJI : J ⊆ I)
 
 end Set
 
---   exact ⟨fun h j _ hiJ ↦ h j hiJ, fun h i hiJ ↦ h i (hJI hiJ) hiJ⟩
-
-
 end Projections
 
 
@@ -158,7 +155,6 @@ theorem Measure.subset_pi_eval_boxI' [DecidableEq ι] (I J : Finset ι) (hJI : J
     intros x hx
     simp only [f, dite_eq_ite, hx, ite_false, measure_univ]
   exact Finset.prod_mem_not_mem_of_eq_one_if_not_mem hJI h1 h2
-
 
 /-- A product of probability measures is a probability measure -/
 instance Measure.subset_pi_of_ProbabilityMeasure (P : ∀ i, Measure (α i))

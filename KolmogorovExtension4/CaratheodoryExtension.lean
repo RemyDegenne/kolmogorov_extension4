@@ -3,7 +3,7 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
-import Mathlib --.MeasureTheory.Measure.Trim
+import Mathlib.MeasureTheory.Measure.Trim
 import KolmogorovExtension4.Content
 
 open Set
@@ -136,9 +136,6 @@ theorem caratheodory_semiring_extension (hC : IsSetSemiring C) (m : AddContent C
     {s : Set α} (hs : s ∈ C) :
     (inducedOuterMeasure (fun x _ ↦ m x) hC.empty_mem addContent_empty).IsCaratheodory s :=
   caratheodory_semiring_extension' hC (m.extend hC) (fun _ ↦ m.extend_eq_top hC) hs
-
-set_option maxHeartbeats 2000000
-set_option diagnostics true
 
 theorem isCaratheodory_inducedOuterMeasure (hC : IsSetSemiring C) (m : AddContent C)
     (s : Set α) (hs : MeasurableSet[MeasurableSpace.generateFrom C] s) :
