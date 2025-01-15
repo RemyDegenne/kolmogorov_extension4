@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import KolmogorovExtension4.AuxLemmas
-import Mathlib.MeasureTheory.Measure.Regular
-import Mathlib.Topology.MetricSpace.Polish.Basic
+import Mathlib.MeasureTheory.Measure.RegularityCompacts
+import Mathlib.Topology.Compactness.PseudometrizableLindelof
 
 open Set MeasureTheory
 
@@ -21,34 +21,9 @@ variable [MeasurableSpace α]
 theorem tendsto_zero_measure_of_antitone (μ : Measure α) [IsFiniteMeasure μ] {s : ℕ → Set α}
     (hs1 : ∀ n, MeasurableSet (s n)) (hs2 : Antitone s) (hs3 : (⋂ n, s n) = ∅) :
     Filter.Tendsto (fun n ↦ μ (s n)) Filter.atTop (𝓝 0) := by
-  convert MeasureTheory.tendsto_measure_iInter (fun n ↦ (hs1 n).nullMeasurableSet) hs2
+  convert MeasureTheory.tendsto_measure_iInter_atTop (fun n ↦ (hs1 n).nullMeasurableSet) hs2
     ⟨0, measure_ne_top μ _⟩
   simp [hs3]
--- MeasureTheory.tendsto_measure_iInter_atTop
-/-- Some version of continuity of a measure in the emptyset using the intersection along a set of
-sets. -/
-theorem exists_measure_iInter_lt (μ : Measure α) [IsFiniteMeasure μ] (S : ℕ → Set α)
-    (hS2 : ∀ n, MeasurableSet (S n)) (hS3 : ⋂ n, S n = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
-    ∃ m, μ (⋂ n ≤ m, S n) < ε := by
-  let s m := (Accumulate (fun n ↦ (S n)ᶜ) m)ᶜ
-  have hs_anti : Antitone s := by
-    intro i j hij
-    simp only [compl_le_compl_iff_le, le_eq_subset, s]
-    exact monotone_accumulate hij
-  have hs_iInter : ⋂ n, s n = ∅ := by
-    simp only [s]
-    simp_rw [← hS3, ← compl_iUnion, iUnion_accumulate, compl_iUnion, compl_compl]
-  have hs_meas n : MeasurableSet (s n) := (MeasurableSet.accumulate (fun m ↦ (hS2 m).compl) n).compl
-  suffices ∃ m, μ (s m) < ε by
-    obtain ⟨m, hm⟩ := this
-    exact ⟨m, by simpa [s, accumulate_def] using hm⟩
-  suffices Filter.Tendsto (fun m ↦ μ (s m)) Filter.atTop (𝓝 0) by
-    rw [ENNReal.tendsto_atTop_zero_iff_of_antitone' _ (fun _ _ h ↦ measure_mono (hs_anti h))]
-      at this
-    exact this ε hε
-  convert tendsto_measure_iInter (fun n ↦ (hs_meas n).nullMeasurableSet) hs_anti
-    ⟨0, measure_ne_top μ _⟩
-  simp [hs_iInter]
 
 end MeasureTheory
 
@@ -103,58 +78,6 @@ namespace MeasureTheory
 
 variable [MeasurableSpace α] {μ : Measure α}
 
-theorem innerRegularWRT_isCompact_closure_iff [TopologicalSpace α] [R1Space α] :
-    μ.InnerRegularWRT (IsCompact ∘ closure) IsClosed ↔ μ.InnerRegularWRT IsCompact IsClosed := by
-  constructor <;> intro h A hA r hr
-  · rcases h hA r hr with ⟨K, ⟨hK1, hK2, hK3⟩⟩
-    exact ⟨closure K, closure_minimal hK1 hA, hK2, hK3.trans_le (measure_mono subset_closure)⟩
-  · rcases h hA r hr with ⟨K, ⟨hK1, hK2, hK3⟩⟩
-    refine ⟨closure K, closure_minimal hK1 hA, ?_, ?_⟩
-    · simpa only [closure_closure, Function.comp_apply] using hK2.closure
-    · exact hK3.trans_le (measure_mono subset_closure)
-
-lemma innerRegularWRT_isCompact_isClosed_iff_innerRegularWRT_isCompact_closure
-    [TopologicalSpace α] [R1Space α] :
-    μ.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsClosed
-      ↔ μ.InnerRegularWRT (IsCompact ∘ closure) IsClosed := by
-  constructor <;> intro h A hA r hr
-  · obtain ⟨K, hK1, ⟨hK2, _⟩, hK4⟩ := h hA r hr
-    refine ⟨K, hK1, ?_, hK4⟩
-    simp only [closure_closure, Function.comp_apply]
-    exact hK2.closure
-  · obtain ⟨K, hK1, hK2, hK3⟩ := h hA r hr
-    refine ⟨closure K, closure_minimal hK1 hA, ?_, ?_⟩
-    · simpa only [isClosed_closure, and_true]
-    · exact hK3.trans_le (measure_mono subset_closure)
-
-lemma innerRegularWRT_isCompact_isClosed_iff [TopologicalSpace α] [R1Space α] :
-    μ.InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) IsClosed
-      ↔ μ.InnerRegularWRT IsCompact IsClosed :=
-  innerRegularWRT_isCompact_isClosed_iff_innerRegularWRT_isCompact_closure.trans
-    innerRegularWRT_isCompact_closure_iff
-
-theorem innerRegularWRT_of_exists_compl_lt {p q : Set α → Prop} (hpq : ∀ A B, p A → q B → p (A ∩ B))
-    (hμ : ∀ ε, 0 < ε → ∃ K, p K ∧ μ Kᶜ < ε) :
-    μ.InnerRegularWRT p q := by
-  intro A hA r hr
-  obtain ⟨K, hK, hK_subset, h_lt⟩ : ∃ K, p K ∧ K ⊆ A ∧ μ (A \ K) < μ A - r := by
-    obtain ⟨K', hpK', hK'_lt⟩ := hμ (μ A - r) (tsub_pos_of_lt hr)
-    refine ⟨K' ∩ A, hpq K' A hpK' hA, inter_subset_right, ?_⟩
-    · refine (measure_mono fun x ↦ ?_).trans_lt hK'_lt
-      simp only [diff_inter_self_eq_diff, mem_diff, mem_compl_iff, and_imp, imp_self, imp_true_iff]
-  refine ⟨K, hK_subset, hK, ?_⟩
-  have h_lt' : μ A - μ K < μ A - r := le_measure_diff.trans_lt h_lt
-  exact lt_of_tsub_lt_tsub_left h_lt'
-
-theorem innerRegularWRT_isCompact_closure_of_univ [TopologicalSpace α]
-    (hμ : ∀ ε, 0 < ε → ∃ K, IsCompact (closure K) ∧ μ (Kᶜ) < ε) :
-    μ.InnerRegularWRT (IsCompact ∘ closure) IsClosed := by
-  refine innerRegularWRT_of_exists_compl_lt (fun s t hs ht ↦ ?_) hμ
-  have : IsCompact (closure s ∩ t) := hs.inter_right ht
-  refine this.of_isClosed_subset isClosed_closure ?_
-  refine (closure_inter_subset_inter_closure _ _).trans_eq ?_
-  rw [IsClosed.closure_eq ht]
-
 theorem exists_isCompact_closure_measure_lt_of_complete_countable [UniformSpace α] [CompleteSpace α]
     [SecondCountableTopology α] [(uniformity α).IsCountablyGenerated]
     [OpensMeasurableSpace α] (P : Measure α) [IsFiniteMeasure P] (ε : ℝ≥0∞) (hε : 0 < ε) :
@@ -175,9 +98,12 @@ theorem exists_isCompact_closure_measure_lt_of_complete_countable [UniformSpace 
     let f : ℕ → ℕ → Set α := fun n m ↦ UniformSpace.ball (seq m) (t n)
     have h_univ n : (⋃ m, f n m) = univ := hseq_dense.iUnion_uniformity_ball (hto n).1
     have h3 n (ε : ℝ≥0∞) (hε : 0 < ε) : ∃ m, P (⋂ m' ≤ m, (f n m')ᶜ) < ε := by
-      refine exists_measure_iInter_lt P _ (fun m ↦ ?_) ?_ hε
-      · exact ((IsOpen.measurableSet (hto n).2.1).ball _).compl
-      · rw [← compl_iUnion, h_univ, compl_univ]
+      refine exists_measure_iInter_lt (fun m ↦ ?_) hε ?_ ?_
+      · simp only [NullMeasurableSet.compl_iff]
+        refine MeasurableSet.nullMeasurableSet (MeasurableSet.ball (seq m) (IsOpen.measurableSet (hto n).2.1))
+      · simp only [ne_eq, measure_ne_top, not_false_eq_true, exists_const]
+      · simp only [iInter_eq_compl_iUnion_compl, compl_compl, compl_empty_iff]
+        exact h_univ n
     choose! s' s'bound using h3
     rcases ENNReal.exists_seq_pos_lt ε hε with ⟨δ, hδ1, hδ2⟩
     classical
@@ -257,3 +183,5 @@ theorem PolishSpace.innerRegular_isCompact_measurableSet [TopologicalSpace α] [
   exact innerRegular_isCompact_isClosed_measurableSet_of_complete_countable μ
 
 end MeasureTheory
+
+#min_imports

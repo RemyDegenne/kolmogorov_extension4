@@ -8,6 +8,8 @@ import KolmogorovExtension4.AdditiveOfContinuous
 
 open scoped ENNReal
 
+open Function
+
 namespace MeasureTheory
 
 variable {α : Type*} {C R : Set (Set α)} {s : ℕ → Set α}

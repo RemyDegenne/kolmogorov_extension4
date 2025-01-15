@@ -8,7 +8,7 @@ import KolmogorovExtension4.RegularContent
 import KolmogorovExtension4.RegularityCompacts
 import Mathlib.MeasureTheory.Constructions.Projective
 
-open Set
+open Set Function
 
 open scoped ENNReal
 
@@ -253,6 +253,9 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
 instance isFiniteMeasure_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
     IsFiniteMeasure (projectiveLimit P hP) :=
   IsProjectiveLimit.isFiniteMeasure (isProjectiveLimit_projectiveLimit hP)
+
+example (α : Type) [MeasurableSpace α] (P : Measure α) [IsProbabilityMeasure P] : IsFiniteMeasure P := by
+  exact IsZeroOrProbabilityMeasure.toIsFiniteMeasure P
 
 instance isProbabilityMeasure_projectiveLimit [hι : Nonempty ι]
     {P : ∀ J : Finset ι, Measure (Π j : J, α j)} [∀ i, IsProbabilityMeasure (P i)]

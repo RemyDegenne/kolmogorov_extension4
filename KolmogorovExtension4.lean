@@ -11,5 +11,4 @@ import KolmogorovExtension4.KolmogorovExtension
 import KolmogorovExtension4.RegularContent
 import KolmogorovExtension4.RegularityCompacts
 import KolmogorovExtension4.Semiring
-import KolmogorovExtension4.mwe
 import KolmogorovExtension4.testSemiring

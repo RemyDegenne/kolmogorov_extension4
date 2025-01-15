@@ -28,6 +28,9 @@ structure IsSetField (C : Set (Set α)) extends IsSetRing C : Prop where
 
 namespace IsSetField
 
+variable {α : Type*} {C : Set (Set α)} {s t : Set α}
+    {J : Finset (Set α)}
+
 theorem inter_mem (hC : IsSetField C) (hs : s ∈ C) (ht : t ∈ C) : s ∩ t ∈ C :=
   hC.toIsSetRing.inter_mem hs ht
 
