@@ -5,7 +5,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import KolmogorovExtension4.Content
 
-open Filter Function
+open Filter
 
 open scoped ENNReal Topology
 
@@ -20,7 +20,8 @@ theorem addContent_iUnion_eq_sum_of_tendsto_zero (hC : IsSetRing C) (m : AddCont
     (hm_ne_top : ∀ s ∈ C, m s ≠ ∞)
     (hm_tendsto : ∀ ⦃s : ℕ → Set α⦄ (_ : ∀ n, s n ∈ C),
       Antitone s → (⋂ n, s n) = ∅ → Tendsto (fun n ↦ m (s n)) atTop (𝓝 0))
-    ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C) (h_disj : Pairwise (Disjoint on f)) :
+    ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ C) (hUf : (⋃ i, f i) ∈ C)
+    (h_disj : Pairwise (Function.onFun Disjoint f)) :
     m (⋃ i, f i) = ∑' i, m (f i) := by
   -- We use the continuity of `m` at `∅` on the sequence `n ↦ (⋃ i, f i) \ (set.accumulate f n)`
   let s : ℕ → Set α := fun n ↦ (⋃ i, f i) \ Set.Accumulate f n

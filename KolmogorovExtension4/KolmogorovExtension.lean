@@ -8,7 +8,7 @@ import KolmogorovExtension4.RegularContent
 import KolmogorovExtension4.RegularityCompacts
 import Mathlib.MeasureTheory.Constructions.Projective
 
-open Set Function
+open Set
 
 open scoped ENNReal
 
@@ -185,7 +185,8 @@ variable [∀ i, TopologicalSpace (α i)] [∀ i, OpensMeasurableSpace (α i)]
 theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
     ⦃f : ℕ → Set (Π i, α i)⦄ (hf : ∀ i, f i ∈ measurableCylinders α)
-    (hf_Union : (⋃ i, f i) ∈ measurableCylinders α) (h_disj : Pairwise (Disjoint on f)) :
+    (hf_Union : (⋃ i, f i) ∈ measurableCylinders α)
+    (h_disj : Pairwise (Function.onFun Disjoint f)) :
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) :=
   addContent_iUnion_eq_sum_of_regular isSetRing_measurableCylinders (kolContent hP)
     (fun _ ↦ kolContent_ne_top hP) isCompactSystem_closedCompactCylinders
@@ -219,7 +220,7 @@ variable [∀ i, TopologicalSpace (α i)] [∀ i, BorelSpace (α i)]
 
 theorem kolContent_sigma_additive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ → Set (Π i, α i)⦄
     (hf : ∀ i, f i ∈ measurableCylinders α) (hf_Union : (⋃ i, f i) ∈ measurableCylinders α)
-    (h_disj : Pairwise (Disjoint on f)) :
+    (h_disj : Pairwise (Function.onFun Disjoint f)) :
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
   refine kolContent_sigma_additive_of_innerRegular hP ?_ hf hf_Union h_disj
   exact fun J ↦ PolishSpace.innerRegular_isCompact_measurableSet (P J)
@@ -254,16 +255,12 @@ instance isFiniteMeasure_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
     IsFiniteMeasure (projectiveLimit P hP) :=
   IsProjectiveLimit.isFiniteMeasure (isProjectiveLimit_projectiveLimit hP)
 
-set_option synthInstance.maxHeartbeats 200000
-
 instance isProbabilityMeasure_projectiveLimit [hι : Nonempty ι]
-    {P : ∀ J : Finset ι, Measure (Π j : J, α j)} [hp1 : ∀ i, IsProbabilityMeasure (P i)]
-    (hP : IsProjectiveMeasureFamily P) : IsProbabilityMeasure
-    -- (@projectiveLimit ι α _ _ _ _ P (fun i => IsZeroOrProbabilityMeasure.toIsFiniteMeasure (P i)) hP)
-    (projectiveLimit P hP)
-    := by
+    {P : ∀ J : Finset ι, Measure (Π j : J, α j)} [∀ i, IsProbabilityMeasure (P i)]
+    (hP : IsProjectiveMeasureFamily P) : IsProbabilityMeasure (projectiveLimit P hP) := by
   constructor
-  rw [← cylinder_univ ({hι.some} : Finset ι), (isProjectiveLimit_projectiveLimit hP).measure_cylinder _ MeasurableSet.univ]
+  rw [← cylinder_univ ({hι.some} : Finset ι),
+    (isProjectiveLimit_projectiveLimit hP).measure_cylinder _ MeasurableSet.univ]
   exact measure_univ
 
 end Polish

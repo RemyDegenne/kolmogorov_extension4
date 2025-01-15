@@ -3,7 +3,7 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
-import Mathlib --.MeasureTheory.Measure.Trim
+import Mathlib.MeasureTheory.Measure.Trim
 import KolmogorovExtension4.Content
 
 open Set
@@ -137,22 +137,14 @@ theorem caratheodory_semiring_extension (hC : IsSetSemiring C) (m : AddContent C
     (inducedOuterMeasure (fun x _ ↦ m x) hC.empty_mem addContent_empty).IsCaratheodory s :=
   caratheodory_semiring_extension' hC (m.extend hC) (fun _ ↦ m.extend_eq_top hC) hs
 
-set_option maxHeartbeats 2000000
-
 theorem isCaratheodory_inducedOuterMeasure (hC : IsSetSemiring C) (m : AddContent C)
     (s : Set α) (hs : MeasurableSet[MeasurableSpace.generateFrom C] s) :
     (inducedOuterMeasure (fun x _ ↦ m x) hC.empty_mem addContent_empty).IsCaratheodory s := by
-  let p := fun (s : Set α) (hs : MeasurableSet[MeasurableSpace.generateFrom C] s) => OuterMeasure.IsCaratheodory (inducedOuterMeasure (fun x _ ↦ m x) hC.empty_mem addContent_empty) s
-  refine MeasurableSpace.generateFrom_induction C p ?_ ?_ ?_ ?_ ?_ ?_
-  · exact fun t a ht => caratheodory_semiring_extension hC m a
-  · exact
-    OuterMeasure.isCaratheodory_empty
-      (inducedOuterMeasure (fun x x_1 => m x) hC.empty_mem addContent_empty)
-  · exact fun t ht a =>
-    OuterMeasure.isCaratheodory_compl
-      (inducedOuterMeasure (fun x x_1 => m x) hC.empty_mem addContent_empty) a
-  · exact fun t a ht => OuterMeasure.isCaratheodory_iUnion (inducedOuterMeasure (fun x x_1 => m x) hC.empty_mem addContent_empty) ht
-  · exact hs
+  induction hs with
+  | basic u hu => exact caratheodory_semiring_extension hC m hu
+  | empty => exact OuterMeasure.isCaratheodory_empty _
+  | compl t _ h => exact OuterMeasure.isCaratheodory_compl _ h
+  | iUnion f _ h => exact OuterMeasure.isCaratheodory_iUnion _ h
 
 /-- Construct a measure from a sigma-subadditive function on a semiring. This
 measure is defined on the associated Carathéodory sigma-algebra. -/
