@@ -88,9 +88,24 @@ lemma preimage_boxI' [DecidableEq ι] {J I : Finset ι} (hJI : J ⊆ I)
       = boxI I (fun (i : ι) ↦ if i ∈ J then t i else (univ : Set (α i))) := by
   ext y
   simp only [mem_preimage, mem_boxI']
-  exact ⟨fun h i _ hiJ ↦ h i hiJ, fun h i hiJ ↦ h i (hJI hiJ) hiJ⟩
+  constructor
+  · rw [mem_boxI']
+    intros h j _
+    simp only [Finset.coe_sort_coe, mem_ite_univ_right]
+    intro hj
+    exact h j hj
+  · intro h a ha
+    simp only [Finset.coe_sort_coe, h]
+    simp only [Finset.coe_sort_coe, mem_univ] at *
+    rw [mem_boxI'] at h
+    obtain h1 := hJI a.prop
+    simp_all only [mem_ite_univ_right, Finset.coe_mem]
+
 
 end Set
+
+--   exact ⟨fun h j _ hiJ ↦ h j hiJ, fun h i hiJ ↦ h i (hJI hiJ) hiJ⟩
+
 
 end Projections
 
@@ -148,11 +163,12 @@ theorem Measure.subset_pi_eval_boxI' [DecidableEq ι] (I J : Finset ι) (hJI : J
   let f := fun i ↦ P i (if i ∈ J then t i else (univ : Set (α i)))
   have h1 : ∀ (x : ι), x ∈ J → f x = g x := by
     intros x hx
-    simp only [f, dite_eq_ite, hx, ite_true]
+    simp only [f, dite_eq_ite, hx, ite_true, f, g]
   have h2 : ∀ (x : ι), ¬x ∈ J → f x = 1 := by
     intros x hx
     simp only [f, dite_eq_ite, hx, ite_false, measure_univ]
   exact Finset.prod_mem_not_mem_of_eq_one_if_not_mem hJI h1 h2
+
 
 /-- A product of probability measures is a probability measure -/
 instance Measure.subset_pi_of_ProbabilityMeasure (P : ∀ i, Measure (α i))
