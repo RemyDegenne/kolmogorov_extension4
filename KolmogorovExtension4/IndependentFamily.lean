@@ -87,7 +87,7 @@ lemma preimage_boxI' [DecidableEq ι] {J I : Finset ι} (hJI : J ⊆ I)
     (fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hJI i.prop⟩)⁻¹' (boxI J t)
       = boxI I (fun (i : ι) ↦ if i ∈ J then t i else (univ : Set (α i))) := by
   ext y
-  simp only [mem_preimage, mem_boxI', mem_ite_univ_right]
+  simp only [mem_preimage, mem_boxI']
   exact ⟨fun h i _ hiJ ↦ h i hiJ, fun h i hiJ ↦ h i (hJI hiJ) hiJ⟩
 
 end Set
