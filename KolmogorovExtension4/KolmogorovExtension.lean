@@ -254,15 +254,23 @@ instance isFiniteMeasure_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
     IsFiniteMeasure (projectiveLimit P hP) :=
   IsProjectiveLimit.isFiniteMeasure (isProjectiveLimit_projectiveLimit hP)
 
+set_option synthInstance.maxHeartbeats 200000
+-- instance FiniteMeasures_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
+-- ∀ (i : Finset ι), IsFiniteMeasure (P i) := by sorry
+
+
+
 example (α : Type) [MeasurableSpace α] (P : Measure α) [IsProbabilityMeasure P] : IsFiniteMeasure P := by
   exact IsZeroOrProbabilityMeasure.toIsFiniteMeasure P
-
+set_option diagnostics true
 instance isProbabilityMeasure_projectiveLimit [hι : Nonempty ι]
-    {P : ∀ J : Finset ι, Measure (Π j : J, α j)} [∀ i, IsProbabilityMeasure (P i)]
-    (hP : IsProjectiveMeasureFamily P) : IsProbabilityMeasure (projectiveLimit P hP) := by
+    {P : ∀ J : Finset ι, Measure (Π j : J, α j)} [hp1 : ∀ i, IsProbabilityMeasure (P i)]
+    (hP : IsProjectiveMeasureFamily P) : IsProbabilityMeasure
+    -- (@projectiveLimit ι α _ _ _ _ P (fun i => IsZeroOrProbabilityMeasure.toIsFiniteMeasure (P i)) hP)
+    (projectiveLimit P hP)
+    := by
   constructor
-  rw [← cylinder_univ ({hι.some} : Finset ι),
-    (isProjectiveLimit_projectiveLimit hP).measure_cylinder _ MeasurableSet.univ]
+  rw [← cylinder_univ ({hι.some} : Finset ι), (isProjectiveLimit_projectiveLimit hP).measure_cylinder _ MeasurableSet.univ]
   exact measure_univ
 
 end Polish
