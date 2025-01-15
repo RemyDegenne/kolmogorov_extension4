@@ -138,7 +138,6 @@ theorem caratheodory_semiring_extension (hC : IsSetSemiring C) (m : AddContent C
   caratheodory_semiring_extension' hC (m.extend hC) (fun _ ↦ m.extend_eq_top hC) hs
 
 set_option maxHeartbeats 2000000
-set_option diagnostics true
 
 theorem isCaratheodory_inducedOuterMeasure (hC : IsSetSemiring C) (m : AddContent C)
     (s : Set α) (hs : MeasurableSet[MeasurableSpace.generateFrom C] s) :
