@@ -14,30 +14,6 @@ open scoped ENNReal Topology
 
 namespace MeasureTheory
 
-namespace IsSetSemiring
-
-variable {α : Type*} {C : Set (Set α)} {s t : Set α}
-
-theorem eq_add_diffFinset_of_subset (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
-    (m_add : ∀ (I : Finset (Set α)) (_ : ↑I ⊆ C) (_ : PairwiseDisjoint (I : Set (Set α)) id)
-        (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
-    (hs : s ∈ C) (ht : t ∈ C) (hst : s ⊆ t) [DecidableEq (Set α)] :
-    m t = m s + ∑ i in hC.diffFinset ht hs, m i := by
-  classical
-  conv_lhs => rw [← hC.sUnion_insert_diffFinset ht hs hst]
-  rw [← coe_insert, m_add]
-  · rw [sum_insert]
-    exact hC.not_mem_diffFinset ht hs
-  · rw [coe_insert]
-    exact Set.insert_subset hs (hC.diffFinset_subset ht hs)
-  · rw [coe_insert]
-    exact hC.pairwiseDisjoint_insert_diffFinset ht hs
-  · rw [coe_insert]
-    rwa [hC.sUnion_insert_diffFinset ht hs hst]
-
-end IsSetSemiring
-
-
 variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 
 section ExtendContent
