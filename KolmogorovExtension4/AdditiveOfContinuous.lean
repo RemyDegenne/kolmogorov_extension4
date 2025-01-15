@@ -5,7 +5,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import KolmogorovExtension4.Content
 
-open Filter Function
+open Filter
 
 open scoped ENNReal Topology
 

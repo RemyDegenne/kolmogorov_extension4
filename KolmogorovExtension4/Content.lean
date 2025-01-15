@@ -192,7 +192,7 @@ lemma addContent_accumulate (m : AddContent C) (hC : IsSetRing C)
   | succ n hn =>
     rw [Finset.sum_range_succ, ← hn, Set.accumulate_succ, addContent_union hC _ (hsC _)]
     · exact Set.disjoint_accumulate hs_disj (Nat.lt_succ_self n)
-    · exact MeasureTheory.IsSetRing.accumulate_mem hC hsC n
+    · exact hC.accumulate_mem hsC n
 
 /-- If an additive content is σ-additive on a set ring, then the content of a monotone sequence of
 sets tends to the content of the union. -/
