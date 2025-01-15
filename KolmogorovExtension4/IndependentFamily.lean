@@ -87,7 +87,9 @@ lemma preimage_boxI' [DecidableEq ι] {J I : Finset ι} (hJI : J ⊆ I)
     (fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hJI i.prop⟩)⁻¹' (boxI J t)
       = boxI I (fun (i : ι) ↦ if i ∈ J then t i else (univ : Set (α i))) := by
   ext y
-  simp only [mem_preimage, mem_boxI', mem_ite_univ_right]
+  simp only [mem_preimage]
+  rw [mem_boxI', mem_boxI']
+  simp only [mem_ite_univ_right]
   exact ⟨fun h i _ hiJ ↦ h i hiJ, fun h i hiJ ↦ h i (hJI hiJ) hiJ⟩
 
 end Set
@@ -148,7 +150,7 @@ theorem Measure.subset_pi_eval_boxI' [DecidableEq ι] (I J : Finset ι) (hJI : J
   let f := fun i ↦ P i (if i ∈ J then t i else (univ : Set (α i)))
   have h1 : ∀ (x : ι), x ∈ J → f x = g x := by
     intros x hx
-    simp only [f, dite_eq_ite, hx, ite_true]
+    simp only [f, dite_eq_ite, hx, ite_true, g]
   have h2 : ∀ (x : ι), ¬x ∈ J → f x = 1 := by
     intros x hx
     simp only [f, dite_eq_ite, hx, ite_false, measure_univ]
