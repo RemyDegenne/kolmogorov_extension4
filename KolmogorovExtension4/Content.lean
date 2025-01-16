@@ -18,6 +18,8 @@ namespace IsSetSemiring
 
 variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 
+/-- For an additive content `m` on a semiring and `s t : Set α` with `s ⊆ t`, we can write
+`m t = m s + ∑ i in hC.diffFinset ht hs, m i`.-/
 theorem eq_add_diffFinset_of_subset (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
     (m_add : ∀ (I : Finset (Set α)) (_ : ↑I ⊆ C) (_ : PairwiseDisjoint (I : Set (Set α)) id)
         (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
@@ -75,6 +77,11 @@ theorem extendContent_eq_top (hC : IsSetSemiring C) (m_empty : m ∅ hC.empty_me
     extendContent hC m m_empty m_add s = ∞ := by
   rw [extendContent_eq_extend, extend_eq_top m hs]
 
+
+-- Where is this used?
+
+/-
+
 -- todo: change name?
 /-- An additive content obtained from another one on the same semiring of sets by setting the value
 of each set not in the semiring at `∞`. -/
@@ -100,6 +107,7 @@ protected theorem AddContent.extend_eq (hC : IsSetSemiring C) (m : AddContent C)
 protected theorem AddContent.extend_eq_top (hC : IsSetSemiring C) (m : AddContent C) (hs : s ∉ C) :
     m.extend hC s = ∞ := by
   rwa [m.extend_eq_extend, extend_eq_top]
+-/
 
 end ExtendContent
 
