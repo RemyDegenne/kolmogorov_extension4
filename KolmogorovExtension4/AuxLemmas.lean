@@ -278,7 +278,3 @@ lemma sUnion_finsetLT_eq_biUnion (J : Finset (Set α)) (n : Fin J.card) :
 end FinsetSet
 
 end Finset
-
-
-
-#min_imports
