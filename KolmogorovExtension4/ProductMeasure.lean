@@ -469,7 +469,7 @@ theorem kolContent_pi_sigma_subadditive ⦃f : ℕ → Set ((i : ι) → X i)⦄
     infer_instance
   refine addContent_iUnion_le_of_addContent_iUnion_eq_tsum
     isSetRing_measurableCylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
-  refine sigma_additive_addContent_of_tendsto_zero isSetRing_measurableCylinders
+  refine addContent_iUnion_eq_sum_of_tendsto_zero isSetRing_measurableCylinders
     (kolContent (isProjectiveMeasureFamily_pi μ)) (fun s hs ↦ ?_) ?_ hf hf_Union hf'
   · rcases (mem_measurableCylinders _).1 hs with ⟨I, S, mS, s_eq⟩
     rw [s_eq, kolContent_eq_lmarginal μ (mS := mS) (x := Classical.ofNonempty)]
