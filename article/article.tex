@@ -152,10 +152,103 @@
 		$${\pi_n}_*\eta = \kappa_0 \otimes ... \otimes \kappa_{n-1}.$$
 	\end{thm}
 
-	Let's start by explaining why this theorem implies the existence of product measures and discrete-time Markov chains.
+	By taking each kernel to be constant we easily get the product of a countable family of probability measures, which can then be used to build the product of an arbitrary family of measures. Likewise if we take $X_n = X$ for all $n$ and $\kappa_n = \kappa$ a kernel from $X \to X$ we get a Markov kernel from $X$ to $X^{\N_+}$ which, if we compose it with a measure $\mu$ at the beginning, gives the measure associated to a Markov chain with initial distribution $\mu$ and transition kernel $\kappa$.
 
-	\begin{cor}\label{cor:product-measure}
-		Let $(X_i, \A_i, \mu_i)_{i\in\iota}$
-	\end{cor}
+	We will now give a sketch of the proof of the theorem to highlight the elements which are required for the formalization. The idea is to use the Carathéodory extension theorem which allows to extend a measure once we have defined it on a restricted family of measurable sets for which it is to give the expression of the measure. In what follows we consider $(X_n, \A_n)_{n\in\N}$ a family of measurable spaces and we set $\pi_n := \piun$. we also consider of Markov kernels $(\kappa_n : \Xlen \tost X_{n+1})_{n\in\N}$ and we set $\eta_{k,n} := \kappa_k \ox ... \ox \kappa_{n-1} : \Xle{k} \tost \Xint{k+1,n}$ and $\eta_n := \eta_{0,n}$.
 
+	\begin{defi}
+		\label{def:cylindres}
+		Sets of the form $A \times \Xgtn$, where $n \ge 1$ and $A \in \Alen$ are called cylinders.
+	\end{defi}
+
+	By writing $A \times \Xgtn = \pi_n\inv(A)$ it is easy to check that the set of cylinders is closed by union and complement, and thus it is an algebra of sets which generates the product $\sigma$-algebra. We now have to define a measure over cylinders which we will then extend to the whole $\sigma$-algebra. We also do this for cylinders in $\Xge{n}$ for $n\ge1$ as we will need it for the extension afterwards.
+
+	\begin{defi}
+		\label{def:content}
+		Let $x_0 \in X_0$. If $A := A' \times \Xgtn \subseteq \Xge{1}$ is a cylinder we set
+		$$P_0(x_0, A) := \eta_n(x_0, A').$$
+		This map is well defined because if $n \le m$ then
+		\begin{align*}
+			\eta_m\prth{x_0, A' \times \Xint{n+1,m}} &= \eta_n \ox \eta_{n+1,m} \prth{x_0, A' \times \Xint{n+1,m}} \\
+			&= \int_{A'} \eta_{n+1, m}\prth{x_0, ..., x_n, \Xint{n+1,m}} \eta_n(x_0, \dx_1...\dx_n) \\
+			&= \int \ind{A'} \eta_n(x_0, \dx_1...\dx_n) \\
+			&= \eta_n(x_0, A').
+		\end{align*}
+
+		For $k \ge 1$ and $A := A' \times \Xgtn \subseteq \Xgt k$,we define likewise
+		$$P_k (x_0, ..., x_k, A) := \eta_{k,n} (x_0,...,x_k,A').$$
+	\end{defi}
+
+	\begin{lem}
+		\label{lem:add-cont}
+		For any $k \in \N$ and any $(x_0,...,x_k) \in \Xle{k}$, the map $P_k(x_0,...,x_k, \cdot)$ is an additive content over the cylinders. Namely if $A, B$ are two disjoint cylinders then $P_0(x_0,...,x_k,A \cup B) = P_0(x_0,...,x_k,A) + P_0(x_0,...,x_k,B)$.
+	\end{lem}
+
+	\begin{proof}
+		We only give the proof in the case $k=0$ as the other cases are identical. Let $A := A' \times \Xgtm$ and $B := B' \times \Xgtn$ be two disjoint cylinders and assume without loss of generality that $m \le n$. We then set $A'' := A' \times \Xint{m+1,n}$. As $A \cap B = \empty$ this implies $A'' \cap B' = \empty$. Moreover, $A \cup B = (A'' \cup B') \times \Xgtn$. Consequently :
+		$$P_0(x_0,A\cup B) = \eta_n(x_0,A'' \cup B') = \eta_n(x_0,A'') + \eta_n(x_0,B') = P_0(x_0,A) + P_0(x_0,B).\eqno\mbox{\qedhere}$$
+	\end{proof}
+
+	To apply Carathéodory theorem it remains to prove that $P_0(x_0,\cdot)$ is $\sigma$-additive over cylinders. Because it is an additive content and cylinders are an algebra of sets it is enough to show the following result:
+
+	\begin{lem}
+		\label{lem:tendsto_zero}
+		Let $x_0 \in X_0$. If $(A_n)_{n\in\N}$ is a non-increasing sequence of cylinders with emty intersection then $P_0(x_0, A_n) \tendl{n\to\infty} 0$.
+	\end{lem}
+
+	\begin{proof}
+		For any $n$ we write $A_n := B_n \times \Xgt{a_n}$. In this proof if $A \subseteq \Xge{1}$ et $(x_1, ..., x_n) \in \Xint{1,n}$ we will denote by $A(x_1,...,x_n) := \set{y \in \Xgtn : (x_1,...,x_n,y) \in A}$ the associated section of $A$.
+
+		We use contraposition. Assume there exists $\eps>0$ such that for any $n \in \N$, $P_0(x_0,A_n) \ge \eps$. We wish to prove that the intersection of $A_n$ is nonempty. We define the following sequence of functions:
+		\begin{align*}
+			f_n : X_1 &\to [0, 1] \\
+			x_1 &\mapsto P_1(x_0,x_1, A_n(x_1)).
+		\end{align*}
+		It allows us to write
+		\begin{align*}
+			P_0(x_0,A_n) &= \eta_{a_n}(x_0,B_n) \\
+			&=\kappa_0 \ox \eta_{1, a_n}(B_n) \\
+			&= \int_{X_1} \eta_{1, a_n}(x_0, x_1, B_n(x_1)) \kappa_0(x_0, \dx_1) \\
+			&= \int_{X_1} P_1(x_0,x_1,A_n(x_1)) \kappa_0(x_0, \dx_1) \\
+			&= \int_{X_1} f_n(x_1) \kappa_0(x_0, \dx_1).
+		\end{align*}
+		Because $(A_n)$ is non-increasing it is also the case of $(f_n)$. We set $g := \lim_{n\to\infty} f_n$. By dominated convergence theorem we get $\eps \le P_0(x_0,A_n) \tendl{n\to\infty} \int_{X_1} g(x_1) \kappa_0(x_0,\dx_1)$. As $\kappa_0(x_0, \cdot)$ is a probability measure there exists $x_1 \in X_1$ such that $g(x_1) \ge \eps$, and so for any $n\in\N$, $f_n(x_1) \ge \eps$ which implies that $P_1(x_0,x_1, A_n(x_1)) \ge \eps$.
+
+		We can thus repeat the same step replacing $P_0(x_0,\cdot)$ by $P_1(x_0,x_1,\cdot)$ and $A_n$ by $A_n(x_1)$. We get a sequence $x := (x_k)_{k\ge1}$ such that for any $n\in\N$ and $k\ge1$ we have $P_k(x_0,...,x_k,A_n(x_1,...,x_k)) \ge \eps$. It remains to show that $x \in \bigcap_{n\in\N}A_n$.
+
+		Let $n\in\N$. As $A_n = B_n \times \Xgt{a_n}$ we in particular have that $A_n(x_1,...,x_{a_n})$is either $\Xgt{a_n}$ or empty according to wether $(x_1,...,x_{a_n})$ belongs to $B_n$ or not. But as $P_{a_n}(x_0,...,x_{a_n},A_n(x_1,...,x_{a_n})) \ge \eps > 0$ we have $A_n(x_1,...,x_{a_n}) = \Xgt{a_n}$, which proves that $x \in A_n$.
+	\end{proof}
+
+	This concludes the main argument of the proof. The measurability is easily provided by applying the $\pi$-$\lambda$ theorem. We will now focus on those aspects of the proof which proved difficult to formalize and how they were overcome.
+
+	\section{Dealing with composition of kernels}
+
+	One of the key tools for the Ionescu-Tulcea theorem is to be able to speak about the composition of Markov kernels. Indeed that is necessary even to be able to state the theorem. However formalizing this in a way which allows us to smoothly write products proved to be quite challenging.
+
+	One common rule in formalization is that if we use "..." in a proof it will likely be hard to formalize. In our case the statement of Theorem~\ref{thm:it} itself makes use of these when we write the composition of kernels, and they hide a real problem.
+
+	Transition kernels and their composition are already defined in Lean. However we need to take the composition of a finite family of kernels which does not exist in Mathlib, and here is why. By hand, if we have three Markov kernels $\kappa : X \tost Y$, $\eta : X \times Y \tost Z$ and $\xi : X \times Y \times Z \tost T$ we can define $\kappa \ox \eta \ox \xi := (\kappa \ox \eta) \ox \xi$. Then we easily get $\kappa \ox \eta \ox \xi = \kappa \ox (\eta \ox \xi)$. But here we forget a detail: $X \times Y \times Z$ does not mean anything a priori. We can write $(X \times Y) \times Z$ or $X \times (Y \times Z)$ but those are two different types. In paper maths they are canonically isomorphic and we often act as though they were the same but it Lean this isomorphism has to be made explicit.
+
+	Coming back to kernels I can write that $\xi$ is a kernel from $X \times (Y \times Z)$ to $T$. Then $(\kappa \ox \eta) \ox \xi$ is a kernel from $X$ to $(Y \times Z) \times T$. But in that case $\kappa \ox (\eta \ox \xi)$ is not even well defined because $\xi$ should start from $(X \times Y) \times Z$. If we were to add an isomorphism to define this object anyway the equality $(\kappa \ox \eta) \ox \xi = \kappa \ox (\eta \ox \xi)$ would still make no sense because on the left we have a kernel from $X$ to $(Y \times Z) \times T$ while on the right it is a kernel from $X$ to $Y \times (Z \times T)$, so they do not have the same type.
+
+	A similar issue arises when formalizing Theorem~\ref{thm:it}: if we have two kernels $\kappa : X_0 \tost \Xint{1,n}$ and $\eta : \Xlen \tost \Xint{n+1,m}$, their composition does not make sense, we need isomorphisms. First to see $\eta$ as a kernel from $X_0 \times \Xint{1,n}$ to $\Xint{n+1,m}$ to get $\kappa \ox \eta : X_0 \tost \Xint{1,n} \times \Xint{n+1,m}$, then to see $\kappa \ox \eta$ as a kernel from $X_0$ to $\Xint{1,m}$. To solve this problem we need to make these isomorphisms explicit and then hide them inside a black box to be able to use it without worrying about the implementation.
+
+	This work was initiated by Degenne. He introduced a compositon of kernels indexed by integer intervals which makes the equivalence invisible.
+	\begin{lstlisting}
+	def compProdNat {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l)
+		((l : Ioc i j) → X l))
+		(η : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) :
+		Kernel ((l : Iic i) → X l) ((l : Ioc i k) → X l)
+	\end{lstlisting}
+	This takes two kernels $\kappa : \Xle{i} \tost X^{\dbrack{i+1,j}}$ and $\eta : \Xle{j} \tost X^{\dbrack{j+1,k}}$ and returns a kernel from $\Xle{i}$ to $X^{\dbrack{i+1,k}}$. Degenne then proves that this composition is associative, and uses it to define
+	\begin{lstlisting}
+	def kerNat (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
+		Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l).
+	\end{lstlisting}
+	This takes as an argument a family of kernels $(\kappa_k)_{k\in\N}$ with $\kappa_k : \Xle{k}\to X_{k+1}$ just as in Theorem~\ref{thm:it}. Then given two integers $i$ and $j$ it returns a kernel \texttt{kerNat $\kappa$ i j} which is the composition
+	$$\kappa_i \ox \kappa_{i+1} \ox \cdots \ox \kappa_{j-1}.$$
+	We are therefore now able to speak about those compositions which are necessary to state the theorem. However \texttt{kerNat} proved to be not enough for later purposes. Indeed after proving the theorem and trying to write some API we thought that it would be best to to have a kernel which does not necesarrily starts at time 0 but at any instant. This  would prove nicer for example when it comes to write formulas for the conditional expectation against the Ionescu-Tulcea kernel (see Section). However we bumped into an issue. Having different kernels starting at different times was proving hard to manipulate even with the compositions that were implemented. That is why I chose to add another layer on top of \texttt{kerNat} which proved to work out smoothly.
+	\begin{lstlisting}
+		content
+	\end{lstlisting}
 \end{document}

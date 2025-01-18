@@ -709,7 +709,9 @@ open ProbabilityTheory Kernel
 
 variable [∀ n, IsMarkovKernel (κ n)]
 
-theorem DependsOn.lmarginalPartialKernel_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
+namespace DependsOn
+
+theorem lmarginalPartialKernel_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (mf : Measurable f) (hf : DependsOn f (Iic a)) (hab : a ≤ b) :
     lmarginalPartialKernel κ b c f = f := by
   rcases le_or_lt c b with hcb | hbc
@@ -726,7 +728,7 @@ theorem DependsOn.lmarginalPartialKernel_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ
     rw [mem_coe, mem_Iic] at hi
     omega
 
-theorem DependsOn.lmarginalPartialKernel_right {a : ℕ} (b : ℕ) {c d : ℕ}
+theorem lmarginalPartialKernel_right {a : ℕ} (b : ℕ) {c d : ℕ}
     (mf : Measurable f) (hf : DependsOn f (Iic a)) (hac : a ≤ c) (had : a ≤ d) :
     lmarginalPartialKernel κ b c f = lmarginalPartialKernel κ b d f := by
   wlog hcd : c ≤ d generalizing c d
@@ -737,7 +739,7 @@ theorem DependsOn.lmarginalPartialKernel_right {a : ℕ} (b : ℕ) {c d : ℕ}
     · rw [hf.lmarginalPartialKernel_eq κ c mf (hac.trans hcb.le),
         hf.lmarginalPartialKernel_eq κ d mf (hac.trans hcb.le)]
 
-theorem DependsOn.dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) → ℝ≥0∞}
+theorem dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (hf : DependsOn f (Iic b)) (mf : Measurable f) :
     DependsOn (lmarginalPartialKernel κ a b f) (Iic a) := by
   intro x y hxy
@@ -749,5 +751,7 @@ theorem DependsOn.dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ} {f : ((n 
     · exact hxy i.1 i.2
     · refine dependsOn_updateFinset hf _ _ ?_
       rwa [← coe_sdiff, Iic_sdiff_Ioc_same hab.le]
+
+end DependsOn
 
 end partialKernel
