@@ -38,6 +38,21 @@ end IsSetSemiring
 end MeasureTheory
 
 
+-- goes to Mathlib.Order.CompleteLattice, line 1652
+
+variable [CompleteLattice α]
+
+lemma disjoint_of_sSup_disjoint_of_le_of_le {a b : α} {c d : Set α} (hs : ∀ e ∈ c, e ≤ a) (ht : ∀ e ∈ d, e ≤ b)
+    (hd : Disjoint a b) (he : ⊥ ∉ c ∨ ⊥ ∉ d) : Disjoint c d := by
+  rw [disjoint_iff_forall_ne]
+  intros x hx y hy
+  rw [Disjoint.ne_iff]
+  aesop
+  exact Disjoint.mono (hs x hx) (ht y hy) hd
+
+lemma disjoint_of_sSup_disjoint {a b : Set α} (hd : Disjoint (sSup a) (sSup b)) (he : ⊥ ∉ a ∨ ⊥ ∉ b)
+    : Disjoint a b :=
+  disjoint_of_sSup_disjoint_of_le_of_le (fun _ hc => le_sSup hc) (fun _ hc => le_sSup hc) hd he
 
 namespace MeasureTheory
 
@@ -52,26 +67,6 @@ variable {α : Type*} {C : Set (Set α)} {s t : Set α}
     * `⋃ x ∈ J, x = ⋃ x ∈ J, ⋃ s ∈ K x, s`.
 -/
 set_option trace.split.failure true
-
--- goes to Mathlib.Order.Disjoint
-
-@[simp]
-lemma not_disjoint_self [PartialOrder α] [OrderBot α] {x : α} : ¬ (Disjoint x x) ↔ (x ≠ ⊥) :=
-  not_iff_not.mpr disjoint_self
-
-lemma disjointSets_of_disjoint [PartialOrder α] [OrderBot α] {a b : α} {J K : Set α}
-    (ha : ∀ c ∈ J, c ≤ a) (hb : ∀ d ∈ K, d ≤ b) (hJK : ⊥ ∉ J ∨ ⊥ ∉ K) (hcd : Disjoint a b) :
-    Disjoint J K := by
-  rw [disjoint_iff_forall_ne]
-  intros x hx y hy hxy
-  obtain h1 : Disjoint x y := by
-    exact Disjoint.mono (ha x hx) (hb y hy) hcd
-  revert h1
-  cases' hJK with hJ hK
-  · rw [← hxy]
-    exact not_disjoint_self.mpr (ne_of_mem_of_not_mem hx hJ)
-  · rw [hxy]
-    exact not_disjoint_self.mpr (ne_of_mem_of_not_mem hy hK)
 
 
 variable [DecidableEq (Set α)]
@@ -112,8 +107,8 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (h1 : ↑J ⊆ C) :
         exact hK0 hj hi hij
       · intro i hi hsi
         have h7 : Disjoint K'.toSet (K i).toSet := by
-          refine disjointSets_of_disjoint (hC.sUnion_diffFinset₀_subsets h11 h12) ?_
-            (Or.inl (hC.empty_not_mem_diffFinset₀ h11 h12)) (@disjoint_sdiff_left _ (⋃₀ J) s)
+          refine disjoint_of_sSup_disjoint_of_le_of_le (hC.sUnion_diffFinset₀_subsets h11 h12) ?_
+            (@disjoint_sdiff_left _ (⋃₀ J) s) (Or.inl (hC.empty_not_mem_diffFinset₀ h11 h12))
           simp only [mem_coe, Set.le_eq_subset]
           apply sUnion_subset_iff.mp
           exact (hK3 i hi).trans (subset_sUnion_of_mem hi)

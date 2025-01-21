@@ -14,7 +14,7 @@ open scoped ENNReal Topology
 
 namespace MeasureTheory
 
-namespace IsSetSemiring
+section IsSetSemiring
 
 variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 
@@ -267,9 +267,5 @@ theorem addContent_iUnion_le_of_addContent_iUnion_eq_tsum {m : AddContent C} (hC
 end Ring
 
 end TotalSetFunction
-
-section PartialSetFunction
-
-end PartialSetFunction
 
 end MeasureTheory
