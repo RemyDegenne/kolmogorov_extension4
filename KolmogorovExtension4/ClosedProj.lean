@@ -176,14 +176,6 @@ lemma isClosedMap_restrict_of_compactSpace [∀ i, TopologicalSpace (α i)] [∀
   refine isClosedMap_fst_of_compactSpace _ ?_
   exact (Homeomorph.isClosed_image _).mpr hs
 
--- Written by Daniel Weber, who might PR it to Mathlib.
-/-- The homeomorphism `(∀ i, β i) ≃ₜ β ⋆` when the domain of `β` only contains `⋆` -/
-def Homeomorph.piUnique {ι : Type*} [Unique ι] (α : ι → Type*) [∀ i, TopologicalSpace (α i)] :
-    (Π j, α j) ≃ₜ α default where
-  toEquiv := Equiv.piUnique α
-  continuous_toFun := continuous_apply _
-  continuous_invFun := continuous_pi fun x ↦ by cases x using uniqueElim; exact continuous_id
-
 lemma IsClosed.isClosed_image_restrict_singleton [∀ i, TopologicalSpace (α i)] (i : ι)
     (hs_compact : IsCompact s) (hs_closed : IsClosed s) :
     IsClosed ((fun x ↦ x i) '' s) := by

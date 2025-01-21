@@ -21,34 +21,9 @@ variable [MeasurableSpace α]
 theorem tendsto_zero_measure_of_antitone (μ : Measure α) [IsFiniteMeasure μ] {s : ℕ → Set α}
     (hs1 : ∀ n, MeasurableSet (s n)) (hs2 : Antitone s) (hs3 : (⋂ n, s n) = ∅) :
     Filter.Tendsto (fun n ↦ μ (s n)) Filter.atTop (𝓝 0) := by
-  convert MeasureTheory.tendsto_measure_iInter (fun n ↦ (hs1 n).nullMeasurableSet) hs2
+  convert MeasureTheory.tendsto_measure_iInter_atTop (fun n ↦ (hs1 n).nullMeasurableSet) hs2
     ⟨0, measure_ne_top μ _⟩
   simp [hs3]
-
-/-- Some version of continuity of a measure in the emptyset using the intersection along a set of
-sets. -/
-theorem exists_measure_iInter_lt (μ : Measure α) [IsFiniteMeasure μ] (S : ℕ → Set α)
-    (hS2 : ∀ n, MeasurableSet (S n)) (hS3 : ⋂ n, S n = ∅) {ε : ℝ≥0∞} (hε : 0 < ε) :
-    ∃ m, μ (⋂ n ≤ m, S n) < ε := by
-  let s m := (Accumulate (fun n ↦ (S n)ᶜ) m)ᶜ
-  have hs_anti : Antitone s := by
-    intro i j hij
-    simp only [compl_le_compl_iff_le, le_eq_subset, s]
-    exact monotone_accumulate hij
-  have hs_iInter : ⋂ n, s n = ∅ := by
-    simp only [s]
-    simp_rw [← hS3, ← compl_iUnion, iUnion_accumulate, compl_iUnion, compl_compl]
-  have hs_meas n : MeasurableSet (s n) := (MeasurableSet.accumulate (fun m ↦ (hS2 m).compl) n).compl
-  suffices ∃ m, μ (s m) < ε by
-    obtain ⟨m, hm⟩ := this
-    exact ⟨m, by simpa [s, accumulate_def] using hm⟩
-  suffices Filter.Tendsto (fun m ↦ μ (s m)) Filter.atTop (𝓝 0) by
-    rw [ENNReal.tendsto_atTop_zero_iff_of_antitone' _ (fun _ _ h ↦ measure_mono (hs_anti h))]
-      at this
-    exact this ε hε
-  convert tendsto_measure_iInter (fun n ↦ (hs_meas n).nullMeasurableSet) hs_anti
-    ⟨0, measure_ne_top μ _⟩
-  simp [hs_iInter]
 
 end MeasureTheory
 
@@ -175,8 +150,9 @@ theorem exists_isCompact_closure_measure_lt_of_complete_countable [UniformSpace 
     let f : ℕ → ℕ → Set α := fun n m ↦ UniformSpace.ball (seq m) (t n)
     have h_univ n : (⋃ m, f n m) = univ := hseq_dense.iUnion_uniformity_ball (hto n).1
     have h3 n (ε : ℝ≥0∞) (hε : 0 < ε) : ∃ m, P (⋂ m' ≤ m, (f n m')ᶜ) < ε := by
-      refine exists_measure_iInter_lt P _ (fun m ↦ ?_) ?_ hε
-      · exact ((IsOpen.measurableSet (hto n).2.1).ball _).compl
+      refine exists_measure_iInter_lt (fun m ↦ ?_) hε ?_ ?_
+      · exact ((IsOpen.measurableSet (hto n).2.1).ball _).compl.nullMeasurableSet
+      · simp
       · rw [← compl_iUnion, h_univ, compl_univ]
     choose! s' s'bound using h3
     rcases ENNReal.exists_seq_pos_lt ε hε with ⟨δ, hδ1, hδ2⟩

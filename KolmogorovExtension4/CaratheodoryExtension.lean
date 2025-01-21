@@ -140,12 +140,11 @@ theorem caratheodory_semiring_extension (hC : IsSetSemiring C) (m : AddContent C
 theorem isCaratheodory_inducedOuterMeasure (hC : IsSetSemiring C) (m : AddContent C)
     (s : Set α) (hs : MeasurableSet[MeasurableSpace.generateFrom C] s) :
     (inducedOuterMeasure (fun x _ ↦ m x) hC.empty_mem addContent_empty).IsCaratheodory s := by
-  apply MeasurableSpace.generateFrom_induction
-  · exact fun _ ↦ caratheodory_semiring_extension hC m
-  · exact OuterMeasure.isCaratheodory_empty _
-  · exact fun _ ↦ OuterMeasure.isCaratheodory_compl _
-  · exact fun _ ↦ OuterMeasure.isCaratheodory_iUnion _
-  · exact hs
+  induction hs with
+  | basic u hu => exact caratheodory_semiring_extension hC m hu
+  | empty => exact OuterMeasure.isCaratheodory_empty _
+  | compl t _ h => exact OuterMeasure.isCaratheodory_compl _ h
+  | iUnion f _ h => exact OuterMeasure.isCaratheodory_iUnion _ h
 
 /-- Construct a measure from a sigma-subadditive function on a semiring. This
 measure is defined on the associated Carathéodory sigma-algebra. -/

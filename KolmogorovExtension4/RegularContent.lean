@@ -73,7 +73,8 @@ lemma addContent_iUnion_eq_sum_of_regular (hR : IsSetRing R) (m : AddContent R)
     (hm_ne_top : ∀ s ∈ R, m s ≠ ∞)
     (hC : IsCompactSystem C) (hCR : C ⊆ R)
     (h_reg : ∀ A ∈ R, ∀ ε, 0 < ε → ∃ K ∈ C, K ⊆ A ∧ m (A \ K) ≤ ε)
-    ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ R) (hUf : (⋃ i, f i) ∈ R) (h_disj : Pairwise (Disjoint on f)) :
+    ⦃f : ℕ → Set α⦄ (hf : ∀ i, f i ∈ R) (hUf : (⋃ i, f i) ∈ R)
+    (h_disj : Pairwise (Function.onFun Disjoint f)) :
     m (⋃ i, f i) = ∑' i, m (f i) := by
   refine addContent_iUnion_eq_sum_of_tendsto_zero hR m hm_ne_top ?_ hf hUf h_disj
   intro s hs hs_anti hs_iInter
