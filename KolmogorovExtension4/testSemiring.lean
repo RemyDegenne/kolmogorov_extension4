@@ -23,11 +23,12 @@ namespace IsSetSemiring
 
 variable {α : Type*} {C : Set (Set α)} {s t : Set α}
     {J : Finset (Set α)}
-
+-- PR #20931
 lemma sUnion_diffFinset₀_subsets (hC : IsSetSemiring C) {I : Finset (Set α)} (hs : s ∈ C) (hI : ↑I ⊆ C) :
     ∀ t ∈ (hC.diffFinset₀ hs hI : Set (Set α)), t ⊆ s \ ⋃₀ I := by
   rw [← sUnion_subset_iff, hC.diff_sUnion_eq_sUnion_diffFinset₀ hs hI]
 
+-- PR #20931
 lemma sUnion_diffFinset₀_subsets' (hC : IsSetSemiring C) {I : Finset (Set α)} (hs : s ∈ C) (hI : ↑I ⊆ C) :
     ∀ t ∈ (hC.diffFinset₀ hs hI : Set (Set α)), t ⊆ s := by
   rw [← sUnion_subset_iff]
@@ -42,6 +43,7 @@ end MeasureTheory
 
 variable [CompleteLattice α]
 
+-- PR #20931
 lemma disjoint_of_sSup_disjoint_of_le_of_le {a b : α} {c d : Set α} (hs : ∀ e ∈ c, e ≤ a) (ht : ∀ e ∈ d, e ≤ b)
     (hd : Disjoint a b) (he : ⊥ ∉ c ∨ ⊥ ∉ d) : Disjoint c d := by
   rw [disjoint_iff_forall_ne]
@@ -50,6 +52,7 @@ lemma disjoint_of_sSup_disjoint_of_le_of_le {a b : α} {c d : Set α} (hs : ∀ 
   aesop
   exact Disjoint.mono (hs x hx) (ht y hy) hd
 
+-- PR #20931
 lemma disjoint_of_sSup_disjoint {a b : Set α} (hd : Disjoint (sSup a) (sSup b)) (he : ⊥ ∉ a ∨ ⊥ ∉ b)
     : Disjoint a b :=
   disjoint_of_sSup_disjoint_of_le_of_le (fun _ hc => le_sSup hc) (fun _ hc => le_sSup hc) hd he
@@ -71,6 +74,7 @@ set_option trace.split.failure true
 
 variable [DecidableEq (Set α)]
 
+-- PR #20931
 theorem allDiffFinset₀_props (hC : IsSetSemiring C) (h1 : ↑J ⊆ C) :
     ∃ K : Set α → Finset (Set α),
       J.toSet.PairwiseDisjoint K
@@ -155,50 +159,61 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (h1 : ↑J ⊆ C) :
       rw [← hC.diff_sUnion_eq_sUnion_diffFinset₀ h11 h12, ← hK5]
       simp
 
+-- PR #20931
 noncomputable def allDiffFinset₀' (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :=
   (hC.allDiffFinset₀_props hJ).choose
 
+-- PR #20931
 lemma allDiffFinset₀'_disjoint (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
     J.toSet.PairwiseDisjoint (hC.allDiffFinset₀' hJ) :=
   (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).1
 
+-- PR #20931
 lemma allDiffFinset₀'_subsets_semiring (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) (hj : j ∈ J) :
     (allDiffFinset₀' hC hJ j).toSet ⊆ C :=
   (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).2.1 _ hj
 
+-- PR #20931
 lemma allDiffFinset₀'_subset_semiring (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
     (disjiUnion J (hC.allDiffFinset₀' hJ) (hC.allDiffFinset₀'_disjoint hJ)).toSet ⊆ C := by
   simp only [disjiUnion_eq_biUnion, coe_biUnion, mem_coe, iUnion_subset_iff]
   exact fun _ ↦ allDiffFinset₀'_subsets_semiring hC hJ
 
+-- PR #20931
 lemma  allDiffFinset₀'_pairwiseDisjoint' (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
     (⋃ x ∈ J, (hC.allDiffFinset₀' hJ x).toSet).PairwiseDisjoint id :=
   (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).2.2.1
 
+-- PR #20931
 lemma allDiffFinset₀'_pairwiseDisjoint (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
     PairwiseDisjoint (disjiUnion J (hC.allDiffFinset₀' hJ)
       (hC.allDiffFinset₀'_disjoint hJ)).toSet id := by
   simp only [disjiUnion_eq_biUnion, coe_biUnion, mem_coe]
   exact allDiffFinset₀'_pairwiseDisjoint' hC hJ
 
+-- PR #20931
 lemma allDiffFinset₀'_pairwiseDisjoints (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) (hj : j ∈ J) :
     PairwiseDisjoint (hC.allDiffFinset₀' hJ j).toSet id := by
   apply PairwiseDisjoint.subset (hC.allDiffFinset₀'_pairwiseDisjoint hJ)
   simp only [disjiUnion_eq_biUnion, coe_biUnion, mem_coe]
   apply subset_iUnion₂_of_subset j hj (by rfl)
 
+-- PR #20931
 lemma allDiffFinset₀'_subset (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) (hj : j ∈ J) :
     ⋃₀ hC.allDiffFinset₀' hJ j ⊆ j :=
   (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).2.2.2.1 j hj
 
+-- PR #20931
 lemma allDiffFinset₀'_subsets (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) (hj : j ∈ J) :
     ∀ x ∈ (hC.allDiffFinset₀' hJ) j, x ⊆ j :=
   sUnion_subset_iff.mp (hC.allDiffFinset₀'_subset hJ hj)
 
+-- PR #20931
 lemma allDiffFinset₀'_empty_not_mem (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) (hj : j ∈ J) :
     ∅ ∉ hC.allDiffFinset₀' hJ j :=
   (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).2.2.2.2.1 j hj
 
+-- PR #20931
 lemma allDiffFinset₀'_sUnion (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :
     (⋃₀ J.toSet) = ⋃₀ (disjiUnion J (hC.allDiffFinset₀' hJ)
       (hC.allDiffFinset₀'_disjoint hJ)).toSet := by
