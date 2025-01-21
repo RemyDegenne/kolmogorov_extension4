@@ -88,6 +88,7 @@
 \newcommand{\tost}{\to_*}
 \newcommand{\ind}[1]{\mathbb{1}_{#1}}
 \newcommand{\dmu}{\mathrm{d}\mu}
+\newcommand{\dlamb}{\mathrm{d}\lambda}
 \newcommand{\mathlib}{\texttt{mathlib}}
 
 \newtheorem{thm}{Theorem}[section]
@@ -245,14 +246,14 @@
 	def kerNat (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
 		Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l).
 	\end{lstlisting}
-	This takes as an argument a family of kernels $(\kappa_k)_{k\in\N}$ with $\kappa_k : \Xle{k}\to X_{k+1}$ just as in Theorem~\ref{thm:it}. Then given two integers $i$ and $j$ it returns a kernel \texttt{kerNat $\kappa$ i j} which is the composition
+	This takes as an argument a family of kernels $(\kappa_k)_{k\in\N}$ with $\kappa_k : \Xle{k}\to X_{k+1}$ just as in Theorem~\ref{thm:it}. Then given two integers $i$ and $j$ it returns a kernel \lean{kerNat κ i j} which is the composition
 	$$\kappa_i \ox \kappa_{i+1} \ox \cdots \ox \kappa_{j-1}.$$
-	We are therefore now able to speak about those compositions which are necessary to state the theorem. However \texttt{kerNat} proved to be not enough for later purposes. Indeed after proving the theorem and trying to write some API we thought that it would be best to to have a kernel which does not necesarrily starts at time 0 but at any instant. This  would prove nicer for example when it comes to write formulas for the conditional expectation against the Ionescu-Tulcea kernel (see Section). However we bumped into an issue. Having different kernels starting at different times was proving hard to manipulate even with the compositions that were implemented. That is why I chose to add another layer on top of \texttt{kerNat} which proved to work out smoothly.
+	We are therefore now able to speak about those compositions which are necessary to state the theorem. However \lean{kerNat} proved to be not enough for later purposes. Indeed after proving the theorem and trying to write some API we thought that it would be best to to have a kernel which does not necesarrily starts at time 0 but at any instant. This  would prove nicer for example when it comes to write formulas for the conditional expectation against the Ionescu-Tulcea kernel (see Section). However we bumped into an issue. Having different kernels starting at different times was proving hard to manipulate even with the compositions that were implemented. That is why I chose to add another layer on top of \lean{kerNat} which proved to work out smoothly.
 	\begin{lstlisting}
 	def partialKernel (a b : ℕ) :
 		Kernel ((i : Iic a) → X i) ((i : Iic b) → X i)
 	\end{lstlisting}
-	Given integer $a$ and $b$ this function will output a kernel from $\Xle{a}$ to $\Xle{b}$. The idea is that the input of this kernel is the full trajectory up to time $a$ and the output is the distribution of the full trajectory up to time $b$. Of course this distribution is deterministic up to time $a$ and then we compose with \texttt{kerNat $\kappa$ a b}. The advantage of this construction is that in the end we always manipulate kernels with domains and codomains of the form $\Xlen$ for some integer $n$ which makes all the composition much easier. For example if we take $a$, $b$ and $c$ three integers satisfying $a \land c \le b$ we get
+	Given integer $a$ and $b$ this function will output a kernel from $\Xle{a}$ to $\Xle{b}$. The idea is that the input of this kernel is the full trajectory up to time $a$ and the output is the distribution of the full trajectory up to time $b$. Of course this distribution is deterministic up to time $a$ and then we compose with \lean{kerNat κ a b}. The advantage of this construction is that in the end we always manipulate kernels with domains and codomains of the form $\Xlen$ for some integer $n$ which makes all the composition much easier. For example if we take $a$, $b$ and $c$ three integers satisfying $a \land c \le b$ we get
 	\begin{lstlisting}
 	(partialKernel κ b c) ∘ₖ (partialKernel κ a b) = partialKernel κ a c
 	\end{lstlisting}
@@ -263,7 +264,7 @@
 	We see that the proof of Lemma~\ref{lem:tendsto_zero} heavily relies on the use of sections of sets. This however is not well suited for formalization purposes because of the following. The set $\prod_{n\in\N} X_n$ is represented in lean as the type of functions $f$ with domain $\N$ and such that for any $n \in \N$ $f(n)$ has type $X_n$. We encounter the same issue as before: $\prod_{n\in\N} X_n$ is different from $X_0 \times \Xge{1}$ so we have to use isomorphisms. Moreover, if $A \subseteq \prod_{n\in\N} X_n$ and $x \in X_0$then $A_x \subseteq \Xge{1}$.
 	So $A_x$ is a set of sequences indexed by $\N_+$ which is not a subset of $\N$ but rather a subtype in Lean. This makes things hard to manipulate because we want to deal with an element of $\N_+$ we have to provide a proof that it is positive. This would have to be done not only for non-zero integers but also for integers greater than $2$, $3$ and so on with the same troubles each time. Therefore Sébastien Gouëzel suggested another approach.
 
-	The idea relies on the notion of marginals exposed in Section~4 of [Van2024]. I generalized their idea as follows: given $a$ and $b$ integers, $f : X \to [0,+\infty]$ and $x \in X$ I defined \texttt{lamrginalPartialKernel $\kappa$ a b f x} as
+	The idea relies on the notion of marginals exposed in Section~4 of [Van2024]. I generalized their idea as follows: given $a$ and $b$ integers, $f : X \to [0,+\infty]$ and $x \in X$ I defined \lean{lamrginalPartialKernel κ a b f x} as
 	$$\int_{\Xle{b}} f(y \leadsto_b x) \mathrm{d}\eta_{a,b}(x_0,...,x_a).$$
 
 	This is great because it allows to write $$\texttt{lamrginalPartialKernel $\kappa$ b c (lamrginalPartialKernel $\kappa$ a b f x) x},$$
@@ -293,11 +294,38 @@
 	def DependsOn (f : ((i : ι) → α i) → β) (s : Set ι) : Prop :=
 	∀ ⦃x y⦄, (∀ i ∈ s, x i = y i) → f x = f y
 	\end{lstlisting}
-	The idea is that if $f : \prod_{i\in\iota} \alpha_i \to \beta$ and $s \subset \iota$, \texttt{DependsOn f s} means that to check $f(x) = f(y)$ it is enough to show that for any $i \in s$, $x_i = y_i$. In other words $f$ only depends on coordinates indexed by $s$. For example, if $f$ only depends on coordinates $\le b$ and we integrate over its coordinates between $a$ and $b$ then the output only depends on coordinates $\le a$. This is formalized as follows.
+	The idea is that if $f : \prod_{i\in\iota} \alpha_i \to \beta$ and $s \subset \iota$, \lean{DependsOn f s} means that to check $f(x) = f(y)$ it is enough to show that for any $i \in s$, $x_i = y_i$. In other words $f$ only depends on coordinates indexed by $s$. For example, if $f$ only depends on coordinates $\le b$ and we integrate over its coordinates between $a$ and $b$ then the output only depends on coordinates $\le a$. This is formalized as follows.
 	\begin{lstlisting}
 	theorem dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ}
 		{f : ((n : ℕ) → X n) → ℝ≥0∞}
 		(hf : DependsOn f (Iic b)) (mf : Measurable f) :
 		DependsOn (lmarginalPartialKernel κ a b f) (Iic a)
 	\end{lstlisting}
+
+	\section{Writing an API}
+
+	When formalizing a new mathematical object one usually does not stop at writing the definition. Indeed the objected is intended to be usable by all the users without having to know how the object was implemented. That is why it is important to accompany the object with many results which allow other users to use the object without knowing the implementation details.
+
+	We now present some of these results. The API is still very basic and will be developed as other users pick up the object to formalize more objects. The best way to find new lemmas to formalize is to choose a target statement and try and formalize it. In our case we aim to prove the following result.
+
+	\begin{nota}
+		For $n \in \N$ we set $\F_n := \pi_{\dbrack{0,n}}\inv\prth{\Alen}$.
+	\end{nota}
+
+	\begin{thm}
+		\label{thm:condexp}
+		Let $a, b \in \N$ with $a \le b$. Let $u \in \Xle{a}$. Let $f : X \to \R$ be an integrable function with respect to $\lambda_a(u)$. Then for $\lambda_a(u)$-almost every $x := (x_n)_{n\in\N}$, $f$ is integrable with respect to $\lambda_b(x_0,...,x_b)$ and
+		$$\E_{\lambda_a(u)}[f \mid \F_n] (x) = \int_X f(y) \lambda_b(x_0,...,x_b, \dy).$$
+	\end{thm}
+
+	Let us give the proof to highlight the necessary intermediate results. Take $A \in \Ale{b}$ and set $\pi := \pi_{\dbrack{0,b}}$. Our goal is to prove that
+	$$\int_{\pi\inv(A)} \int_X f(y) \lambda_b(\pi(x), \dy)\lambda_a(u,\dx) = \int_{\pi\inv(A)} f \dlamb_a.$$
+	We start by rewriting the outer integral using the push-forward measure:
+	$$\int_{\pi\inv(A)} \int_X f(y) \lambda_b(\pi(x), \dy)\lambda_a(u,\dx) = \int_A \int_X f(y) \lambda_b(\pi(x), \dy)(\pi_*\lambda_a)(u,\dx).$$
+	The first we will need is that $\pi_*\lambda_a = \eta_{a,b}$. This is quite obvious: as $\lambda_a$ gives the whole trajectory, keeping only the cooordinates up to time $b$ yields the trajectory up to time $b$. This is formalized as below.
+	\begin{lstlisting}
+theorem ionescuTulceaKernel_proj (a b : ℕ) :
+(ionescuTulceaKernel κ a).map (frestrictLe b) = partialKernel κ a b
+	\end{lstlisting}
+	So we get $$\int_{\pi\inv(A)} \int_X f(y) \lambda_b(\pi(x), \dy)\lambda_a(u,\dx) = \int_A \int_X f(y) \lambda_b(\pi(x), \dy)\eta_{a,b}(u,\dx).$$
 \end{document}

@@ -262,6 +262,11 @@ theorem Kernel.integral_comp (η : Kernel Y Z) [IsFiniteKernel η]
   · convert hg.aestronglyMeasurable
     rw [Kernel.comp_eq_snd_compProd, Kernel.snd_apply]
 
+theorem setIntegral_eq {μ : Measure X} (f : X → E) {s : Set X} (hs : MeasurableSet s) :
+    ∫ x in s, f x ∂μ = ∫ x, (s.indicator (fun _ ↦ (1 : ℝ)) x) • (f x) ∂μ := by
+  simp_rw [← Set.indicator_one_smul_apply]
+  rw [integral_indicator hs]
+
 variable [CompleteSpace E]
 
 theorem Kernel.integral_deterministic_prod {f : X → Y} (mf : Measurable f)
@@ -292,6 +297,9 @@ section Finset
 lemma mem_Ioc_succ {n i : ℕ} : i ∈ Ioc n (n + 1) ↔ i = n + 1 := by
   rw [mem_Ioc]
   omega
+
+lemma mem_Ioc_succ' {n : ℕ} (i : Ioc n (n + 1)) : i = ⟨n + 1, mem_Ioc_succ.2 rfl⟩ := by
+  simp [← mem_Ioc_succ.1 i.2]
 
 theorem updateFinset_self {ι : Type*} [DecidableEq ι] {α : ι → Type*} (x : (i : ι) → α i)
     {s : Finset ι} (y : (i : s) → α i) : (fun i : s ↦ updateFinset x s y i) = y := by

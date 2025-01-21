@@ -578,10 +578,9 @@ theorem ionescuTulceaKernel_eq (n : ℕ) :
   ext x s ms
   rw [Kernel.map_map, Kernel.map_apply' _ _ _ ms, Kernel.deterministic_prod_apply',
     Kernel.map_apply']
-  · have : (frestrictLe a) ∘ (el' n) ∘ (Prod.mk x) ∘
-        (Set.Ioi n).restrict =
+  · have : (frestrictLe a) ∘ (el' n) ∘ (Prod.mk x) ∘ (Set.Ioi n).restrict =
         (fun y (i : Iic a) ↦ if hi : i.1 ≤ n then x ⟨i.1, mem_Iic.2 hi⟩ else y i) ∘
-        (frestrictLe a) := by
+          (frestrictLe a) := by
       ext x i
       by_cases hi : i.1 ≤ n <;> simp [hi, el']
     have aux t : {c : (i : Set.Ioi n) → X i | (id x, c) ∈ t} = Prod.mk x ⁻¹' t := rfl
@@ -680,6 +679,25 @@ theorem partialKernel_comp_ionescuTulceaKernel_apply {a b : ℕ} (hab : a ≤ b)
     · exact hf.of_uncurry_left.aestronglyMeasurable
   · convert i_f
     rw [partialKernel_comp_ionescuTulceaKernel _ hab]
+
+theorem setIntegral_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b) (u : (Π i : Iic a, X i))
+    {f : (Π n, X n) → E} (i_f : Integrable f (ionescuTulceaKernel κ a u))
+    (hf : StronglyMeasurable f)
+    (A : Set (Π i : Iic b, X i)) (hA : MeasurableSet A) :
+    ∫ x in A, ∫ y, f y ∂ionescuTulceaKernel κ b x ∂partialKernel κ a b u =
+      ∫ y in frestrictLe b ⁻¹' A, f y ∂ionescuTulceaKernel κ a u := by
+  rw [setIntegral_eq _ hA]
+  simp_rw [← integral_smul]
+  rw [partialKernel_comp_ionescuTulceaKernel_apply]
+  simp_rw [← preimage_indicator]
+  rw [← setIntegral_eq]
+  · exact measurable_frestrictLe b hA
+  · exact hab
+  · apply StronglyMeasurable.smul
+    · exact (((measurable_const.indicator hA)).comp measurable_fst).stronglyMeasurable
+    · exact hf.comp_measurable measurable_snd
+  · simp_rw [← preimage_indicator, ← Set.indicator_one_smul_apply]
+    exact i_f.indicator (measurable_frestrictLe b hA)
 
 variable [CompleteSpace E]
 

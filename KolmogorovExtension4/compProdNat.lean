@@ -19,6 +19,12 @@ lemma measurable_cast {X Y : Type u} [mX : MeasurableSpace X] [mY : MeasurableSp
   subst hm
   exact measurable_id
 
+lemma measurable_eqRec {X Y : Type u} [mX : MeasurableSpace X] [mY : MeasurableSpace Y] (h : X = Y)
+    (hm : HEq mX mY) : Measurable (fun x : X ↦ h ▸ x) := by
+  subst h
+  subst hm
+  exact measurable_id
+
 variable {X : ℕ → Type*}
 
 theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
@@ -39,17 +45,11 @@ def e (n : ℕ) : (X (n + 1)) ≃ᵐ ((i : Ioc n (n + 1)) → X i) where
   toFun := fun x i ↦ (mem_Ioc_succ.1 i.2).symm ▸ x
   invFun := fun x ↦ x ⟨n + 1, right_mem_Ioc.2 n.lt_succ_self⟩
   left_inv := fun x ↦ by simp
-  right_inv := fun x ↦ funext fun i ↦ by
-    have : ⟨n + 1, right_mem_Ioc.2 n.lt_succ_self⟩ = i := by
-      simp [(mem_Ioc_succ.1 i.2).symm]
-    cases this; rfl
+  right_inv := fun x ↦ funext fun i ↦ by cases mem_Ioc_succ' i; rfl
   measurable_toFun := by
-    refine measurable_pi_lambda _ (fun i ↦ ?_)
     simp_rw [eqRec_eq_cast]
-    apply measurable_cast
-    have : ⟨n + 1, right_mem_Ioc.2 n.lt_succ_self⟩ = i := by
-      simp [(mem_Ioc_succ.1 i.2).symm]
-    cases this; rfl
+    refine measurable_pi_lambda _ (fun i ↦ measurable_cast _ ?_)
+    cases mem_Ioc_succ' i; rfl
   measurable_invFun := measurable_pi_apply _
 
 /-- Gluing `Iic m` and `Ioc m n` into `Iic n`, as a measurable equiv of dependent functions. -/
@@ -63,8 +63,7 @@ def el (m n : ℕ) (hmn : m ≤ n) :
     ext i
     · simp [mem_Iic.1 i.2]
     · simp [not_le.2 (mem_Ioc.mp i.2).1]
-  right_inv := fun p ↦ by
-    ext i
+  right_inv := fun p ↦ funext fun i ↦ by
     by_cases hi : i.1 ≤ m <;> simp [hi]
   measurable_toFun := by
     apply measurable_pi_lambda _ (fun (x : Iic n) ↦ ?_)
