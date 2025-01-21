@@ -669,7 +669,22 @@ theorem measurable_lmarginalPartialKernel [∀ n, IsSFiniteKernel (κ n)]
   · exact (measurable_pi_apply _).comp <| measurable_fst
   · exact measurable_snd.eval
 
-theorem lmarginalPartialKernel_self [∀ n, IsFiniteKernel (κ n)] {a b c : ℕ}
+theorem restrict_udpateFinset {ι : Type*} [DecidableEq ι] {α : ι → Type*} (s : Finset ι)
+    (x : (i : ι) → α i) (y : (i : s) → α i) :
+    s.restrict (updateFinset x s y) = y := by ext i; simp [updateFinset]
+
+theorem updateFinset_updateFinset_subset {ι : Type*} [DecidableEq ι] {α : ι → Type*}
+    (s t : Finset ι) (hst : s ⊆ t) (x : (i : ι) → α i)
+    (y : (i : s) → α i) (z : (i : t) → α i) :
+    updateFinset (updateFinset x s y) t z = updateFinset x t z := by
+  ext i
+  simp [updateFinset]
+  split_ifs with h1 h2
+  · rfl
+  · exact (h1 (hst h2)).elim
+  · rfl
+
+theorem lmarginalPartialKernel_self [∀ n, IsMarkovKernel (κ n)] {a b c : ℕ}
     (hab : a ≤ b) (hbc : b ≤ c)
     {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
     lmarginalPartialKernel κ a b (lmarginalPartialKernel κ b c f) =
@@ -679,26 +694,10 @@ theorem lmarginalPartialKernel_self [∀ n, IsFiniteKernel (κ n)] {a b c : ℕ}
   · rw [lmarginalPartialKernel_le κ (_root_.le_refl a) (measurable_lmarginalPartialKernel _ _ _ hf)]
   · rw [lmarginalPartialKernel_le κ (_root_.le_refl a) (measurable_lmarginalPartialKernel _ _ _ hf)]
   · rw [lmarginalPartialKernel_le κ (_root_.le_refl b) hf]
-  rw [lmarginalPartialKernel_lt _ (hab.trans hbc) hf, lmarginalPartialKernel_lt _ hab]
-  simp_rw [lmarginalPartialKernel_lt _ hbc hf]
-  rw [← compProdNat_kerNat _ hab hbc, compProdNat_eq _ _  hab hbc, Kernel.map_apply,
-    MeasureTheory.lintegral_map _ (er ..).measurable, Kernel.lintegral_compProd]
-  · congrm ∫⁻ _, ∫⁻ _, f fun i ↦ ?_ ∂(?_) ∂_
-    · rw [split_eq_comap, Kernel.comap_apply]
-      congr with i
-      simp only [frestrictLe, restrict, updateFinset, mem_Ioc, el, MeasurableEquiv.coe_mk,
-        Equiv.coe_fn_mk]
-      split_ifs with h1 h2 h3 <;> try rfl
-      · omega
-      · have := mem_Iic.1 i.2
-        omega
-    · simp only [updateFinset, mem_Ioc, er, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk]
-      split_ifs <;> try omega
-      rfl; rfl; rfl
-  · exact hf.comp <| measurable_updateFinset.comp (er ..).measurable
-  · exact hf.comp <| measurable_updateFinset
-  · exact (er ..).measurable
-  · exact measurable_lmarginalPartialKernel _ _ _ hf
+  simp_rw [lmarginalPartialKernel, frestrictLe, restrict_udpateFinset,
+    updateFinset_updateFinset_subset _ _ (Iic_subset_Iic.2 hbc.le)]
+  rw [← lintegral_comp, partialKernel_comp κ c hab.le]
+  exact hf.comp <| measurable_updateFinset
 
 end integral
 

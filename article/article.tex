@@ -7,7 +7,7 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage{subcaption}
-\usepackage[a4paper, total={\textwidth, 23cm}]{geometry}
+\usepackage[a4paper, total={16cm, 23cm}]{geometry}
 \usepackage{setspace}
 \usepackage{bbold}
 \usepackage{chngcntr}
@@ -249,6 +249,55 @@
 	$$\kappa_i \ox \kappa_{i+1} \ox \cdots \ox \kappa_{j-1}.$$
 	We are therefore now able to speak about those compositions which are necessary to state the theorem. However \texttt{kerNat} proved to be not enough for later purposes. Indeed after proving the theorem and trying to write some API we thought that it would be best to to have a kernel which does not necesarrily starts at time 0 but at any instant. This  would prove nicer for example when it comes to write formulas for the conditional expectation against the Ionescu-Tulcea kernel (see Section). However we bumped into an issue. Having different kernels starting at different times was proving hard to manipulate even with the compositions that were implemented. That is why I chose to add another layer on top of \texttt{kerNat} which proved to work out smoothly.
 	\begin{lstlisting}
-		content
+	def partialKernel (a b : ℕ) :
+		Kernel ((i : Iic a) → X i) ((i : Iic b) → X i)
+	\end{lstlisting}
+	Given integer $a$ and $b$ this function will output a kernel from $\Xle{a}$ to $\Xle{b}$. The idea is that the input of this kernel is the full trajectory up to time $a$ and the output is the distribution of the full trajectory up to time $b$. Of course this distribution is deterministic up to time $a$ and then we compose with \texttt{kerNat $\kappa$ a b}. The advantage of this construction is that in the end we always manipulate kernels with domains and codomains of the form $\Xlen$ for some integer $n$ which makes all the composition much easier. For example if we take $a$, $b$ and $c$ three integers satisfying $a \land c \le b$ we get
+	\begin{lstlisting}
+	(partialKernel κ b c) ∘ₖ (partialKernel κ a b) = partialKernel κ a c
+	\end{lstlisting}
+	where $\circ_{\rm k}$ is the composition of kernels. This nice property has the advantage to be expressed with a regular operation on kernels rather than one which would be made up for the occasion. With this tool we get a satisfactory way of expressing the composition of multiple kernels.
+
+	\section{Sections of sets}
+
+	We see that the proof of Lemma~\ref{lem:tendsto_zero} heavily relies on the use of sections of sets. This however is not well suited for formalization purposes because of the following. The set $\prod_{n\in\N} X_n$ is represented in lean as the type of functions $f$ with domain $\N$ and such that for any $n \in \N$ $f(n)$ has type $X_n$. We encounter the same issue as before: $\prod_{n\in\N} X_n$ is different from $X_0 \times \Xge{1}$ so we have to use isomorphisms. Moreover, if $A \subseteq \prod_{n\in\N} X_n$ and $x \in X_0$then $A_x \subseteq \Xge{1}$.
+	So $A_x$ is a set of sequences indexed by $\N_+$ which is not a subset of $\N$ but rather a subtype in Lean. This makes things hard to manipulate because we want to deal with an element of $\N_+$ we have to provide a proof that it is positive. This would have to be done not only for non-zero integers but also for integers greater than $2$, $3$ and so on with the same troubles each time. Therefore Sébastien Gouëzel suggested another approach.
+
+	The idea relies on the notion of marginals exposed in Section~4 of [Van2024]. I generalized their idea as follows: given $a$ and $b$ integers, $f : X \to [0,+\infty]$ and $x \in X$ I defined \texttt{lamrginalPartialKernel $\kappa$ a b f x} as
+	$$\int_{\Xle{b}} f(y \leadsto_b x) \mathrm{d}\eta_{a,b}(x_0,...,x_a).$$
+
+	This is great because it allows to write $$\texttt{lamrginalPartialKernel $\kappa$ b c (lamrginalPartialKernel $\kappa$ a b f x) x},$$
+	in other words we can first integrate between $a$ and $b$ and then between $b$ and $c$. This allows us to peel off the measure of a cylinder as the integral of its indicator:
+	$$P_0(x_0, A_n) = \int_{X_1} P_1(x_0, x_1, A_n(x_1)) \kappa_0(x_0,\dx_1).$$
+
+%	In this paper they explain how we can't directly write
+%	$$\int_{\R^{n+m}}f(x)\dx=\int_{\R^n}\int_{\R^m}f(x,y)\dx\dy$$
+%	because $\R^{n+m}$ and $\R^n\times\R^m$ are not the same type in lean. Therefore given $(X_i, \A_i, \mu_i)_{i\in\iota}$ a family of measure spaces, $I$ a finite subset of $\iota$ and $f : \prod_{i\in\iota} X_i \to [0,+\infty]$,	they define the following function
+%	\begin{align*}
+%		\int\cdots\int_{i\in I}f\dmu_i : \prod_{i\in\iota}X_i &\to [0,+\infty] \\
+%		x &\mapsto \int_{\prod_{i \in I}X_i}f(y \leadsto_I x) \mathrm d \bigotimes_{i\in A}\mu_i(dy),
+%	\end{align*}
+%	where $y \leadsto_J x$ is defined as
+%	$$(y \leadsto_J x)_i :=
+%	\begin{cases}
+%		y_i, &\text{si $i \in J$} \\
+%		x_i, &\text{sinon}
+%	\end{cases}.
+%	$$
+%	What is happening here is that we are computing
+
+	\section{Dependence in coordinates}
+
+	This trick of considering some function as defined over $X$ while it really only depends on the coordinates $\ge n$ brings the necessity of introducing a simple way to indicate which variables a given function actually depends on. We therefore introduced the following predicate.
+	\begin{lstlisting}
+	def DependsOn (f : ((i : ι) → α i) → β) (s : Set ι) : Prop :=
+	∀ ⦃x y⦄, (∀ i ∈ s, x i = y i) → f x = f y
+	\end{lstlisting}
+	The idea is that if $f : \prod_{i\in\iota} \alpha_i \to \beta$ and $s \subset \iota$, \texttt{DependsOn f s} means that to check $f(x) = f(y)$ it is enough to show that for any $i \in s$, $x_i = y_i$. In other words $f$ only depends on coordinates indexed by $s$. For example, if $f$ only depends on coordinates $\le b$ and we integrate over its coordinates between $a$ and $b$ then the output only depends on coordinates $\le a$. This is formalized as follows.
+	\begin{lstlisting}
+	theorem dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ}
+		{f : ((n : ℕ) → X n) → ℝ≥0∞}
+		(hf : DependsOn f (Iic b)) (mf : Measurable f) :
+		DependsOn (lmarginalPartialKernel κ a b f) (Iic a)
 	\end{lstlisting}
 \end{document}
