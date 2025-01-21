@@ -6,6 +6,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.MeasurableSpace.Defs
 import Mathlib.Order.CompletePartialOrder
+import Mathlib
 
 open Finset Set MeasureTheory Order Filter
 
@@ -278,3 +279,49 @@ lemma sUnion_finsetLT_eq_biUnion (J : Finset (Set α)) (n : Fin J.card) :
 end FinsetSet
 
 end Finset
+
+
+/- namespace MeasureTheory
+
+namespace IsProjectiveMeasureFamily
+
+variable {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+  {P : ∀ J : Finset ι, Measure (Π j : J, α j)}
+
+lemma isConstant_of_univ (hP : IsProjectiveMeasureFamily P) :
+    (∃ a, ∀ J, P J univ = a) := by
+  classical
+  by_cases h : Nonempty ι
+  · let default := Classical.choice h
+    use P {default} univ
+    intro J
+    let I := insert default J
+
+
+
+
+
+    sorry
+  · rw [isempty_] at h
+    have h1 : Inhabited ι := by simp
+    use P {default} univ
+
+
+lemma isConstant_of_univ' (hP : IsProjectiveMeasureFamily P) :
+    (∃ a, (fun J => P J univ) = Function.const _ a) := by
+  sorry
+
+
+def IsProjectiveMeasureFamily1 (P : ∀ J : Finset ι, Measure (∀ j : J, α j)) : Prop :=
+  ∀ (I J : Finset ι) (hJI : J ⊆ I),
+    P J = (P I).map (Finset.restrict₂ hJI)
+
+
+
+
+end IsProjectiveMeasureFamily
+
+end MeasureTheory
+-/
+
+#min_imports
