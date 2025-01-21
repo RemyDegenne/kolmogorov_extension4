@@ -233,7 +233,7 @@ lemma compProdNat_apply' {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : 
     (κ ⊗ₖ' η) a s
       = ∫⁻ b, η (el i j hij.le (a, b)) {c | (b, c) ∈ er i j k hij hjk.le ⁻¹' s} ∂(κ a) := by
   rw [compProdNat_eq _ _ hij hjk, Kernel.map_apply' _ _ _ hs,
-    Kernel.compProd_apply _ _ _ ((er _ _ _ _ _).measurable hs)]
+    Kernel.compProd_apply ((er _ _ _ _ _).measurable hs)]
   · simp_rw [split, Kernel.comap_apply]
   · exact (er ..).measurable
 
@@ -293,7 +293,7 @@ lemma compProdNat_assoc {i j k l : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l :
   have : ∀ b, MeasurableSet
       (er j k l hjk hkl.le ⁻¹' {c | (b, c) ∈ er i j l hij (hjk.trans hkl).le ⁻¹' s}) :=
     fun b ↦ (er _ _ _ _ _).measurable (this b)
-  simp_rw [compProd_apply _ _ _ (this _), split, Kernel.comap_apply]
+  simp_rw [compProd_apply (this _), split, Kernel.comap_apply]
   rw [lintegral_compProd]
   swap; exact h_meas_comp.comp (er i j k hij hjk.le).measurable
   simp only [comap_apply, el_assoc, Set.mem_preimage, Set.preimage_setOf_eq, Set.mem_setOf_eq,

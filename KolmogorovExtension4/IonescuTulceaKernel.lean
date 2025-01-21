@@ -469,7 +469,7 @@ theorem isProjectiveLimit_ionescuTulceaFun (p : ℕ) (x₀ : (i : Iic p) → X i
 theorem measurable_ionescuTulceaFun (p : ℕ) : Measurable (ionescuTulceaFun κ p) := by
   apply Measure.measurable_of_measurable_coe
   refine MeasurableSpace.induction_on_inter
-    (C := fun t ↦ Measurable (fun x₀ ↦ ionescuTulceaFun κ p x₀ t))
+    (C := fun t ht ↦ Measurable (fun x₀ ↦ ionescuTulceaFun κ p x₀ t))
     (s := measurableCylinders X) generateFrom_measurableCylinders.symm
     isPiSystem_measurableCylinders (by simp) (fun t ht ↦ ?cylinder) (fun t mt ht ↦ ?compl)
     (fun f disf mf hf ↦ ?union)
@@ -571,26 +571,25 @@ with respect to this kernel. -/
 theorem ionescuTulceaKernel_eq (n : ℕ) :
     ionescuTulceaKernel κ n =
     Kernel.map
-      (deterministic (@id ((i : Iic n) → X i)) measurable_id ×ₖ
+      (Kernel.id (α := Π i : Iic n, X i) ×ₖ
         Kernel.map (ionescuTulceaKernel κ n) (Set.Ioi n).restrict)
       (el' n) := by
   refine (eq_ionescuTulceaKernel' _ (n + 1) _ fun a ha ↦ ?_).symm
   ext x s ms
-  rw [Kernel.map_map, Kernel.map_apply' _ _ _ ms, Kernel.deterministic_prod_apply',
+  rw [Kernel.map_map, Kernel.map_apply' _ _ _ ms, Kernel.id_prod_apply',
     Kernel.map_apply']
   · have : (frestrictLe a) ∘ (el' n) ∘ (Prod.mk x) ∘ (Set.Ioi n).restrict =
         (fun y (i : Iic a) ↦ if hi : i.1 ≤ n then x ⟨i.1, mem_Iic.2 hi⟩ else y i) ∘
           (frestrictLe a) := by
       ext x i
       by_cases hi : i.1 ≤ n <;> simp [hi, el']
-    have aux t : {c : (i : Set.Ioi n) → X i | (id x, c) ∈ t} = Prod.mk x ⁻¹' t := rfl
     have hyp : Measurable
         (fun (y : (i : Iic a) → X i) (i : Iic a) ↦
           if hi : i.1 ≤ n then x ⟨i.1, mem_Iic.2 hi⟩ else y i) := by
       refine measurable_pi_lambda _ (fun i ↦ ?_)
       by_cases hi : i.1 ≤ n <;> simp [hi]
       exact measurable_pi_apply _
-    rw [aux, ← Set.preimage_comp, ← Set.preimage_comp, Function.comp_assoc, this,
+    rw [← Set.preimage_comp, ← Set.preimage_comp, Function.comp_assoc, this,
       ← Kernel.map_apply' _ _ _ ms, ← Kernel.map_map _ (measurable_frestrictLe a) hyp,
       ionescuTulceaKernel_proj, Kernel.map_apply' _ _ _ ms, partialKernel_lt κ (by omega),
       Kernel.map_apply' _ _ _ (hyp ms), Kernel.deterministic_prod_apply',
@@ -625,16 +624,15 @@ theorem ionescuTulceaKernel_eq_map_updateFinset {n : ℕ} (x₀ : (i : Iic n) �
       (ionescuTulceaKernel κ n x₀).map (fun y ↦ updateFinset y _ x₀) := by
   ext s ms
   nth_rw 1 [ionescuTulceaKernel_eq]
-  rw [← aux, Kernel.map_apply' _ _ _ ms, ← Measure.map_map, Measure.map_apply _ ms,
-    Kernel.deterministic_prod_apply', ← Measure.map_map, Measure.map_apply, Kernel.map_apply]
-  · rfl
+  rw [← aux, Kernel.map_apply' _ _ _ ms, ← Measure.map_map (el' n).measurable,
+    Measure.map_apply _ ms, Kernel.id_prod_apply', ← Measure.map_map, Measure.map_apply,
+    Kernel.map_apply]
   · exact Set.measurable_restrict _
   · exact measurable_prod_mk_left
   · exact (el' n).measurable ms
   · exact measurable_prod_mk_left
   · exact Set.measurable_restrict _
   · exact (el' n).measurable ms
-  · exact (el' n).measurable
   · exact (el' n).measurable
   · exact measurable_prod_mk_left.comp (Set.measurable_restrict _)
   · exact (el' n).measurable

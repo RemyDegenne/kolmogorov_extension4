@@ -4,11 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Etienne Marion
 -/
 import Mathlib.Data.Finset.Basic
-import Mathlib.MeasureTheory.Constructions.Prod.Integral
+import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
-import Mathlib.Probability.Kernel.Composition
+import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 import Mathlib.Probability.Kernel.Integral
-import Mathlib.Probability.Kernel.MeasureCompProd
 import Mathlib.Probability.Process.Filtration
 
 /-!
@@ -96,7 +95,7 @@ theorem Kernel.compProd_apply_prod (κ : Kernel X Y) [IsSFiniteKernel κ]
     (η : Kernel (X × Y) Z) [IsSFiniteKernel η]
     {s : Set Y} (hs : MeasurableSet s) {t : Set Z} (ht : MeasurableSet t) (x : X) :
     (κ ⊗ₖ η) x (s ×ˢ t) = ∫⁻ y in s, η (x, y) t ∂κ x := by
-  rw [Kernel.compProd_apply _ _ _ (hs.prod ht), ← lintegral_indicator _ hs]
+  rw [Kernel.compProd_apply (hs.prod ht), ← lintegral_indicator hs]
   congr with y
   by_cases hy : y ∈ s <;> simp [Set.indicator, hy]
 
@@ -147,6 +146,13 @@ theorem Kernel.deterministic_prod_apply' {f : X → Y} (mf : Measurable f)
     ((Kernel.deterministic f mf) ×ₖ η) x s = η x {z | (f x, z) ∈ s} := by
   rw [Kernel.prod_apply' _ _ _ ms, Kernel.lintegral_deterministic']
   exact measurable_measure_prod_mk_left ms
+
+theorem Kernel.id_prod_apply' (η : Kernel X Y) [IsSFiniteKernel η] (x : X)
+    {s : Set (X × Y)} (ms : MeasurableSet s) :
+    (Kernel.id ×ₖ η) x s = η x (Prod.mk x ⁻¹' s) := by
+  rw [Kernel.id, Kernel.deterministic_prod_apply']
+  rfl
+  exact ms
 
 theorem Kernel.prod_apply_symm' (κ : Kernel X Y) [IsSFiniteKernel κ]
     (η : Kernel X Z) [IsSFiniteKernel η]
