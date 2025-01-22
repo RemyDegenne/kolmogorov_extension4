@@ -166,7 +166,7 @@ lemma addContent_accumulate (m : AddContent C) (hC : IsSetRing C)
     {s : ℕ → Set α} (hs_disj : Pairwise (Function.onFun Disjoint s)) (hsC : ∀ i, s i ∈ C) (n : ℕ) :
       m (Set.Accumulate s n) = ∑ i in Finset.range (n + 1), m (s i) := by
   induction n with
-  | zero => simp only [accumulate_zero_nat, zero_add, Finset.range_one, sum_singleton]
+  | zero => simp
   | succ n hn =>
     rw [Finset.sum_range_succ, ← hn, Set.accumulate_succ, addContent_union hC _ (hsC _)]
     · exact Set.disjoint_accumulate hs_disj (Nat.lt_succ_self n)

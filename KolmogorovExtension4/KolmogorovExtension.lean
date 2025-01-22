@@ -25,8 +25,8 @@ open Classical in
 /-- We will show that this is an additive set function that defines a measure. -/
 noncomputable def kolmogorovFun (P : ∀ J : Finset ι, Measure (Π j : J, α j))
     (s : Set (Π i, α i)) : ℝ≥0∞ :=
-  if hs : s ∈ measurableCylinders α then P (measurableCylinders.finset hs) (measurableCylinders.set hs)
-  else 0
+  if hs : s ∈ measurableCylinders α
+    then P (measurableCylinders.finset hs) (measurableCylinders.set hs) else 0
 
 theorem kolmogorovFun_congr (hP : IsProjectiveMeasureFamily P) {s : Set (Π i, α i)}
     (hs : s ∈ measurableCylinders α) {I : Finset ι} {S : Set (Π i : I, α i)}
