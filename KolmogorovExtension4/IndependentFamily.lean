@@ -34,6 +34,7 @@ end Function
 
 namespace Set
 
+/-- A box over `I`, i.e., a product set. -/
 def boxI (I : Set ι) (t : (i : ι) → Set (α i)) : Set ((i : I) → α i) :=
   (univ : Set I).pi (fun (i : I) ↦ t i)
 
@@ -55,6 +56,7 @@ lemma projI_mem_boxI {I : Set ι} (t : (i : ι) → Set (α i)) (x : (i : ι) �
     Function.projI α I x ∈ boxI I t ↔ ∀ i ∈ I, x i ∈ t i := by
   simp only [Function.projI, boxI, mem_pi, mem_univ, forall_true_left, Subtype.forall]
 
+/-- The set of all boxes whose `i`-th side belongs to `C i` for all `i`. -/
 def boxesI (I : Set ι) (C : (i : ι) → Set (Set (α i))) : Set (Set ((i : I) → α i)) :=
   univ.pi '' univ.pi fun i ↦ C i
 
@@ -202,9 +204,15 @@ theorem product_isProjective (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMe
     IsProjectiveMeasureFamily (Measure.subset_pi P) :=
   fun I J ↦ proj' P J I
 
+/-- The product measure of probability measures. Note that this version is slightly
+weaker than the version in the file `ProductMeasure` of
+https://github.com/sgouezel/kolmogorov_extension4
+as it requires a nice topology on the constituents (to be able to apply the
+Kolmogorov extension theorem) while one can remove these assumptions
+by using the Ionescu-Tulcea theorem. -/
 noncomputable def independentFamily [∀ i, PseudoEMetricSpace (α i)]
     [∀ i, BorelSpace (α i)] [∀ i, SecondCountableTopology (α i)]
-    [∀ i, CompleteSpace (α i)] [∀ i, Nonempty (α i)]
+    [∀ i, CompleteSpace (α i)]
     (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)] :
     Measure (∀ i, α i) :=
   projectiveLimitWithWeakestHypotheses (Measure.subset_pi P) (product_isProjective P)
