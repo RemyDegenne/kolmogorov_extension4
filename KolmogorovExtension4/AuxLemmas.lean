@@ -20,9 +20,22 @@ lemma Finset.sUnion_disjiUnion {α β : Type*} {f : α → Finset (Set β)} (I :
   simp only [coe_disjiUnion, mem_coe, Set.mem_sUnion, Set.mem_iUnion, exists_prop]
   tauto
 
+/-- Subadditivity of the sum over a finset. -/
 lemma Finset.sum_image_le_of_nonneg {ι α β : Type*} [DecidableEq α]
     [OrderedAddCommMonoid β] [SMulPosMono ℕ β]
     {J : Finset ι} {g : ι → α} {f : α → β} (hf : ∀ u ∈ J.image g, 0 ≤ f u) :
+    ∑ u ∈ J.image g, f u ≤ ∑ u in J, f (g u) := by
+  rw [sum_comp f g]
+  refine sum_le_sum fun a hag ↦ ?_
+  obtain ⟨i, hi, hig⟩ := Finset.mem_image.mp hag
+  conv_lhs => rw [← one_nsmul (f a)]
+  refine smul_le_smul_of_nonneg_right ?_ (hf a hag)
+  rw [Nat.one_le_iff_ne_zero, ← Nat.pos_iff_ne_zero, card_pos]
+  exact ⟨i, mem_filter.mpr ⟨hi, hig⟩⟩
+
+
+lemma Finset.sum_image_le_of_nonneg' {ι α : Type*} [DecidableEq α]
+    {J : Finset ι} {g : ι → α} {f : α → ℝ≥0∞} (hf : ∀ u ∈ J.image g, 0 ≤ f u) :
     ∑ u in J.image g, f u ≤ ∑ u in J, f (g u) := by
   rw [sum_comp f g]
   refine sum_le_sum fun a hag ↦ ?_
@@ -72,6 +85,7 @@ theorem Set.disjoint_accumulate {s : ℕ → Set α} (hs : Pairwise (Function.on
     rw [Set.biUnion_le_succ s i]
     exact Disjoint.union_left (hi ((Nat.lt_succ_self i).trans hij)) (hs hij.ne)
 
+@[simp]
 theorem Set.accumulate_succ (s : ℕ → Set α) (n : ℕ) :
     Set.Accumulate s (n + 1) = Set.Accumulate s n ∪ s (n + 1) := Set.biUnion_le_succ s n
 

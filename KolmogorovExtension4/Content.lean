@@ -37,8 +37,71 @@ theorem eq_add_diffFinset_of_subset (hC : IsSetSemiring C) (m : Set α → ℝ�
   · rw [coe_insert]
     rwa [hC.sUnion_insert_diffFinset ht hs hst]
 
-end IsSetSemiring
+variable (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
+  (m_add : ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
+    (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
 
+lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
+    (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
+    m (⋃₀ ↑J) ≤ ∑ u in J, m u := by
+  classical
+  rw [hC.allDiffFinset₀'_sUnion h_ss, addContent_sUnion (hC.allDiffFinset₀'_subset_semiring h_ss)
+    (hC.allDiffFinset₀'_pairwiseDisjoint h_ss)]
+  · rw [sum_disjiUnion]
+    apply sum_le_sum
+    intro x hx
+    exact sum_addContent_le_of_subset hC (hC.allDiffFinset₀'_subsets_semiring h_ss hx)
+      (hC.allDiffFinset₀'_pairwiseDisjoints h_ss hx) (h_ss hx) (hC.allDiffFinset₀'_subsets h_ss hx)
+  · exact hC.allDiffFinset₀'_sUnion h_ss ▸ h_mem
+
+lemma addContent_le_sum_of_subset_sUnion {m : AddContent C} (hC : IsSetSemiring C)
+    (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈ C) (htJ : t ⊆ ⋃₀ ↑J) :
+    m t ≤ ∑ u in J, m u := by
+  -- we can't apply `addContent_mono` and `addContent_sUnion_le_sum` because `⋃₀ ↑J` might not
+  -- be in `C`
+  classical
+  let Jt := J.image (fun u ↦ t ∩ u)
+  have ht_eq : t = ⋃₀ Jt := by
+    rw [coe_image, sUnion_image, ← inter_iUnion₂, inter_eq_self_of_subset_left]
+    rwa [← sUnion_eq_biUnion]
+  rw [ht_eq]
+  refine (addContent_sUnion_le_sum hC Jt ?_ ?_).trans ?_
+  · intro s
+    simp only [Jt, coe_image, Set.mem_image, mem_coe, forall_exists_index, and_imp]
+    rintro u hu rfl
+    exact hC.inter_mem _ ht _ (h_ss hu)
+  · rwa [← ht_eq]
+  · refine (sum_image_le_of_nonneg fun _ _ ↦ zero_le _).trans (sum_le_sum fun u hu ↦ ?_)
+    exact addContent_mono hC (hC.inter_mem _ ht _ (h_ss hu)) (h_ss hu) inter_subset_right
+
+/-- If an `AddContent` is σ-subadditive on a semi-ring of sets, then it is σ-additive. -/
+theorem addContent_iUnion_eq_tsum_of_disjoint_of_addContent_iUnion_le {m : AddContent C}
+    (hC : IsSetSemiring C)
+    (m_subadd : ∀ (f : ℕ → Set α) (_ : ∀ i, f i ∈ C) (_ : ⋃ i, f i ∈ C)
+      (_hf_disj : Pairwise (Function.onFun Disjoint f)), m (⋃ i, f i) ≤ ∑' i, m (f i))
+    (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
+    (hf_disj : Pairwise (Function.onFun Disjoint f)) :
+    m (⋃ i, f i) = ∑' i, m (f i) := by
+  refine le_antisymm (m_subadd f hf hf_Union hf_disj) ?_
+  refine tsum_le_of_sum_le ENNReal.summable fun I ↦ ?_
+  classical
+  rw [← Finset.sum_image_of_disjoint addContent_empty (hf_disj.pairwiseDisjoint _)]
+  refine sum_addContent_le_of_subset hC (I := I.image f) ?_ ?_ hf_Union ?_
+  · simp only [coe_image, Set.image_subset_iff]
+    refine (subset_preimage_image f I).trans (preimage_mono ?_)
+    rintro i ⟨j, _, rfl⟩
+    exact hf j
+  · simp only [coe_image]
+    intro s hs t ht hst
+    rw [Set.mem_image] at hs ht
+    obtain ⟨i, _, rfl⟩ := hs
+    obtain ⟨j, _, rfl⟩ := ht
+    have hij : i ≠ j := by intro h_eq; rw [h_eq] at hst; exact hst rfl
+    exact hf_disj hij
+  · simp only [Finset.mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+    exact fun i _ ↦ subset_iUnion _ i
+
+end IsSetSemiring
 
 variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 
@@ -78,9 +141,6 @@ theorem extendContent_eq_top (hC : IsSetSemiring C) (m_empty : m ∅ hC.empty_me
   rw [extendContent_eq_extend, extend_eq_top m hs]
 
 
--- Where is this used?
-
-/-
 
 -- todo: change name?
 /-- An additive content obtained from another one on the same semiring of sets by setting the value
@@ -107,81 +167,11 @@ protected theorem AddContent.extend_eq (hC : IsSetSemiring C) (m : AddContent C)
 protected theorem AddContent.extend_eq_top (hC : IsSetSemiring C) (m : AddContent C) (hs : s ∉ C) :
     m.extend hC s = ∞ := by
   rwa [m.extend_eq_extend, extend_eq_top]
--/
 
 end ExtendContent
 
-section TotalSetFunction
 
-section Semiring
-
-variable (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
-  (m_add : ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-    (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
-
-lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
-    (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
-    m (⋃₀ ↑J) ≤ ∑ u in J, m u := by
-  classical
-  rw [hC.allDiffFinset₀'_sUnion h_ss, addContent_sUnion (hC.allDiffFinset₀'_subset_semiring h_ss)
-    (hC.allDiffFinset₀'_pairwiseDisjoint h_ss)]
-  · rw [sum_disjiUnion]
-    apply sum_le_sum
-    intro x hx
-    exact sum_addContent_le_of_subset hC (hC.allDiffFinset₀'_subsets_semiring h_ss hx)
-      (hC.allDiffFinset₀'_pairwiseDisjoints h_ss hx) (h_ss hx) (hC.allDiffFinset₀'_subsets h_ss hx)
-  · exact hC.allDiffFinset₀'_sUnion h_ss ▸ h_mem
-
-lemma addContent_le_sum_of_subset_sUnion {m : AddContent C} (hC : IsSetSemiring C)
-    (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈ C) (htJ : t ⊆ ⋃₀ ↑J) :
-    m t ≤ ∑ u in J, m u := by
-  -- we can't apply `addContent_mono` and `addContent_sUnion_le_sum` because `⋃₀ ↑J` might not
-  -- be in `C`
-  classical
-  let Jt := J.image (fun u ↦ t ∩ u)
-  have ht_eq : t = ⋃₀ Jt := by
-    rw [coe_image, sUnion_image, ← inter_iUnion₂, inter_eq_self_of_subset_left]
-    rwa [← sUnion_eq_biUnion]
-  rw [ht_eq]
-  refine (addContent_sUnion_le_sum hC Jt ?_ ?_).trans ?_
-  · intro s
-    simp only [Jt, coe_image, Set.mem_image, mem_coe, forall_exists_index, and_imp]
-    rintro u hu rfl
-    exact hC.inter_mem _ ht _ (h_ss hu)
-  · rwa [← ht_eq]
-  · refine (Finset.sum_image_le_of_nonneg fun _ _ ↦ zero_le _).trans (sum_le_sum fun u hu ↦ ?_)
-    exact addContent_mono hC (hC.inter_mem _ ht _ (h_ss hu)) (h_ss hu) inter_subset_right
-
-/-- If an `AddContent` is σ-subadditive on a semi-ring of sets, then it is σ-additive. -/
-theorem addContent_iUnion_eq_tsum_of_disjoint_of_addContent_iUnion_le {m : AddContent C}
-    (hC : IsSetSemiring C)
-    (m_subadd : ∀ (f : ℕ → Set α) (_ : ∀ i, f i ∈ C) (_ : ⋃ i, f i ∈ C)
-      (_hf_disj : Pairwise (Function.onFun Disjoint f)), m (⋃ i, f i) ≤ ∑' i, m (f i))
-    (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
-    (hf_disj : Pairwise (Function.onFun Disjoint f)) :
-    m (⋃ i, f i) = ∑' i, m (f i) := by
-  refine le_antisymm (m_subadd f hf hf_Union hf_disj) ?_
-  refine tsum_le_of_sum_le ENNReal.summable fun I ↦ ?_
-  classical
-  rw [← Finset.sum_image_of_disjoint addContent_empty (hf_disj.pairwiseDisjoint _)]
-  refine sum_addContent_le_of_subset hC (I := I.image f) ?_ ?_ hf_Union ?_
-  · simp only [coe_image, Set.image_subset_iff]
-    refine (subset_preimage_image f I).trans (preimage_mono ?_)
-    rintro i ⟨j, _, rfl⟩
-    exact hf j
-  · simp only [coe_image]
-    intro s hs t ht hst
-    rw [Set.mem_image] at hs ht
-    obtain ⟨i, _, rfl⟩ := hs
-    obtain ⟨j, _, rfl⟩ := ht
-    have hij : i ≠ j := by intro h_eq; rw [h_eq] at hst; exact hst rfl
-    exact hf_disj hij
-  · simp only [Finset.mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
-    exact fun i _ ↦ subset_iUnion _ i
-
-end Semiring
-
-section Ring
+section IsSetRing
 
 lemma addContent_diff_of_ne_top (m : AddContent C) (hC : IsSetRing C)
     (hm_ne_top : ∀ s ∈ C, m s ≠ ∞)
@@ -196,7 +186,7 @@ lemma addContent_accumulate (m : AddContent C) (hC : IsSetRing C)
     {s : ℕ → Set α} (hs_disj : Pairwise (Function.onFun Disjoint s)) (hsC : ∀ i, s i ∈ C) (n : ℕ) :
       m (Set.Accumulate s n) = ∑ i in Finset.range (n + 1), m (s i) := by
   induction n with
-  | zero => simp
+  | zero => simp only [accumulate_zero_nat, zero_add, Finset.range_one, sum_singleton]
   | succ n hn =>
     rw [Finset.sum_range_succ, ← hn, Set.accumulate_succ, addContent_union hC _ (hsC _)]
     · exact Set.disjoint_accumulate hs_disj (Nat.lt_succ_self n)
@@ -264,8 +254,6 @@ theorem addContent_iUnion_le_of_addContent_iUnion_eq_tsum {m : AddContent C} (hC
     exact hC.partialSups_mem hf n
   · exact Finset.sum_image_le_of_nonneg fun _ _ ↦ zero_le _
 
-end Ring
-
-end TotalSetFunction
+end IsSetRing
 
 end MeasureTheory
