@@ -45,60 +45,29 @@ theorem addContent_iUnion_eq_sum_of_tendsto_zero (hC : IsSetRing C) (m : AddCont
   exact addContent_mono hC.isSetSemiring (hC.accumulate_mem hf n) hUf
     (Set.accumulate_subset_iUnion _)
 
-theorem sUnion_eq_sum_of_union_eq_add (hC_empty : ∅ ∈ C)
-    (hC_union : ∀ {s t : Set α}, s ∈ C → t ∈ C → s ∪ t ∈ C)
-    (m : Set α → ℝ≥0∞) (m_empty : m ∅ = 0)
-    (m_add : ∀ {s t : Set α} (_ : s ∈ C) (_ : t ∈ C), Disjoint s t → m (s ∪ t) = m s + m t)
-    (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : Set.PairwiseDisjoint (I : Set (Set α)) id)
-    (h_mem : ⋃₀ ↑I ∈ C) :
-    m (⋃₀ I) = ∑ u in I, m u := by
-  classical
-  induction I using Finset.induction with
-  | empty => simp only [Finset.coe_empty, Set.sUnion_empty, Finset.sum_empty, m_empty]
-  | @insert s I hsI h =>
-    rw [Finset.coe_insert] at *
-    rw [Set.insert_subset_iff] at h_ss
-    rw [Set.pairwiseDisjoint_insert_of_not_mem] at h_dis
-    swap; · exact hsI
-    have h_sUnion_mem : ⋃₀ ↑I ∈ C := by
-      have (J : Finset (Set α)) : ↑J ⊆ C → ⋃₀ ↑J ∈ C := by
-        induction J using Finset.induction with
-        | empty => simp [hC_empty]
-        | @insert s I _ h =>
-          intro h_insert
-          simp only [Finset.coe_insert, Set.sUnion_insert, Set.insert_subset_iff] at h_insert ⊢
-          exact hC_union h_insert.1 (h h_insert.2)
-      exact this I h_ss.2
-    rw [Set.sUnion_insert, m_add h_ss.1 h_sUnion_mem (Set.disjoint_sUnion_right.mpr h_dis.2),
-      Finset.sum_insert hsI, h h_ss.2 h_dis.1]
-    rwa [Set.sUnion_insert] at h_mem
-
-theorem sUnion_eq_sum_of_union_eq_add' (hC_empty : ∅ ∈ C)
-    (hC_union : ∀ {s t : Set α}, s ∈ C → t ∈ C → s ∪ t ∈ C)
-    {m : ∀ s : Set α, s ∈ C → ℝ≥0∞} (m_empty : m ∅ hC_empty = 0)
-    (m_add : ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
-      Disjoint s t → m (s ∪ t) (hC_union hs ht) = m s hs + m t ht)
-    (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : Set.PairwiseDisjoint (I : Set (Set α)) id)
-    (h_mem : ⋃₀ ↑I ∈ C) :
-    m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.property) := by
-  have h : extend m (⋃₀ ↑I) = ∑ u ∈ I, extend m u :=
-    sUnion_eq_sum_of_union_eq_add hC_empty (fun hs ht ↦ hC_union hs ht) (extend m)
-      (extend_empty hC_empty m_empty) ?_ I h_ss h_dis h_mem
-  · rw [extend_eq m h_mem] at h
-    refine h.trans ?_
-    simp_rw [← extend_eq m, Finset.univ_eq_attach]
-    exact (Finset.sum_attach _ _).symm
-  · simp_rw [← extend_eq m] at m_add
-    exact m_add
-
-lemma IsSetRing.sUnion_eq_sum_of_union_eq_add (hC : IsSetRing C)
-    {m : ∀ s : Set α, s ∈ C → ℝ≥0∞} (m_empty : m ∅ hC.empty_mem = 0)
-    (m_add : ∀ {s t : Set α} (hs : s ∈ C) (ht : t ∈ C),
-      Disjoint s t → m (s ∪ t) (hC.union_mem hs ht) = m s hs + m t ht)
-    (I : Finset (Set α)) (h_ss : ↑I ⊆ C) (h_dis : Set.PairwiseDisjoint (I : Set (Set α)) id)
-    (h_mem : ⋃₀ ↑I ∈ C) :
-    m (⋃₀ I) h_mem = ∑ u : I, m u (h_ss u.property) :=
-  sUnion_eq_sum_of_union_eq_add' hC.empty_mem (fun hs ht ↦ hC.union_mem hs ht) m_empty m_add I
-    h_ss h_dis h_mem
+/-- A function which is additive on disjoint elements in a ring of sets `C` defines an
+additive content on `C`. -/
+def IsSetRing.addContent_of_union (m : Set α → ℝ≥0∞) (hC : IsSetRing C) (m_empty : m ∅ = 0)
+    (m_add : ∀ {s t : Set α} (_hs : s ∈ C) (_ht : t ∈ C), Disjoint s t → m (s ∪ t) = m s + m t) :
+    AddContent C where
+  toFun := m
+  empty' := m_empty
+  sUnion' I h_ss h_dis h_mem := by
+    classical
+    induction I using Finset.induction with
+    | empty => simp only [Finset.coe_empty, Set.sUnion_empty, Finset.sum_empty, m_empty]
+    | @insert s I hsI h =>
+      rw [Finset.coe_insert] at *
+      rw [Set.insert_subset_iff] at h_ss
+      rw [Set.pairwiseDisjoint_insert_of_not_mem] at h_dis
+      swap; · exact hsI
+      have h_sUnion_mem : ⋃₀ ↑I ∈ C := by
+        rw [Set.sUnion_eq_biUnion]
+        apply hC.biUnion_mem
+        intro n hn
+        exact h_ss.2 hn
+      rw [Set.sUnion_insert, m_add h_ss.1 h_sUnion_mem (Set.disjoint_sUnion_right.mpr h_dis.2),
+        Finset.sum_insert hsI, h h_ss.2 h_dis.1]
+      rwa [Set.sUnion_insert] at h_mem
 
 end MeasureTheory
