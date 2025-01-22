@@ -336,6 +336,8 @@ section kerNat
 
 variable {i j k : ℕ}
 
+/-- Given a family of kernels `κ k` from `X 0 × ... × X k` to `X (k + 1)` for all `k`,
+construct a kernel from `X 0 × ... × X i` to `X (i + 1) × ... × X j` by iterating `κ`. -/
 def kerNat (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
     Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l) := by
   induction j with
@@ -506,7 +508,7 @@ theorem partialKernel_le {a b : ℕ} (hab : b ≤ a) :
       deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ _) := by
   rw [partialKernel, dif_neg (not_lt.2 hab)]
 
-instance [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ) : IsSFiniteKernel (partialKernel κ a b) := by
+instance (a b : ℕ) : IsSFiniteKernel (partialKernel κ a b) := by
   rw [partialKernel]
   split_ifs <;> infer_instance
 
@@ -652,9 +654,8 @@ theorem lmarginalPartialKernel_lt [∀ n, IsFiniteKernel (κ n)]
   · exact (el ..).measurable
   · exact mf.comp measurable_updateFinset
 
-theorem measurable_lmarginalPartialKernel [∀ n, IsSFiniteKernel (κ n)]
-    (a b : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
-    (hf : Measurable f) : Measurable (lmarginalPartialKernel κ a b f) := by
+theorem measurable_lmarginalPartialKernel (a b : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
+    Measurable (lmarginalPartialKernel κ a b f) := by
   unfold lmarginalPartialKernel
   let g : ((i : Iic b) → X i) × ((n : ℕ) → X n) → ℝ≥0∞ :=
     fun c ↦ f (updateFinset c.2 _ c.1)
