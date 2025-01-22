@@ -205,9 +205,11 @@ theorem product_isProjective (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMe
   fun I J ↦ proj' P J I
 
 /-- The product measure of probability measures. Note that this version is slightly
-weaker than the version in `ProductMeasure` as it requires a nice topology on the
-constituents (to be able to apply Kolmogorov extension theorem) while one can remove
-these assumptions by using the Ionescu-Tulcea theorem. -/
+weaker than the version in the file `ProductMeasure` of
+https://github.com/sgouezel/kolmogorov_extension4
+as it requires a nice topology on the constituents (to be able to apply the
+Kolmogorov extension theorem) while one can remove these assumptions
+by using the Ionescu-Tulcea theorem. -/
 noncomputable def independentFamily [∀ i, PseudoEMetricSpace (α i)]
     [∀ i, BorelSpace (α i)] [∀ i, SecondCountableTopology (α i)]
     [∀ i, CompleteSpace (α i)]
