@@ -5,7 +5,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import KolmogorovExtension4.CaratheodoryExtension
 import KolmogorovExtension4.RegularContent
-import KolmogorovExtension4.RegularityCompacts
+import Mathlib.MeasureTheory.Measure.RegularityCompacts
 import Mathlib.MeasureTheory.Constructions.Projective
 
 open Set
@@ -211,7 +211,7 @@ noncomputable def projectiveLimitWithWeakestHypotheses [∀ i, PseudoEMetricSpac
   Measure.ofAddContent isSetSemiring_measurableCylinders generateFrom_measurableCylinders
     (kolContent hP)
     (kolContent_iUnion_le_sum_of_innerRegular hP fun J ↦
-      innerRegular_isCompact_isClosed_measurableSet_of_complete_countable (P J))
+      innerRegular_isCompact_isClosed_measurableSet_of_finite (P J))
 
 section Polish
 
@@ -223,13 +223,13 @@ theorem kolContent_sigma_additive (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ 
     (h_disj : Pairwise (Function.onFun Disjoint f)) :
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) := by
   refine kolContent_sigma_additive_of_innerRegular hP ?_ hf hf_Union h_disj
-  exact fun J ↦ PolishSpace.innerRegular_isCompact_measurableSet (P J)
+  exact fun J ↦ PolishSpace.innerRegular_isCompact_isClosed_measurableSet (P J)
 
 theorem kolContent_iUnion_le_sum (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ → Set (Π i, α i)⦄
     (hf : ∀ i, f i ∈ measurableCylinders α) (hf_Union : (⋃ i, f i) ∈ measurableCylinders α) :
     kolContent hP (⋃ i, f i) ≤ ∑' i, kolContent hP (f i) := by
   refine kolContent_iUnion_le_sum_of_innerRegular hP ?_ hf hf_Union
-  exact fun J ↦ PolishSpace.innerRegular_isCompact_measurableSet (P J)
+  exact fun J ↦ PolishSpace.innerRegular_isCompact_isClosed_measurableSet (P J)
 
 /-- Projective limit of a projective measure family. -/
 noncomputable def projectiveLimit (P : ∀ J : Finset ι, Measure (Π j : J, α j))
