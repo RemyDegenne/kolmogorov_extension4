@@ -79,7 +79,7 @@ theorem caratheodory_semiring_extension' (hC : IsSetSemiring C) (m : AddContent 
     `⨅ (f' : ℕ → Set α) (_ : t \ s ⊆ ⋃ i, f' i), ∑' i, m (f' i)`.
     The issue is that we don't have one sum on the right, but two sums.
     We introduce functions (`e` and `g`) to write those two sums as `∑' i, m ((g ∘ e) i)`,
-    and then argue that the infimum is less that this particular sum. -/
+    and then argue that the infimum is less than this particular sum. -/
     let e : ℕ ≃ ℕ × ℕ := Nat.pairEquiv.symm
     let g : ℕ × ℕ → Set α := fun n ↦
       if h : n.2 < (A n.1).card then (A n.1).ordered ⟨n.2, h⟩ else ∅
