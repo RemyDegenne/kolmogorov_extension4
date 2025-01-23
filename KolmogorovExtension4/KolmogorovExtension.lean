@@ -21,33 +21,31 @@ section KolFunDef
 
 variable {s t : Set (Π i, α i)}
 
+open Classical in
 /-- We will show that this is an additive set function that defines a measure. -/
 noncomputable def kolmogorovFun (P : ∀ J : Finset ι, Measure (Π j : J, α j))
-    (s : Set (Π i, α i)) (hs : s ∈ measurableCylinders α) : ℝ≥0∞ :=
-  P (measurableCylinders.finset hs) (measurableCylinders.set hs)
-
-theorem kolmogorovFun_congr_set (hs : s ∈ measurableCylinders α) (h_eq : s = t) :
-    kolmogorovFun P s hs = kolmogorovFun P t (by rwa [h_eq] at hs ) := by congr
+    (s : Set (Π i, α i)) : ℝ≥0∞ :=
+  if hs : s ∈ measurableCylinders α
+    then P (measurableCylinders.finset hs) (measurableCylinders.set hs) else 0
 
 theorem kolmogorovFun_congr (hP : IsProjectiveMeasureFamily P) {s : Set (Π i, α i)}
     (hs : s ∈ measurableCylinders α) {I : Finset ι} {S : Set (Π i : I, α i)}
     (hs_eq : s = cylinder I S) (hS : MeasurableSet S) :
-    kolmogorovFun P s hs = P I S :=
-  hP.congr_cylinder (measurableCylinders.measurableSet hs) hS
+    kolmogorovFun P s = P I S := by
+  simp [kolmogorovFun, hs]
+  exact hP.congr_cylinder (measurableCylinders.measurableSet hs) hS
     ((measurableCylinders.eq_cylinder hs).symm.trans hs_eq)
 
 theorem kolmogorovFun_empty (hP : IsProjectiveMeasureFamily P) :
-    kolmogorovFun P ∅ (empty_mem_measurableCylinders α) = 0 := by
+    kolmogorovFun P ∅ = 0 := by
   rw [kolmogorovFun_congr hP (empty_mem_measurableCylinders α) (cylinder_empty ∅).symm
     MeasurableSet.empty, measure_empty]
 
-theorem kolmogorovFun_union (hP : IsProjectiveMeasureFamily P) (hs : s ∈ measurableCylinders α)
-    (ht : t ∈ measurableCylinders α) (hst : Disjoint s t) :
-    kolmogorovFun P (s ∪ t) (union_mem_measurableCylinders hs ht) =
-      kolmogorovFun P s hs + kolmogorovFun P t ht := by
-  rw [mem_measurableCylinders] at hs ht
-  obtain ⟨I, S, hS, hs_eq⟩ := hs
-  obtain ⟨J, T, hT, ht_eq⟩ := ht
+theorem kolmogorovFun_union (hP : IsProjectiveMeasureFamily P) {s t : Set (Π i, α i)}
+    (hs : s ∈ measurableCylinders α) (ht : t ∈ measurableCylinders α) (hst : Disjoint s t) :
+    kolmogorovFun P (s ∪ t) = kolmogorovFun P s + kolmogorovFun P t := by
+  obtain ⟨I, S, hS, hs_eq⟩ := (mem_measurableCylinders _).1 hs
+  obtain ⟨J, T, hT, ht_eq⟩ := (mem_measurableCylinders _).1 ht
   classical
   let S' := (fun f : ∀ i : (I ∪ J : Finset ι), α i ↦
     fun j : I ↦ f ⟨j, Finset.mem_union_left J j.prop⟩) ⁻¹' S
@@ -60,28 +58,21 @@ theorem kolmogorovFun_union (hP : IsProjectiveMeasureFamily P) (hs : s ∈ measu
   have h_eq3 : s ∪ t = cylinder (I ∪ J) (S' ∪ T') := by
     rw [hs_eq, ht_eq]; exact union_cylinder _ _ _ _
   rw [kolmogorovFun_congr hP hs h_eq1 hS', kolmogorovFun_congr hP ht h_eq2 hT',
-    kolmogorovFun_congr hP _ h_eq3 (hS'.union hT')]
+    kolmogorovFun_congr hP (union_mem_measurableCylinders hs ht) h_eq3 (hS'.union hT')]
   cases isEmpty_or_nonempty (Π i, α i) with
   | inl h => simp [hP.eq_zero_of_isEmpty]
   | inr h =>
     rw [measure_union _ hT']
     rwa [hs_eq, ht_eq, disjoint_cylinder_iff] at hst
 
-theorem kolmogorovFun_sUnion (hP : IsProjectiveMeasureFamily P) (I : Finset (Set (∀ i, α i)))
-    (h_ss : ↑I ⊆ measurableCylinders α) (h_dis : PairwiseDisjoint (I : Set (Set (∀ i, α i))) id)
-    (h_mem : ⋃₀ ↑I ∈ measurableCylinders α) :
-    kolmogorovFun P (⋃₀ I) h_mem = ∑ u : I, kolmogorovFun P u (h_ss u.prop) :=
-  isSetRing_measurableCylinders.sUnion_eq_sum_of_union_eq_add (kolmogorovFun_empty hP)
-    (kolmogorovFun_union hP) I h_ss h_dis h_mem
-
 /-- `kolmogorovFun` as an additive content. -/
 noncomputable def kolContent (hP : IsProjectiveMeasureFamily P) :
     AddContent (measurableCylinders α) :=
-  extendContent isSetSemiring_measurableCylinders (kolmogorovFun P) (kolmogorovFun_empty hP)
-    (kolmogorovFun_sUnion hP)
+  isSetRing_measurableCylinders.addContent_of_union (kolmogorovFun P) (kolmogorovFun_empty hP)
+    (kolmogorovFun_union hP)
 
-theorem kolContent_eq (hP : IsProjectiveMeasureFamily P) (hs : s ∈ measurableCylinders α) :
-    kolContent hP s = kolmogorovFun P s hs := by rw [kolContent, extendContent_eq]
+theorem kolContent_eq (hP : IsProjectiveMeasureFamily P) :
+    kolContent hP s = kolmogorovFun P s := rfl
 
 theorem kolContent_congr (hP : IsProjectiveMeasureFamily P) (s : Set (Π i, α i))
     {I : Finset ι} {S : Set (Π i : I, α i)} (hs_eq : s = cylinder I S) (hS : MeasurableSet S) :
@@ -109,15 +100,18 @@ theorem kolContent_diff (hP : IsProjectiveMeasureFamily P) (hs : s ∈ measurabl
     (ht : t ∈ measurableCylinders α) : kolContent hP s - kolContent hP t ≤ kolContent hP (s \ t) :=
   le_addContent_diff (kolContent hP) isSetRing_measurableCylinders hs ht
 
-theorem kolContent_ne_top [∀ J, IsFiniteMeasure (P J)] (hP : IsProjectiveMeasureFamily P)
-    (hs : s ∈ measurableCylinders α) : kolContent hP s ≠ ∞ := by
-  rw [kolContent_eq hP hs]; exact measure_ne_top _ _
+theorem kolContent_ne_top [∀ J, IsFiniteMeasure (P J)] (hP : IsProjectiveMeasureFamily P) :
+    kolContent hP s ≠ ∞ := by
+  rw [kolContent_eq hP, kolmogorovFun]
+  split_ifs with hs
+  · exact measure_ne_top _ _
+  · exact ENNReal.zero_ne_top
 
 theorem kolContent_diff_of_subset [∀ J, IsFiniteMeasure (P J)] (hP : IsProjectiveMeasureFamily P)
-    (hs : s ∈ measurableCylinders α) (ht : t ∈ measurableCylinders α) (hts :t ⊆ s) :
+    (hs : s ∈ measurableCylinders α) (ht : t ∈ measurableCylinders α) (hts : t ⊆ s) :
     kolContent hP (s \ t) = kolContent hP s - kolContent hP t :=
   addContent_diff_of_ne_top (kolContent hP) isSetRing_measurableCylinders
-    (fun _ ↦ kolContent_ne_top hP) hs ht hts
+    (fun _ _ ↦ kolContent_ne_top hP) hs ht hts
 
 end KolFunDef
 
@@ -189,7 +183,7 @@ theorem kolContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamil
     (h_disj : Pairwise (Function.onFun Disjoint f)) :
     kolContent hP (⋃ i, f i) = ∑' i, kolContent hP (f i) :=
   addContent_iUnion_eq_sum_of_regular isSetRing_measurableCylinders (kolContent hP)
-    (fun _ ↦ kolContent_ne_top hP) isCompactSystem_closedCompactCylinders
+    (fun _ _ ↦ kolContent_ne_top hP) isCompactSystem_closedCompactCylinders
     (fun _ ↦ mem_cylinder_of_mem_closedCompactCylinders)
     (fun _ ↦ innerRegular_kolContent hP hP_inner) hf hf_Union h_disj
 

@@ -20,27 +20,23 @@ section measurableCylinders
 
 variable [∀ i, MeasurableSpace (α i)]
 
-theorem isSetField_measurableCylinders : IsSetField (measurableCylinders α) where
+theorem isSetRing_measurableCylinders : IsSetRing (measurableCylinders α) where
   empty_mem := empty_mem_measurableCylinders α
-  univ_mem := univ_mem_measurableCylinders α
   union_mem := fun _ _ ↦ union_mem_measurableCylinders
   diff_mem := fun _ _ ↦ diff_mem_measurableCylinders
 
-theorem isSetRing_measurableCylinders : MeasureTheory.IsSetRing (measurableCylinders α) :=
-  isSetField_measurableCylinders.toIsSetRing
-
 theorem isSetSemiring_measurableCylinders : MeasureTheory.IsSetSemiring (measurableCylinders α) :=
-  isSetField_measurableCylinders.isSetSemiring
+  isSetRing_measurableCylinders.isSetSemiring
 
 theorem iUnion_le_mem_measurableCylinders {s : ℕ → Set (∀ i : ι, α i)}
     (hs : ∀ n, s n ∈ measurableCylinders α) (n : ℕ) :
     (⋃ i ≤ n, s i) ∈ measurableCylinders α :=
-  isSetField_measurableCylinders.iUnion_le_mem hs n
+  isSetRing_measurableCylinders.iUnion_le_mem hs n
 
 theorem iInter_le_mem_measurableCylinders {s : ℕ → Set (∀ i : ι, α i)}
     (hs : ∀ n, s n ∈ measurableCylinders α) (n : ℕ) :
     (⋂ i ≤ n, s i) ∈ measurableCylinders α :=
-  isSetField_measurableCylinders.iInter_le_mem hs n
+  isSetRing_measurableCylinders.iInter_le_mem hs n
 
 end measurableCylinders
 
