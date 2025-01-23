@@ -159,6 +159,33 @@ theorem allDiffFinset₀_props (hC : IsSetSemiring C) (h1 : ↑J ⊆ C) :
       rw [← hC.diff_sUnion_eq_sUnion_diffFinset₀ h11 h12, ← hK5]
       simp
 
+structure disjoint_of_non_disjoint (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) where
+  K :  Set α → Finset (Set α)
+  h1 : J.toSet.PairwiseDisjoint K
+  h2 : (∀ i ∈ J, (K i).toSet ⊆ C)
+  h3 : PairwiseDisjoint (⋃ x ∈ J, (K x).toSet) id
+  h4 : (∀ j ∈ J, ⋃₀ K j ⊆ j)
+  h5 : (∀ j ∈ J, ∅ ∉ K j)
+  h6 : (⋃₀ J.toSet) = ⋃₀ (⋃ x ∈ J, (K x).toSet)
+
+
+/-
+noncomputable def allDiffFinset₀'' : disjoint_of_non_disjoint (hC : IsSetSemiring C) (J : Finset (Set α)) (hJ : ↑J ⊆ C) :=
+  {
+  K := (hC.allDiffFinset₀_props hJ).choose,
+  h1 := (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).1
+  h2 := (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).2.1
+  h3 := (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).2.2.1
+  h4 := (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).2.2.2.1
+  h5 := (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).2.2.2.2.1
+  h6 := (Exists.choose_spec (hC.allDiffFinset₀_props hJ)).2.2.2.2.2
+  }
+
+variable (hC : IsSetSemiring C) (hJ : ↑J ⊆ C)
+#check allDiffFinset₀''.h6
+-/
+
+
 -- PR #20931
 noncomputable def allDiffFinset₀' (hC : IsSetSemiring C) (hJ : ↑J ⊆ C) :=
   (hC.allDiffFinset₀_props hJ).choose
