@@ -27,12 +27,9 @@ def AddContent.extend (hC : IsSetSemiring C) (m : AddContent C) : AddContent C w
   toFun := extend (fun x (_ : x ∈ C) ↦ m x)
   empty' := by rw [extend_eq, addContent_empty]; exact hC.empty_mem
   sUnion' I h_ss h_dis h_mem := by
-    rw [extend_eq]
-    swap; · exact h_mem
-    rw [addContent_sUnion h_ss h_dis h_mem]
+    rw [extend_eq _ h_mem, addContent_sUnion h_ss h_dis h_mem]
     refine Finset.sum_congr rfl (fun s hs ↦ ?_)
-    rw [extend_eq]
-    exact h_ss hs
+    rw [extend_eq _ (h_ss hs)]
 
 protected theorem AddContent.extend_eq_extend (hC : IsSetSemiring C) (m : AddContent C) :
     m.extend hC = extend (fun x (_ : x ∈ C) ↦ m x) := rfl
