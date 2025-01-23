@@ -5,6 +5,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import Mathlib.MeasureTheory.Measure.Trim
 import KolmogorovExtension4.Content
+import KolmogorovExtension4.Ordered
 
 open Set
 
