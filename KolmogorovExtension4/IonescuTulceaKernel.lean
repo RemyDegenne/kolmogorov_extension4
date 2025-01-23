@@ -648,6 +648,13 @@ theorem integrable_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b) {f : ((n : �
       rw [← ionescuTulceaKernel_proj, Kernel.map_apply _ (measurable_frestrictLe _)]
   · exact i_f.aestronglyMeasurable
 
+theorem aestronglyMeasurable_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b)
+    {f : ((n : ℕ) → X n) → E} {x₀ : (i : Iic a) → X i}
+    (hf : AEStronglyMeasurable f (ionescuTulceaKernel κ a x₀)) :
+    ∀ᵐ x ∂partialKernel κ a b x₀, AEStronglyMeasurable f (ionescuTulceaKernel κ b x) := by
+  rw [← partialKernel_comp_ionescuTulceaKernel κ hab] at hf
+  exact hf.comp
+
 variable [NormedSpace ℝ E]
 
 theorem integral_ionescuTulceaKernel {n : ℕ} (x₀ : (i : Iic n) → X i) {f : ((n : ℕ) → X n) → E}
@@ -661,22 +668,30 @@ theorem integral_ionescuTulceaKernel {n : ℕ} (x₀ : (i : Iic n) → X i) {f :
 
 theorem partialKernel_comp_ionescuTulceaKernel_apply {a b : ℕ} (hab : a ≤ b)
     (f : ((i : Iic b) → X i) → ((n : ℕ) → X n) → E)
-    (hf : StronglyMeasurable f.uncurry)
     (x₀ : (i : Iic a) → X i)
-    (i_f : Integrable (fun x ↦ f (frestrictLe b x) x) (ionescuTulceaKernel κ a x₀)) :
+    (hf : AEStronglyMeasurable f.uncurry
+      (((partialKernel κ a b) ⊗ₖ ((ionescuTulceaKernel κ b).prodMkLeft _)) x₀))
+    (i_f : AEStronglyMeasurable (fun x ↦ f (frestrictLe b x) x) (ionescuTulceaKernel κ a x₀)) :
     ∫ x, ∫ y, f x y ∂ionescuTulceaKernel κ b x ∂partialKernel κ a b x₀ =
       ∫ x, f (frestrictLe b x) x ∂ionescuTulceaKernel κ a x₀ := by
   rw [← partialKernel_comp_ionescuTulceaKernel κ hab, Kernel.integral_comp]
-  · congr with x
+  · apply integral_congr_ae
+    replace this := this.mp (Eventually.of_forall (fun x ↦ aestronglyMeasurable_ionescuTulceaKernel κ hab))
+    -- simp_rw [aestronglyMeasurable_ionescuTulceaKernel κ hba] at this
+    filter_upwards [aestronglyMeasurable_ionescuTulceaKernel κ hab i_f, this]
+    intro x h1 h2
     rw [integral_ionescuTulceaKernel]
     · nth_rw 2 [integral_ionescuTulceaKernel]
       · congrm ∫ y, f (fun i ↦ ?_) _ ∂_
         simp [updateFinset, i.2]
-      · exact hf.aestronglyMeasurable.comp_measurable
-          ((measurable_frestrictLe b).prod_mk measurable_id)
-    · exact hf.of_uncurry_left.aestronglyMeasurable
-  · convert i_f
-    rw [partialKernel_comp_ionescuTulceaKernel _ hab]
+      · exact h1
+    · apply h1.congr
+
+  --       exact hf.aestronglyMeasurable.comp_measurable
+  --         ((measurable_frestrictLe b).prod_mk measurable_id)
+  --   · exact hf.of_uncurry_left.aestronglyMeasurable
+  -- · convert i_f
+  --   rw [partialKernel_comp_ionescuTulceaKernel _ hab]
 
 theorem setIntegral_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b) (u : (Π i : Iic a, X i))
     {f : (Π n, X n) → E} (i_f : Integrable f (ionescuTulceaKernel κ a u))

@@ -71,9 +71,9 @@ variable [MeasurableSpace Z] [MeasurableSpace T] [MeasurableSpace U]
 /-- If a function `g` is measurable with respect to the pullback along some function `f`, then
 to prove `g x = g y` it is enough to prove `f x = f y`. -/
 theorem eq_of_measurable_comap [m : MeasurableSpace Y] [MeasurableSingletonClass Z]
-    (f : X → Y) {g : X → Z} (hg : @Measurable _ _ (m.comap f) _ g)
+    (f : X → Y) {g : X → Z} (hg : Measurable[m.comap f] g)
     {x₁ x₂ : X} (h : f x₁ = f x₂) : g x₁ = g x₂ := by
-  rcases hg (measurableSet_singleton (g x₁)) with ⟨s, -, hs⟩
+  obtain ⟨s, -, hs⟩ := hg (measurableSet_singleton (g x₁))
   have : x₁ ∈ f ⁻¹' s := by simp [hs]
   have : x₂ ∈ f ⁻¹' s := by rwa [Set.mem_preimage, ← h]
   rw [hs] at this
@@ -83,13 +83,46 @@ theorem eq_of_measurable_comap [m : MeasurableSpace Y] [MeasurableSingletonClass
 then to prove `g x = g y` it is enough to prove `f x = f y`. -/
 theorem eq_of_stronglyMeasurable_comap {Z : Type*} [m : MeasurableSpace Y]
     [TopologicalSpace Z] [TopologicalSpace.PseudoMetrizableSpace Z] [T1Space Z]
-    (f : X → Y) {g : X → Z} (hg : @StronglyMeasurable _ _ _ (m.comap f) g)
+    (f : X → Y) {g : X → Z} (hg : StronglyMeasurable[m.comap f] g)
     {x₁ x₂ : X} (h : f x₁ = f x₂) : g x₁ = g x₂ := by
   let _ : MeasurableSpace Z := borel Z
   have : BorelSpace Z := BorelSpace.mk rfl
   exact eq_of_measurable_comap f hg.measurable h
 
 variable [MeasurableSpace X] [MeasurableSpace Y]
+  {κ : Kernel X Y} {η : Kernel Y Z} {x : X} {s : Set Z}
+
+theorem comp_null (x : X) (hs : MeasurableSet s) :
+    (η ∘ₖ κ) x s = 0 ↔ (fun y ↦ η y s) =ᵐ[κ x] 0 := by
+  rw [Kernel.comp_apply' _ _ _ hs, lintegral_eq_zero_iff]
+  · exact Kernel.measurable_coe _ hs
+
+theorem ae_null_of_comp_null (h : (η ∘ₖ κ) x s = 0) :
+    (fun y => η y s) =ᵐ[κ x] 0 := by
+  obtain ⟨t, hst, mt, ht⟩ := exists_measurable_superset_of_null h
+  simp_rw [comp_null x mt] at ht
+  rw [Filter.eventuallyLE_antisymm_iff]
+  exact
+    ⟨Filter.EventuallyLE.trans_eq
+        (Filter.Eventually.of_forall fun x => measure_mono hst) ht,
+      Filter.Eventually.of_forall fun x => zero_le _⟩
+
+theorem ae_ae_of_ae_comp {p : Z → Prop} (h : ∀ᵐ z ∂(η ∘ₖ κ) x, p z) :
+    ∀ᵐ y ∂κ x, ∀ᵐ z ∂η y, p z :=
+  ae_null_of_comp_null h
+
+lemma ae_comp_of_ae_ae {κ : Kernel X Y} {η : Kernel Y Z}
+    {p : Z → Prop} (hp : MeasurableSet {z | p z})
+    (h : ∀ᵐ y ∂κ x, ∀ᵐ z ∂η y, p z) :
+    ∀ᵐ z ∂(η ∘ₖ κ) x, p z := by
+  simp_rw [ae_iff] at h ⊢
+  rw [comp_null]
+  · exact h
+  · exact hp.compl
+
+lemma ae_comp_iff {p : Z → Prop} (hp : MeasurableSet {z | p z}) :
+    (∀ᵐ z ∂(η ∘ₖ κ) x, p z) ↔ ∀ᵐ y ∂κ x, ∀ᵐ z ∂η y, p z :=
+  ⟨fun h ↦ ae_ae_of_ae_comp h, fun h ↦ ae_comp_of_ae_ae hp h⟩
 
 theorem Kernel.compProd_apply_prod (κ : Kernel X Y) [IsSFiniteKernel κ]
     (η : Kernel (X × Y) Z) [IsSFiniteKernel η]
@@ -190,6 +223,11 @@ theorem Kernel.comap_const (μ : Measure Z) {f : X → Y} (hf : Measurable f) :
   rw [Kernel.const_apply, Kernel.comap_apply, Kernel.const_apply]
 
 variable {E : Type*} [NormedAddCommGroup E]
+
+lemma MeasureTheory.AEStronglyMeasurable.comp {f : Z → E} (hf : AEStronglyMeasurable f ((η ∘ₖ κ) x)) :
+    ∀ᵐ y ∂κ x, AEStronglyMeasurable f (η y) := by
+  filter_upwards [ae_ae_of_ae_comp hf.ae_eq_mk] with x' hx'
+  exact hf.stronglyMeasurable_mk.aestronglyMeasurable.congr (ae_eq_symm hx')
 
 theorem Kernel.integrable_prod_iff (κ : Kernel X Y) [IsFiniteKernel κ]
     (η : Kernel X Z) [IsFiniteKernel η] (x : X) {f : (Y × Z) → E}
