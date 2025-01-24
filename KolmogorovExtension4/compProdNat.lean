@@ -5,7 +5,6 @@ Authors: Rémy Degenne, Etienne Marion
 -/
 import KolmogorovExtension4.Annexe
 import KolmogorovExtension4.DependsOn
-import Mathlib.MeasureTheory.MeasurableSpace.PreorderRestrict
 
 open Finset ENNReal ProbabilityTheory MeasureTheory Function Preorder
 

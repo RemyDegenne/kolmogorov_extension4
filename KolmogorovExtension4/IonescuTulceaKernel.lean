@@ -669,33 +669,25 @@ theorem integral_ionescuTulceaKernel {n : ℕ} (x₀ : (i : Iic n) → X i) {f :
 theorem partialKernel_comp_ionescuTulceaKernel_apply {a b : ℕ} (hab : a ≤ b)
     (f : ((i : Iic b) → X i) → ((n : ℕ) → X n) → E)
     (x₀ : (i : Iic a) → X i)
-    (hf : AEStronglyMeasurable f.uncurry
-      (((partialKernel κ a b) ⊗ₖ ((ionescuTulceaKernel κ b).prodMkLeft _)) x₀))
-    (i_f : AEStronglyMeasurable (fun x ↦ f (frestrictLe b x) x) (ionescuTulceaKernel κ a x₀)) :
+    (hf : AEStronglyMeasurable f.uncurry ((partialKernel κ a b x₀) ⊗ₘ (ionescuTulceaKernel κ b)))
+    (i_f : Integrable (fun x ↦ f (frestrictLe b x) x) (ionescuTulceaKernel κ a x₀)) :
     ∫ x, ∫ y, f x y ∂ionescuTulceaKernel κ b x ∂partialKernel κ a b x₀ =
       ∫ x, f (frestrictLe b x) x ∂ionescuTulceaKernel κ a x₀ := by
   rw [← partialKernel_comp_ionescuTulceaKernel κ hab, Kernel.integral_comp]
   · apply integral_congr_ae
-    replace this := this.mp (Eventually.of_forall (fun x ↦ aestronglyMeasurable_ionescuTulceaKernel κ hab))
-    -- simp_rw [aestronglyMeasurable_ionescuTulceaKernel κ hba] at this
-    filter_upwards [aestronglyMeasurable_ionescuTulceaKernel κ hab i_f, this]
+    filter_upwards [aestronglyMeasurable_ionescuTulceaKernel κ hab i_f.1, hf.compProd]
     intro x h1 h2
     rw [integral_ionescuTulceaKernel]
     · nth_rw 2 [integral_ionescuTulceaKernel]
-      · congrm ∫ y, f (fun i ↦ ?_) _ ∂_
-        simp [updateFinset, i.2]
+      · simp_rw [frestrictLe_updateFinset]
       · exact h1
-    · apply h1.congr
-
-  --       exact hf.aestronglyMeasurable.comp_measurable
-  --         ((measurable_frestrictLe b).prod_mk measurable_id)
-  --   · exact hf.of_uncurry_left.aestronglyMeasurable
-  -- · convert i_f
-  --   rw [partialKernel_comp_ionescuTulceaKernel _ hab]
+    · exact h2
+  · convert i_f
+    rw [partialKernel_comp_ionescuTulceaKernel _ hab]
 
 theorem setIntegral_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b) (u : (Π i : Iic a, X i))
     {f : (Π n, X n) → E} (i_f : Integrable f (ionescuTulceaKernel κ a u))
-    (hf : StronglyMeasurable f)
+    (hf : AEStronglyMeasurable f (ionescuTulceaKernel κ a u))
     (A : Set (Π i : Iic b, X i)) (hA : MeasurableSet A) :
     ∫ x in A, ∫ y, f y ∂ionescuTulceaKernel κ b x ∂partialKernel κ a b u =
       ∫ y in frestrictLe b ⁻¹' A, f y ∂ionescuTulceaKernel κ a u := by
@@ -706,9 +698,11 @@ theorem setIntegral_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b) (u : (Π i :
   rw [← setIntegral_eq]
   · exact measurable_frestrictLe b hA
   · exact hab
-  · apply StronglyMeasurable.smul
-    · exact (((measurable_const.indicator hA)).comp measurable_fst).stronglyMeasurable
-    · exact hf.comp_measurable measurable_snd
+  · apply AEStronglyMeasurable.smul
+    · exact (((measurable_const.indicator hA)).comp measurable_fst).aestronglyMeasurable
+    · refine AEStronglyMeasurable.comp_measurable ?_ measurable_snd
+      rwa [← Measure.snd, snd_compProd, ← comp_apply'',
+        partialKernel_comp_ionescuTulceaKernel κ hab]
   · simp_rw [← preimage_indicator, ← Set.indicator_one_smul_apply]
     exact i_f.indicator (measurable_frestrictLe b hA)
 
@@ -716,9 +710,20 @@ variable [CompleteSpace E]
 
 theorem condexp_ionescuTulceaKernel
     {a b : ℕ} (hab : a ≤ b) (x₀ : (i : Iic a) → X i) {f : ((n : ℕ) → X n) → E}
-    (i_f : Integrable f (ionescuTulceaKernel κ a x₀)) (mf : StronglyMeasurable f) :
+    (i_f : Integrable f (ionescuTulceaKernel κ a x₀)) :
     (ionescuTulceaKernel κ a x₀)[f|ℱ b] =ᵐ[ionescuTulceaKernel κ a x₀]
       fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b (frestrictLe b x) := by
+  have mf : AEStronglyMeasurable
+      (fun x => ∫ (y : (n : ℕ) → X n), f y ∂(ionescuTulceaKernel κ b) x)
+      ((partialKernel κ a b) x₀) := by
+    rw [← partialKernel_comp_ionescuTulceaKernel _ hab] at i_f
+    exact i_f.1.comp_mk_left
+  have mf' : AEStronglyMeasurable
+      (fun x => ∫ (y : (n : ℕ) → X n), f y ∂(ionescuTulceaKernel κ b) x)
+      (Measure.map (frestrictLe b) ((ionescuTulceaKernel κ a) x₀)) := by
+    rw [← Kernel.map_apply, ionescuTulceaKernel_proj]
+    · exact mf
+    · exact measurable_frestrictLe _
   refine (ae_eq_condexp_of_forall_setIntegral_eq _ i_f ?_ ?_ ?_).symm
   · rintro s - -
     apply Integrable.integrableOn
@@ -727,47 +732,31 @@ theorem condexp_ionescuTulceaKernel
     · rw [← integrable_map_measure, ← Kernel.map_apply, ionescuTulceaKernel_proj,
         ← integrable_norm_iff]
       · apply i_f.2.mono'
-        · apply AEStronglyMeasurable.norm
-          exact (mf.comp_measurable measurable_snd).integral_kernel_prod_right'.aestronglyMeasurable
+        · exact AEStronglyMeasurable.norm mf
         · refine Eventually.of_forall fun x ↦ ?_
           rw [norm_norm]
           exact norm_integral_le_integral_norm _
-      · exact (mf.comp_measurable measurable_snd).integral_kernel_prod_right'.aestronglyMeasurable
+      · exact mf
       · exact measurable_frestrictLe _
-      · exact (mf.comp_measurable measurable_snd).integral_kernel_prod_right'.aestronglyMeasurable
+      · exact mf'
       · exact (measurable_frestrictLe b).aemeasurable
-    · exact mf.aestronglyMeasurable
+    · exact i_f.1
   · rintro - ⟨t, mt, rfl⟩ -
-    rw [← integral_indicator]
-    · have this x : ((frestrictLe b) ⁻¹' t).indicator
-          (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b (frestrictLe b x)) x =
-          t.indicator (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x) ((frestrictLe b) x) :=
-        Set.indicator_comp_right (frestrictLe b) (g := fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x)
-      simp_rw [this]
-      rw [← integral_map, ← Kernel.map_apply, ionescuTulceaKernel_proj κ]
-      simp_rw [Set.indicator_one_smul_apply (M := ℝ)
-        (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x), ← integral_smul]
-      · rw [partialKernel_comp_ionescuTulceaKernel_apply _ hab, ← integral_indicator]
-        · congr with x
-          by_cases h : frestrictLe b x ∈ t <;> simp [h]
-        · exact measurable_frestrictLe b mt
-        · rw [uncurry_def]
-          apply StronglyMeasurable.smul
-          · exact (stronglyMeasurable_const.indicator mt).comp_measurable measurable_fst
-          · exact mf.comp_measurable measurable_snd
-        · simp_rw [← Set.indicator_comp_right]
-          change Integrable (fun _ ↦ (Set.indicator _ (fun _ ↦ 1) _) • _) _
-          simp_rw [← Set.indicator_one_smul_apply]
-          exact i_f.indicator (measurable_frestrictLe b mt)
-      · exact measurable_frestrictLe _
-      · exact (measurable_frestrictLe b).aemeasurable
-      · refine (StronglyMeasurable.indicator ?_ mt).aestronglyMeasurable
-        exact (mf.comp_measurable measurable_snd).integral_kernel_prod_right'
-    · exact measurable_frestrictLe b mt
+    rw [← setIntegral_map mt (f := fun x ↦ ∫ y, f y ∂(ionescuTulceaKernel κ _ x)),
+      ← Kernel.map_apply, ionescuTulceaKernel_proj, setIntegral_ionescuTulceaKernel κ hab _ i_f]
+    · exact i_f.1
+    · exact mt
+    · exact measurable_frestrictLe _
+    · rw [← Kernel.map_apply _ (measurable_frestrictLe _)]
+      apply AEStronglyMeasurable.comp_mk_left
+      rw [ionescuTulceaKernel_proj, partialKernel_comp_ionescuTulceaKernel _ hab]
+      exact i_f.1
+    · exact (measurable_frestrictLe _).aemeasurable
   · conv => enter [2]; change (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x) ∘ (frestrictLe b)
     apply AEStronglyMeasurable.comp_ae_measurable'
-    · exact (mf.comp_measurable measurable_snd).integral_kernel_prod_right'.aestronglyMeasurable
+    · exact mf'
     · exact (measurable_frestrictLe b).aemeasurable
+
 
 theorem condexp_ionescuTulceaKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
     (x₀ : (i : Iic a) → X i) {f : ((n : ℕ) → X n) → E} :
@@ -778,7 +767,7 @@ theorem condexp_ionescuTulceaKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ 
       (ionescuTulceaKernel κ a x₀) := integrable_condexp
   have mcf : StronglyMeasurable ((ionescuTulceaKernel κ a x₀)[f|ℱ c]) :=
     stronglyMeasurable_condexp.mono (ℱ.le c)
-  filter_upwards [ℱ.condexp_condexp f hbc, condexp_ionescuTulceaKernel κ hab x₀ i_cf mcf]
+  filter_upwards [ℱ.condexp_condexp f hbc, condexp_ionescuTulceaKernel κ hab x₀ i_cf]
   intro x h1 h2
   rw [← h1, h2, ← ionescuTulceaKernel_proj, Kernel.map_apply, integral_map]
   · congr with y

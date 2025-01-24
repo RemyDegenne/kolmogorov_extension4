@@ -4,8 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Etienne Marion
 -/
 import Mathlib.Data.Finset.Basic
-import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
+import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.MeasurableSpace.PreorderRestrict
 import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 import Mathlib.Probability.Kernel.Integral
 import Mathlib.Probability.Process.Filtration
@@ -201,6 +202,12 @@ theorem Kernel.prod_deterministic_apply' {f : X → Z} (mf : Measurable f)
   · rfl
   · exact measurable_measure_prod_mk_right ms
 
+theorem Kernel.comp_apply'' (κ : Kernel X Y) [IsMarkovKernel κ]
+    (η : Kernel Y Z) [IsSFiniteKernel η] (x : X) :
+    (η ∘ₖ κ) x = (κ x).bind η := by
+  ext s hs
+  rw [Kernel.comp_apply' _ _ _ hs, Measure.bind_apply hs η.measurable]
+
 theorem Measure.map_snd_compProd (μ : Measure X) [IsProbabilityMeasure μ] (κ : Kernel X Y)
     [IsSFiniteKernel κ] {f : Y → Z} (hf : Measurable f) :
     (μ ⊗ₘ κ).snd.map f = (μ ⊗ₘ (κ.map f)).snd := by
@@ -217,6 +224,15 @@ theorem Measure.fst_compProd (μ : Measure X) [SFinite μ]
   rw [Measure.fst_apply ms, ← Set.prod_univ, Measure.compProd_apply_prod ms MeasurableSet.univ]
   simp
 
+/-- from #19639 -/
+@[simp]
+lemma snd_compProd (μ : Measure X) [SFinite μ] (κ : Kernel X Y) [IsSFiniteKernel κ] :
+    (μ ⊗ₘ κ).snd = Measure.bind μ κ := by
+  ext s hs
+  rw [Measure.bind_apply hs κ.measurable, Measure.snd_apply hs, Measure.compProd_apply]
+  · rfl
+  · exact measurable_snd hs
+
 theorem Kernel.comap_const (μ : Measure Z) {f : X → Y} (hf : Measurable f) :
     Kernel.comap (Kernel.const Y μ) f hf = Kernel.const X μ := by
   ext1 x
@@ -224,10 +240,27 @@ theorem Kernel.comap_const (μ : Measure Z) {f : X → Y} (hf : Measurable f) :
 
 variable {E : Type*} [NormedAddCommGroup E]
 
-lemma MeasureTheory.AEStronglyMeasurable.comp {f : Z → E} (hf : AEStronglyMeasurable f ((η ∘ₖ κ) x)) :
+theorem MeasureTheory.AEStronglyMeasurable.compProd {μ : Measure X} [SFinite μ]
+    {κ : Kernel X Y} [IsMarkovKernel κ] {f : X → Y → E}
+    (hf : AEStronglyMeasurable f.uncurry (μ ⊗ₘ κ)) :
+    ∀ᵐ x ∂μ, AEStronglyMeasurable (f x) (κ x) := by
+  rw [Measure.compProd] at hf
+  apply compProd_mk_left at hf
+  simpa using hf
+
+lemma MeasureTheory.AEStronglyMeasurable.comp {f : Z → E}
+    (hf : AEStronglyMeasurable f ((η ∘ₖ κ) x)) :
     ∀ᵐ y ∂κ x, AEStronglyMeasurable f (η y) := by
   filter_upwards [ae_ae_of_ae_comp hf.ae_eq_mk] with x' hx'
   exact hf.stronglyMeasurable_mk.aestronglyMeasurable.congr (ae_eq_symm hx')
+
+theorem MeasureTheory.AEStronglyMeasurable.comp_mk_left [NormedSpace ℝ E]
+    [IsSFiniteKernel η] [IsSFiniteKernel κ] {f : Z → E} {x : X}
+    (hf : AEStronglyMeasurable f ((η ∘ₖ κ) x)) :
+    AEStronglyMeasurable (fun y ↦ ∫ z, f z ∂η y) (κ x) := by
+  rw [← Kernel.snd_compProd_prodMkLeft, Kernel.snd_apply] at hf
+  replace hf := hf.comp_measurable measurable_snd
+  exact hf.integral_kernel_compProd
 
 theorem Kernel.integrable_prod_iff (κ : Kernel X Y) [IsFiniteKernel κ]
     (η : Kernel X Z) [IsFiniteKernel η] (x : X) {f : (Y × Z) → E}
@@ -375,6 +408,33 @@ theorem Finset.Iic_union_Ioc_eq_Iic {α : Type*} [LinearOrder α] [LocallyFinite
 theorem Finset.disjoint_Iic_Ioc {α : Type*} [Preorder α] [LocallyFiniteOrder α] [OrderBot α]
     {a b c : α} (h : a ≤ b) : Disjoint (Iic a) (Ioc b c) :=
   disjoint_left.2 fun _ hax hbcx ↦ (mem_Iic.1 hax).not_lt <| lt_of_le_of_lt h (mem_Ioc.1 hbcx).1
+
+theorem restrict_updateFinset' {ι : Type*} [DecidableEq ι] {α : ι → Type*} {s t : Finset ι}
+    (hst : s ⊆ t) (x : Π i, α i) (y : Π i : t, α i) :
+    s.restrict (updateFinset x t y) = restrict₂ hst y := by
+  ext i
+  simp only [restrict, updateFinset, restrict₂]
+  split_ifs with hi
+  · rfl
+  · exact (hi (hst i.2)).elim
+
+theorem restrict_updateFinset {ι : Type*} [DecidableEq ι] {α : ι → Type*} {s : Finset ι}
+    (x : Π i, α i) (y : Π i : s, α i) :
+    s.restrict (updateFinset x s y) = y := by
+  rw [restrict_updateFinset' subset_rfl]
+  rfl
+
+open Preorder
+
+theorem frestrictLe_updateFinset' {ι : Type*} [DecidableEq ι] [Preorder ι] [LocallyFiniteOrderBot ι]
+    {α : ι → Type*} {i j : ι} (hij : i ≤ j) (x : Π k, α k) (y : Π k : Iic j, α k) :
+    frestrictLe i (updateFinset x _ y) = frestrictLe₂ hij y :=
+  restrict_updateFinset' (Iic_subset_Iic.2 hij) ..
+
+theorem frestrictLe_updateFinset {ι : Type*} [DecidableEq ι] [Preorder ι] [LocallyFiniteOrderBot ι]
+    {α : ι → Type*} {i : ι} (x : Π j, α j) (y : Π j : Iic i, α j) :
+    frestrictLe i (updateFinset x _ y) = y :=
+  restrict_updateFinset ..
 
 end Finset
 
