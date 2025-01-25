@@ -43,6 +43,12 @@ theorem iterate_induction_le {p : ℕ} (x₀ : (i : Iic p) → X i)
   · rw [iterate_induction]
     simp [mem_Iic.1 hi]
 
+lemma frestrictLe_iterate_induction {p : ℕ} (x₀ : (i : Iic p) → X i)
+    (ind : (k : ℕ) → ((n : Iic k) → X n) → X (k + 1)) :
+    frestrictLe p (iterate_induction x₀ ind) = x₀ := by
+  ext i
+  simp [iterate_induction_le]
+
 variable [∀ n, MeasurableSpace (X n)]
 
 private lemma measure_cast {a b : ℕ} (h : a = b) (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) :
@@ -258,9 +264,9 @@ converges to `0`.
 This implies the `σ`-additivity of `ionescuTulceaContent`
 (see `sigma_additive_addContent_of_tendsto_zero`), which allows to extend it to the
 `σ`-algebra by Carathéodory's theorem. -/
-theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
+theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set (Π n : ℕ, X n))
     (A_mem : ∀ n, A n ∈ measurableCylinders X) (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅)
-    {p : ℕ} (x₀ : (i : Iic p) → X i) :
+    {p : ℕ} (x₀ : Π i : Iic p, X i) :
     Tendsto (fun n ↦ ionescuTulceaContent κ x₀ (A n)) atTop (𝓝 0) := by
   have _ n : Nonempty (X n) := by
     refine Nat.case_strong_induction_on (p := fun n ↦ Nonempty (X n)) _ inferInstance
@@ -286,8 +292,7 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
   have lma_const x y n :
       lmarginalPartialKernel κ p (N n) (χ n) (updateFinset x _ x₀) =
       lmarginalPartialKernel κ p (N n) (χ n) (updateFinset y _ x₀) := by
-    apply (χ_dep n).dependsOn_lmarginalPartialKernel κ p (mχ n)
-    intro i hi
+    refine (χ_dep n).dependsOn_lmarginalPartialKernel κ p (mχ n) fun i hi ↦ ?_
     rw [mem_coe, mem_Iic] at hi
     simp [updateFinset, hi]
   -- As `(Aₙ)` is non-increasing, so is `(χₙ)`.
@@ -329,25 +334,22 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
   have χ_le n x : χ n x ≤ 1 := by
     apply Set.indicator_le
     simp
-  -- We have all the conditions to apply ``. This allows us to recursively
-  -- build a sequence `z` with the following property: for any `k ≥ p` and `n`,
-  -- integrating `χ n` from time `k` to time `N n` with the trajectory up to `k` being equal to `z`
-  -- gives something greater than `ε`.
+  -- We have all the conditions to apply `le_lmarginalPartialKernel_succ`.
+  -- This allows us to recursively build a sequence `z` with the following property:
+  -- for any `k ≥ p` and `n`, integrating `χ n` from time `k` to time `N n`
+  -- with the trajectory up to `k` being equal to `z` gives something greater than `ε`.
   choose! ind hind using
     fun k y h ↦ le_lmarginalPartialKernel_succ κ χ_dep mχ (by norm_num : (1 : ℝ≥0∞) ≠ ∞)
       χ_le (anti_lma (k + 1)) (hl (k + 1)) ε y h
   let z := iterate_induction x₀ ind
-  have imp k (hk : p ≤ k) : ∀ x n,
+  have main k (hk : p ≤ k) : ∀ x n,
       ε ≤ lmarginalPartialKernel κ k (N n) (χ n) (updateFinset x (Iic k) (frestrictLe k z)) := by
     refine Nat.le_induction (fun x n ↦ ?_) (fun k hn h x n ↦ ?_) k hk
-    · convert hpos x n
-      ext i
-      simp only [frestrictLe, restrict, z]
-      exact iterate_induction_le ..
+    · rw [frestrictLe_iterate_induction]
+      exact hpos x n
     · rw [← update_updateFinset_eq]
       convert hind k (fun i ↦ z i.1) h x n
-      simp_rw [z]
-      rw [iterate_induction]
+      simp_rw [z, iterate_induction]
       simp [Nat.lt_succ.2 hn]
   -- We now want to prove that the integral of `χₙ`, which is equal to the `ionescuTulceaContent`
   -- of `Aₙ`, converges to `0`.
@@ -372,7 +374,7 @@ theorem ionescuTulceaContent_tendsto_zero (A : ℕ → Set ((n : ℕ) → X n))
       simp [updateFinset]
     have : 0 < χ n (z) := by
       rw [this]
-      convert lt_of_lt_of_le ε_pos (imp _ (le_max_left _ _) z n) using 2
+      convert lt_of_lt_of_le ε_pos (main _ (le_max_left _ _) z n) using 2
       ext i
       simp [updateFinset]
     exact Set.mem_of_indicator_ne_zero (ne_of_lt this).symm
