@@ -197,34 +197,6 @@ end IsSetSemiring
 
 end Ordered
 
-namespace IsSetRing
-
-theorem iUnion_le_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ n, s n ∈ C) (n : ℕ) :
-    (⋃ i ≤ n, s i) ∈ C := by
-  induction' n with n hn
-  · simp only [Nat.zero_eq, le_zero_iff, iUnion_iUnion_eq_left, exists_prop]
-    exact hs 0
-  rw [Set.biUnion_le_succ]
-  exact hC.union_mem hn (hs _)
-
-theorem iInter_le_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ n, s n ∈ C) (n : ℕ) :
-    (⋂ i ≤ n, s i) ∈ C := by
-  induction' n with n hn
-  · simp only [Nat.zero_eq, le_zero_iff, iInter_iInter_eq_left, exists_prop]
-    exact hs 0
-  rw [Set.biInter_le_succ]
-  exact hC.inter_mem hn (hs _)
-
-theorem accumulate_mem (hC : IsSetRing C) {s : ℕ → Set α} (hs : ∀ i, s i ∈ C) (n : ℕ) :
-    Set.Accumulate s n ∈ C := by
-  induction' n with n hn
-  · simp only [Set.Accumulate, le_zero_iff, Set.iUnion_iUnion_eq_left, hs 0, Nat.zero_eq,
-      nonpos_iff_eq_zero, iUnion_iUnion_eq_left]
-  · rw [Set.accumulate_succ]
-    exact hC.union_mem hn (hs _)
-
-end IsSetRing
-
 /-- A field of sets is a family of sets which is stable under union, difference, and contains
 the empty set and the whole space. -/
 structure IsSetField (C : Set (Set α)) extends IsSetRing C : Prop where

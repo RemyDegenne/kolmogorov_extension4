@@ -708,7 +708,7 @@ theorem setIntegral_ionescuTulceaKernel {a b : ℕ} (hab : a ≤ b) (u : (Π i :
 
 variable [CompleteSpace E]
 
-theorem condexp_ionescuTulceaKernel
+theorem condExp_ionescuTulceaKernel
     {a b : ℕ} (hab : a ≤ b) (x₀ : (i : Iic a) → X i) {f : ((n : ℕ) → X n) → E}
     (i_f : Integrable f (ionescuTulceaKernel κ a x₀)) :
     (ionescuTulceaKernel κ a x₀)[f|ℱ b] =ᵐ[ionescuTulceaKernel κ a x₀]
@@ -724,7 +724,7 @@ theorem condexp_ionescuTulceaKernel
     rw [← Kernel.map_apply, ionescuTulceaKernel_proj]
     · exact mf
     · exact measurable_frestrictLe _
-  refine (ae_eq_condexp_of_forall_setIntegral_eq _ i_f ?_ ?_ ?_).symm
+  refine (ae_eq_condExp_of_forall_setIntegral_eq _ i_f ?_ ?_ ?_).symm
   · rintro s - -
     apply Integrable.integrableOn
     conv => enter [1]; change (fun x ↦ ∫ y, f y ∂ionescuTulceaKernel κ b x) ∘ (frestrictLe b)
@@ -758,20 +758,20 @@ theorem condexp_ionescuTulceaKernel
     · exact (measurable_frestrictLe b).aemeasurable
 
 
-theorem condexp_ionescuTulceaKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
+theorem condExp_ionescuTulceaKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
     (x₀ : (i : Iic a) → X i) {f : ((n : ℕ) → X n) → E} :
     (ionescuTulceaKernel κ a x₀)[f|ℱ b] =ᵐ[ionescuTulceaKernel κ a x₀]
       fun x ↦ ∫ y, ((ionescuTulceaKernel κ a x₀)[f|ℱ c]) (updateFinset x _ y)
         ∂partialKernel κ b c (frestrictLe b x) := by
   have i_cf : Integrable ((ionescuTulceaKernel κ a x₀)[f|ℱ c])
-      (ionescuTulceaKernel κ a x₀) := integrable_condexp
+      (ionescuTulceaKernel κ a x₀) := integrable_condExp
   have mcf : StronglyMeasurable ((ionescuTulceaKernel κ a x₀)[f|ℱ c]) :=
-    stronglyMeasurable_condexp.mono (ℱ.le c)
-  filter_upwards [ℱ.condexp_condexp f hbc, condexp_ionescuTulceaKernel κ hab x₀ i_cf]
+    stronglyMeasurable_condExp.mono (ℱ.le c)
+  filter_upwards [ℱ.condExp_condExp f hbc, condExp_ionescuTulceaKernel κ hab x₀ i_cf]
   intro x h1 h2
   rw [← h1, h2, ← ionescuTulceaKernel_proj, Kernel.map_apply, integral_map]
   · congr with y
-    apply stronglyMeasurable_dependsOn stronglyMeasurable_condexp
+    apply stronglyMeasurable_dependsOn stronglyMeasurable_condExp
     simp [updateFinset]
     exact fun i hi ↦ (if_pos hi).symm
   · exact (measurable_frestrictLe c).aemeasurable

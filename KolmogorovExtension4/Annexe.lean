@@ -202,8 +202,7 @@ theorem Kernel.prod_deterministic_apply' {f : X → Z} (mf : Measurable f)
   · rfl
   · exact measurable_measure_prod_mk_right ms
 
-theorem Kernel.comp_apply'' (κ : Kernel X Y) [IsMarkovKernel κ]
-    (η : Kernel Y Z) [IsSFiniteKernel η] (x : X) :
+theorem Kernel.comp_apply'' (κ : Kernel X Y) (η : Kernel Y Z) (x : X) :
     (η ∘ₖ κ) x = (κ x).bind η := by
   ext s hs
   rw [Kernel.comp_apply' _ _ _ hs, Measure.bind_apply hs η.measurable]
@@ -362,10 +361,10 @@ theorem Kernel.lintegral_deterministic_prod {f : X → Y} (mf : Measurable f)
   rw [Kernel.lintegral_prod _ _ _ mg, Kernel.lintegral_deterministic']
   exact mg.lintegral_prod_right'
 
-theorem MeasureTheory.Filtration.condexp_condexp {ι : Type*} [Preorder ι]
+theorem MeasureTheory.Filtration.condExp_condExp {ι : Type*} [Preorder ι]
     (f : X → E) {μ : Measure X} (ℱ : @Filtration X ι _ inferInstance)
     {i j : ι} (hij : i ≤ j) [SigmaFinite (μ.trim (ℱ.le j))] :
-    μ[μ[f|ℱ j]|ℱ i] =ᵐ[μ] μ[f|ℱ i] := condexp_condexp_of_le (ℱ.mono hij) (ℱ.le j)
+    μ[μ[f|ℱ j]|ℱ i] =ᵐ[μ] μ[f|ℱ i] := condExp_condExp_of_le (ℱ.mono hij) (ℱ.le j)
 
 end Measure
 

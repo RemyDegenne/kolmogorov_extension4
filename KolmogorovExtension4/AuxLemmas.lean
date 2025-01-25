@@ -61,21 +61,6 @@ theorem MeasurableSet.accumulate {_ : MeasurableSpace α} {s : ℕ → Set α}
     (hs : ∀ n, MeasurableSet (s n)) (n : ℕ) : MeasurableSet (Set.Accumulate s n) :=
   MeasurableSet.biUnion (Set.to_countable _) fun n _ ↦ hs n
 
-theorem Set.disjoint_accumulate {s : ℕ → Set α} (hs : Pairwise (Function.onFun Disjoint s)) {i j : ℕ}
-    (hij : i < j) : Disjoint (Set.Accumulate s i) (s j) := by
-  rw [Set.accumulate_def]
-  induction i with
-  | zero => simp only [Nat.zero_eq, nonpos_iff_eq_zero, iUnion_iUnion_eq_left]; exact hs hij.ne
-  | succ i hi =>
-    rw [Set.biUnion_le_succ s i]
-    exact Disjoint.union_left (hi ((Nat.lt_succ_self i).trans hij)) (hs hij.ne)
-
-theorem Set.accumulate_succ (s : ℕ → Set α) (n : ℕ) :
-    Set.Accumulate s (n + 1) = Set.Accumulate s n ∪ s (n + 1) := Set.biUnion_le_succ s n
-
-@[simp]
-lemma accumulate_zero_nat (s : ℕ → Set α) : Set.Accumulate s 0 = s 0 := by simp [Set.accumulate_def]
-
 end Accumulate
 
 namespace NNReal
@@ -129,20 +114,6 @@ theorem exists_seq_pos_lt (x : ℝ≥0∞) (hx : 0 < x) :
     refine ⟨f, hf.1, ?_⟩
     rw [hf.2]
     exact ENNReal.half_lt_self hx.ne' hx_top
-
-theorem tendsto_atTop_zero_const_sub_iff (f : ℕ → ℝ≥0∞) (a : ℝ≥0∞) (ha : a ≠ ∞)
-    (hfa : ∀ n, f n ≤ a) :
-    Tendsto (fun n ↦ a - f n) atTop (𝓝 0) ↔ Tendsto (fun n ↦ f n) atTop (𝓝 a) := by
-  rw [ENNReal.tendsto_atTop_zero, ENNReal.tendsto_atTop ha]
-  refine ⟨fun h ε hε ↦ ?_, fun h ε hε ↦ ?_⟩ <;> obtain ⟨N, hN⟩ := h ε hε
-  · refine ⟨N, fun n hn ↦ ⟨?_, (hfa n).trans (le_add_right le_rfl)⟩⟩
-    specialize hN n hn
-    rw [tsub_le_iff_right] at hN ⊢
-    rwa [add_comm]
-  · refine ⟨N, fun n hn ↦ ?_⟩
-    have hN_left := (hN n hn).1
-    rw [tsub_le_iff_right] at hN_left ⊢
-    rwa [add_comm]
 
 theorem tendsto_atTop_zero_iff_of_antitone (f : ℕ → ℝ≥0∞) (hf : Antitone f) :
     Filter.Tendsto f Filter.atTop (𝓝 0) ↔ ∀ ε, 0 < ε → ∃ n : ℕ, f n ≤ ε := by
