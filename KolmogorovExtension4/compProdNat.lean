@@ -653,6 +653,18 @@ theorem lmarginalPartialKernel_lt [∀ n, IsFiniteKernel (κ n)]
   · exact (el ..).measurable
   · exact mf.comp measurable_updateFinset
 
+/-- If `a < b`, then integrating `f` against the `partialKernel κ a b` is the same as integrating
+  against `kerNat a b`. -/
+theorem lmarginalPartialKernel_succ [∀ n, IsFiniteKernel (κ n)]
+    (a : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞} (mf : Measurable f) (x₀ : (n : ℕ) → X n) :
+    lmarginalPartialKernel κ a (a + 1) f x₀ =
+      ∫⁻ x : X (a + 1), f (update x₀ _ x) ∂κ a (frestrictLe a x₀) := by
+  rw [lmarginalPartialKernel_lt κ a.lt_succ_self mf, kerNat_succ_self, lintegral_map]
+  · congrm ∫⁻ y, f (fun i ↦ ?_) ∂_
+    simp [updateFinset, e, update]
+  · exact (e ..).measurable
+  · exact mf.comp measurable_updateFinset
+
 theorem measurable_lmarginalPartialKernel (a b : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
     Measurable (lmarginalPartialKernel κ a b f) := by
   unfold lmarginalPartialKernel
@@ -667,10 +679,6 @@ theorem measurable_lmarginalPartialKernel (a b : ℕ) {f : ((n : ℕ) → X n) �
   by_cases h : i ∈ Iic b <;> simp [h]
   · exact (measurable_pi_apply _).comp <| measurable_fst
   · exact measurable_snd.eval
-
-theorem restrict_udpateFinset {ι : Type*} [DecidableEq ι] {α : ι → Type*} (s : Finset ι)
-    (x : (i : ι) → α i) (y : (i : s) → α i) :
-    s.restrict (updateFinset x s y) = y := by ext i; simp [updateFinset]
 
 theorem updateFinset_updateFinset_subset {ι : Type*} [DecidableEq ι] {α : ι → Type*}
     (s t : Finset ι) (hst : s ⊆ t) (x : (i : ι) → α i)
@@ -693,7 +701,7 @@ theorem lmarginalPartialKernel_self [∀ n, IsMarkovKernel (κ n)] {a b c : ℕ}
   · rw [lmarginalPartialKernel_le κ (_root_.le_refl a) (measurable_lmarginalPartialKernel _ _ _ hf)]
   · rw [lmarginalPartialKernel_le κ (_root_.le_refl a) (measurable_lmarginalPartialKernel _ _ _ hf)]
   · rw [lmarginalPartialKernel_le κ (_root_.le_refl b) hf]
-  simp_rw [lmarginalPartialKernel, frestrictLe, restrict_udpateFinset,
+  simp_rw [lmarginalPartialKernel, frestrictLe, restrict_updateFinset,
     updateFinset_updateFinset_subset _ _ (Iic_subset_Iic.2 hbc.le)]
   rw [← lintegral_comp, partialKernel_comp κ c hab.le]
   exact hf.comp <| measurable_updateFinset

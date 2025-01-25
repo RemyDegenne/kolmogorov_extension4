@@ -69,6 +69,23 @@ section Measure
 variable {X Y Z T U : Type*}
 variable [MeasurableSpace Z] [MeasurableSpace T] [MeasurableSpace U]
 
+lemma lintegral_le_mul_ae [MeasurableSpace X] {μ : Measure X} {f : X → ℝ≥0∞}
+    {b : ℝ≥0∞} (hf : ∀ᵐ x ∂μ, f x ≤ b) : ∫⁻ x, f x ∂μ ≤ b * (μ Set.univ) := by
+  rw [← lintegral_const]
+  exact lintegral_mono_ae hf
+
+lemma lintegral_le_mul [MeasurableSpace X] (μ : Measure X) {f : X → ℝ≥0∞}
+    {b : ℝ≥0∞} (hf : ∀ x, f x ≤ b) : ∫⁻ x, f x ∂μ ≤ b * (μ Set.univ) :=
+  lintegral_le_mul_ae (Filter.Eventually.of_forall hf)
+
+lemma lintegral_le_mul_ae' [MeasurableSpace X] {μ : Measure X} [IsProbabilityMeasure μ]
+    {f : X → ℝ≥0∞} {b : ℝ≥0∞} (hf : ∀ᵐ x ∂μ, f x ≤ b) : ∫⁻ x, f x ∂μ ≤ b := by
+  simpa using lintegral_le_mul_ae hf
+
+lemma lintegral_le_mul' [MeasurableSpace X] (μ : Measure X) [IsProbabilityMeasure μ] {f : X → ℝ≥0∞}
+    {b : ℝ≥0∞} (hf : ∀ x, f x ≤ b) : ∫⁻ x, f x ∂μ ≤ b := by
+  simpa using lintegral_le_mul μ hf
+
 /-- If a function `g` is measurable with respect to the pullback along some function `f`, then
 to prove `g x = g y` it is enough to prove `f x = f y`. -/
 theorem eq_of_measurable_comap [m : MeasurableSpace Y] [MeasurableSingletonClass Z]
@@ -231,6 +248,11 @@ lemma snd_compProd (μ : Measure X) [SFinite μ] (κ : Kernel X Y) [IsSFiniteKer
   rw [Measure.bind_apply hs κ.measurable, Measure.snd_apply hs, Measure.compProd_apply]
   · rfl
   · exact measurable_snd hs
+
+lemma snd_compProd_kernel (κ : Kernel X Y) [IsSFiniteKernel κ] (η : Kernel Y Z)
+    [IsSFiniteKernel η] (x : X) :
+    ((κ x) ⊗ₘ η).snd = (η ∘ₖ κ) x := by
+  rw [snd_compProd, Kernel.comp_apply'']
 
 theorem Kernel.comap_const (μ : Measure Z) {f : X → Y} (hf : Measurable f) :
     Kernel.comap (Kernel.const Y μ) f hf = Kernel.const X μ := by
