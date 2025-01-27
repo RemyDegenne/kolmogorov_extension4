@@ -324,8 +324,8 @@ theorem Kernel.integrable_deterministic_prod {f : X → Y} (mf : Measurable f)
         exact mg.norm.integral_prod_right'
   · exact mg.aestronglyMeasurable
 
-theorem Kernel.integrable_comp_iff (η : Kernel Y Z) [IsSFiniteKernel η]
-    (κ : Kernel X Y) [IsSFiniteKernel κ] (x : X)
+theorem integrable_comp_iff {η : Kernel Y Z} [IsSFiniteKernel η]
+    {κ : Kernel X Y} [IsSFiniteKernel κ] {x : X}
     {f : Z → E} (hf : AEStronglyMeasurable f ((η ∘ₖ κ) x)) :
     Integrable f ((η ∘ₖ κ) x) ↔
     (∀ᵐ y ∂κ x, Integrable f (η y)) ∧ (Integrable (fun y ↦ ∫ z, ‖f z‖ ∂η y) (κ x)) := by
@@ -337,6 +337,12 @@ theorem Kernel.integrable_comp_iff (η : Kernel Y Z) [IsSFiniteKernel η]
   · exact measurable_snd.aemeasurable
 
 variable [NormedSpace ℝ E]
+
+theorem MeasureTheory.Integrable.integral_comp {η : Kernel Y Z} [IsSFiniteKernel η] {κ : Kernel X Y}
+    [IsSFiniteKernel κ] {x : X} {f : Z → E} (hf : Integrable f ((η ∘ₖ κ) x)) :
+    Integrable (fun y ↦ ∫ z, f z ∂η y) (κ x) :=
+  ((integrable_comp_iff hf.1).1 hf).2.mono' hf.1.comp_mk_left <|
+    Filter.Eventually.of_forall fun _ ↦ norm_integral_le_integral_norm _
 
 theorem Kernel.integral_prod (κ : Kernel X Y) [IsFiniteKernel κ]
     (η : Kernel X Z) [IsFiniteKernel η] (x : X)

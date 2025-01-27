@@ -60,15 +60,19 @@ theorem dependsOn_const (b : β) : DependsOn (fun _ : (i : ι) → α i ↦ b) �
 /-- A function which depends on the empty set is constant. -/
 theorem dependsOn_empty (hf : DependsOn f ∅) (x y : (i : ι) → α i) : f x = f y := hf (by simp)
 
-theorem Finset.dependsOn_restrict (s : Finset ι) : DependsOn (s.restrict (π := α)) s := by
-  refine fun x y hxy ↦ funext fun i ↦ hxy i.1 ?_
-  rw [mem_coe]
-  exact i.2
+theorem Set.dependsOn_restrict (s : Set ι) : DependsOn (s.restrict (π := α)) s :=
+  fun _ _ h ↦ funext fun i ↦ h i.1 i.2
+
+theorem Finset.dependsOn_restrict (s : Finset ι) : DependsOn (s.restrict (π := α)) s :=
+  (s : Set ι).dependsOn_restrict
+
+theorem Preorder.dependsOn_restrictLe [Preorder ι] (i : ι) :
+    DependsOn (restrictLe (π := α) i) (Set.Iic i) := (Iic i).dependsOn_restrict
 
 theorem Preorder.dependsOn_frestrictLe [Preorder ι] [LocallyFiniteOrderBot ι] (i : ι) :
     DependsOn (frestrictLe (π := α) i) (Set.Iic i) := by
-  convert dependsOn_restrict (Finset.Iic i)
-  rw [coe_Iic]
+  convert (Finset.Iic i).dependsOn_restrict
+  norm_cast
 
 variable [DecidableEq ι]
 

@@ -3,7 +3,7 @@ Copyright (c) 2024 Etienne Marion. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Etienne Marion
 -/
-import KolmogorovExtension4.trajKernel
+import KolmogorovExtension4.IonescuTulceaKernel
 
 open MeasureTheory MeasurableSpace ProbabilityTheory Finset ENNReal Filter Topology Function Kernel Preorder
 
@@ -147,7 +147,7 @@ theorem prod_noyau_proj (N : ℕ) :
           (const _ (Measure.pi (fun i : Ioc 0 N ↦ μ i))))
         (el 0 N (zero_le N)) := by
   rcases eq_zero_or_pos N with rfl | hN
-  · have : IsEmpty (Ioc 0 0) := by simp
+  · have : IsEmpty (Ioc 0 0) := by simp [Subtype.isEmpty_false]
     rw [ptraj, dif_neg (lt_irrefl 0), Measure.pi_of_empty]
     ext x s ms
     rw [Kernel.map_apply _ (el ..).measurable, deterministic_apply, Kernel.prod_apply,
@@ -210,14 +210,14 @@ theorem isProjectiveLimit_infinitePiNat :
   rw [← restrict₂_comp_restrict I.sub_Iic,
     ← Measure.map_map (measurable_restrict₂ _) (measurable_restrict _), ← frestrictLe]
   congr
-  rw [infinitePiNat, Measure.map_bind, trajKernel_proj]; swap
+  rw [infinitePiNat, Measure.map_bind, frestrictLe_trajKernel]; swap
   · exact measurable_frestrictLe _
   refine (Measure.pi_eq fun s ms ↦ ?_).symm
   have mpis := MeasurableSet.univ_pi ms
   rw [Measure.bind_apply mpis (Kernel.measurable _),
     ← prod_congr' (Iic_union_Ioc_eq_Iic (zero_le _)), ← prod_union' (disjoint_Iic_Ioc (zero_le _)),
     mul_comm, ← Measure.pi_pi (ι := Iic 0), ← setLIntegral_const,
-    ← lintegral_indicator _ (MeasurableSet.univ_pi (fun _ ↦ ms _))]
+    ← lintegral_indicator (MeasurableSet.univ_pi (fun _ ↦ ms _))]
   congr with x₀
   rw [prod_noyau_proj, Kernel.map_apply', Kernel.prod_apply, el_preimage,
     Measure.prod_prod, deterministic_apply', Kernel.const_apply, indicator_one_mul_const']
@@ -342,7 +342,7 @@ theorem secondLemma
     rw [Measure.map_apply (mg n) (mS n)]
   simp_rw [crucial, fun n ↦ kolContent_eq_infinitePiNat (fun k ↦ μ (φ k)) (B_mem n),
     ← measure_empty (μ := Measure.infinitePiNat (fun k ↦ μ (φ k))), ← B_inter]
-  exact tendsto_measure_iInter
+  exact tendsto_measure_iInter_atTop
     (fun n ↦ (MeasurableSet.of_mem_measurableCylinders (B_mem n)).nullMeasurableSet)
     B_anti ⟨0, measure_ne_top _ _⟩
 
@@ -431,7 +431,7 @@ theorem thirdLemma (A : ℕ → Set ((i : ι) → X i)) (A_mem : ∀ n, A n ∈ 
       fun n ↦ kolContent_eq_measure_pi (fun i : u ↦ μ i)
         (MeasurableSet.of_mem_measurableCylinders (B_mem n)),
       ← measure_empty (μ := Measure.pi (fun i : u ↦ μ i)), ← B_inter]
-    exact tendsto_measure_iInter
+    exact tendsto_measure_iInter_atTop
       (fun n ↦ (MeasurableSet.of_mem_measurableCylinders (B_mem n)).nullMeasurableSet)
       B_anti ⟨0, measure_ne_top _ _⟩
   · -- If `u` is infinite, then we have an equivalence with `ℕ` so we can apply `secondLemma`.

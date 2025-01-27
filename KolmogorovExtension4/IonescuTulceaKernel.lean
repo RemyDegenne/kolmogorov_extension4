@@ -413,17 +413,15 @@ theorem isProbabilityMeasure_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     · exact (mem_measurableCylinders _).2 ⟨Iic 0, Set.univ, MeasurableSet.univ, rfl⟩
 
 theorem isProjectiveLimit_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
-    IsProjectiveLimit (trajFun κ p x₀)
-      (inducedFamily (fun n ↦ ptraj κ p n x₀)) := by
-  rw [isProjectiveLimit_nat_iff]
-  · intro n
-    ext s ms
-    rw [Measure.map_apply (measurable_frestrictLe n) ms]
-    have h_mem : (frestrictLe n) ⁻¹' s ∈ measurableCylinders X := by
-      rw [mem_measurableCylinders]; exact ⟨Iic n, s, ms, rfl⟩
-    rw [trajFun, Measure.ofAddContent_eq _ _ _ _ h_mem, trajContent,
-      kolContent_congr _ (frestrictLe n ⁻¹' s) rfl ms]
-  · exact (isProjectiveMeasureFamily_inducedFamily _ (ptraj_proj_apply κ x₀))
+    IsProjectiveLimit (trajFun κ p x₀) (inducedFamily (fun n ↦ ptraj κ p n x₀)) := by
+  refine isProjectiveLimit_nat_iff _
+    (isProjectiveMeasureFamily_inducedFamily _ (ptraj_proj_apply κ x₀)) _ |>.2 fun n ↦ ?_
+  ext s ms
+  rw [Measure.map_apply (measurable_frestrictLe n) ms]
+  have h_mem : (frestrictLe n) ⁻¹' s ∈ measurableCylinders X :=
+    (mem_measurableCylinders _).2 ⟨Iic n, s, ms, rfl⟩
+  rw [trajFun, Measure.ofAddContent_eq _ _ _ _ h_mem, trajContent,
+    kolContent_congr _ (frestrictLe n ⁻¹' s) rfl ms]
 
 theorem measurable_trajFun (p : ℕ) : Measurable (trajFun κ p) := by
   apply Measure.measurable_of_measurable_coe
@@ -437,7 +435,7 @@ theorem measurable_trajFun (p : ℕ) : Measurable (trajFun κ p) := by
     simp_rw [trajFun, Measure.ofAddContent_eq _ _ _ _ ht, trajContent,
       kolContent_congr _ t t_eq mS, inducedFamily]
     refine Measure.measurable_measure.1 ?_ _ mS
-    exact (Measure.measurable_map _ (measurable_restrict₂ _)).comp (Kernel.measurable _)
+    exact (Measure.measurable_map _ (measurable_restrict₂ _)).comp (measurable _)
   · have := isProbabilityMeasure_trajFun κ p
     simp_rw [measure_compl mt (measure_ne_top _ _), measure_univ]
     exact Measurable.const_sub ht _
@@ -452,9 +450,9 @@ kernels `κ p`, then `κ (p+1)`, and so on.
 
 The fact that such a kernel exists on infinite trajectories is not obvious, and is the content of
 the Ionescu-Tulcea theorem. -/
-noncomputable def trajKernel (p : ℕ) : Kernel ((i : Iic p) → X i) ((n : ℕ) → X n) :=
-  { toFun := trajFun κ p
-    measurable' := measurable_trajFun κ p }
+noncomputable def trajKernel (p : ℕ) : Kernel ((i : Iic p) → X i) ((n : ℕ) → X n) where
+  toFun := trajFun κ p
+  measurable' := measurable_trajFun κ p
 
 theorem trajKernel_apply (p : ℕ) (x₀ : (i : Iic p) → X i) :
     trajKernel κ p x₀ = trajFun κ p x₀ := rfl
@@ -462,53 +460,51 @@ theorem trajKernel_apply (p : ℕ) (x₀ : (i : Iic p) → X i) :
 instance (p : ℕ) : IsMarkovKernel (trajKernel κ p) :=
   ⟨fun _ ↦ isProbabilityMeasure_trajFun ..⟩
 
-theorem trajKernel_proj (a b : ℕ) :
+theorem frestrictLe_trajKernel (a b : ℕ) :
     (trajKernel κ a).map (frestrictLe b) = ptraj κ a b := by
   ext1 x₀
-  rw [Kernel.map_apply _ (measurable_frestrictLe _), trajKernel_apply, frestrictLe,
+  rw [map_apply _ (measurable_frestrictLe _), trajKernel_apply, frestrictLe,
     isProjectiveLimit_trajFun, inducedFamily_Iic]
 
+theorem frestrictLe_trajKernel_le {a b : ℕ} (hab : a ≤ b) :
+    (trajKernel κ b).map (frestrictLe a) =
+      deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ _) := by
+  rw [frestrictLe_trajKernel, ptraj_le]
+
 theorem eq_trajKernel' {a : ℕ} (n : ℕ) (η : Kernel ((i : Iic a) → X i) ((n : ℕ) → X n))
-    (hη : ∀ b ≥ n, Kernel.map η (frestrictLe b) = ptraj κ a b) :
+    (hη : ∀ b ≥ n, η.map (frestrictLe b) = ptraj κ a b) :
     η = trajKernel κ a := by
   ext1 x₀
   refine ((isProjectiveLimit_trajFun _ _ _).unique ?_).symm
   rw [isProjectiveLimit_nat_iff' _ _ _ n]
   · intro k hk
-    rw [inducedFamily_Iic, ← Kernel.map_apply _ (measurable_frestrictLe k), hη k hk]
+    rw [inducedFamily_Iic, ← map_apply _ (measurable_frestrictLe k), hη k hk]
   · exact (isProjectiveMeasureFamily_inducedFamily _ (ptraj_proj_apply κ x₀))
 
 theorem eq_trajKernel {a : ℕ} (η : Kernel ((i : Iic a) → X i) ((n : ℕ) → X n))
-    (hη : ∀ b, Kernel.map η (frestrictLe b) = ptraj κ a b) :
+    (hη : ∀ b, η.map (frestrictLe b) = ptraj κ a b) :
     η = trajKernel κ a := eq_trajKernel' κ 0 η fun b _ ↦ hη b
 
-theorem ptraj_comp_trajKernel {a b : ℕ} (hab : a ≤ b) :
+theorem trajKernel_comp_ptraj {a b : ℕ} (hab : a ≤ b) :
     (trajKernel κ b) ∘ₖ (ptraj κ a b) = trajKernel κ a := by
   refine eq_trajKernel _ _ fun n ↦ ?_
   ext x₀ s ms
-  rw [Kernel.map_apply' _ (measurable_frestrictLe _) _ ms,
-    Kernel.comp_apply' _ _ _ (measurable_frestrictLe n ms)]
-  simp_rw [← Measure.map_apply (measurable_frestrictLe n) ms,
-    ← Kernel.map_apply (trajKernel κ b) (measurable_frestrictLe n),
-    trajKernel_proj κ b n]
-  rw [← Kernel.comp_apply' _ _ _ ms, ptraj_comp _ n hab]
-
-theorem trajKernel_proj_le {a b : ℕ} (hab : a ≤ b) :
-    Kernel.map (trajKernel κ b) (frestrictLe (π := X) a) =
-    Kernel.deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ _) := by
-  rw [trajKernel_proj, ptraj, dif_neg (not_lt.2 hab)]
+  simp_rw [map_apply' _ (measurable_frestrictLe _) _ ms,
+    comp_apply' _ _ _ (measurable_frestrictLe n ms),
+    ← Measure.map_apply (measurable_frestrictLe n) ms,
+    ← map_apply (trajKernel κ b) (measurable_frestrictLe n), frestrictLe_trajKernel κ b n,
+    ← comp_apply' _ _ _ ms, ptraj_comp _ n hab]
 
 end definition
 
-variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
-variable (κ : (k : ℕ) → Kernel ((i : Iic k) → X i) (X (k + 1)))
-variable [∀ k, IsMarkovKernel (κ k)]
+section Filtration
 
-variable {E : Type*} [NormedAddCommGroup E]
+variable {ι : Type*} [Preorder ι] [LocallyFiniteOrderBot ι]
+  {X : ι → Type*} [∀ i, MeasurableSpace (X i)]
 
 /-- The canonical filtration on dependent functions indexed by `ℕ`, where `𝓕 n` consists of
 measurable sets depending only on coordinates `≤ n`. -/
-def ℱ : @Filtration ((n : ℕ) → X n) ℕ _ inferInstance where
+def Filtration.pi_preorder : @Filtration ((i : ι) → X i) ι _ inferInstance where
   seq n := (inferInstance : MeasurableSpace ((i : Iic n) → X i)).comap (frestrictLe n)
   mono' i j hij := by
     simp only
@@ -516,11 +512,21 @@ def ℱ : @Filtration ((n : ℕ) → X n) ℕ _ inferInstance where
     exact MeasurableSpace.comap_mono (measurable_frestrictLe₂ _).comap_le
   le' n := (measurable_frestrictLe n).comap_le
 
+variable {E : Type*} [NormedAddCommGroup E]
+
 /-- If a function is strongly measurable with respect to the σ-algebra generated by the
 first coordinates, then it only depends on those first coordinates. -/
-theorem stronglyMeasurable_dependsOn {n : ℕ} {f : ((n : ℕ) → X n) → E}
-    (mf : @StronglyMeasurable _ _ _ (ℱ n) f) : DependsOn f (Set.Iic n) :=
-  fun _ _ h ↦ eq_of_stronglyMeasurable_comap _ mf (dependsOn_frestrictLe n h)
+theorem stronglyMeasurable_dependsOn {i : ι} {f : ((i : ι) → X i) → E}
+    (mf : StronglyMeasurable[Filtration.pi_preorder i] f) : DependsOn f (Set.Iic i) :=
+  fun _ _ h ↦ eq_of_stronglyMeasurable_comap _ mf (dependsOn_frestrictLe i h)
+
+end Filtration
+
+open Filtration
+
+variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
+variable (κ : (k : ℕ) → Kernel ((i : Iic k) → X i) (X (k + 1)))
+variable [∀ k, IsMarkovKernel (κ k)]
 
 variable [Nonempty (X 0)]
 
@@ -532,8 +538,7 @@ theorem trajKernel_eq (n : ℕ) :
       (Kernel.id ×ₖ (trajKernel κ n).map (Set.Ioi n).restrict).map (el' n) := by
   refine (eq_trajKernel' _ (n + 1) _ fun a ha ↦ ?_).symm
   ext x s ms
-  rw [Kernel.map_map, Kernel.map_apply' _ _ _ ms, Kernel.id_prod_apply',
-    Kernel.map_apply']
+  rw [Kernel.map_map, map_apply' _ _ _ ms, id_prod_apply', map_apply']
   · have : (frestrictLe a) ∘ (el' n) ∘ (Prod.mk x) ∘ (Set.Ioi n).restrict =
         (fun y (i : Iic a) ↦ if hi : i.1 ≤ n then x ⟨i.1, mem_Iic.2 hi⟩ else y i) ∘
           (frestrictLe a) := by
@@ -545,10 +550,9 @@ theorem trajKernel_eq (n : ℕ) :
       by_cases hi : i.1 ≤ n <;> simp [hi]
       exact measurable_pi_apply _
     rw [← Set.preimage_comp, ← Set.preimage_comp, Function.comp_assoc, this,
-      ← Kernel.map_apply' _ _ _ ms, ← Kernel.map_map _ _ hyp,
-      trajKernel_proj, Kernel.map_apply' _ _ _ ms, ptraj_lt κ (by omega),
-      Kernel.map_apply' _ _ _ (hyp ms), Kernel.deterministic_prod_apply',
-      Kernel.map_apply' _ _ _ ms, Kernel.deterministic_prod_apply']
+      ← map_apply' _ _ _ ms, ← map_map _ _ hyp, frestrictLe_trajKernel, map_apply' _ _ _ ms,
+      ptraj_lt κ (by omega), map_apply' _ _ _ (hyp ms), deterministic_prod_apply',
+      map_apply' _ _ _ ms, deterministic_prod_apply']
     · congr with y
       simp only [id_eq, el, Nat.succ_eq_add_one, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
         Set.mem_preimage, Set.mem_setOf_eq]
@@ -571,189 +575,172 @@ theorem measurable_updateFinset' {ι : Type*} [DecidableEq ι] {I : Finset ι}
   by_cases hi : i ∈ I <;> simp only [updateFinset, hi, ↓reduceDIte, measurable_const]
   exact measurable_pi_apply _
 
-theorem trajKernel_eq_map_updateFinset {n : ℕ} (x₀ : (i : Iic n) → X i) :
-    (trajKernel κ n x₀).map (fun y ↦ updateFinset y _ x₀) =
-      trajKernel κ n x₀ := by
+theorem trajKernel_map_updateFinset {n : ℕ} (x₀ : (i : Iic n) → X i) :
+    (trajKernel κ n x₀).map (fun y ↦ updateFinset y _ x₀) = trajKernel κ n x₀ := by
   ext s ms
   nth_rw 2 [trajKernel_eq]
   have : (fun y ↦ updateFinset y _ x₀) = (el' n ∘ (Prod.mk x₀) ∘ (Set.Ioi n).restrict) := by
     ext x i
     simp [el', updateFinset]
-  rw [this, Kernel.map_apply' _ _ _ ms, ← Measure.map_map,
-    Measure.map_apply _ ms, Kernel.id_prod_apply', ← Measure.map_map, Measure.map_apply,
-    Kernel.map_apply]
+  rw [this, map_apply' _ _ _ ms, ← Measure.map_map, Measure.map_apply _ ms, id_prod_apply',
+    ← Measure.map_map, Measure.map_apply, map_apply]
   any_goals fun_prop
   all_goals exact (el' n).measurable ms
 
+variable {E : Type*} [NormedAddCommGroup E]
+
 theorem integrable_trajKernel {a b : ℕ} (hab : a ≤ b) {f : ((n : ℕ) → X n) → E}
-    (x₀ : (i : Iic a) → X i)
-    (i_f : Integrable f (trajKernel κ a x₀)) :
+    (x₀ : (i : Iic a) → X i) (i_f : Integrable f (trajKernel κ a x₀)) :
     ∀ᵐ x ∂trajKernel κ a x₀, Integrable f (trajKernel κ b (frestrictLe b x)) := by
-  rw [← ptraj_comp_trajKernel _ hab, Kernel.integrable_comp_iff] at i_f
+  rw [← trajKernel_comp_ptraj _ hab, integrable_comp_iff] at i_f
   · apply ae_of_ae_map (p := fun x ↦ Integrable f (trajKernel κ b x))
     · exact (measurable_frestrictLe b).aemeasurable
     · convert i_f.1
-      rw [← trajKernel_proj, Kernel.map_apply _ (measurable_frestrictLe _)]
+      rw [← frestrictLe_trajKernel, Kernel.map_apply _ (measurable_frestrictLe _)]
   · exact i_f.aestronglyMeasurable
 
 theorem aestronglyMeasurable_trajKernel {a b : ℕ} (hab : a ≤ b)
     {f : ((n : ℕ) → X n) → E} {x₀ : (i : Iic a) → X i}
     (hf : AEStronglyMeasurable f (trajKernel κ a x₀)) :
     ∀ᵐ x ∂ptraj κ a b x₀, AEStronglyMeasurable f (trajKernel κ b x) := by
-  rw [← ptraj_comp_trajKernel κ hab] at hf
+  rw [← trajKernel_comp_ptraj κ hab] at hf
   exact hf.comp
 
 variable [NormedSpace ℝ E]
 
+variable {κ} in
+/-- When computing `∫ x, f x ∂trajKernel κ n x₀`, because the trajectory up to time `n` is
+determined by `x₀` we can replace `x` by `updateFinset x _ x₀`. -/
 theorem integral_trajKernel {n : ℕ} (x₀ : (i : Iic n) → X i) {f : ((n : ℕ) → X n) → E}
     (mf : AEStronglyMeasurable f (trajKernel κ n x₀)) :
-    ∫ x, f x ∂trajKernel κ n x₀ =
-      ∫ x, f (updateFinset x _ x₀) ∂trajKernel κ n x₀ := by
-  nth_rw 1 [← trajKernel_eq_map_updateFinset, integral_map]
+    ∫ x, f x ∂trajKernel κ n x₀ = ∫ x, f (updateFinset x _ x₀) ∂trajKernel κ n x₀ := by
+  nth_rw 1 [← trajKernel_map_updateFinset, integral_map]
   · exact measurable_updateFinset'.aemeasurable
   · convert mf
-    nth_rw 2 [← trajKernel_eq_map_updateFinset]
+    nth_rw 2 [← trajKernel_map_updateFinset]
 
-lemma test {a b : ℕ} (hab : a ≤ b) (u : Π i : Iic a, X i) :
+lemma ptraj_compProd_trajKernel {a b : ℕ} (hab : a ≤ b) (u : Π i : Iic a, X i) :
     (trajKernel κ a u).map (fun x ↦ (frestrictLe b x, x)) =
-    (ptraj κ a b u) ⊗ₘ (trajKernel κ b) := by
+      (ptraj κ a b u) ⊗ₘ (trajKernel κ b) := by
   ext s ms
-  rw [Measure.map_apply, Measure.compProd_apply, ← ptraj_comp_trajKernel κ hab,
-    Kernel.comp_apply']
-  · conv_rhs =>
-      enter [2]
-      ext a
-      rw [← trajKernel_eq_map_updateFinset,
-        Measure.map_apply measurable_updateFinset' (measurable_prod_mk_left ms)]
-    conv_lhs =>
-      enter [2]
-      ext a
-      rw [← trajKernel_eq_map_updateFinset, Measure.map_apply measurable_updateFinset']
-      rfl
-      exact ((measurable_frestrictLe b).prod_mk measurable_id) ms
-    simp_rw [← Set.preimage_comp]
-    congrm ∫⁻ x, (trajKernel _ _ _) ((fun y ↦ ?_) ⁻¹' _) ∂_
-    ext i <;> simp [updateFinset]
-  · exact ms.preimage (by fun_prop)
-  · exact ms
-  · fun_prop
-  · exact ms
+  rw [Measure.map_apply (by fun_prop) ms, Measure.compProd_apply ms, ← trajKernel_comp_ptraj κ hab,
+    comp_apply' _ _ _ (ms.preimage (by fun_prop))]
+  conv_rhs => enter [2]; ext a; rw [← trajKernel_map_updateFinset]
+  conv_lhs =>
+    enter [2]
+    ext a
+    rw [← trajKernel_map_updateFinset, Measure.map_apply measurable_updateFinset']
+    rfl
+    exact ((measurable_frestrictLe b).prod_mk measurable_id) ms
+  simp_rw [Measure.map_apply measurable_updateFinset' (measurable_prod_mk_left ms),
+    ← Set.preimage_comp]
+  congrm ∫⁻ x, (trajKernel _ _ _) ((fun y ↦ ?_) ⁻¹' _) ∂_
+  ext i <;> simp [updateFinset]
 
+variable {κ}
 
-theorem ptraj_comp_trajKernel_apply {a b : ℕ} (hab : a ≤ b)
-    (f : ((i : Iic b) → X i) → ((n : ℕ) → X n) → E)
-    (x₀ : (i : Iic a) → X i)
+theorem integral_trajKernel_ptraj' {a b : ℕ} (hab : a ≤ b) {x₀ : (i : Iic a) → X i}
+    {f : (Π i : Iic b, X i) → (Π n : ℕ, X n) → E}
     (hf : Integrable f.uncurry ((ptraj κ a b x₀) ⊗ₘ (trajKernel κ b))) :
     ∫ x, ∫ y, f x y ∂trajKernel κ b x ∂ptraj κ a b x₀ =
       ∫ x, f (frestrictLe b x) x ∂trajKernel κ a x₀ := by
-  have := hf.1
-  rw [← test] at this
-  replace this := this.comp_measurable (by fun_prop)
-  apply aestronglyMeasurable_trajKernel κ hab at this
-  have aux := hf
-  rw [← test] at aux
-  replace aux := aux.comp_measurable (by fun_prop)
-  rw [← ptraj_comp_trajKernel κ hab, Kernel.integral_comp]
+  have hf1 := hf
+  rw [← ptraj_compProd_trajKernel κ hab] at hf1
+  replace hf1 := hf1.comp_measurable (by fun_prop)
+  have hf2 := aestronglyMeasurable_trajKernel κ hab hf1.1
+  rw [← trajKernel_comp_ptraj κ hab, Kernel.integral_comp]
   · apply integral_congr_ae
-    filter_upwards [hf.1.compProd, this]
+    filter_upwards [hf.1.compProd, hf2]
     intro x h1 h2
-    rw [integral_trajKernel]
-    · nth_rw 2 [integral_trajKernel]
-      · simp_rw [frestrictLe_updateFinset]
-      · exact h2
-    · exact h1
-  · rw [ptraj_comp_trajKernel _ hab]
-    exact aux
-  · exact hab
-  · exact hab
+    rw [integral_trajKernel _ h1]
+    nth_rw 2 [integral_trajKernel]
+    · simp_rw [frestrictLe_updateFinset]
+    · exact h2
+  · rwa [trajKernel_comp_ptraj _ hab]
 
-theorem setIntegral_trajKernel {a b : ℕ} (hab : a ≤ b) (u : (Π i : Iic a, X i))
-    {f : (Π n, X n) → E} (i_f : Integrable f (trajKernel κ a u))
-    (A : Set (Π i : Iic b, X i)) (hA : MeasurableSet A) :
-    ∫ x in A, ∫ y, f y ∂trajKernel κ b x ∂ptraj κ a b u =
-      ∫ y in frestrictLe b ⁻¹' A, f y ∂trajKernel κ a u := by
-  rw [setIntegral_eq _ hA]
-  simp_rw [← integral_smul]
-  rw [ptraj_comp_trajKernel_apply]
-  simp_rw [← preimage_indicator]
-  rw [← setIntegral_eq]
-  · exact measurable_frestrictLe b hA
-  · exact hab
-  · apply Integrable.smul_of_top_right
-    · apply Integrable.comp_measurable _ measurable_snd
-      rwa [← Measure.snd, snd_compProd_kernel, ptraj_comp_trajKernel _ hab]
-    · apply memℒp_top_of_bound (C := 1)
-      · exact (((measurable_indicator_const_iff 1).2 hA).comp measurable_fst).aestronglyMeasurable
-      · refine Eventually.of_forall fun x ↦ ?_
-        by_cases hx : x.1 ∈ A <;> simp [hx]
+theorem integral_trajKernel_ptraj {a b : ℕ} (hab : a ≤ b) {x₀ : (i : Iic a) → X i}
+    {f : (Π n : ℕ, X n) → E} (hf : Integrable f (trajKernel κ a x₀)) :
+    ∫ x, ∫ y, f y ∂trajKernel κ b x ∂ptraj κ a b x₀ = ∫ x, f x ∂trajKernel κ a x₀ := by
+  apply integral_trajKernel_ptraj' hab
+  rw [← trajKernel_comp_ptraj κ hab, ← snd_compProd_kernel] at hf
+  exact hf.comp_measurable measurable_snd
+
+-- theorem setIntegral_trajKernel_ptraj' {a b : ℕ} (hab : a ≤ b) {u : (Π i : Iic a, X i)}
+--     {f : (Π i : Iic b, X i) → (Π n : ℕ, X n) → E}
+--     (hf : Integrable f.uncurry ((ptraj κ a b u) ⊗ₘ (trajKernel κ b)))
+--     {A : Set (Π n, X n)} (hA : MeasurableSet[pi_preorder b] A) :
+--     ∫ x in A, ∫ y, f x y ∂trajKernel κ b (frestrictLe b x) ∂trajKernel κ a u =
+--       ∫ y in A, f (frestrictLe b y) y ∂trajKernel κ a u := by
+--   simp_rw [setIntegral_eq _ hA, ← integral_smul]
+--   rw [integral_trajKernel_ptraj' hab]
+--   simp_rw [← preimage_indicator, ← setIntegral_eq _ (measurable_frestrictLe b hA)]
+--   refine hf.smul_of_top_right <| memℒp_top_of_bound (C := 1)
+--     (((measurable_indicator_const_iff 1).2 hA).comp measurable_fst).aestronglyMeasurable
+--     <| Eventually.of_forall fun x ↦ ?_
+--   by_cases hx : x.1 ∈ A <;> simp [hx]
+
+theorem setIntegral_trajKernel_ptraj' {a b : ℕ} (hab : a ≤ b) {u : (Π i : Iic a, X i)}
+    {f : (Π i : Iic b, X i) → (Π n : ℕ, X n) → E}
+    (hf : Integrable f.uncurry ((ptraj κ a b u) ⊗ₘ (trajKernel κ b)))
+    {A : Set (Π i : Iic b, X i)} (hA : MeasurableSet A) :
+    ∫ x in A, ∫ y, f x y ∂trajKernel κ b x ∂ptraj κ a b u =
+      ∫ y in frestrictLe b ⁻¹' A, f (frestrictLe b y) y ∂trajKernel κ a u := by
+  simp_rw [setIntegral_eq _ hA, ← integral_smul]
+  rw [integral_trajKernel_ptraj' hab]
+  simp_rw [← preimage_indicator, ← setIntegral_eq _ (measurable_frestrictLe b hA)]
+  refine hf.smul_of_top_right <| memℒp_top_of_bound (C := 1)
+    (((measurable_indicator_const_iff 1).2 hA).comp measurable_fst).aestronglyMeasurable
+    <| Eventually.of_forall fun x ↦ ?_
+  by_cases hx : x.1 ∈ A <;> simp [hx]
+
+theorem setIntegral_trajKernel_ptraj {a b : ℕ} (hab : a ≤ b) {x₀ : (Π i : Iic a, X i)}
+    {f : (Π n : ℕ, X n) → E} (hf : Integrable f (trajKernel κ a x₀))
+    {A : Set (Π i : Iic b, X i)} (hA : MeasurableSet A) :
+    ∫ x in A, ∫ y, f y ∂trajKernel κ b x ∂ptraj κ a b x₀ =
+      ∫ y in frestrictLe b ⁻¹' A, f y ∂trajKernel κ a x₀ := by
+  refine setIntegral_trajKernel_ptraj' hab ?_ hA
+  rw [← trajKernel_comp_ptraj κ hab, ← snd_compProd_kernel] at hf
+  exact hf.comp_measurable measurable_snd
 
 variable [CompleteSpace E]
 
 theorem condExp_trajKernel
-    {a b : ℕ} (hab : a ≤ b) (x₀ : (i : Iic a) → X i) {f : ((n : ℕ) → X n) → E}
+    {a b : ℕ} (hab : a ≤ b) {x₀ : (i : Iic a) → X i} {f : ((n : ℕ) → X n) → E}
     (i_f : Integrable f (trajKernel κ a x₀)) :
-    (trajKernel κ a x₀)[f|ℱ b] =ᵐ[trajKernel κ a x₀]
+    (trajKernel κ a x₀)[f|pi_preorder b] =ᵐ[trajKernel κ a x₀]
       fun x ↦ ∫ y, f y ∂trajKernel κ b (frestrictLe b x) := by
-  have mf : AEStronglyMeasurable
-      (fun x => ∫ (y : (n : ℕ) → X n), f y ∂(trajKernel κ b) x)
-      ((ptraj κ a b) x₀) := by
-    rw [← ptraj_comp_trajKernel _ hab] at i_f
-    exact i_f.1.comp_mk_left
-  have mf' : AEStronglyMeasurable
-      (fun x => ∫ (y : (n : ℕ) → X n), f y ∂(trajKernel κ b) x)
-      (Measure.map (frestrictLe b) ((trajKernel κ a) x₀)) := by
-    rw [← Kernel.map_apply, trajKernel_proj]
-    · exact mf
-    · exact measurable_frestrictLe _
-  refine (ae_eq_condExp_of_forall_setIntegral_eq _ i_f ?_ ?_ ?_).symm
-  · rintro s - -
-    apply Integrable.integrableOn
-    conv => enter [1]; change (fun x ↦ ∫ y, f y ∂trajKernel κ b x) ∘ (frestrictLe b)
-    rw [← ptraj_comp_trajKernel κ hab, Kernel.integrable_comp_iff] at i_f
-    · rw [← integrable_map_measure, ← Kernel.map_apply, trajKernel_proj,
-        ← integrable_norm_iff]
-      · apply i_f.2.mono'
-        · exact AEStronglyMeasurable.norm mf
-        · refine Eventually.of_forall fun x ↦ ?_
-          rw [norm_norm]
-          exact norm_integral_le_integral_norm _
-      · exact mf
-      · exact measurable_frestrictLe _
-      · exact mf'
-      · exact (measurable_frestrictLe b).aemeasurable
-    · exact i_f.1
-  · rintro - ⟨t, mt, rfl⟩ -
-    rw [← setIntegral_map mt (f := fun x ↦ ∫ y, f y ∂(trajKernel κ _ x)),
-      ← Kernel.map_apply, trajKernel_proj, setIntegral_trajKernel κ hab _ i_f]
-    · exact mt
-    · exact measurable_frestrictLe _
-    · rw [← Kernel.map_apply _ (measurable_frestrictLe _)]
-      apply AEStronglyMeasurable.comp_mk_left
-      rw [trajKernel_proj, ptraj_comp_trajKernel _ hab]
-      exact i_f.1
-    · exact (measurable_frestrictLe _).aemeasurable
-  · conv => enter [2]; change (fun x ↦ ∫ y, f y ∂trajKernel κ b x) ∘ (frestrictLe b)
-    apply AEStronglyMeasurable.comp_ae_measurable'
-    · exact mf'
-    · exact (measurable_frestrictLe b).aemeasurable
+  have mf : Integrable (fun x ↦ ∫ y, f y ∂(trajKernel κ b) x)
+      (((trajKernel κ a) x₀).map (frestrictLe b)) := by
+    rw [← map_apply _ (measurable_frestrictLe _), frestrictLe_trajKernel _ _]
+    rw [← trajKernel_comp_ptraj _ hab] at i_f
+    exact i_f.integral_comp
+  refine ae_eq_condExp_of_forall_setIntegral_eq (pi_preorder.le _) i_f
+    (fun s _ _ ↦
+      (integrable_map_measure mf.1 (measurable_frestrictLe b).aemeasurable).1 mf |>.integrableOn)
+    ?_ (mf.1.comp_ae_measurable' (measurable_frestrictLe b).aemeasurable) |>.symm
+  rintro - ⟨t, mt, rfl⟩ -
+  simp_rw [Function.comp_apply]
+  rw [← setIntegral_map mt mf.1, ← map_apply, frestrictLe_trajKernel,
+    setIntegral_trajKernel_ptraj hab i_f mt]
+  any_goals fun_prop
 
+variable (κ)
 
 theorem condExp_trajKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
-    (x₀ : (i : Iic a) → X i) {f : ((n : ℕ) → X n) → E} :
-    (trajKernel κ a x₀)[f|ℱ b] =ᵐ[trajKernel κ a x₀]
-      fun x ↦ ∫ y, ((trajKernel κ a x₀)[f|ℱ c]) (updateFinset x _ y)
+    (x₀ : (i : Iic a) → X i) (f : ((n : ℕ) → X n) → E) :
+    (trajKernel κ a x₀)[f|pi_preorder b] =ᵐ[trajKernel κ a x₀]
+      fun x ↦ ∫ y, ((trajKernel κ a x₀)[f|pi_preorder c]) (updateFinset x _ y)
         ∂ptraj κ b c (frestrictLe b x) := by
-  have i_cf : Integrable ((trajKernel κ a x₀)[f|ℱ c])
-      (trajKernel κ a x₀) := integrable_condExp
-  have mcf : StronglyMeasurable ((trajKernel κ a x₀)[f|ℱ c]) :=
-    stronglyMeasurable_condExp.mono (ℱ.le c)
-  filter_upwards [ℱ.condExp_condExp f hbc, condExp_trajKernel κ hab x₀ i_cf]
+  have i_cf : Integrable ((trajKernel κ a x₀)[f|pi_preorder c]) (trajKernel κ a x₀) :=
+    integrable_condExp
+  have mcf : StronglyMeasurable ((trajKernel κ a x₀)[f|pi_preorder c]) :=
+    stronglyMeasurable_condExp.mono (pi_preorder.le c)
+  filter_upwards [pi_preorder.condExp_condExp f hbc, condExp_trajKernel hab i_cf]
   intro x h1 h2
-  rw [← h1, h2, ← trajKernel_proj, Kernel.map_apply, integral_map]
+  rw [← h1, h2, ← frestrictLe_trajKernel, Kernel.map_apply, integral_map]
   · congr with y
     apply stronglyMeasurable_dependsOn stronglyMeasurable_condExp
-    simp [updateFinset]
+    simp only [Set.mem_Iic, updateFinset, mem_Iic, frestrictLe_apply, dite_eq_ite]
     exact fun i hi ↦ (if_pos hi).symm
-  · exact (measurable_frestrictLe c).aemeasurable
+  any_goals fun_prop
   · exact (mcf.comp_measurable measurable_updateFinset).aestronglyMeasurable
-  · exact measurable_frestrictLe _
