@@ -3,7 +3,7 @@ Copyright (c) 2024 Etienne Marion. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Etienne Marion
 -/
-import KolmogorovExtension4.IonescuTulceaKernel
+import KolmogorovExtension4.trajKernel
 
 open MeasureTheory MeasurableSpace ProbabilityTheory Finset ENNReal Filter Topology Function Kernel Preorder
 
@@ -71,7 +71,7 @@ lemma mem_Iic_zero {i : ℕ} (hi : i ∈ Iic 0) : 0 = i := (by simpa using hi : 
 general index space. -/
 noncomputable def Measure.infinitePiNat : Measure ((n : ℕ) → X n) :=
   (Measure.pi (fun i : Iic 0 ↦ μ i)).bind
-    (@ionescuTulceaKernel _ _
+    (@trajKernel _ _
       (fun n ↦ const _ (μ (n + 1))) _ (ProbabilityMeasure.nonempty ⟨μ 0, hμ 0⟩) 0)
 
 open Measure
@@ -142,13 +142,13 @@ theorem kerNat_prod {N : ℕ} (hN : 0 < N) :
     · exact (er ..).measurable
 
 theorem prod_noyau_proj (N : ℕ) :
-    partialKernel (fun n ↦ const ((i : Iic n) → X i) (μ (n + 1))) 0 N =
+    ptraj (fun n ↦ const ((i : Iic n) → X i) (μ (n + 1))) 0 N =
       Kernel.map ((deterministic id measurable_id) ×ₖ
           (const _ (Measure.pi (fun i : Ioc 0 N ↦ μ i))))
         (el 0 N (zero_le N)) := by
   rcases eq_zero_or_pos N with rfl | hN
   · have : IsEmpty (Ioc 0 0) := by simp
-    rw [partialKernel, dif_neg (lt_irrefl 0), Measure.pi_of_empty]
+    rw [ptraj, dif_neg (lt_irrefl 0), Measure.pi_of_empty]
     ext x s ms
     rw [Kernel.map_apply _ (el ..).measurable, deterministic_apply, Kernel.prod_apply,
       deterministic_apply, Kernel.const_apply, Measure.dirac_prod_dirac,
@@ -159,7 +159,7 @@ theorem prod_noyau_proj (N : ℕ) :
     simp only [id_eq, el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, mem_preimage]
     congrm (fun i ↦ ?_) ∈ s
     simp [(mem_Iic_zero i.2).symm]
-  · rw [partialKernel, dif_pos hN, kerNat_prod _ hN]
+  · rw [ptraj, dif_pos hN, kerNat_prod _ hN]
 
 theorem el_preimage {n : ℕ} (s : (i : Iic n) → Set (X i)) :
     (el 0 n (zero_le n)) ⁻¹' (Set.univ.pi s) =
@@ -210,7 +210,7 @@ theorem isProjectiveLimit_infinitePiNat :
   rw [← restrict₂_comp_restrict I.sub_Iic,
     ← Measure.map_map (measurable_restrict₂ _) (measurable_restrict _), ← frestrictLe]
   congr
-  rw [infinitePiNat, Measure.map_bind, ionescuTulceaKernel_proj]; swap
+  rw [infinitePiNat, Measure.map_bind, trajKernel_proj]; swap
   · exact measurable_frestrictLe _
   refine (Measure.pi_eq fun s ms ↦ ?_).symm
   have mpis := MeasurableSet.univ_pi ms

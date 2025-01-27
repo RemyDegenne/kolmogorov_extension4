@@ -472,7 +472,7 @@ end ProbabilityTheory
 
 end compProdNat
 
-section partialKernel
+section ptraj
 
 variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
 variable (κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1)))
@@ -487,36 +487,36 @@ compose them: if `a < b`, then `(κ a) ⊗ₖ ... ⊗ₖ (κ (b - 1))` is a kern
 `(i : Iic a) → X i` to `(i : Ioc a b) → X i`. This composition is called `kerNat κ a b`.
 
 In order to make manipulations easier, we define
-`partialKernel κ a b : Kernel ((i : Iic a) → X i) ((i : Iic b) → X i)`. Given the trajectory up to
-time `a`, `partialKernel κ a b` gives the distribution of the trajectory up to time `b`. It is
+`ptraj κ a b : Kernel ((i : Iic a) → X i) ((i : Iic b) → X i)`. Given the trajectory up to
+time `a`, `ptraj κ a b` gives the distribution of the trajectory up to time `b`. It is
 the product of a Dirac mass along the trajectory, up to `a`, with `kerNat κ a b`. -/
-noncomputable def partialKernel (a b : ℕ) : Kernel ((i : Iic a) → X i) ((i : Iic b) → X i) :=
+noncomputable def ptraj (a b : ℕ) : Kernel ((i : Iic a) → X i) ((i : Iic b) → X i) :=
   if hab : a < b
     then ((deterministic id measurable_id) ×ₖ kerNat κ a b).map
       (el a b hab.le)
     else deterministic (frestrictLe₂ (not_lt.1 hab)) (measurable_frestrictLe₂ _)
 
-theorem partialKernel_lt {a b : ℕ} (hab : a < b) :
-    partialKernel κ a b =
+theorem ptraj_lt {a b : ℕ} (hab : a < b) :
+    ptraj κ a b =
       ((deterministic id measurable_id) ×ₖ kerNat κ a b).map
         (el a b hab.le) := by
-  rw [partialKernel, dif_pos hab]
+  rw [ptraj, dif_pos hab]
 
-theorem partialKernel_le {a b : ℕ} (hab : b ≤ a) :
-    partialKernel κ a b =
+theorem ptraj_le {a b : ℕ} (hab : b ≤ a) :
+    ptraj κ a b =
       deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ _) := by
-  rw [partialKernel, dif_neg (not_lt.2 hab)]
+  rw [ptraj, dif_neg (not_lt.2 hab)]
 
-instance (a b : ℕ) : IsSFiniteKernel (partialKernel κ a b) := by
-  rw [partialKernel]
+instance (a b : ℕ) : IsSFiniteKernel (ptraj κ a b) := by
+  rw [ptraj]
   split_ifs <;> infer_instance
 
-instance [∀ n, IsFiniteKernel (κ n)] (a b : ℕ) : IsFiniteKernel (partialKernel κ a b) := by
-  rw [partialKernel]
+instance [∀ n, IsFiniteKernel (κ n)] (a b : ℕ) : IsFiniteKernel (ptraj κ a b) := by
+  rw [ptraj]
   split_ifs <;> infer_instance
 
-instance [∀ n, IsMarkovKernel (κ n)] (a b : ℕ) : IsMarkovKernel (partialKernel κ a b) := by
-  rw [partialKernel]
+instance [∀ n, IsMarkovKernel (κ n)] (a b : ℕ) : IsMarkovKernel (ptraj κ a b) := by
+  rw [ptraj]
   split_ifs with hab
   · have := isMarkovKernel_kerNat κ hab
     exact IsMarkovKernel.map _ (el ..).measurable
@@ -526,10 +526,10 @@ variable [∀ n, IsMarkovKernel (κ n)]
 
 /-- If `b ≤ c`, then projecting the trajectory up to time `c` on first coordinates gives the
 trajectory up to time `b`. -/
-theorem partialKernel_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
-    (partialKernel κ a c).map (frestrictLe₂ hbc) =
-      partialKernel κ a b := by
-  unfold partialKernel
+theorem ptraj_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
+    (ptraj κ a c).map (frestrictLe₂ hbc) =
+      ptraj κ a b := by
+  unfold ptraj
   split_ifs with h1 h2 h3
   · have : (frestrictLe₂ (π := X) hbc) ∘ (el a c h1.le) =
         (el a b h2.le) ∘ (Prod.map id (restrict₂ (Ioc_subset_Ioc_right hbc))) := by
@@ -556,18 +556,18 @@ theorem partialKernel_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
   · rw [Kernel.map_deterministic _ (measurable_frestrictLe₂ _)]
     rfl
 
-theorem partialKernel_proj_apply {n : ℕ} (x : (i : Iic n) → X i) (a b : ℕ) (hab : a ≤ b) :
-    (partialKernel κ n b x).map (frestrictLe₂ hab) = partialKernel κ n a x := by
-  rw [← partialKernel_proj _ _ hab, Kernel.map_apply _ (measurable_frestrictLe₂ _)]
+theorem ptraj_proj_apply {n : ℕ} (x : (i : Iic n) → X i) (a b : ℕ) (hab : a ≤ b) :
+    (ptraj κ n b x).map (frestrictLe₂ hab) = ptraj κ n a x := by
+  rw [← ptraj_proj _ _ hab, Kernel.map_apply _ (measurable_frestrictLe₂ _)]
 
 /-- Given the trajectory up to time `a`, first computing the distribution up to time `b`
 and then the distribution up to time `c` is the same as directly computing the distribution up
 to time `c`. -/
-theorem partialKernel_comp (c : ℕ) {a b : ℕ} (h : a ≤ b) :
-    (partialKernel κ b c) ∘ₖ (partialKernel κ a b) = partialKernel κ a c := by
+theorem ptraj_comp (c : ℕ) {a b : ℕ} (h : a ≤ b) :
+    (ptraj κ b c) ∘ₖ (ptraj κ a b) = ptraj κ a c := by
   by_cases hab : a < b <;> by_cases hbc : b < c <;> by_cases hac : a < c <;> try omega
   · ext x s ms
-    rw [partialKernel_lt κ hab, partialKernel_lt κ hbc, partialKernel_lt κ hac,
+    rw [ptraj_lt κ hab, ptraj_lt κ hbc, ptraj_lt κ hac,
       Kernel.comp_apply' _ _ _ ms, Kernel.lintegral_map, Kernel.lintegral_prod,
       Kernel.map_apply' _ _ _ ms, Kernel.prod_apply', Kernel.lintegral_deterministic',
       Kernel.lintegral_deterministic', ← compProdNat_kerNat κ hab hbc,
@@ -592,58 +592,58 @@ theorem partialKernel_comp (c : ℕ) {a b : ℕ} (h : a ≤ b) :
     · exact (Kernel.measurable_coe _ ms).comp (el ..).measurable
     · exact (el ..).measurable
     · exact Kernel.measurable_coe _ ms
-  · rw [partialKernel_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
-      partialKernel_proj κ a (not_lt.1 hbc)]
-  · rw [partialKernel_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
-      partialKernel_proj κ a (not_lt.1 hbc)]
+  · rw [ptraj_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
+      ptraj_proj κ a (not_lt.1 hbc)]
+  · rw [ptraj_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
+      ptraj_proj κ a (not_lt.1 hbc)]
   · have : a = b := by omega
     cases this
-    rw [partialKernel_le κ (_root_.le_refl a), Kernel.comp_deterministic_eq_comap]
-    convert Kernel.comap_id (partialKernel κ a c)
-  · rw [partialKernel_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
-      partialKernel_proj κ a (not_lt.1 hbc)]
+    rw [ptraj_le κ (_root_.le_refl a), Kernel.comp_deterministic_eq_comap]
+    convert Kernel.comap_id (ptraj κ a c)
+  · rw [ptraj_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
+      ptraj_proj κ a (not_lt.1 hbc)]
 
 /-- Given the trajectory up to time `a`, first computing the distribution up to time `b`
 and then the distribution up to time `c` is the same as directly computing the distribution up
 to time `c`. -/
-theorem partialKernel_comp' (a : ℕ) {b c : ℕ} (h : c ≤ b) :
-    (partialKernel κ b c) ∘ₖ (partialKernel κ a b) = partialKernel κ a c := by
+theorem ptraj_comp' (a : ℕ) {b c : ℕ} (h : c ≤ b) :
+    (ptraj κ b c) ∘ₖ (ptraj κ a b) = ptraj κ a c := by
   by_cases a < b <;> by_cases hbc : b < c <;> by_cases a < c <;>
-    try rw [partialKernel_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
-      partialKernel_proj κ a (not_lt.1 hbc)]
+    try rw [ptraj_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
+      ptraj_proj κ a (not_lt.1 hbc)]
   all_goals omega
 
 end Basic
 
 section integral
 
-/-- This function computes the integral of a function `f` against `partialKernel`,
+/-- This function computes the integral of a function `f` against `ptraj`,
 and allows to view it as a function depending on all the variables. -/
-noncomputable def lmarginalPartialKernel (a b : ℕ) (f : ((n : ℕ) → X n) → ℝ≥0∞)
+noncomputable def lmarginalPTraj (a b : ℕ) (f : ((n : ℕ) → X n) → ℝ≥0∞)
     (x : (n : ℕ) → X n) : ℝ≥0∞ :=
-  ∫⁻ z : (i : Iic b) → X i, f (updateFinset x _ z) ∂(partialKernel κ a b (frestrictLe a x))
+  ∫⁻ z : (i : Iic b) → X i, f (updateFinset x _ z) ∂(ptraj κ a b (frestrictLe a x))
 
-/-- If `b ≤ a`, then integrating `f` against the `partialKernel κ a b` does nothing. -/
-theorem lmarginalPartialKernel_le {a b : ℕ} (hba : b ≤ a)
-    {f : ((n : ℕ) → X n) → ℝ≥0∞} (mf : Measurable f) : lmarginalPartialKernel κ a b f = f := by
+/-- If `b ≤ a`, then integrating `f` against the `ptraj κ a b` does nothing. -/
+theorem lmarginalPTraj_le {a b : ℕ} (hba : b ≤ a)
+    {f : ((n : ℕ) → X n) → ℝ≥0∞} (mf : Measurable f) : lmarginalPTraj κ a b f = f := by
   ext x
-  rw [lmarginalPartialKernel, partialKernel_le κ hba, Kernel.lintegral_deterministic']
+  rw [lmarginalPTraj, ptraj_le κ hba, Kernel.lintegral_deterministic']
   · congr with i
     simp [updateFinset]
   · exact mf.comp measurable_updateFinset
 
-theorem lmarginalPartialKernel_mono (a b : ℕ) {f g : ((n : ℕ) → X n) → ℝ≥0∞} (hfg : f ≤ g)
-    (x : (n : ℕ) → X n) : lmarginalPartialKernel κ a b f x ≤ lmarginalPartialKernel κ a b g x :=
+theorem lmarginalPTraj_mono (a b : ℕ) {f g : ((n : ℕ) → X n) → ℝ≥0∞} (hfg : f ≤ g)
+    (x : (n : ℕ) → X n) : lmarginalPTraj κ a b f x ≤ lmarginalPTraj κ a b g x :=
   lintegral_mono fun _ ↦ hfg _
 
-/-- If `a < b`, then integrating `f` against the `partialKernel κ a b` is the same as integrating
+/-- If `a < b`, then integrating `f` against the `ptraj κ a b` is the same as integrating
   against `kerNat a b`. -/
-theorem lmarginalPartialKernel_lt [∀ n, IsFiniteKernel (κ n)]
+theorem lmarginalPTraj_lt [∀ n, IsFiniteKernel (κ n)]
     {a b : ℕ} (hab : a < b) {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (mf : Measurable f) (x : (n : ℕ) → X n) :
-    lmarginalPartialKernel κ a b f x =
+    lmarginalPTraj κ a b f x =
       ∫⁻ y : (i : Ioc a b) → X i, f (updateFinset x _ y) ∂kerNat κ a b (frestrictLe a x) := by
-  rw [lmarginalPartialKernel, partialKernel, dif_pos hab, Kernel.lintegral_map,
+  rw [lmarginalPTraj, ptraj, dif_pos hab, Kernel.lintegral_map,
     Kernel.lintegral_deterministic_prod]
   · congrm ∫⁻ y, f (fun i ↦ ?_) ∂_
     simp only [updateFinset, mem_Iic, el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, mem_Ioc]
@@ -653,25 +653,25 @@ theorem lmarginalPartialKernel_lt [∀ n, IsFiniteKernel (κ n)]
   · exact (el ..).measurable
   · exact mf.comp measurable_updateFinset
 
-/-- If `a < b`, then integrating `f` against the `partialKernel κ a b` is the same as integrating
+/-- If `a < b`, then integrating `f` against the `ptraj κ a b` is the same as integrating
   against `kerNat a b`. -/
-theorem lmarginalPartialKernel_succ [∀ n, IsFiniteKernel (κ n)]
+theorem lmarginalPTraj_succ [∀ n, IsFiniteKernel (κ n)]
     (a : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞} (mf : Measurable f) (x₀ : (n : ℕ) → X n) :
-    lmarginalPartialKernel κ a (a + 1) f x₀ =
+    lmarginalPTraj κ a (a + 1) f x₀ =
       ∫⁻ x : X (a + 1), f (update x₀ _ x) ∂κ a (frestrictLe a x₀) := by
-  rw [lmarginalPartialKernel_lt κ a.lt_succ_self mf, kerNat_succ_self, lintegral_map]
+  rw [lmarginalPTraj_lt κ a.lt_succ_self mf, kerNat_succ_self, lintegral_map]
   · congrm ∫⁻ y, f (fun i ↦ ?_) ∂_
     simp [updateFinset, e, update]
   · exact (e ..).measurable
   · exact mf.comp measurable_updateFinset
 
-theorem measurable_lmarginalPartialKernel (a b : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
-    Measurable (lmarginalPartialKernel κ a b f) := by
-  unfold lmarginalPartialKernel
+theorem measurable_lmarginalPTraj (a b : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
+    Measurable (lmarginalPTraj κ a b f) := by
+  unfold lmarginalPTraj
   let g : ((i : Iic b) → X i) × ((n : ℕ) → X n) → ℝ≥0∞ :=
     fun c ↦ f (updateFinset c.2 _ c.1)
   let η : Kernel ((n : ℕ) → X n) ((i : Iic b) → X i) :=
-    Kernel.comap (partialKernel κ a b) (frestrictLe a) (measurable_frestrictLe _)
+    Kernel.comap (ptraj κ a b) (frestrictLe a) (measurable_frestrictLe _)
   change Measurable fun x ↦ ∫⁻ z : (i : Iic b) → X i, g (z, x) ∂η x
   refine Measurable.lintegral_kernel_prod_left' <| hf.comp ?_
   simp only [updateFinset, measurable_pi_iff]
@@ -691,19 +691,19 @@ theorem updateFinset_updateFinset_subset {ι : Type*} [DecidableEq ι] {α : ι 
   · exact (h1 (hst h2)).elim
   · rfl
 
-theorem lmarginalPartialKernel_self [∀ n, IsMarkovKernel (κ n)] {a b c : ℕ}
+theorem lmarginalPTraj_self [∀ n, IsMarkovKernel (κ n)] {a b c : ℕ}
     (hab : a ≤ b) (hbc : b ≤ c)
     {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
-    lmarginalPartialKernel κ a b (lmarginalPartialKernel κ b c f) =
-      lmarginalPartialKernel κ a c f := by
+    lmarginalPTraj κ a b (lmarginalPTraj κ b c f) =
+      lmarginalPTraj κ a c f := by
   ext x
   obtain rfl | hab := eq_or_lt_of_le hab <;> obtain rfl | hbc := eq_or_lt_of_le hbc
-  · rw [lmarginalPartialKernel_le κ (_root_.le_refl a) (measurable_lmarginalPartialKernel _ _ _ hf)]
-  · rw [lmarginalPartialKernel_le κ (_root_.le_refl a) (measurable_lmarginalPartialKernel _ _ _ hf)]
-  · rw [lmarginalPartialKernel_le κ (_root_.le_refl b) hf]
-  simp_rw [lmarginalPartialKernel, frestrictLe, restrict_updateFinset,
+  · rw [lmarginalPTraj_le κ (_root_.le_refl a) (measurable_lmarginalPTraj _ _ _ hf)]
+  · rw [lmarginalPTraj_le κ (_root_.le_refl a) (measurable_lmarginalPTraj _ _ _ hf)]
+  · rw [lmarginalPTraj_le κ (_root_.le_refl b) hf]
+  simp_rw [lmarginalPTraj, frestrictLe, restrict_updateFinset,
     updateFinset_updateFinset_subset _ _ (Iic_subset_Iic.2 hbc.le)]
-  rw [← lintegral_comp, partialKernel_comp κ c hab.le]
+  rw [← lintegral_comp, ptraj_comp κ c hab.le]
   exact hf.comp <| measurable_updateFinset
 
 end integral
@@ -717,14 +717,14 @@ variable [∀ n, IsMarkovKernel (κ n)]
 
 namespace DependsOn
 
-theorem lmarginalPartialKernel_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
+theorem lmarginalPTraj_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (mf : Measurable f) (hf : DependsOn f (Iic a)) (hab : a ≤ b) :
-    lmarginalPartialKernel κ b c f = f := by
+    lmarginalPTraj κ b c f = f := by
   rcases le_or_lt c b with hcb | hbc
-  · exact lmarginalPartialKernel_le κ hcb mf
+  · exact lmarginalPTraj_le κ hcb mf
   · ext x
     have := isMarkovKernel_kerNat κ hbc
-    rw [lmarginalPartialKernel_lt κ hbc mf, ← mul_one (f x),
+    rw [lmarginalPTraj_lt κ hbc mf, ← mul_one (f x),
       ← measure_univ (μ := kerNat κ b c (frestrictLe b x)), ← MeasureTheory.lintegral_const]
     refine lintegral_congr fun y ↦ hf fun i hi ↦ ?_
     simp only [updateFinset, mem_Iic, el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
@@ -734,25 +734,25 @@ theorem lmarginalPartialKernel_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ) → X n)
     rw [mem_coe, mem_Iic] at hi
     omega
 
-theorem lmarginalPartialKernel_right {a : ℕ} (b : ℕ) {c d : ℕ}
+theorem lmarginalPTraj_right {a : ℕ} (b : ℕ) {c d : ℕ}
     (mf : Measurable f) (hf : DependsOn f (Iic a)) (hac : a ≤ c) (had : a ≤ d) :
-    lmarginalPartialKernel κ b c f = lmarginalPartialKernel κ b d f := by
+    lmarginalPTraj κ b c f = lmarginalPTraj κ b d f := by
   wlog hcd : c ≤ d generalizing c d
   · rw [@this d c had hac (le_of_not_le hcd)]
   · obtain hbc | hcb := le_or_lt b c
-    · rw [← lmarginalPartialKernel_self κ hbc hcd mf,
-        hf.lmarginalPartialKernel_eq κ d mf hac]
-    · rw [hf.lmarginalPartialKernel_eq κ c mf (hac.trans hcb.le),
-        hf.lmarginalPartialKernel_eq κ d mf (hac.trans hcb.le)]
+    · rw [← lmarginalPTraj_self κ hbc hcd mf,
+        hf.lmarginalPTraj_eq κ d mf hac]
+    · rw [hf.lmarginalPTraj_eq κ c mf (hac.trans hcb.le),
+        hf.lmarginalPTraj_eq κ d mf (hac.trans hcb.le)]
 
-theorem dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) → ℝ≥0∞}
+theorem dependsOn_lmarginalPTraj (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (hf : DependsOn f (Iic b)) (mf : Measurable f) :
-    DependsOn (lmarginalPartialKernel κ a b f) (Iic a) := by
+    DependsOn (lmarginalPTraj κ a b f) (Iic a) := by
   intro x y hxy
   rcases le_or_lt b a with hba | hab
-  · rw [lmarginalPartialKernel_le κ hba mf]
+  · rw [lmarginalPTraj_le κ hba mf]
     exact hf fun i hi ↦ hxy i (Iic_subset_Iic.2 hba hi)
-  · rw [lmarginalPartialKernel_lt _ hab mf, lmarginalPartialKernel_lt _ hab mf]
+  · rw [lmarginalPTraj_lt _ hab mf, lmarginalPTraj_lt _ hab mf]
     congrm ∫⁻ z : _, ?_ ∂kerNat κ a b (fun i ↦ ?_)
     · exact hxy i.1 i.2
     · refine dependsOn_updateFinset hf _ _ ?_
@@ -760,4 +760,4 @@ theorem dependsOn_lmarginalPartialKernel (a : ℕ) {b : ℕ} {f : ((n : ℕ) →
 
 end DependsOn
 
-end partialKernel
+end ptraj

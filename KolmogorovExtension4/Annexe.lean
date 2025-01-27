@@ -445,6 +445,12 @@ theorem restrict_updateFinset {ι : Type*} [DecidableEq ι] {α : ι → Type*} 
   rw [restrict_updateFinset' subset_rfl]
   rfl
 
+@[simp]
+theorem updateFinset_restrict {ι : Type*} [DecidableEq ι] {α : ι → Type*} {s : Finset ι}
+    (x : Π i, α i) : updateFinset x s (s.restrict x) = x := by
+  ext i
+  simp [updateFinset]
+
 open Preorder
 
 theorem frestrictLe_updateFinset' {ι : Type*} [DecidableEq ι] [Preorder ι] [LocallyFiniteOrderBot ι]
@@ -456,6 +462,11 @@ theorem frestrictLe_updateFinset {ι : Type*} [DecidableEq ι] [Preorder ι] [Lo
     {α : ι → Type*} {i : ι} (x : Π j, α j) (y : Π j : Iic i, α j) :
     frestrictLe i (updateFinset x _ y) = y :=
   restrict_updateFinset ..
+
+@[simp]
+theorem updateFinset_frestrictLe {ι : Type*} [DecidableEq ι] [Preorder ι] [LocallyFiniteOrderBot ι]
+    {α : ι → Type*} {i : ι} (x : Π i, α i) : updateFinset x _ (frestrictLe i x) = x := by
+  simp [frestrictLe]
 
 end Finset
 
