@@ -7,7 +7,7 @@ import KolmogorovExtension4.CompactSystem
 import KolmogorovExtension4.Content
 import KolmogorovExtension4.DependsOn
 import KolmogorovExtension4.IndependentFamily
-import KolmogorovExtension4.trajKernel
+import KolmogorovExtension4.IonescuTulceaKernel
 import KolmogorovExtension4.KolmogorovExtension
 import KolmogorovExtension4.Ordered
 import KolmogorovExtension4.RegularContent
