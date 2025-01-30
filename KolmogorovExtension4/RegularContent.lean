@@ -23,9 +23,9 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent R)
   · simp [Set.eq_empty_of_isEmpty]
   rw [ENNReal.tendsto_nhds_zero]
   intro ε hε
-  obtain ⟨δ, hδ_pos, hδ_sum⟩ := ENNReal.exists_seq_pos_lt ε hε
+  obtain ⟨δ, hδ_pos, hδ_sum⟩ := ENNReal.exists_pos_sum_of_countable hε.ne' ℕ
   have h_reg' : ∀ n, ∃ K ∈ C, K ⊆ s n ∧ m (s n \ K) ≤ δ n :=
-    fun n ↦ h_reg (s n) (hs n) (δ n) (hδ_pos n)
+    fun n ↦ h_reg (s n) (hs n) (δ n) (mod_cast (hδ_pos n))
   choose t ht_mem_C ht_subset ht using h_reg'
   rw [Filter.eventually_atTop]
   have ht_empty : ⋂ n, t n = ∅ := Set.subset_eq_empty (Set.iInter_mono ht_subset) hs_Inter
@@ -65,8 +65,8 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent R)
     _ = m (⋃ i ∈ Finset.range (n + 1), (s i \ t i)) := by simp only [Finset.mem_range_succ_iff]
     _ ≤ ∑ i in Finset.range (n + 1), m (s i \ t i) :=
         addContent_biUnion_le hR (fun i _ ↦ hR.diff_mem (hs i) (hCR (ht_mem_C i)))
-    _ ≤ ∑ i in Finset.range (n + 1), δ i := Finset.sum_le_sum (fun i _ ↦ ht i)
-    _ ≤ ∑' i, δ i := ENNReal.sum_le_tsum _
+    _ ≤ ∑ i in Finset.range (n + 1), (δ i : ℝ≥0∞) := Finset.sum_le_sum (fun i _ ↦ ht i)
+    _ ≤ ∑' i, (δ i : ℝ≥0∞) := ENNReal.sum_le_tsum _
     _ ≤ ε := hδ_sum.le
 
 lemma addContent_iUnion_eq_sum_of_regular (hR : IsSetRing R) (m : AddContent R)

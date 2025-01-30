@@ -53,23 +53,25 @@ variable (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
     (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
 
 lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
-    (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
+    {J : Finset (Set α)} (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
     m (⋃₀ ↑J) ≤ ∑ u in J, m u := by
   classical
-  rw [← hC.sUnion_allDiffFinset₀ J h_ss, addContent_sUnion]
+  rw [← hC.sUnion_unionDisjointOfUnion h_ss]
+  rw [addContent_sUnion]
   rotate_left
-  · exact hC.allDiffFinset₀_subset J h_ss
-  · exact hC.pairwiseDisjoint_allDiffFinset₀ J h_ss
-  · rwa [hC.sUnion_allDiffFinset₀ J h_ss]
-  rw [IsSetSemiring.allDiffFinset₀, sum_disjiUnion, ← sum_ordered J]
-  refine sum_le_sum fun i _ ↦ sum_addContent_le_of_subset hC ?_ ?_ ?_ ?_
-  · exact hC.indexedDiffFinset₀_subset J h_ss i
-  · exact hC.pairwiseDisjoint_indexedDiffFinset₀' J h_ss i
-  · exact h_ss (ordered_mem i)
-  · exact Set.sUnion_subset_iff.mp (hC.sUnion_indexedDiffFinset₀_subset J h_ss i)
+  · exact hC.unionDisjointOfUnion_subset h_ss
+  · exact hC.pairwiseDisjoint_unionDisjointOfUnion h_ss
+  · rwa [hC.sUnion_unionDisjointOfUnion h_ss]
+  rw [IsSetSemiring.unionDisjointOfUnion, sum_disjiUnion]
+  refine sum_le_sum fun i hi ↦ sum_addContent_le_of_subset hC ?_ ?_ ?_ ?_
+  · exact hC.disjointOfUnion_subset h_ss hi
+  · exact hC.pairwiseDisjoint_disjointOfUnion_of_mem h_ss hi
+  · exact h_ss hi
+  · intro j hj
+    exact hC.subset_of_mem_disjointOfUnion h_ss hi hj
 
 lemma addContent_le_sum_of_subset_sUnion {m : AddContent C} (hC : IsSetSemiring C)
-    (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (ht : t ∈ C) (htJ : t ⊆ ⋃₀ ↑J) :
+    {J : Finset (Set α)} (h_ss : ↑J ⊆ C) (ht : t ∈ C) (htJ : t ⊆ ⋃₀ ↑J) :
     m t ≤ ∑ u in J, m u := by
   -- we can't apply `addContent_mono` and `addContent_sUnion_le_sum` because `⋃₀ ↑J` might not
   -- be in `C`
@@ -79,7 +81,7 @@ lemma addContent_le_sum_of_subset_sUnion {m : AddContent C} (hC : IsSetSemiring 
     rw [coe_image, sUnion_image, ← inter_iUnion₂, inter_eq_self_of_subset_left]
     rwa [← sUnion_eq_biUnion]
   rw [ht_eq]
-  refine (addContent_sUnion_le_sum hC Jt ?_ ?_).trans ?_
+  refine (addContent_sUnion_le_sum hC (J := Jt) ?_ ?_).trans ?_
   · intro s
     simp only [Jt, coe_image, Set.mem_image, mem_coe, forall_exists_index, and_imp]
     rintro u hu rfl
@@ -173,7 +175,7 @@ theorem addContent_iUnion_le_of_addContent_iUnion_eq_tsum {m : AddContent C} (hC
   refine le_of_tendsto_of_tendsto' h_tendsto h_tendsto' fun n ↦ ?_
   rw [partialSups_eq_sUnion_image]
   refine (addContent_le_sum_of_subset_sUnion hC.isSetSemiring
-    ((Finset.range (n + 1)).image f) (fun s ↦ ?_) ?_ subset_rfl).trans ?_
+    (J := (Finset.range (n + 1)).image f) (fun s ↦ ?_) ?_ subset_rfl).trans ?_
   · rw [mem_coe, Finset.mem_image]
     rintro ⟨i, _, rfl⟩
     exact hf i
