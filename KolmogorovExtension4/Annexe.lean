@@ -254,10 +254,17 @@ lemma snd_compProd_kernel (κ : Kernel X Y) [IsSFiniteKernel κ] (η : Kernel Y 
     ((κ x) ⊗ₘ η).snd = (η ∘ₖ κ) x := by
   rw [snd_compProd, Kernel.comp_apply'']
 
-theorem Kernel.comap_const (μ : Measure Z) {f : X → Y} (hf : Measurable f) :
+theorem ProbabilityTheory.Kernel.comap_const (μ : Measure Z) {f : X → Y} (hf : Measurable f) :
     Kernel.comap (Kernel.const Y μ) f hf = Kernel.const X μ := by
   ext1 x
   rw [Kernel.const_apply, Kernel.comap_apply, Kernel.const_apply]
+
+lemma ProbabilityTheory.Kernel.const_compProd_const (μ : Measure Y) [SFinite μ]
+    (ν : Measure Z) [SFinite ν] :
+    (const X μ) ⊗ₖ (const (X × Y) ν) = const X (μ.prod ν) := by
+  ext x s ms
+  simp_rw [compProd_apply ms, const_apply, Measure.prod_apply ms]
+  rfl
 
 variable {E : Type*} [NormedAddCommGroup E]
 
@@ -492,11 +499,14 @@ theorem Finset.prod_union' {α M : Type*} [DecidableEq α] [CommMonoid M] {s t :
   rw [h1, h2, h3, prod_coe_sort, prod_coe_sort, prod_coe_sort, ← disjUnion_eq_union _ _ hst,
     prod_disjUnion hst]
 
-theorem prod_Ioc {M : Type*} [CommMonoid M] (n : ℕ) (f : (Ioc 0 (n + 1)) → M) :
-    (f ⟨n + 1, mem_Ioc.2 ⟨n.succ_pos, le_refl _⟩⟩) *
-      (∏ i : Ioc 0 n, f ⟨i.1, Ioc_subset_Ioc_right n.le_succ i.2⟩) =
-    ∏ i : Ioc 0 (n + 1), f i := by
-  let g : ℕ → M := fun k ↦ if hk : k ∈ Ioc 0 (n + 1) then f ⟨k, hk⟩ else 1
+theorem prod_Ioc {M : Type*} [CommMonoid M] {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
+    (f : (Ioc a c) → M) :
+    (∏ i : Ioc a b, f (Set.inclusion (Ioc_subset_Ioc_right hbc) i)) *
+      (∏ i : Ioc b c, f (Set.inclusion (Ioc_subset_Ioc_left hab) i)) = (∏ i : Ioc a c, f i) := by
+  have : Ioc a b ∪ Ioc b c = Ioc a c:= by simp [hab, hbc]
+  rw [← prod_congr' (Ioc_union_Ioc_eq_Ioc hab hbc), ← prod_union']
+  rw [← disjoint_coe, coe_Ioc, coe_Ioc, Set.Ioc_disjoint_Ioc, min_eq_left hbc, max_eq_right hab]
+  /-let g : ℕ → M := fun k ↦ if hk : k ∈ Ioc 0 (n + 1) then f ⟨k, hk⟩ else 1
   have h1 : ∏ i : Ioc 0 n, f ⟨i.1, Ioc_subset_Ioc_right n.le_succ i.2⟩ =
       ∏ i : Ioc 0 n, g i := by
     refine prod_congr rfl ?_
@@ -514,4 +524,4 @@ theorem prod_Ioc {M : Type*} [CommMonoid M] (n : ℕ) (f : (Ioc 0 (n + 1)) → M
   rw [this]
   exact mul_prod_Ico_eq_prod_Icc (Nat.le_add_left (0 + 1) n)
 
-end Product
+end Product-/

@@ -51,6 +51,24 @@ def e (n : ℕ) : (X (n + 1)) ≃ᵐ ((i : Ioc n (n + 1)) → X i) where
     cases mem_Ioc_succ' i; rfl
   measurable_invFun := measurable_pi_apply _
 
+instance subsingleton_subtype {α : Type*} (a : α) : Subsingleton ({a} : Finset α) where
+  allEq x y := by
+    rw [← Subtype.coe_inj, Finset.eq_of_mem_singleton x.2, Finset.eq_of_mem_singleton y.2]
+
+lemma MeasureTheory.Measure.map_e (μ : (n : ℕ) → Measure (X n)) [∀ n, SigmaFinite (μ n)] (n : ℕ) :
+    Measure.pi (fun i : Ioc n (n + 1) ↦ μ i) = (μ (n + 1)).map (e n) := by
+  refine Measure.pi_eq fun s hs ↦ ?_
+  have : Subsingleton (Ioc n (n + 1)) := by
+    rw [Nat.Ioc_succ_singleton]
+    infer_instance
+  rw [Fintype.prod_subsingleton _ ⟨n + 1, mem_Ioc_succ.2 rfl⟩, Measure.map_apply]
+  · congr with x
+    simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_const, Subtype.forall,
+      Nat.Ioc_succ_singleton, mem_singleton]
+    exact ⟨fun h ↦ h (n + 1) rfl, fun h a b ↦ b.symm ▸ h⟩
+  · exact (e n).measurable
+  · exact MeasurableSet.univ_pi hs
+
 /-- Gluing `Iic m` and `Ioc m n` into `Iic n`, as a measurable equiv of dependent functions. -/
 def el (m n : ℕ) (hmn : m ≤ n) :
     ((i : Iic m) → X i) × ((i : Ioc m n) → X i) ≃ᵐ ((i : Iic n) → X i) where

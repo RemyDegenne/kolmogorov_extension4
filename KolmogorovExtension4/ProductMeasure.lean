@@ -5,7 +5,7 @@ Authors: Etienne Marion
 -/
 import KolmogorovExtension4.IonescuTulceaKernel
 
-open MeasureTheory MeasurableSpace ProbabilityTheory Finset ENNReal Filter Topology Function Kernel Preorder
+open MeasureTheory MeasurableSpace ProbabilityTheory Finset ENNReal Filter Topology Kernel Preorder
 
 namespace MeasureTheory
 
@@ -13,10 +13,10 @@ section Preliminaries
 
 variable {ι : Type*}
 
-theorem preimage_proj {α : ι → Type*} (I J : Finset ι) [∀ i : ι, Decidable (i ∈ I)]
+theorem preimage_restrict₂ {α : ι → Type*} {I J : Finset ι} [∀ i : ι, Decidable (i ∈ I)]
     (hIJ : I ⊆ J) (s : (i : I) → Set (α i)) :
     (restrict₂ hIJ) ⁻¹' (Set.univ.pi s) =
-    (@Set.univ J).pi (fun j ↦ if h : j.1 ∈ I then s ⟨j.1, h⟩ else Set.univ) := by
+      (@Set.univ J).pi (fun j ↦ if h : j.1 ∈ I then s ⟨j.1, h⟩ else Set.univ) := by
   ext x
   simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies, Subtype.forall]
   refine ⟨fun h i hi ↦ ?_, fun h i i_mem ↦ by simpa [i_mem] using h i (hIJ i_mem)⟩
@@ -34,29 +34,26 @@ theorem isProjectiveMeasureFamily_pi :
   refine fun I J hJI ↦ Measure.pi_eq (fun s ms ↦ ?_)
   classical
   rw [Measure.map_apply (measurable_restrict₂ hJI) (MeasurableSet.univ_pi ms),
-    preimage_proj J I hJI, Measure.pi_pi]
+    preimage_restrict₂ hJI, Measure.pi_pi]
   let g := fun i ↦ (μ i) (if hi : i ∈ J then s ⟨i, hi⟩ else Set.univ)
   conv_lhs => change ∏ i : I, g i
   have h2 : univ.prod (fun i : J ↦ (μ i) (s i)) = univ.prod (fun i : J ↦ g i) :=
     Finset.prod_congr rfl (by simp [g])
-  rw [h2, Finset.prod_coe_sort, Finset.prod_coe_sort,
-    Finset.prod_subset hJI (fun _ h h' ↦ by simp [g, h, h'])]
+  rw [h2, prod_coe_sort, prod_coe_sort, prod_subset hJI (fun _ h h' ↦ by simp [g, h, h'])]
 
-theorem kolContent_eq_measure_pi [Fintype ι] {s : Set ((i : ι) → X i)} (hs : MeasurableSet s) :
+theorem kolContent_eq_measure_pi [Fintype ι] {s : Set (Π i, X i)} (hs : MeasurableSet s) :
     kolContent (isProjectiveMeasureFamily_pi μ) s = Measure.pi μ s := by
-  let aux : ((i : univ) → X i) → ((i : ι) → X i) := fun x i ↦ x ⟨i, mem_univ i⟩
+  let aux : (Π i : univ, X i) → (Π i, X i) := fun x i ↦ x ⟨i, mem_univ i⟩
   have maux : Measurable aux := measurable_pi_lambda _ (fun _ ↦ measurable_pi_apply _)
-  let t := aux ⁻¹' s
-  have : s = cylinder Finset.univ t := by ext x; simp [t, aux]
-  nth_rw 1 [this]
-  rw [kolContent_cylinder _ (maux hs)]
-  have : Measure.pi μ = (Measure.pi (fun i : @univ ι _ ↦ μ i)).map aux := by
+  have pi_eq : Measure.pi μ = (Measure.pi (fun i : univ ↦ μ i)).map aux := by
     refine Measure.pi_eq fun a ma ↦ ?_
     rw [Measure.map_apply maux (MeasurableSet.univ_pi ma)]
     have : aux ⁻¹' Set.univ.pi a = Set.univ.pi (fun i : @univ ι _ ↦ a i) := by ext x; simp [aux]
     rw [this, Measure.pi_pi]
     simp
-  rw [this, Measure.map_apply maux hs]
+  have : s = cylinder univ (aux ⁻¹' s) := by ext x; simp [aux]
+  nth_rw 1 [this]
+  rw [kolContent_cylinder _ (maux hs), pi_eq, Measure.map_apply maux hs]
 
 end Preliminaries
 
@@ -65,14 +62,14 @@ section Nat
 variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
 variable (μ : (n : ℕ) → Measure (X n)) [hμ : ∀ n, IsProbabilityMeasure (μ n)]
 
-lemma mem_Iic_zero {i : ℕ} (hi : i ∈ Iic 0) : 0 = i := (by simpa using hi : i = 0).symm
+lemma mem_Iic_bot {ι : Type*} [PartialOrder ι] [LocallyFiniteOrder ι] [OrderBot ι] {i : ι}
+    (hi : i ∈ Iic ⊥) : i = ⊥ := bot_unique (mem_Iic.1 hi)
 
 /-- Infinite product measure indexed by `ℕ`. Use instead `Measure.productMeasure` for the case of a
 general index space. -/
 noncomputable def Measure.infinitePiNat : Measure ((n : ℕ) → X n) :=
   (Measure.pi (fun i : Iic 0 ↦ μ i)).bind
-    (@trajKernel _ _
-      (fun n ↦ const _ (μ (n + 1))) _ (ProbabilityMeasure.nonempty ⟨μ 0, hμ 0⟩) 0)
+    (@trajKernel _ _ (fun n ↦ const _ (μ (n + 1))) _ (ProbabilityMeasure.nonempty ⟨μ 0, hμ 0⟩) 0)
 
 open Measure
 
@@ -86,60 +83,43 @@ instance : IsProbabilityMeasure (infinitePiNat μ) := by
   rw [infinitePiNat]
   infer_instance
 
-theorem er_succ_preimage_pi {n : ℕ} (hn : 0 < n) (s : (i : Ioc 0 (n + 1)) → Set (X i)) :
-    er 0 n (n + 1) hn n.le_succ ⁻¹' Set.univ.pi s =
-      (Set.univ.pi (fun i : Ioc 0 n ↦ s ⟨i.1, Ioc_subset_Ioc_right n.le_succ i.2⟩)) ×ˢ
-        ((e n).symm ⁻¹' (s ⟨n + 1, right_mem_Ioc.2 n.succ_pos⟩)) := by
-  ext p
-  simp only [er, Nat.succ_eq_add_one, Nat.reduceAdd, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
-    Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies, Subtype.forall, mem_Ioc, e,
-    MeasurableEquiv.symm_mk, Equiv.coe_fn_symm_mk, Set.mem_prod]
-  refine ⟨fun h ↦ ⟨fun i ⟨hi1, hi2⟩ ↦ ?_, ?_⟩, fun ⟨h1, h2⟩ i ⟨hi1, hi2⟩ ↦ ?_⟩
-  · convert h i ⟨hi1, hi2.trans n.le_succ⟩
-    rw [dif_pos hi2]
-  · convert h (n + 1) ⟨n.succ_pos, _root_.le_refl _⟩
-    simp
-  · split_ifs with h
-    · exact h1 i ⟨hi1, h⟩
-    · cases (by omega : i = n + 1)
-      exact h2
+-- lemma prod_map_er (μ : (n : ℕ) → Measure (X n)) [∀ n, SigmaFinite (μ n)] (n : ℕ) :
+--     Measure.pi (fun i Iic)
+
+lemma map_er {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
+    ((Measure.pi (fun i : Ioc a b ↦ μ i)).prod (Measure.pi (fun i : Ioc b c ↦ μ i))).map
+      (er a b c hab hbc) = Measure.pi (fun i : Ioc a c ↦ μ i) := by
+  refine (Measure.pi_eq fun s ms ↦ ?_).symm
+  set aux := er (X := X) a b c hab hbc
+  let s1 := @restrict₂ ℕ (fun n ↦ Set (X n)) _ _ (Ioc_subset_Ioc_right hbc) s
+  let s2 := @restrict₂ ℕ (fun n ↦ Set (X n)) _ _ (Ioc_subset_Ioc_left hab.le) s
+  have : aux ⁻¹' (Set.univ.pi s) = (Set.univ.pi s1) ×ˢ (Set.univ.pi s2) := by
+    ext x
+    simp only [er, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage, Set.mem_pi,
+      Set.mem_univ, forall_const, Subtype.forall, mem_Ioc, Set.mem_prod, restrict₂, aux, s1, s2]
+    refine ⟨fun h ↦ ⟨fun i ⟨hi1, hi2⟩ ↦ ?_, fun i ⟨hi1, hi2⟩ ↦ ?_⟩, fun ⟨h1, h2⟩ i ⟨hi1, hi2⟩ ↦ ?_⟩
+    · convert h i ⟨hi1, hi2.trans hbc⟩
+      rw [dif_pos hi2]
+    · convert h i ⟨hab.trans hi1, hi2⟩
+      rw [dif_neg (not_le.2 hi1)]
+    · split_ifs with hi3
+      · exact h1 i ⟨hi1, hi3⟩
+      · exact h2 i ⟨not_le.1 hi3, hi2⟩
+  rw [Measure.map_apply, this, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
+    ← prod_Ioc hab.le hbc (f := fun i ↦ μ i (s i))]
+  · rfl
+  · fun_prop
+  · exact MeasurableSet.univ_pi ms
 
 theorem kerNat_prod {N : ℕ} (hN : 0 < N) :
-    (kerNat (fun n ↦ const _ (μ (n + 1))) 0 N) =
-      Kernel.const _ (Measure.pi (fun i : Ioc 0 N ↦ μ i)) := by
-  ext1 x₀
-  refine Nat.le_induction ?_ (fun n hn hind ↦ ?_) N (Nat.succ_le.2 hN)
-  · rw [kerNat_succ_self, Kernel.const_apply]
-    refine (Measure.pi_eq (fun s ms ↦ ?_)).symm
-    have : Subsingleton (Ioc 0 1) := by
-      constructor
-      rintro ⟨i, hi⟩ ⟨j, hj⟩
-      rw [mem_Ioc_succ] at hi hj
-      simp [hi, hj]
-    rw [Fintype.prod_subsingleton _ ⟨1, right_mem_Ioc.2 zero_lt_one⟩,
-      map_apply' _ (e 0).measurable, Kernel.const_apply]
-    · congr with x
-      simp only [Nat.reduceAdd, e, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Nat.succ_eq_add_one,
-        Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies, Subtype.forall,
-        Nat.Ioc_succ_singleton, zero_add, mem_singleton, Nat.zero_eq]
-      refine ⟨fun h ↦ h 1 rfl, fun h i hi ↦ ?_⟩
-      cases hi; exact h
-    · exact MeasurableSet.univ_pi ms
-  · rw [Kernel.const_apply]
-    refine (Measure.pi_eq fun s ms ↦ ?_).symm
-    rw [kerNat_succ_right _ _ _ (Nat.succ_le.1 hn), kerNat_succ_self, compProdNat,
-      dif_pos ⟨Nat.succ_le.1 hn, n.lt_succ_self⟩,
-      map_apply' _ _ _ (MeasurableSet.univ_pi ms), er_succ_preimage_pi (Nat.succ_le.1 hn),
-      split, Kernel.map_const, Kernel.comap_const, Kernel.compProd_apply_prod, ← prod_Ioc,
-      ← Measure.pi_pi, ← setLIntegral_const, hind, Kernel.const_apply]
-    · congr with x
-      rw [Kernel.const_apply, Measure.map_apply (e n).measurable]
-      · congr
-      · exact (e n).measurable_invFun (ms _)
-    · exact MeasurableSet.univ_pi (fun _ ↦ ms _)
-    · exact (e n).measurable_invFun (ms _)
-    · exact (e n).measurable
-    · exact (er ..).measurable
+    (kerNat (fun n ↦ const _ (μ (n + 1))) 0 N) = const _ (Measure.pi (fun i : Ioc 0 N ↦ μ i)) := by
+  refine Nat.le_induction ?_ (fun n hn hind ↦ ?_) N (Nat.succ_le.2 hN) <;> ext1 x₀
+  · rw [kerNat_succ_self, Kernel.map_apply _ (e 0).measurable, const_apply, const_apply, map_e]
+  · rw [Kernel.const_apply, kerNat_succ_right, compProdNat_eq, kerNat_succ_self, split_eq_comap,
+      Kernel.map_apply, Kernel.map_const, Kernel.comap_const, ← map_e, hind,
+      const_compProd_const, const_apply, map_er]
+    any_goals omega
+    any_goals fun_prop
 
 theorem prod_noyau_proj (N : ℕ) :
     ptraj (fun n ↦ const ((i : Iic n) → X i) (μ (n + 1))) 0 N =
@@ -158,7 +138,7 @@ theorem prod_noyau_proj (N : ℕ) :
     apply indicator_const_eq
     simp only [id_eq, el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, mem_preimage]
     congrm (fun i ↦ ?_) ∈ s
-    simp [(mem_Iic_zero i.2).symm]
+    simp [mem_Iic_bot i.2]
   · rw [ptraj, dif_pos hN, kerNat_prod _ hN]
 
 theorem el_preimage {n : ℕ} (s : (i : Iic n) → Set (X i)) :
@@ -546,7 +526,7 @@ theorem integral_stronglyMeasurable [DecidableEq ι] {E : Type*} [NormedAddCommG
   have this y : g (s.restrict y) = f y := by
     apply stronglyMeasurable_dependsOn' mf
     intro i hi
-    simp only [updateFinset, restrict, dite_eq_ite, ite_eq_left_iff]
+    simp only [Function.updateFinset, restrict, dite_eq_ite, ite_eq_left_iff]
     exact fun h ↦ (h hi).elim
   rw [← integral_congr_ae <| Eventually.of_forall this, integral_dep_productMeasure]
   exact mf.comp_measurable (measurable_updateFinset.mono (_root_.le_refl _) (ℱ.le s))
@@ -570,7 +550,7 @@ theorem lintegral_measurable [DecidableEq ι] {s : Finset ι}
   let g : ((i : s) → X i) → ℝ≥0∞ := fun y ↦ f (Function.updateFinset x _ y)
   have this y : g (s.restrict y) = f y := by
     refine measurable_dependsOn' mf fun i hi ↦ ?_
-    simp only [updateFinset, restrict, dite_eq_ite, ite_eq_left_iff]
+    simp only [Function.updateFinset, restrict, dite_eq_ite, ite_eq_left_iff]
     exact fun h ↦ (h hi).elim
   simp_rw [← this]
   rw [lintegral_dep]
