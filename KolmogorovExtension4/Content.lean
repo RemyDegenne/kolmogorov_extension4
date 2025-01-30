@@ -56,8 +56,7 @@ lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
     {J : Finset (Set α)} (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
     m (⋃₀ ↑J) ≤ ∑ u in J, m u := by
   classical
-  rw [← hC.sUnion_unionDisjointOfUnion h_ss]
-  rw [addContent_sUnion]
+  rw [← hC.sUnion_unionDisjointOfUnion h_ss, addContent_sUnion]
   rotate_left
   · exact hC.unionDisjointOfUnion_subset h_ss
   · exact hC.pairwiseDisjoint_unionDisjointOfUnion h_ss
