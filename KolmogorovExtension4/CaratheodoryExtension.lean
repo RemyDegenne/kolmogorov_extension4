@@ -5,6 +5,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import Mathlib.MeasureTheory.Measure.Trim
 import KolmogorovExtension4.Content
+import KolmogorovExtension4.Ordered
 
 open Set
 
@@ -62,11 +63,11 @@ theorem caratheodory_semiring_extension' (hC : IsSetSemiring C) (m : AddContent 
   intro t
   conv_rhs => rw [OuterMeasure.ofFunction_eq_iInf_mem _ _ m_top]
   refine le_iInf fun f ↦ le_iInf fun hf ↦ le_iInf fun hf_subset ↦ ?_
-  let A : ℕ → Finset (Set α) := fun i ↦ hC.diffFinset (hf i) (hC.inter_mem _ (hf i) _ hs)
-  have h_diff_eq_sUnion i : f i \ s = ⋃₀ A i := by simp [A, IsSetSemiring.sUnion_diffFinset]
+  let A : ℕ → Finset (Set α) := fun i ↦ hC.disjointOfDiff (hf i) (hC.inter_mem _ (hf i) _ hs)
+  have h_diff_eq_sUnion i : f i \ s = ⋃₀ A i := by simp [A, IsSetSemiring.sUnion_disjointOfDiff]
   classical
   have h_m_eq i : m (f i) = m (f i ∩ s) + ∑ u in A i, m u :=
-    hC.eq_add_diffFinset_of_subset m (fun _ ↦ addContent_sUnion) (hC.inter_mem _ (hf i) _ hs) (hf i)
+    hC.eq_add_disjointOfDiff_of_subset m (fun _ ↦ addContent_sUnion) (hC.inter_mem _ (hf i) _ hs) (hf i)
       inter_subset_left
   simp_rw [h_m_eq]
   rw [tsum_add ENNReal.summable ENNReal.summable]
