@@ -142,7 +142,7 @@ lemma ae_comp_iff {p : Z → Prop} (hp : MeasurableSet {z | p z}) :
     (∀ᵐ z ∂(η ∘ₖ κ) x, p z) ↔ ∀ᵐ y ∂κ x, ∀ᵐ z ∂η y, p z :=
   ⟨fun h ↦ ae_ae_of_ae_comp h, fun h ↦ ae_comp_of_ae_ae hp h⟩
 
-theorem Kernel.compProd_apply_prod (κ : Kernel X Y) [IsSFiniteKernel κ]
+theorem ProbabilityTheory.Kernel.compProd_apply_prod (κ : Kernel X Y) [IsSFiniteKernel κ]
     (η : Kernel (X × Y) Z) [IsSFiniteKernel η]
     {s : Set Y} (hs : MeasurableSet s) {t : Set Z} (ht : MeasurableSet t) (x : X) :
     (κ ⊗ₖ η) x (s ×ˢ t) = ∫⁻ y in s, η (x, y) t ∂κ x := by
@@ -150,12 +150,27 @@ theorem Kernel.compProd_apply_prod (κ : Kernel X Y) [IsSFiniteKernel κ]
   congr with y
   by_cases hy : y ∈ s <;> simp [Set.indicator, hy]
 
-theorem Kernel.map_map (κ : Kernel X Y) {f : Y → Z} (hf : Measurable f)
+theorem ProbabilityTheory.Kernel.map_map (κ : Kernel X Y) {f : Y → Z} (hf : Measurable f)
     {g : Z → T} (hg : Measurable g) :
     (κ.map f).map g = κ.map (g ∘ f) := by
   ext1 x
   rw [Kernel.map_apply _ hg, Kernel.map_apply _ hf, Measure.map_map hg hf,
     ← Kernel.map_apply _ (hg.comp hf)]
+
+theorem ProbabilityTheory.Kernel.id_map {f : X → Y} (hf : Measurable f) :
+    Kernel.id.map f = Kernel.deterministic f hf := by
+  ext1 x
+  rw [map_apply _ hf, id_apply, Measure.map_dirac hf, deterministic_apply]
+
+theorem ProbabilityTheory.Kernel.lintegral_id {f : X → ℝ≥0∞} (x : X) (hf : Measurable f) :
+    ∫⁻ y, f y ∂(@Kernel.id X inferInstance x) = f x := by
+  rw [id_apply, lintegral_dirac' _ hf]
+
+theorem ProbabilityTheory.Kernel.lintegral_id_prod (κ : Kernel X Y) [IsSFiniteKernel κ]
+    {f : X × Y → ℝ≥0∞} (x : X) (hf : Measurable f) :
+    ∫⁻ z, f z ∂((Kernel.id ×ₖ κ) x) = ∫⁻ y, f (x, y) ∂κ x := by
+  rw [lintegral_prod _ _ _ hf, lintegral_id]
+  exact hf.lintegral_prod_right'
 
 theorem Measure.map_prod (μ : Measure X) [IsFiniteMeasure μ]
     (ν : Measure Y) [IsFiniteMeasure ν] {f : X → Z} (hf : Measurable f)
@@ -503,25 +518,19 @@ theorem prod_Ioc {M : Type*} [CommMonoid M] {a b c : ℕ} (hab : a ≤ b) (hbc :
     (f : (Ioc a c) → M) :
     (∏ i : Ioc a b, f (Set.inclusion (Ioc_subset_Ioc_right hbc) i)) *
       (∏ i : Ioc b c, f (Set.inclusion (Ioc_subset_Ioc_left hab) i)) = (∏ i : Ioc a c, f i) := by
-  have : Ioc a b ∪ Ioc b c = Ioc a c:= by simp [hab, hbc]
-  rw [← prod_congr' (Ioc_union_Ioc_eq_Ioc hab hbc), ← prod_union']
+  have : Ioc a b ∪ Ioc b c = Ioc a c := by simp [hab, hbc]
+  rw [← prod_congr' this, ← prod_union']
   rw [← disjoint_coe, coe_Ioc, coe_Ioc, Set.Ioc_disjoint_Ioc, min_eq_left hbc, max_eq_right hab]
-  /-let g : ℕ → M := fun k ↦ if hk : k ∈ Ioc 0 (n + 1) then f ⟨k, hk⟩ else 1
-  have h1 : ∏ i : Ioc 0 n, f ⟨i.1, Ioc_subset_Ioc_right n.le_succ i.2⟩ =
-      ∏ i : Ioc 0 n, g i := by
-    refine prod_congr rfl ?_
-    simp only [mem_univ, mem_Ioc, true_implies, Subtype.forall, g]
-    rintro k ⟨hk1, hk2⟩
-    rw [dif_pos ⟨hk1, hk2.trans n.le_succ⟩]
-  have h2 : ∏ i : Ioc 0 (n + 1), f i = ∏ i : Ioc 0 (n + 1), g i := by
-    refine prod_congr rfl ?_
-    simp only [mem_univ, mem_Ioc, Subtype.coe_eta, dite_eq_ite, true_implies, Subtype.forall,
-      g]
-    intro k hk
-    simp [hk]
-  rw [h1, h2, prod_coe_sort, prod_coe_sort]
-  have : f ⟨n + 1, right_mem_Ioc.2 n.succ_pos⟩ = g (n + 1) := by simp [g]
-  rw [this]
-  exact mul_prod_Ico_eq_prod_Icc (Nat.le_add_left (0 + 1) n)
 
-end Product-/
+theorem prod_Iic {M : Type*} [CommMonoid M] {a b : ℕ} (hab : a ≤ b)
+    (f : (Iic b) → M) :
+    (∏ i : Iic a, f (Set.inclusion (Iic_subset_Iic.2 hab) i)) *
+      (∏ i : Ioc a b, f (Set.inclusion Ioc_subset_Iic_self i)) = (∏ i, f i) := by
+  have : Iic a ∪ Ioc a b = Iic b := by
+    rw [← Finset.coe_inj, coe_union, coe_Iic, coe_Ioc, coe_Iic]
+    simp [hab]
+  rw [← prod_congr' this, ← prod_union']
+  rw [← disjoint_coe, coe_Iic, coe_Ioc]
+  exact Set.Iic_disjoint_Ioc le_rfl
+
+end Product

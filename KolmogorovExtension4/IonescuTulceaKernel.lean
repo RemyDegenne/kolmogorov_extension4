@@ -551,8 +551,8 @@ theorem trajKernel_eq (n : ℕ) :
       exact measurable_pi_apply _
     rw [← Set.preimage_comp, ← Set.preimage_comp, Function.comp_assoc, this,
       ← map_apply' _ _ _ ms, ← map_map _ _ hyp, frestrictLe_trajKernel, map_apply' _ _ _ ms,
-      ptraj_lt κ (by omega), map_apply' _ _ _ (hyp ms), deterministic_prod_apply',
-      map_apply' _ _ _ ms, deterministic_prod_apply']
+      ptraj_lt κ (by omega), map_apply' _ _ _ (hyp ms), id_prod_apply',
+      map_apply' _ _ _ ms, id_prod_apply']
     · congr with y
       simp only [id_eq, el, Nat.succ_eq_add_one, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
         Set.mem_preimage, Set.mem_setOf_eq]

@@ -510,14 +510,11 @@ time `a`, `ptraj κ a b` gives the distribution of the trajectory up to time `b`
 the product of a Dirac mass along the trajectory, up to `a`, with `kerNat κ a b`. -/
 noncomputable def ptraj (a b : ℕ) : Kernel ((i : Iic a) → X i) ((i : Iic b) → X i) :=
   if hab : a < b
-    then ((deterministic id measurable_id) ×ₖ kerNat κ a b).map
-      (el a b hab.le)
+    then (Kernel.id ×ₖ kerNat κ a b).map (el a b hab.le)
     else deterministic (frestrictLe₂ (not_lt.1 hab)) (measurable_frestrictLe₂ _)
 
 theorem ptraj_lt {a b : ℕ} (hab : a < b) :
-    ptraj κ a b =
-      ((deterministic id measurable_id) ×ₖ kerNat κ a b).map
-        (el a b hab.le) := by
+    ptraj κ a b = (Kernel.id ×ₖ kerNat κ a b).map (el a b hab.le) := by
   rw [ptraj, dif_pos hab]
 
 theorem ptraj_le {a b : ℕ} (hab : b ≤ a) :
@@ -567,9 +564,8 @@ theorem ptraj_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
       simp [el, frestrictLe₂, restrict₂, (mem_Iic.1 i.2).trans (not_lt.1 h2)]
     have _ := isMarkovKernel_kerNat κ h1
     rw [Kernel.map_map, this, ← Kernel.map_map _ _ (measurable_frestrictLe₂ _),
-      ← Kernel.fst_eq, Kernel.fst_prod, Kernel.map_deterministic]
-    · rfl
-    any_goals measurability
+      ← Kernel.fst_eq, Kernel.fst_prod, id_map]
+    any_goals fun_prop
   · omega
   · rw [Kernel.map_deterministic _ (measurable_frestrictLe₂ _)]
     rfl
@@ -587,11 +583,11 @@ theorem ptraj_comp (c : ℕ) {a b : ℕ} (h : a ≤ b) :
   · ext x s ms
     rw [ptraj_lt κ hab, ptraj_lt κ hbc, ptraj_lt κ hac,
       Kernel.comp_apply' _ _ _ ms, Kernel.lintegral_map, Kernel.lintegral_prod,
-      Kernel.map_apply' _ _ _ ms, Kernel.prod_apply', Kernel.lintegral_deterministic',
-      Kernel.lintegral_deterministic', ← compProdNat_kerNat κ hab hbc,
+      Kernel.map_apply' _ _ _ ms, Kernel.prod_apply', Kernel.lintegral_id,
+      Kernel.lintegral_id, ← compProdNat_kerNat κ hab hbc,
       compProdNat_apply' _ _ hab hbc]
     · congr with y
-      rw [Kernel.map_apply' _ _ _ ms, Kernel.prod_apply', Kernel.lintegral_deterministic']
+      rw [Kernel.map_apply' _ _ _ ms, Kernel.prod_apply', Kernel.lintegral_id]
       · congr with z
         simp only [el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage,
           Set.mem_setOf_eq, er, Set.preimage_setOf_eq]
@@ -661,8 +657,7 @@ theorem lmarginalPTraj_lt [∀ n, IsFiniteKernel (κ n)]
     (mf : Measurable f) (x : (n : ℕ) → X n) :
     lmarginalPTraj κ a b f x =
       ∫⁻ y : (i : Ioc a b) → X i, f (updateFinset x _ y) ∂kerNat κ a b (frestrictLe a x) := by
-  rw [lmarginalPTraj, ptraj, dif_pos hab, Kernel.lintegral_map,
-    Kernel.lintegral_deterministic_prod]
+  rw [lmarginalPTraj, ptraj, dif_pos hab, Kernel.lintegral_map, Kernel.lintegral_id_prod]
   · congrm ∫⁻ y, f (fun i ↦ ?_) ∂_
     simp only [updateFinset, mem_Iic, el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, mem_Ioc]
     split_ifs <;> try rfl
