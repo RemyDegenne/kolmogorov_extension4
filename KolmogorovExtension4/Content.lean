@@ -16,18 +16,16 @@ namespace MeasureTheory
 
 section IsSetSemiring
 
-variable {α : Type*} {C : Set (Set α)} {s t : Set α}
+variable {α : Type*} {C : Set (Set α)} {s t : Set α} {m : AddContent C}
 
 /-- For an additive content `m` on a semiring and `s t : Set α` with `s ⊆ t`, we can write
 `m t = m s + ∑ i in hC.diffFinset ht hs, m i`.-/
-theorem eq_add_diffFinset_of_subset (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
-    (m_add : ∀ (I : Finset (Set α)) (_ : ↑I ⊆ C) (_ : PairwiseDisjoint (I : Set (Set α)) id)
-        (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
-    (hs : s ∈ C) (ht : t ∈ C) (hst : s ⊆ t) [DecidableEq (Set α)] :
+theorem eq_add_diffFinset_of_subset (hC : IsSetSemiring C)
+(hs : s ∈ C) (ht : t ∈ C) (hst : s ⊆ t) [DecidableEq (Set α)] :
     m t = m s + ∑ i in hC.diffFinset ht hs, m i := by
   classical
   conv_lhs => rw [← hC.sUnion_insert_diffFinset ht hs hst]
-  rw [← coe_insert, m_add]
+  rw [← coe_insert, addContent_sUnion]
   · rw [sum_insert]
     exact hC.not_mem_diffFinset ht hs
   · rw [coe_insert]
@@ -45,8 +43,10 @@ lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
     (J : Finset (Set α)) (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
     m (⋃₀ ↑J) ≤ ∑ u in J, m u := by
   classical
-  rw [hC.allDiffFinset₀'_sUnion h_ss, addContent_sUnion (hC.allDiffFinset₀'_subset_semiring h_ss)
-    (hC.allDiffFinset₀'_pairwiseDisjoint h_ss)]
+  rw [hC.allDiffFinset₀'_sUnion h_ss]
+  obtain h := addContent_sUnion (hC.allDiffFinset₀'_subset_semiring h_ss)
+    (hC.allDiffFinset₀'_pairwiseDisjoint h_ss)
+  rw [h]
   · rw [sum_disjiUnion]
     apply sum_le_sum
     intro x hx

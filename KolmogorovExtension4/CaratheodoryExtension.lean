@@ -7,6 +7,25 @@ import KolmogorovExtension4.Content
 import KolmogorovExtension4.Semiring
 import Mathlib.MeasureTheory.Measure.Trim
 
+/-!
+# Caratheodorys extension theorem
+
+
+## Main declarations
+
+`Measure.ofAddContent`: Construct a measure from a sigma-subadditive content on a semiring, assuming the semiring
+generates a given measurable structure. The measure is defined on this measurable structure.
+
+## Main results
+* `inducedOuterMeasure_addContent_of_subadditive`:
+A semiadditive content on a semiring induces an outer measure.
+* `isCaratheodory_inducedOuterMeasure`: The Caratheodory measurable sets are at least members of the SetSemiring
+
+
+
+
+-/
+
 open Set
 
 open scoped ENNReal

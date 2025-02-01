@@ -38,7 +38,6 @@ end IsSetSemiring
 
 end MeasureTheory
 
-
 -- goes to Mathlib.Order.CompleteLattice, line 1652
 
 variable [CompleteLattice α]
