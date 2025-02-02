@@ -22,7 +22,7 @@ A semiadditive content on a semiring induces an outer measure.
 * `isCaratheodory_inducedOuterMeasure`: The Caratheodory measurable sets are at least members of the SetSemiring
 
 
-
+PR 21353
 
 -/
 
@@ -74,16 +74,6 @@ theorem inducedOuterMeasure_addContent_of_subadditive (hC : IsSetSemiring C) (m 
     congr with i
     rw [m.extend_eq hC (hf i)]
   · exact fun _ ↦ m.extend_eq_top _
-
-example (f g : ℕ → ℝ≥0∞) (hfg : ∀ (b : ℕ), f b ≤ g b) :
-∑' (b : ℕ), f b ≤ ∑' (b : ℕ), g b := by
-  exact ENNReal.tsum_le_tsum hfg
-
-example (f g : α → ℝ≥0∞) (s : Finset α) (hfg : ∀ b ∈ s, f b ≤ g b) :
-∑ b ∈ s, f b ≤ ∑ b ∈ s, g b := by
-  exact Finset.sum_le_sum hfg
-
-example (s : Finset α) : s.toSet.Countable := by exact s.countable_toSet
 
 theorem caratheodory_semiring_extension' (hC : IsSetSemiring C) (m : AddContent C)
     (m_top : ∀ s ∉ C, m s = ∞) {s : Set α} (hs : s ∈ C) :

@@ -12,14 +12,6 @@ open Finset Set MeasureTheory Order Filter
 
 open scoped ENNReal NNReal Topology
 
--- PR #15294
-lemma Finset.sUnion_disjiUnion {α β : Type*} {f : α → Finset (Set β)} (I : Finset α)
-    (hf : (I : Set α).PairwiseDisjoint f) :
-    ⋃₀ (I.disjiUnion f hf : Set (Set β)) = ⋃ a ∈ I, ⋃₀ ↑(f a) := by
-  ext
-  simp only [coe_disjiUnion, mem_coe, Set.mem_sUnion, Set.mem_iUnion, exists_prop]
-  tauto
-
 /-- Subadditivity of the sum over a finset. -/
 lemma Finset.sum_image_le_of_nonneg {ι α β : Type*} [DecidableEq α]
     [OrderedAddCommMonoid β] [SMulPosMono ℕ β]
@@ -45,29 +37,6 @@ lemma Finset.sum_image_le_of_nonneg' {ι α : Type*} [DecidableEq α]
   rw [Nat.one_le_iff_ne_zero, ← Nat.pos_iff_ne_zero, card_pos]
   exact ⟨i, mem_filter.mpr ⟨hi, hig⟩⟩
 
--- PR #15294
-@[to_additive]
-lemma Finset.prod_image_of_disjoint {α β : Type*} [PartialOrder α] [OrderBot α] [DecidableEq α]
-    [CommMonoid β] {g : α → β}
-    (hg_bot : g ⊥ = 1) {f : ι → α} {I : Finset ι} (hf_disj : (I : Set ι).PairwiseDisjoint f) :
-    ∏ s in I.image f, g s = ∏ i in I, g (f i) := by
-  rw [prod_image']
-  intro n hnI
-  by_cases hfn : f n = ⊥
-  · simp only [hfn, hg_bot]
-    refine (prod_eq_one fun i hi ↦ ?_).symm
-    rw [mem_filter] at hi
-    rw [hi.2, hg_bot]
-  · classical
-    suffices filter (fun j ↦ f j = f n) I = filter (fun j ↦ j = n) I by
-      simp only [this, prod_filter, prod_ite_eq', if_pos hnI]
-    refine filter_congr (fun j hj ↦ ?_)
-    refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
-    by_contra hij
-    have h_dis : Disjoint (f j) (f n) := hf_disj hj hnI hij
-    rw [h] at h_dis
-    exact hfn (disjoint_self.mp h_dis)
-
 section Accumulate
 
 variable {α : Type*}
@@ -75,19 +44,6 @@ variable {α : Type*}
 theorem MeasurableSet.accumulate {_ : MeasurableSpace α} {s : ℕ → Set α}
     (hs : ∀ n, MeasurableSet (s n)) (n : ℕ) : MeasurableSet (Set.Accumulate s n) :=
   MeasurableSet.biUnion (Set.to_countable _) fun n _ ↦ hs n
-
-theorem Set.disjoint_accumulate {s : ℕ → Set α} (hs : Pairwise (Function.onFun Disjoint s)) {i j : ℕ}
-    (hij : i < j) : Disjoint (Set.Accumulate s i) (s j) := by
-  rw [Set.accumulate_def]
-  induction i with
-  | zero => simp only [Nat.zero_eq, nonpos_iff_eq_zero, iUnion_iUnion_eq_left]; exact hs hij.ne
-  | succ i hi =>
-    rw [Set.biUnion_le_succ s i]
-    exact Disjoint.union_left (hi ((Nat.lt_succ_self i).trans hij)) (hs hij.ne)
-
-@[simp]
-theorem Set.accumulate_succ (s : ℕ → Set α) (n : ℕ) :
-    Set.Accumulate s (n + 1) = Set.Accumulate s n ∪ s (n + 1) := Set.biUnion_le_succ s n
 
 @[simp]
 lemma accumulate_zero_nat (s : ℕ → Set α) : Set.Accumulate s 0 = s 0 := by simp [Set.accumulate_def]

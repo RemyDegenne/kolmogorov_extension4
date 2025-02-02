@@ -173,25 +173,6 @@ end ExtendContent
 
 section IsSetRing
 
-lemma addContent_diff_of_ne_top (m : AddContent C) (hC : IsSetRing C)
-    (hm_ne_top : ∀ s ∈ C, m s ≠ ∞)
-    {s t : Set α} (hs : s ∈ C) (ht : t ∈ C) (hts : t ⊆ s) :
-    m (s \ t) = m s - m t := by
-  have h_union : m (t ∪ s \ t) = m t + m (s \ t) :=
-    addContent_union hC ht (hC.diff_mem hs ht) disjoint_sdiff_self_right
-  simp_rw [Set.union_diff_self, Set.union_eq_right.mpr hts] at h_union
-  rw [h_union, ENNReal.add_sub_cancel_left (hm_ne_top _ ht)]
-
-lemma addContent_accumulate (m : AddContent C) (hC : IsSetRing C)
-    {s : ℕ → Set α} (hs_disj : Pairwise (Function.onFun Disjoint s)) (hsC : ∀ i, s i ∈ C) (n : ℕ) :
-      m (Set.Accumulate s n) = ∑ i in Finset.range (n + 1), m (s i) := by
-  induction n with
-  | zero => simp only [accumulate_zero_nat, zero_add, Finset.range_one, sum_singleton]
-  | succ n hn =>
-    rw [Finset.sum_range_succ, ← hn, Set.accumulate_succ, addContent_union hC _ (hsC _)]
-    · exact Set.disjoint_accumulate hs_disj (Nat.lt_succ_self n)
-    · exact hC.accumulate_mem hsC n
-
 /-- If an additive content is σ-additive on a set ring, then the content of a monotone sequence of
 sets tends to the content of the union. -/
 theorem tendsto_atTop_addContent_iUnion_of_addContent_iUnion_eq_tsum {m : AddContent C}
