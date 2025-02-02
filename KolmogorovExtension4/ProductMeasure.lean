@@ -84,52 +84,54 @@ instance : IsProbabilityMeasure (infinitePiNat μ) := by
   rw [infinitePiNat]
   infer_instance
 
+lemma er_preim {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) (s : (i : Ioc a c) → Set (X i)) :
+    er a b c hab hbc ⁻¹' (Set.univ.pi s) =
+      (Set.univ.pi <| restrict₂ (π := (fun n ↦ Set (X n))) (Ioc_subset_Ioc_right hbc) s) ×ˢ
+        (Set.univ.pi <| restrict₂ (π := (fun n ↦ Set (X n))) (Ioc_subset_Ioc_left hab.le) s) := by
+  ext x
+  simp only [er, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage, Set.mem_pi,
+    Set.mem_univ, forall_const, Subtype.forall, mem_Ioc, Set.mem_prod, restrict₂]
+  refine ⟨fun h ↦ ⟨fun i ⟨hi1, hi2⟩ ↦ ?_, fun i ⟨hi1, hi2⟩ ↦ ?_⟩, fun ⟨h1, h2⟩ i ⟨hi1, hi2⟩ ↦ ?_⟩
+  · convert h i ⟨hi1, hi2.trans hbc⟩
+    rw [dif_pos hi2]
+  · convert h i ⟨hab.trans hi1, hi2⟩
+    rw [dif_neg (not_le.2 hi1)]
+  · split_ifs with hi3
+    · exact h1 i ⟨hi1, hi3⟩
+    · exact h2 i ⟨not_le.1 hi3, hi2⟩
+
 lemma prod_map_er {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
     ((Measure.pi (fun i : Ioc a b ↦ μ i)).prod (Measure.pi (fun i : Ioc b c ↦ μ i))).map
       (er a b c hab hbc) = Measure.pi (fun i : Ioc a c ↦ μ i) := by
   refine (Measure.pi_eq fun s ms ↦ ?_).symm
-  set aux := er (X := X) a b c hab hbc
-  let s1 := @restrict₂ ℕ (fun n ↦ Set (X n)) _ _ (Ioc_subset_Ioc_right hbc) s
-  let s2 := @restrict₂ ℕ (fun n ↦ Set (X n)) _ _ (Ioc_subset_Ioc_left hab.le) s
-  have : aux ⁻¹' (Set.univ.pi s) = (Set.univ.pi s1) ×ˢ (Set.univ.pi s2) := by
-    ext x
-    simp only [er, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage, Set.mem_pi,
-      Set.mem_univ, forall_const, Subtype.forall, mem_Ioc, Set.mem_prod, restrict₂, aux, s1, s2]
-    refine ⟨fun h ↦ ⟨fun i ⟨hi1, hi2⟩ ↦ ?_, fun i ⟨hi1, hi2⟩ ↦ ?_⟩, fun ⟨h1, h2⟩ i ⟨hi1, hi2⟩ ↦ ?_⟩
-    · convert h i ⟨hi1, hi2.trans hbc⟩
-      rw [dif_pos hi2]
-    · convert h i ⟨hab.trans hi1, hi2⟩
-      rw [dif_neg (not_le.2 hi1)]
-    · split_ifs with hi3
-      · exact h1 i ⟨hi1, hi3⟩
-      · exact h2 i ⟨not_le.1 hi3, hi2⟩
-  rw [Measure.map_apply, this, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
+  rw [Measure.map_apply, er_preim, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
     ← prod_Ioc hab.le hbc (f := fun i ↦ μ i (s i))]
   · rfl
   · fun_prop
   · exact MeasurableSet.univ_pi ms
 
+lemma el_preim {a b : ℕ} (hab : a ≤ b) (s : (i : Iic b) → Set (X i)) :
+    el a b hab ⁻¹' (Set.univ.pi s) =
+      (Set.univ.pi <| frestrictLe₂ (π := (fun n ↦ Set (X n))) hab s) ×ˢ
+        (Set.univ.pi <| restrict₂ (π := (fun n ↦ Set (X n))) Ioc_subset_Iic_self s) := by
+  ext x
+  simp only [el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage, Set.mem_pi,
+    Set.mem_univ, forall_const, Subtype.forall, mem_Iic, Set.mem_prod, frestrictLe₂_apply,
+    restrict₂, mem_Ioc]
+  refine ⟨fun h ↦ ⟨fun i hi ↦ ?_, fun i ⟨hi1, hi2⟩ ↦ ?_⟩, fun ⟨h1, h2⟩ i hi ↦ ?_⟩
+  · convert h i (hi.trans hab)
+    rw [dif_pos hi]
+  · convert h i hi2
+    rw [dif_neg (not_le.2 hi1)]
+  · split_ifs with hi3
+    · exact h1 i hi3
+    · exact h2 i ⟨not_le.1 hi3, hi⟩
+
 lemma prod_map_el {a b : ℕ} (hab : a ≤ b) :
     ((Measure.pi (fun i : Iic a ↦ μ i)).prod (Measure.pi (fun i : Ioc a b ↦ μ i))).map
       (el a b hab) = Measure.pi (fun i : Iic b ↦ μ i) := by
   refine (Measure.pi_eq fun s ms ↦ ?_).symm
-  set aux := el (X := X) a b hab
-  let s1 := @frestrictLe₂ ℕ _ (fun n ↦ Set (X n)) _ _ _ hab s
-  let s2 := @restrict₂ ℕ (fun n ↦ Set (X n)) _ _ (Ioc_subset_Iic_self (a := a)) s
-  have : aux ⁻¹' (Set.univ.pi s) = (Set.univ.pi s1) ×ˢ (Set.univ.pi s2) := by
-    ext x
-    simp only [el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage, Set.mem_pi,
-      Set.mem_univ, forall_const, Subtype.forall, mem_Iic, Set.mem_prod, frestrictLe₂_apply,
-      restrict₂, mem_Ioc, aux, s1, s2]
-    refine ⟨fun h ↦ ⟨fun i hi ↦ ?_, fun i ⟨hi1, hi2⟩ ↦ ?_⟩, fun ⟨h1, h2⟩ i hi ↦ ?_⟩
-    · convert h i (hi.trans hab)
-      rw [dif_pos hi]
-    · convert h i hi2
-      rw [dif_neg (not_le.2 hi1)]
-    · split_ifs with hi3
-      · exact h1 i hi3
-      · exact h2 i ⟨not_le.1 hi3, hi⟩
-  rw [Measure.map_apply, this, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
+  rw [Measure.map_apply, el_preim, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
     ← prod_Iic hab (f := fun i ↦ μ i (s i))]
   · rfl
   · fun_prop
@@ -158,27 +160,6 @@ theorem prod_noyau_proj {a b : ℕ} (hab : a ≤ b) :
     any_goals fun_prop
   · rw [ptraj_lt _ hab, kerNat_prod _ hab]
 
-theorem el_preimage {n : ℕ} (s : (i : Iic n) → Set (X i)) :
-    (el 0 n (zero_le n)) ⁻¹' (Set.univ.pi s) =
-      (Set.univ.pi fun i : Iic 0 ↦ s ⟨i.1, Iic_subset_Iic.2 (zero_le n) i.2⟩) ×ˢ
-      (Set.univ.pi fun i : Ioc 0 n ↦ s ⟨i.1, Ioc_subset_Iic_self i.2⟩) := by
-  ext p
-  simp only [el, nonpos_iff_eq_zero, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage,
-    Set.mem_pi, Set.mem_univ, true_implies, Subtype.forall, mem_Iic, Set.mem_prod, mem_Ioc]
-  constructor
-  · intro h
-    constructor
-    · rintro - rfl
-      exact h 0 (zero_le n)
-    · rintro a ⟨h1, h2⟩
-      convert h a h2
-      rw [dif_neg h1.ne']
-  · intro h a ha
-    obtain rfl | ha' := eq_zero_or_pos a
-    · exact h.1 0 rfl
-    · rw [dif_neg ha'.ne']
-      exact h.2 a ⟨ha', ha⟩
-
 theorem Measure.map_bind {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     [MeasurableSpace Z]
     (μ : Measure X) (κ : Kernel X Y) (f : Y → Z) (mf : Measurable f) :
@@ -198,8 +179,6 @@ theorem map_bind_eq_bind_comap {X Y Z : Type*} [MeasurableSpace X] [MeasurableSp
   · exact Kernel.measurable _
   · exact Kernel.measurable_coe _ ms
   · exact mf
-
-
 
 theorem isProjectiveLimit_infinitePiNat :
     IsProjectiveLimit (infinitePiNat μ) (fun I : Finset ℕ ↦ (Measure.pi (fun i : I ↦ μ i))) := by
@@ -226,23 +205,18 @@ variable {ι : Type*}
 variable {X : ι → Type*} [hX : ∀ i, MeasurableSpace (X i)]
 variable (μ : (i : ι) → Measure (X i)) [hμ : ∀ i, IsProbabilityMeasure (μ i)]
 
-lemma cast_pi_eval {X : ι → Type*} (s : Set ι) (x : (i : s) → X i) (i j : s) (h : i = j)
-    (h' : X i = X j) :
-    cast h' (x i) = x j := by
-  subst h
-  rfl
+lemma cast_pi_eval {X : ι → Type*} (s : Set ι) (x : (i : s) → X i) (i j : s) (h : i = j) :
+    cast (congrArg X (Subtype.coe_inj.2 h)) (x i) = x j := by cases h; rfl
 
-lemma cast_mem_cast (α β : Type u) (h : α = β) (a : α) (s : Set α) (h' : Set α = Set β) :
-    (cast h a ∈ cast h' s) = (a ∈ s) := by
-  subst h
-  rfl
+lemma cast_mem_cast (α β : Type u) (h : α = β) (a : α) (s : Set α) :
+    (cast h a ∈ cast (congrArg Set h) s) = (a ∈ s) := by cases h; rfl
 
 lemma HEq_meas {i j : ι} (hij : i = j) :
     HEq (inferInstance : MeasurableSpace (X i)) (inferInstance : MeasurableSpace (X j)) := by
   cases hij; rfl
 
 /-- This theorem is used to prove the existence of the product measure: the `kolContent` of
-a decresaing sequence of cylinders with empty intersection converges to `0`, in the case where
+a decreasing sequence of cylinders with empty intersection converges to `0`, in the case where
 the measurable spaces are indexed by a countable type. This implies the σ-additivity of
 `kolContent` (see `sigma_additive_addContent_of_tendsto_zero`),
 which allows to extend it to the σ-algebra by Carathéodory's theorem. -/
@@ -306,9 +280,9 @@ theorem secondLemma
       simp
     · convert h' (φ.symm i) (e n i hi)
       rw [← @cast_pi_eval ι (fun i ↦ Set (X i)) (s n) u ⟨φ (φ.symm i), by simp [hi]⟩
-          ⟨i, hi⟩ (by simp) _,
+          ⟨i, hi⟩ (by simp),
         cast_mem_cast (X (φ (φ.symm i))) (X i) (by simp) (x ⟨φ.symm i, e n i hi⟩)
-          (u ⟨φ (φ.symm i), by simp [hi]⟩) (by simp)]
+          (u ⟨φ (φ.symm i), by simp [hi]⟩)]
   -- The pushforward measure of the product measure of `(μ_{φ k})_{k ∈ tₙ}` by `gₙ` is the
   -- product measre of `(∨ᵢ)_{i ∈ sₙ}`.
   have test' n : Measure.pi (fun i : s n ↦ μ i) =
@@ -494,16 +468,16 @@ theorem productMeasure_cylinder {s : Finset ι} {S : Set ((i : s) → X i)} (mS 
   rw [cylinder, ← Measure.map_apply (measurable_restrict _) mS, isProjectiveLimit_productMeasure μ]
 
 theorem integral_dep_productMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {s : Finset ι} {f : ((i : s) → X i) → E} (hf : StronglyMeasurable f) :
-    ∫ y, f (s.restrict y) ∂productMeasure μ =
-    ∫ y, f y ∂Measure.pi (fun i : s ↦ μ i) := by
-
-  rw [← integral_map (measurable_restrict _).aemeasurable hf.aestronglyMeasurable,
-    isProjectiveLimit_productMeasure μ]
+    {s : Finset ι} {f : ((i : s) → X i) → E}
+    (hf : AEStronglyMeasurable f (Measure.pi (fun i : s ↦ μ i))) :
+    ∫ y, f (s.restrict y) ∂productMeasure μ = ∫ y, f y ∂Measure.pi (fun i : s ↦ μ i) := by
+  rw [← integral_map, isProjectiveLimit_productMeasure μ]
+  · fun_prop
+  · rwa [isProjectiveLimit_productMeasure μ]
 
 /-- The canonical filtration on dependent functions indexed by ι, where `𝓕 s` consists of
 measurable sets depending only on coordinates is `s`. -/
-def ℱ : @Filtration ((i : ι) → X i) (Finset ι) _ inferInstance where
+def Filtration.pi_finset : @Filtration ((i : ι) → X i) (Finset ι) _ inferInstance where
   seq s := (inferInstance : MeasurableSpace ((i : s) → X i)).comap s.restrict
   mono' s t hst := by
     simp only
@@ -511,18 +485,20 @@ def ℱ : @Filtration ((i : ι) → X i) (Finset ι) _ inferInstance where
     exact MeasurableSpace.comap_mono (measurable_restrict₂ _).comap_le
   le' s := (measurable_restrict s).comap_le
 
+open Filtration
+
 /-- If a function is strongly measurable with respect to the σ-algebra generated by
 the finite set of coordinates `s`, then it only depends on those coordinates. -/
 theorem stronglyMeasurable_dependsOn' {E : Type*} [NormedAddCommGroup E]
     {s : Finset ι} {f : ((i : ι) → X i) → E}
-    (mf : @StronglyMeasurable _ _ _ (ℱ s) f) : DependsOn f s := by
+    (mf : StronglyMeasurable[pi_finset s] f) : DependsOn f s := by
   intro x y hxy
   apply eq_of_stronglyMeasurable_comap s.restrict mf
   exact dependsOn_restrict s hxy
 
 theorem integral_stronglyMeasurable [DecidableEq ι] {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {s : Finset ι} {f : ((i : ι) → X i) → E}
-    (mf : @StronglyMeasurable _ _ _ (ℱ s) f) (x : (i : ι) → X i) :
+    (mf : StronglyMeasurable[pi_finset s] f) (x : (i : ι) → X i) :
     ∫ y, f y ∂productMeasure μ =
     ∫ y, f (Function.updateFinset x s y) ∂Measure.pi (fun i : s ↦ μ i) := by
   let g : ((i : s) → X i) → E := fun y ↦ f (Function.updateFinset x _ y)
@@ -532,7 +508,8 @@ theorem integral_stronglyMeasurable [DecidableEq ι] {E : Type*} [NormedAddCommG
     simp only [Function.updateFinset, restrict, dite_eq_ite, ite_eq_left_iff]
     exact fun h ↦ (h hi).elim
   rw [← integral_congr_ae <| Eventually.of_forall this, integral_dep_productMeasure]
-  exact mf.comp_measurable (measurable_updateFinset.mono (_root_.le_refl _) (ℱ.le s))
+  exact mf.comp_measurable (measurable_updateFinset.mono le_rfl (pi_finset.le s))
+    |>.aestronglyMeasurable
 
 theorem lintegral_dep {s : Finset ι} {f : ((i : s) → X i) → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ y, f (s.restrict y) ∂productMeasure μ =
@@ -542,13 +519,13 @@ theorem lintegral_dep {s : Finset ι} {f : ((i : s) → X i) → ℝ≥0∞} (hf
 /-- If a function is measurable with respect to the σ-algebra generated by
 the finite set of coordinates `s`, then it only depends on those coordinates. -/
 theorem measurable_dependsOn' {s : Finset ι} {f : ((i : ι) → X i) → ℝ≥0∞}
-    (mf : @Measurable _ _ (ℱ s) _ f) : DependsOn f s := by
+    (mf : Measurable[pi_finset s] f) : DependsOn f s := by
   intro x y hxy
   apply eq_of_measurable_comap s.restrict mf
   exact dependsOn_restrict s hxy
 
 theorem lintegral_measurable [DecidableEq ι] {s : Finset ι}
-    {f : ((i : ι) → X i) → ℝ≥0∞} (mf : @Measurable _ _ (ℱ s) _ f)
+    {f : ((i : ι) → X i) → ℝ≥0∞} (mf : Measurable[pi_finset s] f)
     (x : (i : ι) → X i) : ∫⁻ y, f y ∂productMeasure μ = (∫⋯∫⁻_s, f ∂μ) x := by
   let g : ((i : s) → X i) → ℝ≥0∞ := fun y ↦ f (Function.updateFinset x _ y)
   have this y : g (s.restrict y) = f y := by
@@ -558,6 +535,6 @@ theorem lintegral_measurable [DecidableEq ι] {s : Finset ι}
   simp_rw [← this]
   rw [lintegral_dep]
   · rfl
-  · exact mf.comp (measurable_updateFinset.mono (_root_.le_refl _) (ℱ.le s))
+  · exact mf.comp (measurable_updateFinset.mono (_root_.le_refl _) (pi_finset.le s))
 
 end ProductMeasure
