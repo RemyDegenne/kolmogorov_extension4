@@ -503,25 +503,7 @@ theorem prod_Ioc {M : Type*} [CommMonoid M] {a b c : ℕ} (hab : a ≤ b) (hbc :
     (f : (Ioc a c) → M) :
     (∏ i : Ioc a b, f (Set.inclusion (Ioc_subset_Ioc_right hbc) i)) *
       (∏ i : Ioc b c, f (Set.inclusion (Ioc_subset_Ioc_left hab) i)) = (∏ i : Ioc a c, f i) := by
-  have : Ioc a b ∪ Ioc b c = Ioc a c:= by simp [hab, hbc]
   rw [← prod_congr' (Ioc_union_Ioc_eq_Ioc hab hbc), ← prod_union']
   rw [← disjoint_coe, coe_Ioc, coe_Ioc, Set.Ioc_disjoint_Ioc, min_eq_left hbc, max_eq_right hab]
-  /-let g : ℕ → M := fun k ↦ if hk : k ∈ Ioc 0 (n + 1) then f ⟨k, hk⟩ else 1
-  have h1 : ∏ i : Ioc 0 n, f ⟨i.1, Ioc_subset_Ioc_right n.le_succ i.2⟩ =
-      ∏ i : Ioc 0 n, g i := by
-    refine prod_congr rfl ?_
-    simp only [mem_univ, mem_Ioc, true_implies, Subtype.forall, g]
-    rintro k ⟨hk1, hk2⟩
-    rw [dif_pos ⟨hk1, hk2.trans n.le_succ⟩]
-  have h2 : ∏ i : Ioc 0 (n + 1), f i = ∏ i : Ioc 0 (n + 1), g i := by
-    refine prod_congr rfl ?_
-    simp only [mem_univ, mem_Ioc, Subtype.coe_eta, dite_eq_ite, true_implies, Subtype.forall,
-      g]
-    intro k hk
-    simp [hk]
-  rw [h1, h2, prod_coe_sort, prod_coe_sort]
-  have : f ⟨n + 1, right_mem_Ioc.2 n.succ_pos⟩ = g (n + 1) := by simp [g]
-  rw [this]
-  exact mul_prod_Ico_eq_prod_Icc (Nat.le_add_left (0 + 1) n)
 
-end Product-/
+end Product
