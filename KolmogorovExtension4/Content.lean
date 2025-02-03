@@ -19,29 +19,6 @@ section ExtendContent
 
 variable {m : ∀ s : Set α, s ∈ C → ℝ≥0∞}
 
--- todo: change name?
-/-- An additive content obtained from another one on the same semiring of sets by setting the value
-of each set not in the semiring at `∞`. -/
-protected noncomputable
-def AddContent.extend (hC : IsSetSemiring C) (m : AddContent C) : AddContent C where
-  toFun := extend (fun x (_ : x ∈ C) ↦ m x)
-  empty' := by rw [extend_eq, addContent_empty]; exact hC.empty_mem
-  sUnion' I h_ss h_dis h_mem := by
-    rw [extend_eq _ h_mem, addContent_sUnion h_ss h_dis h_mem]
-    refine Finset.sum_congr rfl (fun s hs ↦ ?_)
-    rw [extend_eq _ (h_ss hs)]
-
-protected theorem AddContent.extend_eq_extend (hC : IsSetSemiring C) (m : AddContent C) :
-    m.extend hC = extend (fun x (_ : x ∈ C) ↦ m x) := rfl
-
-protected theorem AddContent.extend_eq (hC : IsSetSemiring C) (m : AddContent C) (hs : s ∈ C) :
-    m.extend hC s = m s := by
-  rwa [m.extend_eq_extend, extend_eq]
-
-protected theorem AddContent.extend_eq_top (hC : IsSetSemiring C) (m : AddContent C) (hs : s ∉ C) :
-    m.extend hC s = ∞ := by
-  rwa [m.extend_eq_extend, extend_eq_top]
-
 end ExtendContent
 
 section TotalSetFunction
@@ -50,71 +27,7 @@ section Semiring
 
 variable (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
   (m_add : ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-    (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
-
-lemma addContent_sUnion_le_sum {m : AddContent C} (hC : IsSetSemiring C)
-    {J : Finset (Set α)} (h_ss : ↑J ⊆ C) (h_mem : ⋃₀ ↑J ∈ C) :
-    m (⋃₀ ↑J) ≤ ∑ u in J, m u := by
-  classical
-  rw [← hC.sUnion_unionDisjointOfUnion h_ss, addContent_sUnion]
-  rotate_left
-  · exact hC.unionDisjointOfUnion_subset h_ss
-  · exact hC.pairwiseDisjoint_unionDisjointOfUnion h_ss
-  · rwa [hC.sUnion_unionDisjointOfUnion h_ss]
-  rw [IsSetSemiring.unionDisjointOfUnion, sum_disjiUnion]
-  refine sum_le_sum fun i hi ↦ sum_addContent_le_of_subset hC ?_ ?_ ?_ ?_
-  · exact hC.disjointOfUnion_subset h_ss hi
-  · exact hC.pairwiseDisjoint_disjointOfUnion_of_mem h_ss hi
-  · exact h_ss hi
-  · intro j hj
-    exact hC.subset_of_mem_disjointOfUnion h_ss hi hj
-
-lemma addContent_le_sum_of_subset_sUnion {m : AddContent C} (hC : IsSetSemiring C)
-    {J : Finset (Set α)} (h_ss : ↑J ⊆ C) (ht : t ∈ C) (htJ : t ⊆ ⋃₀ ↑J) :
-    m t ≤ ∑ u in J, m u := by
-  -- we can't apply `addContent_mono` and `addContent_sUnion_le_sum` because `⋃₀ ↑J` might not
-  -- be in `C`
-  classical
-  let Jt := J.image (fun u ↦ t ∩ u)
-  have ht_eq : t = ⋃₀ Jt := by
-    rw [coe_image, sUnion_image, ← inter_iUnion₂, inter_eq_self_of_subset_left]
-    rwa [← sUnion_eq_biUnion]
-  rw [ht_eq]
-  refine (addContent_sUnion_le_sum hC (J := Jt) ?_ ?_).trans ?_
-  · intro s
-    simp only [Jt, coe_image, Set.mem_image, mem_coe, forall_exists_index, and_imp]
-    rintro u hu rfl
-    exact hC.inter_mem _ ht _ (h_ss hu)
-  · rwa [← ht_eq]
-  refine (Finset.sum_image_le_of_nonneg fun _ _ ↦ zero_le _).trans (sum_le_sum fun u hu ↦ ?_)
-  exact addContent_mono hC (hC.inter_mem _ ht _ (h_ss hu)) (h_ss hu) inter_subset_right
-
-/-- If an `AddContent` is σ-subadditive on a semi-ring of sets, then it is σ-additive. -/
-theorem addContent_iUnion_eq_tsum_of_disjoint_of_addContent_iUnion_le {m : AddContent C}
-    (hC : IsSetSemiring C)
-    (m_subadd : ∀ (f : ℕ → Set α) (_ : ∀ i, f i ∈ C) (_ : ⋃ i, f i ∈ C)
-      (_hf_disj : Pairwise (Function.onFun Disjoint f)), m (⋃ i, f i) ≤ ∑' i, m (f i))
-    (f : ℕ → Set α) (hf : ∀ i, f i ∈ C) (hf_Union : (⋃ i, f i) ∈ C)
-    (hf_disj : Pairwise (Function.onFun Disjoint f)) :
-    m (⋃ i, f i) = ∑' i, m (f i) := by
-  refine le_antisymm (m_subadd f hf hf_Union hf_disj) ?_
-  refine tsum_le_of_sum_le ENNReal.summable fun I ↦ ?_
-  classical
-  rw [← Finset.sum_image_of_disjoint addContent_empty (hf_disj.pairwiseDisjoint _)]
-  refine sum_addContent_le_of_subset hC (I := I.image f) ?_ ?_ hf_Union ?_
-  · simp only [coe_image, Set.image_subset_iff]
-    refine (subset_preimage_image f I).trans (preimage_mono ?_)
-    rintro i ⟨j, _, rfl⟩
-    exact hf j
-  · simp only [coe_image]
-    intro s hs t ht hst
-    rw [Set.mem_image] at hs ht
-    obtain ⟨i, _, rfl⟩ := hs
-    obtain ⟨j, _, rfl⟩ := ht
-    have hij : i ≠ j := by intro h_eq; rw [h_eq] at hst; exact hst rfl
-    exact hf_disj hij
-  · simp only [Finset.mem_image, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
-    exact fun i _ ↦ subset_iUnion _ i
+    (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u ∈ I, m u)
 
 end Semiring
 
@@ -133,7 +46,7 @@ theorem tendsto_atTop_addContent_iUnion_of_addContent_iUnion_eq_tsum {m : AddCon
   have hg_Union : (⋃ i, g i) = ⋃ i, f i := iUnion_disjointed
   simp_rw [← hg_Union,
     m_iUnion g (hC.disjointed_mem hf) (by rwa [hg_Union]) (disjoint_disjointed f)]
-  have h : ∀ n, m (f n) = ∑ i in range (n + 1), m (g i) := by
+  have h : ∀ n, m (f n) = ∑ i ∈ range (n + 1), m (g i) := by
     intro n
     have h1 : f n = ⋃₀ Finset.image g (range (n + 1)) := by
       rw [← Monotone.partialSups_eq hf_mono, ← partialSups_disjointed, ←
@@ -152,8 +65,8 @@ theorem tendsto_atTop_addContent_iUnion_of_addContent_iUnion_eq_tsum {m : AddCon
       exact disjoint_disjointed f hij
     · rw [← h1]; exact hf n
   simp_rw [h]
-  change Tendsto (fun n ↦ (fun k ↦ ∑ i in range k, m (g i)) (n + 1)) atTop (𝓝 (∑' i, m (g i)))
-  rw [tendsto_add_atTop_iff_nat (f := (fun k ↦ ∑ i in range k, m (g i))) 1]
+  change Tendsto (fun n ↦ (fun k ↦ ∑ i ∈ range k, m (g i)) (n + 1)) atTop (𝓝 (∑' i, m (g i)))
+  rw [tendsto_add_atTop_iff_nat (f := (fun k ↦ ∑ i ∈ range k, m (g i))) 1]
   exact ENNReal.tendsto_nat_tsum _
 
 /-- If an additive content is σ-additive on a set ring, then it is σ-subadditive. -/
@@ -168,8 +81,8 @@ theorem addContent_iUnion_le_of_addContent_iUnion_eq_tsum {m : AddContent C} (hC
     refine tendsto_atTop_addContent_iUnion_of_addContent_iUnion_eq_tsum hC m_iUnion (partialSups f)
       (partialSups_monotone f) (hC.partialSups_mem hf) ?_
     rwa [← iSup_eq_iUnion, iSup_partialSups_eq]
-  have h_tendsto' : Tendsto (fun n ↦ ∑ i in range (n + 1), m (f i)) atTop (𝓝 (∑' i, m (f i))) := by
-    rw [tendsto_add_atTop_iff_nat (f := (fun k ↦ ∑ i in range k, m (f i))) 1]
+  have h_tendsto' : Tendsto (fun n ↦ ∑ i ∈ range (n + 1), m (f i)) atTop (𝓝 (∑' i, m (f i))) := by
+    rw [tendsto_add_atTop_iff_nat (f := (fun k ↦ ∑ i ∈ range k, m (f i))) 1]
     exact ENNReal.tendsto_nat_tsum _
   refine le_of_tendsto_of_tendsto' h_tendsto h_tendsto' fun n ↦ ?_
   rw [partialSups_eq_sUnion_image]

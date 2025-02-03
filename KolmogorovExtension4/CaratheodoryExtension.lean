@@ -66,7 +66,7 @@ theorem caratheodory_semiring_extension' (hC : IsSetSemiring C) (m : AddContent 
   let A : ℕ → Finset (Set α) := fun i ↦ hC.disjointOfDiff (hf i) (hC.inter_mem _ (hf i) _ hs)
   have h_diff_eq_sUnion i : f i \ s = ⋃₀ A i := by simp [A, IsSetSemiring.sUnion_disjointOfDiff]
   classical
-  have h_m_eq i : m (f i) = m (f i ∩ s) + ∑ u in A i, m u :=
+  have h_m_eq i : m (f i) = m (f i ∩ s) + ∑ u ∈ A i, m u :=
     hC.eq_add_disjointOfDiff_of_subset m (fun _ ↦ addContent_sUnion) (hC.inter_mem _ (hf i) _ hs) (hf i)
       inter_subset_left
   simp_rw [h_m_eq]
@@ -84,7 +84,7 @@ theorem caratheodory_semiring_extension' (hC : IsSetSemiring C) (m : AddContent 
     let e : ℕ ≃ ℕ × ℕ := Nat.pairEquiv.symm
     let g : ℕ × ℕ → Set α := fun n ↦
       if h : n.2 < (A n.1).card then (A n.1).ordered ⟨n.2, h⟩ else ∅
-    suffices h_sum_sum : ∑' i, ∑ u in A i, m u = ∑' n, m (g (e n)) by
+    suffices h_sum_sum : ∑' i, ∑ u ∈ A i, m u = ∑' n, m (g (e n)) by
       rw [h_sum_sum]
       refine iInf_le_of_le _ (iInf_le_of_le ?_ le_rfl)
       suffices h_Union : (⋃ i, g (e i)) = (⋃ i, f i) \ s by
@@ -102,7 +102,7 @@ theorem caratheodory_semiring_extension' (hC : IsSetSemiring C) (m : AddContent 
         exact ⟨a, ⟨b, h⟩, h_mem⟩
       · rintro ⟨a, ⟨b, h⟩, h_mem⟩
         exact ⟨a, b, h, h_mem⟩
-    suffices ∀ i, ∑ u in A i, m u = ∑' n, m (g ⟨i, n⟩) by
+    suffices ∀ i, ∑ u ∈ A i, m u = ∑' n, m (g ⟨i, n⟩) by
       simp_rw [this]
       rw [← ENNReal.tsum_prod' (f := fun p ↦ m (g p)),
         ← tsum_range (fun n ↦ m (g n)) e.injective, Equiv.range_eq_univ,
