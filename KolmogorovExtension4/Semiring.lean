@@ -25,9 +25,9 @@ namespace IsSetSemiring
 
 theorem eq_add_disjointOfDiff_of_subset (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
     (m_add : ∀ (I : Finset (Set α)) (_ : ↑I ⊆ C) (_ : PairwiseDisjoint (I : Set (Set α)) id)
-        (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u in I, m u)
+        (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u ∈ I, m u)
     (hs : s ∈ C) (ht : t ∈ C) (hst : s ⊆ t) :
-    m t = m s + ∑ i in hC.disjointOfDiff ht hs, m i := by
+    m t = m s + ∑ i ∈ hC.disjointOfDiff ht hs, m i := by
   classical
   conv_lhs => rw [← hC.sUnion_insert_disjointOfDiff ht hs hst]
   rw [← coe_insert, m_add]

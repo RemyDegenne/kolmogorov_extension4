@@ -53,7 +53,7 @@ lemma map_ordered (J : Finset α) : Finset.map J.ordered (univ : Finset (Fin J.c
   ext; simp_rw [Finset.ordered, Finset.mem_map_univ_asEmbedding]
 
 lemma sum_ordered [AddCommMonoid β] (J : Finset α) (m : α → β) :
-    ∑ i : Fin J.card, m (J.ordered i) = ∑ u in J, m u := by
+    ∑ i : Fin J.card, m (J.ordered i) = ∑ u ∈ J, m u := by
   conv_rhs => rw [← map_ordered J]
   rw [sum_map]
 
