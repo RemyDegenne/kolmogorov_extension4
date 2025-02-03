@@ -90,10 +90,10 @@ theorem kolContent_mono (hP : IsProjectiveMeasureFamily P) (hs : s ∈ measurabl
 
 theorem kolContent_iUnion_le (hP : IsProjectiveMeasureFamily P) ⦃s : ℕ → Set (Π i : ι, α i)⦄
     (hs : ∀ n, s n ∈ measurableCylinders α) (n : ℕ) :
-    kolContent hP (⋃ i ≤ n, s i) ≤ ∑ i in Finset.range (n + 1), kolContent hP (s i) := calc
+    kolContent hP (⋃ i ≤ n, s i) ≤ ∑ i ∈ Finset.range (n + 1), kolContent hP (s i) := calc
   kolContent hP (⋃ i ≤ n, s i) = kolContent hP (⋃ i ∈ Finset.range (n+1), s i) := by
     simp only [Finset.mem_range_succ_iff]
-  _ ≤ ∑ i in Finset.range (n + 1), kolContent hP (s i) :=
+  _ ≤ ∑ i ∈ Finset.range (n + 1), kolContent hP (s i) :=
     addContent_biUnion_le isSetRing_measurableCylinders (fun i _ ↦ hs i)
 
 theorem kolContent_diff (hP : IsProjectiveMeasureFamily P) (hs : s ∈ measurableCylinders α)
