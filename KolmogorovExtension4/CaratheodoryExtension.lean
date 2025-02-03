@@ -5,7 +5,6 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import Mathlib.MeasureTheory.Measure.Trim
 import KolmogorovExtension4.Content
-import KolmogorovExtension4.Ordered
 
 open Set
 
@@ -66,72 +65,23 @@ theorem caratheodory_semiring_extension' (hC : IsSetSemiring C) (m : AddContent 
   let A : ℕ → Finset (Set α) := fun i ↦ hC.disjointOfDiff (hf i) (hC.inter_mem _ (hf i) _ hs)
   have h_diff_eq_sUnion i : f i \ s = ⋃₀ A i := by simp [A, IsSetSemiring.sUnion_disjointOfDiff]
   classical
-  have h_m_eq i : m (f i) = m (f i ∩ s) + ∑ u in A i, m u :=
-    hC.eq_add_disjointOfDiff_of_subset m (fun _ ↦ addContent_sUnion) (hC.inter_mem _ (hf i) _ hs) (hf i)
-      inter_subset_left
+  have h_m_eq i : m (f i) = m (f i ∩ s) + ∑ u ∈ A i, m u :=
+    eq_add_disjointOfDiff_of_subset hC (hC.inter_mem _ (hf i) _ hs) (hf i) inter_subset_left
   simp_rw [h_m_eq]
   rw [tsum_add ENNReal.summable ENNReal.summable]
   refine add_le_add ?_ ?_
   · refine iInf_le_of_le (fun i ↦ f i ∩ s) <| iInf_le_of_le ?_ le_rfl
     rw [← iUnion_inter]
     exact Set.inter_subset_inter_left _ hf_subset
-  · /- `⊢ (OuterMeasure.ofFunction m ⋯) (t \ s) ≤ ∑' n, ∑ u ∈ A n, m u`
-    `OuterMeasure.ofFunction` is by definition an infimum over sums, equal here to
-    `⨅ (f' : ℕ → Set α) (_ : t \ s ⊆ ⋃ i, f' i), ∑' i, m (f' i)`.
-    The issue is that we don't have one sum on the right, but two sums.
-    We introduce functions (`e` and `g`) to write those two sums as `∑' i, m ((g ∘ e) i)`,
-    and then argue that the infimum is less than this particular sum. -/
-    let e : ℕ ≃ ℕ × ℕ := Nat.pairEquiv.symm
-    let g : ℕ × ℕ → Set α := fun n ↦
-      if h : n.2 < (A n.1).card then (A n.1).ordered ⟨n.2, h⟩ else ∅
-    suffices h_sum_sum : ∑' i, ∑ u in A i, m u = ∑' n, m (g (e n)) by
-      rw [h_sum_sum]
-      refine iInf_le_of_le _ (iInf_le_of_le ?_ le_rfl)
-      suffices h_Union : (⋃ i, g (e i)) = (⋃ i, f i) \ s by
-        rw [h_Union]
-        exact diff_subset_diff hf_subset subset_rfl
-      suffices ⋃ x, g x = ⋃ i, f i \ s by
-        rw [iUnion_diff, ← biUnion_range, Equiv.range_eq_univ]
-        simpa only [Set.mem_univ, iUnion_true]
-      simp only [g, iUnion_dite, iUnion_empty,
-        Set.union_empty, h_diff_eq_sUnion]
-      ext x
-      simp only [← Finset.iUnion_ordered, mem_iUnion, Prod.exists]
-      constructor
-      · rintro ⟨a, b, h, h_mem⟩
-        exact ⟨a, ⟨b, h⟩, h_mem⟩
-      · rintro ⟨a, ⟨b, h⟩, h_mem⟩
-        exact ⟨a, b, h, h_mem⟩
-    suffices ∀ i, ∑ u in A i, m u = ∑' n, m (g ⟨i, n⟩) by
-      simp_rw [this]
-      rw [← ENNReal.tsum_prod' (f := fun p ↦ m (g p)),
-        ← tsum_range (fun n ↦ m (g n)) e.injective, Equiv.range_eq_univ,
-        tsum_univ fun n ↦ m (g n)]
-    intro i
-    rw [← Finset.sum_ordered]
-    let e_fin_range : Fin (A i).card ≃ Finset.range (A i).card :=
-      { toFun := fun j ↦ ⟨j, Finset.mem_range.mpr j.2⟩
-        invFun := fun j ↦ ⟨j, Finset.mem_range.mp j.2⟩
-        left_inv := fun j ↦ by simp only [Subtype.coe_mk, Fin.eta]
-        right_inv := fun j ↦ by simp only [Fin.val_mk, Subtype.coe_eta] }
-    rw [Fintype.sum_equiv e_fin_range (fun j ↦ m (Finset.ordered (A i) j)) fun j ↦
-        m (Finset.ordered (A i) (e_fin_range.symm j))]
-    swap; · intro j; simp only [Equiv.symm_apply_apply]
-    have : ∑' n, m (g (i, n)) =
-        ∑' n : ((Finset.range (A i).card : Finset ℕ) : Set ℕ), m (g (i, n)) := by
-      rw [tsum_subtype ((Finset.range (A i).card : Finset ℕ) : Set ℕ) fun n ↦ m (g (i, n))]
-      congr with n
-      rw [Set.indicator_apply]
-      split_ifs with h_lt
-      · simp only [h_lt, mem_setOf_eq, if_true]
-      · have : ¬ (i, n).snd < (A (i, n).fst).card := by simpa using h_lt
-        simp only [this, not_false_eq_true, dif_neg, addContent_empty, g]
-    rw [this, Finset.tsum_subtype' (Finset.range (A i).card) fun n ↦ m (g (i, n)),
-      ← Finset.sum_coe_sort (Finset.range (A i).card)]
-    congr with j
-    simp only [g]
-    rw [dif_pos (Finset.mem_range.mp j.2)]
-    congr
+  · apply le_trans <| (OuterMeasure.ofFunction m addContent_empty).mono
+      <| (iUnion_diff s f) ▸ diff_subset_diff_left hf_subset
+    simp only [OuterMeasure.measureOf_eq_coe, A]
+    apply le_trans <| measure_iUnion_le (μ := OuterMeasure.ofFunction m addContent_empty) (fun i ↦ f i \ s)
+    refine ENNReal.tsum_le_tsum fun i ↦ ?_
+    simp_rw [sUnion_eq_biUnion] at h_diff_eq_sUnion
+    rw [h_diff_eq_sUnion]
+    exact (measure_biUnion_finset_le (A i) id).trans
+      (Finset.sum_le_sum <| fun b _ ↦ OuterMeasure.ofFunction_le (m_empty := addContent_empty) b)
 
 theorem caratheodory_semiring_extension (hC : IsSetSemiring C) (m : AddContent C)
     {s : Set α} (hs : s ∈ C) :

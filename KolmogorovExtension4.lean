@@ -9,7 +9,6 @@ import KolmogorovExtension4.DependsOn
 import KolmogorovExtension4.IndependentFamily
 import KolmogorovExtension4.IonescuTulceaKernel
 import KolmogorovExtension4.KolmogorovExtension
-import KolmogorovExtension4.Ordered
 import KolmogorovExtension4.RegularContent
 import KolmogorovExtension4.Semiring
 import KolmogorovExtension4.compProdNat
