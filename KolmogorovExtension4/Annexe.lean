@@ -198,13 +198,18 @@ theorem Kernel.map_prod_snd (κ : Kernel X Y) [IsMarkovKernel κ]
     (κ ×ₖ η).map Prod.snd = η := by
   rw [← Kernel.snd_eq, Kernel.snd_prod κ η]
 
-theorem Kernel.map_deterministic {f : X → Y} (hf : Measurable f)
+theorem ProbabilityTheory.Kernel.map_deterministic {f : X → Y} (hf : Measurable f)
     {g : Y → Z} (hg : Measurable g) :
     (Kernel.deterministic f hf).map g = Kernel.deterministic (g ∘ f) (hg.comp hf) := by
   ext x s ms
   rw [Kernel.map_apply' _ hg _ ms, Kernel.deterministic_apply' _ _ (hg ms),
     Kernel.deterministic_apply' _ _ ms, preimage_indicator]
   rfl
+
+lemma ProbabilityTheory.Kernel.eq_zero_of_isEmpty [IsEmpty Y] (κ : Kernel X Y) :
+    κ = 0 := by
+  ext1 x
+  rw [Measure.eq_zero_of_isEmpty (κ x), zero_apply]
 
 theorem Kernel.deterministic_prod_apply' {f : X → Y} (mf : Measurable f)
     (η : Kernel X Z) [IsSFiniteKernel η] (x : X)
@@ -273,6 +278,19 @@ theorem ProbabilityTheory.Kernel.comap_const (μ : Measure Z) {f : X → Y} (hf 
     Kernel.comap (Kernel.const Y μ) f hf = Kernel.const X μ := by
   ext1 x
   rw [Kernel.const_apply, Kernel.comap_apply, Kernel.const_apply]
+
+lemma ProbabilityTheory.Kernel.comp_map (κ : Kernel X Y) (η : Kernel Z T) {f : Y → Z}
+    (hf : Measurable f) :
+    η ∘ₖ (κ.map f) = (η.comap f hf) ∘ₖ κ := by
+  ext x s ms
+  rw [comp_apply' _ _ _ ms, lintegral_map _ hf _ (η.measurable_coe ms), comp_apply' _ _ _ ms]
+  simp_rw [comap_apply']
+
+lemma ProbabilityTheory.Kernel.prod_comap (κ : Kernel Y Z) [IsSFiniteKernel κ]
+    (η : Kernel Y T) [IsSFiniteKernel η] {f : X → Y} (hf : Measurable f) :
+    (κ ×ₖ η).comap f hf = (κ.comap f hf) ×ₖ (η.comap f hf) := by
+  ext1 x
+  rw [comap_apply, prod_apply, prod_apply, comap_apply, comap_apply]
 
 lemma ProbabilityTheory.Kernel.const_compProd_const (μ : Measure Y) [SFinite μ]
     (ν : Measure Z) [SFinite ν] :

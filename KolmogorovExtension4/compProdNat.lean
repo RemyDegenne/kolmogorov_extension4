@@ -92,6 +92,15 @@ def el (m n : ℕ) (hmn : m ≤ n) :
   measurable_invFun := by
     refine Measurable.prod_mk ?_ ?_ <;> exact measurable_pi_lambda _ (fun a ↦ measurable_id.eval)
 
+lemma frestrictLe₂_comp_el (a b : ℕ) (hab : a ≤ b) :
+    (frestrictLe₂ hab) ∘ (el (X := X) a b hab) = Prod.fst := by
+  ext x i
+  simp [el, mem_Iic.1 i.2]
+
+lemma el_self (a : ℕ) : ⇑(el (X := X) a a le_rfl) = Prod.fst := by
+  ext x i
+  simp [el, mem_Iic.1 i.2]
+
 /-- The union of `Iic n` and `Ioi n` is the whole `ℕ`, version as a measurable equivalence
 on dependent functions. -/
 def el' (n : ℕ) : (((i : Iic n) → X i) × ((i : Set.Ioi n) → X i)) ≃ᵐ ((n : ℕ) → X n) :=
@@ -355,133 +364,137 @@ variable {i j k : ℕ}
 
 /-- Given a family of kernels `κ k` from `X 0 × ... × X k` to `X (k + 1)` for all `k`,
 construct a kernel from `X 0 × ... × X i` to `X (i + 1) × ... × X j` by iterating `κ`. -/
-def kerNat (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
-    Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l) := by
+def ptraj (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
+    Kernel ((l : Iic i) → X l) ((l : Iic j) → X l) := by
   induction j with
-  | zero => exact 0
+  | zero => exact deterministic (frestrictLe₂ (zero_le i)) (measurable_frestrictLe₂ _)
   | succ k κ_k =>
-    exact if h : i = k then castPath ((κ i).map (e i)) (h ▸ rfl)
-    else (κ_k ⊗ₖ' ((κ k).map (e k)))
+    exact if h : k + 1 ≤ i
+      then deterministic (frestrictLe₂ h) (measurable_frestrictLe₂ h)
+      else ((Kernel.id ×ₖ ((κ k).map (e k))) ∘ₖ κ_k).map (el k (k + 1) k.le_succ)
+    -- exact if h : i = k then h ▸ (κ i).map (e i)
+    -- else (κ_k ⊗ₖ split i j k h.1 η).map (er i j k h.1 h.2.le)
+    -- (κ_k ⊗ₖ' ((κ k).map (e k)))
 
-lemma kerNat_zero (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i : ℕ) :
-    kerNat κ i 0 = 0 := rfl
+-- lemma kerNat_zero (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i : ℕ) :
+--     kerNat κ i 0 = 0 := rfl
 
-lemma kerNat_succ (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
-    kerNat κ i (j + 1) =
-      if h : i = j then castPath ((κ i).map (e i)) (h ▸ rfl)
-        else (kerNat κ i j) ⊗ₖ' ((κ j).map (e j)) := rfl
+-- lemma kerNat_succ (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
+--     kerNat κ i (j + 1) =
+--       if h : i = j then castPath ((κ i).map (e i)) (h ▸ rfl)
+--         else (kerNat κ i j) ⊗ₖ' ((κ j).map (e j)) := rfl
 
-lemma kerNat_succ_self (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i : ℕ) :
-    kerNat κ i (i + 1) = (κ i).map (e i) := by
-  rw [kerNat_succ, dif_pos rfl, castPath_self]
+-- lemma kerNat_succ_self (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i : ℕ) :
+--     kerNat κ i (i + 1) = (κ i).map (e i) := by
+--   rw [kerNat_succ, dif_pos rfl, castPath_self]
 
-lemma kerNat_succ_of_ne (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : i ≠ j) :
-    kerNat κ i (j + 1) = (kerNat κ i j) ⊗ₖ' ((κ j).map (e j)) := by
-  rw [kerNat_succ, dif_neg h]
+-- lemma kerNat_succ_of_ne (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : i ≠ j) :
+--     kerNat κ i (j + 1) = (kerNat κ i j) ⊗ₖ' ((κ j).map (e j)) := by
+--   rw [kerNat_succ, dif_neg h]
 
-lemma kerNat_succ_right (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
-    (i j : ℕ) (hij : i < j) :
-    kerNat κ i (j + 1) = (kerNat κ i j) ⊗ₖ' (kerNat κ j (j + 1)) := by
-  rw [kerNat_succ_of_ne κ hij.ne, kerNat_succ_self]
+-- lemma kerNat_succ_right (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
+--     (i j : ℕ) (hij : i < j) :
+--     kerNat κ i (j + 1) = (kerNat κ i j) ⊗ₖ' (kerNat κ j (j + 1)) := by
+--   rw [kerNat_succ_of_ne κ hij.ne, kerNat_succ_self]
 
-lemma kerNat_of_ge (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : j ≤ i) :
-    kerNat κ i j = 0 := by
-  induction j with
-  | zero => rfl
-  | succ n ih =>
-      rw [kerNat_succ, dif_neg (by omega), ih (by omega)]
-      simp
+-- lemma kerNat_of_ge (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (h : j ≤ i) :
+--     kerNat κ i j = 0 := by
+--   induction j with
+--   | zero => rfl
+--   | succ n ih =>
+--       rw [kerNat_succ, dif_neg (by omega), ih (by omega)]
+--       simp
 
-instance (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) [∀ i, IsSFiniteKernel (κ i)] :
-    IsSFiniteKernel (kerNat κ i j) := by
-  induction j with
-  | zero => rw [kerNat_zero]; infer_instance
-  | succ k _ => rw [kerNat_succ]; split_ifs <;> infer_instance
+-- instance (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) [∀ i, IsSFiniteKernel (κ i)] :
+--     IsSFiniteKernel (kerNat κ i j) := by
+--   induction j with
+--   | zero => rw [kerNat_zero]; infer_instance
+--   | succ k _ => rw [kerNat_succ]; split_ifs <;> infer_instance
 
-instance (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) [∀ i, IsFiniteKernel (κ i)] :
-    IsFiniteKernel (kerNat κ i j) := by
-  induction j with
-  | zero => rw [kerNat_zero]; infer_instance
-  | succ k _ => rw [kerNat_succ]; split_ifs <;> infer_instance
+-- instance (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) [∀ i, IsFiniteKernel (κ i)] :
+--     IsFiniteKernel (kerNat κ i j) := by
+--   induction j with
+--   | zero => rw [kerNat_zero]; infer_instance
+--   | succ k _ => rw [kerNat_succ]; split_ifs <;> infer_instance
 
-lemma kerNat_succ_left (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
-    [∀ i, IsSFiniteKernel (κ i)] (i j : ℕ) (hij : i + 1 < j) :
-    kerNat κ i j = (kerNat κ i (i + 1)) ⊗ₖ' (kerNat κ (i + 1) j) := by
-  induction j with
-  | zero =>
-    rw [kerNat_of_ge κ (Nat.zero_le _), kerNat_of_ge κ (Nat.zero_le _)]
-    simp
-  | succ j hj => cases le_or_lt j (i + 1) with
-    | inl h =>
-      have hj_eq : j = i + 1 := le_antisymm h (Nat.succ_lt_succ_iff.mp (by convert hij))
-      rw [kerNat_succ_right]
-      · congr
-      · rw [hj_eq]; exact Nat.lt_succ_self i
-    | inr h =>
-      rw [kerNat_succ_right _ _ _ (Nat.succ_lt_succ_iff.mp hij), hj h,
-        kerNat_succ_right _ _ j h,
-        compProdNat_assoc (kerNat κ i (i + 1)) (kerNat κ (i + 1) j)
-          (kerNat κ j (j + 1)) (Nat.lt_succ_self i) h (Nat.lt_succ_self j)]
+-- lemma kerNat_succ_left (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
+--     [∀ i, IsSFiniteKernel (κ i)] (i j : ℕ) (hij : i + 1 < j) :
+--     kerNat κ i j = (kerNat κ i (i + 1)) ⊗ₖ' (kerNat κ (i + 1) j) := by
+--   induction j with
+--   | zero =>
+--     rw [kerNat_of_ge κ (Nat.zero_le _), kerNat_of_ge κ (Nat.zero_le _)]
+--     simp
+--   | succ j hj => cases le_or_lt j (i + 1) with
+--     | inl h =>
+--       have hj_eq : j = i + 1 := le_antisymm h (Nat.succ_lt_succ_iff.mp (by convert hij))
+--       rw [kerNat_succ_right]
+--       · congr
+--       · rw [hj_eq]; exact Nat.lt_succ_self i
+--     | inr h =>
+--       rw [kerNat_succ_right _ _ _ (Nat.succ_lt_succ_iff.mp hij), hj h,
+--         kerNat_succ_right _ _ j h,
+--         compProdNat_assoc (kerNat κ i (i + 1)) (kerNat κ (i + 1) j)
+--           (kerNat κ j (j + 1)) (Nat.lt_succ_self i) h (Nat.lt_succ_self j)]
 
-theorem compProdNat_kerNat (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
-    [∀ i, IsSFiniteKernel (κ i)] (hij : i < j) (hjk : j < k) :
-    ((kerNat κ i j) ⊗ₖ' (kerNat κ j k)) = kerNat κ i k := by
-  cases k with
-  | zero => exfalso; linarith
-  | succ k =>
-    refine Nat.decreasingInduction' ?_ (Nat.lt_succ_iff.mp hjk) ?_
-    · intro l hlk hjl h
-      rw [← h, kerNat_succ_left _ l]
-      swap; linarith
-      rw [kerNat_succ_right _ i _ (hij.trans_le hjl),
-        compProdNat_assoc _ _ _ (hij.trans_le hjl) (Nat.lt_succ_self l)]
-      linarith
-    · rw [kerNat_succ_right _ _ _ (hij.trans_le (Nat.lt_succ_iff.mp hjk))]
+-- theorem compProdNat_kerNat (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
+--     [∀ i, IsSFiniteKernel (κ i)] (hij : i < j) (hjk : j < k) :
+--     ((kerNat κ i j) ⊗ₖ' (kerNat κ j k)) = kerNat κ i k := by
+--   cases k with
+--   | zero => exfalso; linarith
+--   | succ k =>
+--     refine Nat.decreasingInduction' ?_ (Nat.lt_succ_iff.mp hjk) ?_
+--     · intro l hlk hjl h
+--       rw [← h, kerNat_succ_left _ l]
+--       swap; linarith
+--       rw [kerNat_succ_right _ i _ (hij.trans_le hjl),
+--         compProdNat_assoc _ _ _ (hij.trans_le hjl) (Nat.lt_succ_self l)]
+--       linarith
+--     · rw [kerNat_succ_right _ _ _ (hij.trans_le (Nat.lt_succ_iff.mp hjk))]
 
-theorem isMarkovKernel_compProdNat {i j k : ℕ}
-    (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
-    (η : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l))
-    [IsMarkovKernel κ] [IsMarkovKernel η] (hij : i < j) (hjk : j < k) :
-    IsMarkovKernel (κ ⊗ₖ' η) := by
-  simp only [compProdNat, hij, hjk, and_self, ↓reduceDIte, split]
-  exact IsMarkovKernel.map _ (er ..).measurable
+-- theorem isMarkovKernel_compProdNat {i j k : ℕ}
+--     (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
+--     (η : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l))
+--     [IsMarkovKernel κ] [IsMarkovKernel η] (hij : i < j) (hjk : j < k) :
+--     IsMarkovKernel (κ ⊗ₖ' η) := by
+--   simp only [compProdNat, hij, hjk, and_self, ↓reduceDIte, split]
+--   exact IsMarkovKernel.map _ (er ..).measurable
 
-theorem isMarkovKernel_kerNat {i j : ℕ}
-    (κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1)))
-    [∀ k, IsMarkovKernel (κ k)] (hij : i < j) :
-    IsMarkovKernel (kerNat κ i j) := by
-  induction j with
-  | zero => omega
-  |succ k hk =>
-    rw [kerNat_succ]
-    split_ifs with h
-    · have := IsMarkovKernel.map (κ i) (e i).measurable
-      infer_instance
-    · have _ := hk (by omega)
-      have := IsMarkovKernel.map (κ k) (e k).measurable
-      exact isMarkovKernel_compProdNat _ _ (by omega) k.lt_succ_self
+-- theorem isMarkovKernel_kerNat {i j : ℕ}
+--     (κ : ∀ k, Kernel ((l : Iic k) → X l) (X (k + 1)))
+--     [∀ k, IsMarkovKernel (κ k)] (hij : i < j) :
+--     IsMarkovKernel (kerNat κ i j) := by
+--   induction j with
+--   | zero => omega
+--   |succ k hk =>
+--     rw [kerNat_succ]
+--     split_ifs with h
+--     · have := IsMarkovKernel.map (κ i) (e i).measurable
+--       infer_instance
+--     · have _ := hk (by omega)
+--       have := IsMarkovKernel.map (κ k) (e k).measurable
+--       exact isMarkovKernel_compProdNat _ _ (by omega) k.lt_succ_self
 
-theorem kerNat_proj (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
-    [∀ i, IsMarkovKernel (κ i)] {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
-    Kernel.map (kerNat κ a c) (restrict₂ (Ioc_subset_Ioc_right hbc)) =
-      kerNat κ a b := by
-  rcases eq_or_lt_of_le hbc with rfl | hbc
-  · exact Kernel.map_id _
-  · ext x s ms
-    rw [Kernel.map_apply' _ (measurable_restrict₂ _) _ ms, ← compProdNat_kerNat κ hab hbc,
-      compProdNat_apply' _ _ hab hbc _ (measurable_restrict₂ _ ms), ← one_mul (kerNat κ a b x s),
-      ← lintegral_indicator_const ms]
-    congr with y
-    by_cases hy : y ∈ s <;> simp only [Set.mem_preimage, Set.indicator, hy, ↓reduceIte]
-    · have := isMarkovKernel_kerNat κ hbc
-      convert measure_univ
-      · ext z
-        simpa only [Set.mem_setOf_eq, Set.mem_univ, iff_true, restrict₂_er] using hy
-      · infer_instance
-    · convert measure_empty
-      · ext z
-        simpa [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, restrict₂_er] using hy
-      · infer_instance
+-- theorem kerNat_proj (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1)))
+--     [∀ i, IsMarkovKernel (κ i)] {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
+--     Kernel.map (kerNat κ a c) (restrict₂ (Ioc_subset_Ioc_right hbc)) =
+--       kerNat κ a b := by
+--   rcases eq_or_lt_of_le hbc with rfl | hbc
+--   · exact Kernel.map_id _
+--   · ext x s ms
+--     rw [Kernel.map_apply' _ (measurable_restrict₂ _) _ ms, ← compProdNat_kerNat κ hab hbc,
+--       compProdNat_apply' _ _ hab hbc _ (measurable_restrict₂ _ ms), ← one_mul (kerNat κ a b x s),
+--       ← lintegral_indicator_const ms]
+--     congr with y
+--     by_cases hy : y ∈ s <;> simp only [Set.mem_preimage, Set.indicator, hy, ↓reduceIte]
+--     · have := isMarkovKernel_kerNat κ hbc
+--       convert measure_univ
+--       · ext z
+--         simpa only [Set.mem_setOf_eq, Set.mem_univ, iff_true, restrict₂_er] using hy
+--       · infer_instance
+--     · convert measure_empty
+--       · ext z
+--         simpa [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, restrict₂_er] using hy
+--       · infer_instance
 
 end kerNat
 
@@ -500,132 +513,191 @@ namespace Kernel
 
 section Basic
 
-/-- Given a family of kernels `κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1))`, we can
-compose them: if `a < b`, then `(κ a) ⊗ₖ ... ⊗ₖ (κ (b - 1))` is a kernel from
-`(i : Iic a) → X i` to `(i : Ioc a b) → X i`. This composition is called `kerNat κ a b`.
+-- /-- Given a family of kernels `κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1))`, we can
+-- compose them: if `a < b`, then `(κ a) ⊗ₖ ... ⊗ₖ (κ (b - 1))` is a kernel from
+-- `(i : Iic a) → X i` to `(i : Ioc a b) → X i`. This composition is called `kerNat κ a b`.
 
-In order to make manipulations easier, we define
-`ptraj κ a b : Kernel ((i : Iic a) → X i) ((i : Iic b) → X i)`. Given the trajectory up to
-time `a`, `ptraj κ a b` gives the distribution of the trajectory up to time `b`. It is
-the product of a Dirac mass along the trajectory, up to `a`, with `kerNat κ a b`. -/
-noncomputable def ptraj (a b : ℕ) : Kernel ((i : Iic a) → X i) ((i : Iic b) → X i) :=
-  if hab : a < b
-    then (Kernel.id ×ₖ kerNat κ a b).map (el a b hab.le)
-    else deterministic (frestrictLe₂ (not_lt.1 hab)) (measurable_frestrictLe₂ _)
+-- In order to make manipulations easier, we define
+-- `ptraj κ a b : Kernel ((i : Iic a) → X i) ((i : Iic b) → X i)`. Given the trajectory up to
+-- time `a`, `ptraj κ a b` gives the distribution of the trajectory up to time `b`. It is
+-- the product of a Dirac mass along the trajectory, up to `a`, with `kerNat κ a b`. -/
+-- -- noncomputable def ptraj (a b : ℕ) : Kernel ((i : Iic a) → X i) ((i : Iic b) → X i) :=
+-- --   if hab : a < b
+-- --     then (Kernel.id ×ₖ kerNat κ a b).map (el a b hab.le)
+-- --     else deterministic (frestrictLe₂ (not_lt.1 hab)) (measurable_frestrictLe₂ _)
 
-theorem ptraj_lt {a b : ℕ} (hab : a < b) :
-    ptraj κ a b = (Kernel.id ×ₖ kerNat κ a b).map (el a b hab.le) := by
-  rw [ptraj, dif_pos hab]
+-- -- theorem ptraj_lt {a b : ℕ} (hab : a < b) :
+-- --     ptraj κ a b = (Kernel.id ×ₖ kerNat κ a b).map (el a b hab.le) := by
+-- --   rw [ptraj, dif_pos hab]
 
-theorem ptraj_le {a b : ℕ} (hab : b ≤ a) :
-    ptraj κ a b =
-      deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ _) := by
-  rw [ptraj, dif_neg (not_lt.2 hab)]
+variable {κ}
 
-instance (a b : ℕ) : IsSFiniteKernel (ptraj κ a b) := by
-  rw [ptraj]
-  split_ifs <;> infer_instance
+lemma ptraj_succ_eq (a b : ℕ) :
+    ptraj κ a (b + 1) =
+    if hab : b + 1 ≤ a
+      then deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ hab)
+      else ((Kernel.id ×ₖ ((κ b).map (e b))) ∘ₖ ptraj κ a b).map (el b (b + 1) b.le_succ) := rfl
+
+lemma ptraj_le {a b : ℕ} (hab : b ≤ a) :
+    ptraj κ a b = deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ _) := by
+  induction b with
+  | zero => rfl
+  | succ k hk => rw [ptraj_succ_eq, dif_pos hab]
+
+lemma ptraj_zero (a : ℕ) :
+    ptraj κ a 0 = deterministic (frestrictLe₂ (zero_le a)) (measurable_frestrictLe₂ _) := by
+  rw [ptraj_le (zero_le a)]
+
+instance [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ) : IsSFiniteKernel (ptraj κ a b) := by
+  induction b with
+  | zero => rw [ptraj_zero]; infer_instance
+  | succ k hk =>
+    rw [ptraj_succ_eq]
+    split_ifs with hab <;> infer_instance
 
 instance [∀ n, IsFiniteKernel (κ n)] (a b : ℕ) : IsFiniteKernel (ptraj κ a b) := by
-  rw [ptraj]
-  split_ifs <;> infer_instance
+  induction b with
+  | zero => rw [ptraj_zero]; infer_instance
+  | succ k hk =>
+    rw [ptraj_succ_eq]
+    split_ifs with hab <;> infer_instance
 
 instance [∀ n, IsMarkovKernel (κ n)] (a b : ℕ) : IsMarkovKernel (ptraj κ a b) := by
-  rw [ptraj]
-  split_ifs with hab
-  · have := isMarkovKernel_kerNat κ hab
-    exact IsMarkovKernel.map _ (el ..).measurable
-  · infer_instance
+  induction b with
+  | zero => rw [ptraj_zero]; infer_instance
+  | succ k hk =>
+    rw [ptraj_succ_eq]
+    split_ifs with hab
+    · infer_instance
+    · have := IsMarkovKernel.map (κ k) (e k).measurable
+      exact IsMarkovKernel.map _ (el ..).measurable
 
-variable [∀ n, IsMarkovKernel (κ n)]
+@[simp]
+lemma ptraj_self (a : ℕ) : ptraj κ a a = Kernel.id := by
+  rw [ptraj_le le_rfl]
+  rfl
 
-/-- If `b ≤ c`, then projecting the trajectory up to time `c` on first coordinates gives the
-trajectory up to time `b`. -/
-theorem ptraj_proj (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
-    (ptraj κ a c).map (frestrictLe₂ hbc) =
-      ptraj κ a b := by
-  unfold ptraj
-  split_ifs with h1 h2 h3
-  · have : (frestrictLe₂ (π := X) hbc) ∘ (el a c h1.le) =
-        (el a b h2.le) ∘ (Prod.map id (restrict₂ (Ioc_subset_Ioc_right hbc))) := by
-      ext x i
-      simp [el]
-    rw [Kernel.map_map, this, ← Kernel.map_map, Kernel.map_prod, Kernel.map_id,
-      kerNat_proj _ h2 hbc]
-    · exact measurable_id
-    · exact measurable_restrict₂ _
-    · exact measurable_id.prod_map <| measurable_restrict₂ _
-    · exact (el ..).measurable
-    · exact (el ..).measurable
-    · exact measurable_frestrictLe₂ _
-  · have : (frestrictLe₂ (π := X) hbc) ∘ (el a c h1.le) =
-        (frestrictLe₂ (not_lt.1 h2)) ∘ Prod.fst := by
-      ext x i
-      simp [el, frestrictLe₂, restrict₂, (mem_Iic.1 i.2).trans (not_lt.1 h2)]
-    have _ := isMarkovKernel_kerNat κ h1
-    rw [Kernel.map_map, this, ← Kernel.map_map _ _ (measurable_frestrictLe₂ _),
-      ← Kernel.fst_eq, Kernel.fst_prod, id_map]
+lemma ptraj_succ {a b : ℕ} (hab : a ≤ b) : ptraj κ a (b + 1) =
+    ((Kernel.id ×ₖ ((κ b).map (e b))) ∘ₖ (ptraj κ a b)).map (el b (b + 1) b.le_succ) := by
+  rw [ptraj_succ_eq, dif_neg (by omega)]
+
+lemma ptraj_self_succ (a : ℕ) : ptraj κ a (a + 1) =
+    (Kernel.id ×ₖ ((κ a).map (e a))).map (el a (a + 1) a.le_succ) := by
+  rw [ptraj_succ le_rfl, ptraj_self, comp_id]
+
+theorem ptraj_succ' {a b : ℕ} (hab : a ≤ b) :
+    ptraj κ a (b + 1) = ptraj κ b (b + 1) ∘ₖ ptraj κ a b := by
+  induction b with
+  | zero => rw [le_zero_iff.1 hab, ptraj_self, comp_id]
+  | succ k hk =>
+    rw [ptraj_self_succ, ← map_comp, ptraj_succ hab]
+
+theorem ptraj_comp [∀ n, IsSFiniteKernel (κ n)] {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c) :
+    ptraj κ b c ∘ₖ ptraj κ a b = ptraj κ a c := by
+  induction c, hbc using Nat.le_induction with
+  | base => simp
+  | succ k h hk => rw [ptraj_succ' h, comp_assoc, hk, ← ptraj_succ' (hab.trans h)]
+
+lemma ptraj_proj_succ [∀ n, IsMarkovKernel (κ n)] (a b : ℕ) :
+    (ptraj κ a (b + 1)).map (frestrictLe₂ b.le_succ) = ptraj κ a b := by
+  obtain hab | hba := le_or_lt a b
+  · have := IsMarkovKernel.map (κ b) (e b).measurable
+    rw [ptraj_succ' hab, map_comp, ptraj_self_succ, map_map, frestrictLe₂_comp_el, ← fst_eq,
+      fst_prod, id_comp]
     any_goals fun_prop
-  · omega
-  · rw [Kernel.map_deterministic _ (measurable_frestrictLe₂ _)]
-    rfl
+  · rw [ptraj_le (Nat.succ_le.2 hba), ptraj_le hba.le, map_deterministic]
+    · rfl
+    · fun_prop
 
-theorem ptraj_proj_apply {n : ℕ} (x : (i : Iic n) → X i) (a b : ℕ) (hab : a ≤ b) :
-    (ptraj κ n b x).map (frestrictLe₂ hab) = ptraj κ n a x := by
-  rw [← ptraj_proj _ _ hab, Kernel.map_apply _ (measurable_frestrictLe₂ _)]
+lemma ptraj_proj [∀ n, IsMarkovKernel (κ n)] (a : ℕ) {b c : ℕ} (hbc : b ≤ c) :
+    (ptraj κ a c).map (frestrictLe₂ hbc) = ptraj κ a b := by
+  induction c, hbc using Nat.le_induction with
+  | base => convert map_id ..
+  | succ k h hk =>
+    rw [← hk, ← frestrictLe₂_comp_frestrictLe₂ h k.le_succ, ← map_map, ptraj_proj_succ]
+    any_goals fun_prop
 
-/-- Given the trajectory up to time `a`, first computing the distribution up to time `b`
-and then the distribution up to time `c` is the same as directly computing the distribution up
-to time `c`. -/
-theorem ptraj_comp (c : ℕ) {a b : ℕ} (h : a ≤ b) :
-    (ptraj κ b c) ∘ₖ (ptraj κ a b) = ptraj κ a c := by
-  by_cases hab : a < b <;> by_cases hbc : b < c <;> by_cases hac : a < c <;> try omega
-  · ext x s ms
-    rw [ptraj_lt κ hab, ptraj_lt κ hbc, ptraj_lt κ hac,
-      Kernel.comp_apply' _ _ _ ms, Kernel.lintegral_map, Kernel.lintegral_prod,
-      Kernel.map_apply' _ _ _ ms, Kernel.prod_apply', Kernel.lintegral_id,
-      Kernel.lintegral_id, ← compProdNat_kerNat κ hab hbc,
-      compProdNat_apply' _ _ hab hbc]
+theorem ptraj_comp' [∀ n, IsMarkovKernel (κ n)] {a b : ℕ} (c : ℕ) (hab : a ≤ b) :
+    ptraj κ b c ∘ₖ ptraj κ a b = ptraj κ a c := by
+  obtain hbc | hcb := le_total b c
+  · rw [ptraj_comp hab hbc]
+  · rw [ptraj_le hcb, deterministic_comp_eq_map, ptraj_proj]
+
+theorem ptraj_comp'' [∀ n, IsMarkovKernel (κ n)] (a : ℕ) {b c : ℕ} (hcb : c ≤ b) :
+    ptraj κ b c ∘ₖ ptraj κ a b = ptraj κ a c := by
+  rw [ptraj_le hcb, deterministic_comp_eq_map, ptraj_proj]
+
+theorem ptraj_lt_eq_prod [∀ n, IsSFiniteKernel (κ n)] {a b : ℕ} (hab : a ≤ b) :
+    ptraj κ a b =
+      (Kernel.id ×ₖ (ptraj κ a b).map (restrict₂ Ioc_subset_Iic_self)).map (el a b hab) := by
+  induction b, hab using Nat.le_induction with
+  | base =>
+    ext1 x
+    rw [ptraj_self, id_map, map_apply, prod_apply, el_self, ← Measure.fst, Measure.fst_prod]
+    any_goals fun_prop
+  | succ k h hk =>
+    rw [← ptraj_comp h k.le_succ, hk]
+    ext x s ms
+    rw [comp_apply, map_apply, prod_apply, map_apply, map_apply, prod_apply, map_apply, comp_apply,
+      map_apply, prod_apply, map_apply, Measure.bind_apply, MeasureTheory.lintegral_map,
+      MeasureTheory.lintegral_prod, lintegral_id, MeasureTheory.lintegral_map,
+      Measure.map_apply, @Measure.prod_apply _ _ _ _ _ _ ?_, lintegral_id, Measure.map_apply,
+      Measure.bind_apply, MeasureTheory.lintegral_map, MeasureTheory.lintegral_prod, lintegral_id,
+      MeasureTheory.lintegral_map]
     · congr with y
-      rw [Kernel.map_apply' _ _ _ ms, Kernel.prod_apply', Kernel.lintegral_id]
-      · congr with z
-        simp only [el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage,
-          Set.mem_setOf_eq, er, Set.preimage_setOf_eq]
+      rw [ptraj_self_succ, map_apply', prod_apply', lintegral_id, map_apply', map_apply',
+        prod_apply', lintegral_id, map_apply']
+      · congr
+        ext z
+        simp only [e, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, el, restrict₂, Set.mem_preimage,
+          Set.preimage_setOf_eq, Set.mem_setOf_eq, subset_refl, Set.coe_inclusion]
         congrm (fun i ↦ ?_) ∈ s
-        split_ifs <;> try rfl
+        split_ifs with h1 h2 h3 <;> try rfl
         omega
-      · exact measurable_measure_prod_mk_left ((el b c hbc.le).measurable ms)
-      · exact (el b c hbc.le).measurable ms
-      · exact (el ..).measurable
-    · exact measurable_prod_mk_left ((el a c hac.le).measurable ms)
-    · exact measurable_measure_prod_mk_left ((el a c hac.le).measurable ms)
-    · apply Measurable.lintegral_prod_right' (f := fun x ↦ (Kernel.map _ _) _ _)
-      exact (Kernel.measurable_coe _ ms).comp (el a b hab.le).measurable
-    · exact (el a c hac.le).measurable ms
-    · exact (el ..).measurable
-    · exact (Kernel.measurable_coe _ ms).comp (el ..).measurable
-    · exact (el ..).measurable
-    · exact Kernel.measurable_coe _ ms
-  · rw [ptraj_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
-      ptraj_proj κ a (not_lt.1 hbc)]
-  · rw [ptraj_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
-      ptraj_proj κ a (not_lt.1 hbc)]
-  · have : a = b := by omega
-    cases this
-    rw [ptraj_le κ (_root_.le_refl a), Kernel.comp_deterministic_eq_comap]
-    convert Kernel.comap_id (ptraj κ a c)
-  · rw [ptraj_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
-      ptraj_proj κ a (not_lt.1 hbc)]
+      any_goals fun_prop
+      any_goals try exact ms.preimage (by fun_prop)
+      · change Measurable fun b ↦ (κ k).map _ _ (Prod.mk b ⁻¹' _)
+        conv =>
+          enter [1]
+          ext b
+          rw [← Measure.map_apply measurable_prod_mk_left]
+          rfl
+          exact ms.preimage (by fun_prop)
+        apply Measure.measurable_measure.1 Measurable.map_prod_mk_left
+        exact ms.preimage (by fun_prop)
+      · change Measurable fun b ↦ (κ k).map _ _ (Prod.mk b ⁻¹' _)
+        conv =>
+          enter [1]
+          ext b
+          rw [← Measure.map_apply measurable_prod_mk_left]
+          rfl
+          exact (el ..).measurable ms
+        apply Measure.measurable_measure.1 Measurable.map_prod_mk_left
+        exact (el ..).measurable ms
+      · exact (el ..).measurable ms
+    any_goals fun_prop
+    any_goals try exact ms.preimage (by fun_prop)
+    · refine (Kernel.measurable_coe _ ?_).comp ?_
+      · exact ms.preimage (by fun_prop)
+      · fun_prop
+    · apply Measurable.lintegral_prod_right' (f := fun z ↦ (ptraj _ _ _) (el _ _ _ z) _)
+      refine (Kernel.measurable_coe _ ?_).comp ?_
+      · exact ms.preimage (by fun_prop)
+      · fun_prop
+    · apply Measurable.aemeasurable
+      refine (Kernel.measurable_coe _ ?_).comp ?_
+      · exact ms.preimage (by fun_prop)
+      · fun_prop
+    · refine (Kernel.measurable_coe _ ?_).comp ?_
+      · exact ms.preimage (by fun_prop)
+      · fun_prop
+    · exact Kernel.measurable _
+    · simp_rw [← Measure.map_apply measurable_prod_mk_left (ms.preimage (el ..).measurable)]
+      apply Measure.measurable_measure.1
+      · apply @Measurable.map_prod_mk_left _ _ _ _ _ ?_
+        apply @Measure.instSFiniteMap _ _ _ _ _ _ ?_
+        apply MeasureTheory.Measure.instSFiniteBindCoeKernelOfIsSFiniteKernel
 
-/-- Given the trajectory up to time `a`, first computing the distribution up to time `b`
-and then the distribution up to time `c` is the same as directly computing the distribution up
-to time `c`. -/
-theorem ptraj_comp' (a : ℕ) {b c : ℕ} (h : c ≤ b) :
-    (ptraj κ b c) ∘ₖ (ptraj κ a b) = ptraj κ a c := by
-  by_cases a < b <;> by_cases hbc : b < c <;> by_cases a < c <;>
-    try rw [ptraj_le κ (not_lt.1 hbc), Kernel.deterministic_comp_eq_map,
-      ptraj_proj κ a (not_lt.1 hbc)]
-  all_goals omega
 
 end Basic
 
@@ -641,7 +713,7 @@ noncomputable def lmarginalPTraj (a b : ℕ) (f : ((n : ℕ) → X n) → ℝ≥
 theorem lmarginalPTraj_le {a b : ℕ} (hba : b ≤ a)
     {f : ((n : ℕ) → X n) → ℝ≥0∞} (mf : Measurable f) : lmarginalPTraj κ a b f = f := by
   ext x
-  rw [lmarginalPTraj, ptraj_le κ hba, Kernel.lintegral_deterministic']
+  rw [lmarginalPTraj, ptraj_le hba, Kernel.lintegral_deterministic']
   · congr with i
     simp [updateFinset]
   · exact mf.comp measurable_updateFinset
