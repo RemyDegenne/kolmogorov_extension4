@@ -133,7 +133,7 @@ trajectory up to time `n` we can construct an additive content over cylinders. I
 to composing the kernels by starting at time `n + 1`. -/
 noncomputable def trajContent {n : ℕ} (x₀ : (i : Iic n) → X i) :
     AddContent (measurableCylinders X) :=
-  kolContent (isProjectiveMeasureFamily_inducedFamily _ (ptraj_proj_apply κ x₀))
+  kolContent (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_proj_apply κ x₀))
 
 /-- The `trajContent κ x₀` of a cylinder indexed by first coordinates is given by
 `ptraj`. -/
@@ -415,7 +415,7 @@ theorem isProbabilityMeasure_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
 theorem isProjectiveLimit_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     IsProjectiveLimit (trajFun κ p x₀) (inducedFamily (fun n ↦ ptraj κ p n x₀)) := by
   refine isProjectiveLimit_nat_iff _
-    (isProjectiveMeasureFamily_inducedFamily _ (ptraj_proj_apply κ x₀)) _ |>.2 fun n ↦ ?_
+    (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_proj_apply κ x₀)) _ |>.2 fun n ↦ ?_
   ext s ms
   rw [Measure.map_apply (measurable_frestrictLe n) ms]
   have h_mem : (frestrictLe n) ⁻¹' s ∈ measurableCylinders X :=
@@ -479,7 +479,7 @@ theorem eq_trajKernel' {a : ℕ} (n : ℕ) (η : Kernel ((i : Iic a) → X i) ((
   rw [isProjectiveLimit_nat_iff' _ _ _ n]
   · intro k hk
     rw [inducedFamily_Iic, ← map_apply _ (measurable_frestrictLe k), hη k hk]
-  · exact (isProjectiveMeasureFamily_inducedFamily _ (ptraj_proj_apply κ x₀))
+  · exact (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_proj_apply κ x₀))
 
 theorem eq_trajKernel {a : ℕ} (η : Kernel ((i : Iic a) → X i) ((n : ℕ) → X n))
     (hη : ∀ b, η.map (frestrictLe b) = ptraj κ a b) :
@@ -493,7 +493,7 @@ theorem trajKernel_comp_ptraj {a b : ℕ} (hab : a ≤ b) :
     comp_apply' _ _ _ (measurable_frestrictLe n ms),
     ← Measure.map_apply (measurable_frestrictLe n) ms,
     ← map_apply (trajKernel κ b) (measurable_frestrictLe n), frestrictLe_trajKernel κ b n,
-    ← comp_apply' _ _ _ ms, ptraj_comp _ n hab]
+    ← comp_apply' _ _ _ ms, ptraj_comp' n hab]
 
 end definition
 
@@ -547,11 +547,11 @@ theorem trajKernel_eq (n : ℕ) :
     have hyp : Measurable (fun (y : (i : Iic a) → X i) (i : Iic a) ↦
         if hi : i.1 ≤ n then x ⟨i.1, mem_Iic.2 hi⟩ else y i) := by
       refine measurable_pi_lambda _ (fun i ↦ ?_)
-      by_cases hi : i.1 ≤ n <;> simp [hi]
+      by_cases hi : i.1 ≤ n <;> simp only [hi, ↓reduceDIte, measurable_const]
       exact measurable_pi_apply _
     rw [← Set.preimage_comp, ← Set.preimage_comp, Function.comp_assoc, this,
       ← map_apply' _ _ _ ms, ← map_map _ _ hyp, frestrictLe_trajKernel, map_apply' _ _ _ ms,
-      ptraj_lt κ (by omega), map_apply' _ _ _ (hyp ms), id_prod_apply',
+      ptraj_lt_eq_prod (by omega), map_apply' _ _ _ (hyp ms), id_prod_apply',
       map_apply' _ _ _ ms, id_prod_apply']
     · congr with y
       simp only [id_eq, el, Nat.succ_eq_add_one, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,

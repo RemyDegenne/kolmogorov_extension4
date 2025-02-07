@@ -299,6 +299,14 @@ lemma ProbabilityTheory.Kernel.const_compProd_const (μ : Measure Y) [SFinite μ
   simp_rw [compProd_apply ms, const_apply, Measure.prod_apply ms]
   rfl
 
+lemma ProbabilityTheory.Kernel.prod_const_comp (κ : Kernel X Y) [IsSFiniteKernel κ]
+    (η : Kernel Y Z) [IsSFiniteKernel η] (μ : Measure T) [SFinite μ] :
+    (η ×ₖ (const Y μ)) ∘ₖ κ = (η ∘ₖ κ) ×ₖ (const X μ) := by
+  ext x s ms
+  simp_rw [comp_apply' _ _ _ ms, prod_apply' _ _ _ ms, const_apply]
+  rw [lintegral_comp]
+  exact measurable_measure_prod_mk_left ms
+
 variable {E : Type*} [NormedAddCommGroup E]
 
 theorem MeasureTheory.AEStronglyMeasurable.compProd {μ : Measure X} [SFinite μ]

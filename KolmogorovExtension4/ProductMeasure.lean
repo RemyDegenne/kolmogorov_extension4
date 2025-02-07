@@ -137,14 +137,26 @@ lemma prod_map_el {a b : ℕ} (hab : a ≤ b) :
   · fun_prop
   · exact MeasurableSet.univ_pi ms
 
+lemma restrict₂_el {a b : ℕ} (hab : a ≤ b) :
+    (restrict₂ Ioc_subset_Iic_self) ∘ (el (X := X) a b hab) = Prod.snd := by
+  ext x i
+  simp [el, not_le.2 (mem_Ioc.1 i.2).1]
+
 theorem kerNat_prod {a b : ℕ} (hab : a < b) :
-    (kerNat (fun n ↦ const _ (μ (n + 1))) a b) = const _ (Measure.pi (fun i : Ioc a b ↦ μ i)) := by
+    (ptraj (fun n ↦ const _ (μ (n + 1))) a b).map (restrict₂ (Ioc_subset_Iic_self (a := a))) =
+    const _ (Measure.pi (fun i : Ioc a b ↦ μ i)) := by
   refine Nat.le_induction ?_ (fun n hn hind ↦ ?_) b (Nat.succ_le.2 hab) <;> ext1 x₀
-  · rw [kerNat_succ_self, Kernel.map_apply _ (e a).measurable, const_apply, const_apply, map_e]
-  · rw [Kernel.const_apply, kerNat_succ_right, compProdNat_eq, kerNat_succ_self, split_eq_comap,
-      Kernel.map_apply, Kernel.map_const, Kernel.comap_const, ← map_e, hind,
-      const_compProd_const, const_apply, prod_map_er]
-    any_goals omega
+  · rw [ptraj_self_succ, Kernel.map_map, Kernel.map_apply, Kernel.prod_apply, Kernel.map_apply,
+      const_apply, const_apply, map_e, restrict₂_el, Measure.map_snd_prod, measure_univ, one_smul]
+    any_goals fun_prop
+    exact (el ..).measurable
+  · have : (restrict₂ (Ioc_subset_Iic_self (a := a))) ∘ (el (X := X) n (n + 1) n.le_succ) =
+        (er a n (n + 1) (by omega) n.le_succ) ∘ (Prod.map (restrict₂ Ioc_subset_Iic_self) id) := by
+      ext x i
+      simp [el, er]
+    rw [Kernel.const_apply, ptraj_succ (by omega), Kernel.map_const, Kernel.prod_const_comp,
+      Kernel.id_comp, Kernel.map_map, this, ← Kernel.map_map, Kernel.map_prod, hind, Kernel.map_id,
+      Kernel.map_apply, prod_apply, const_apply, const_apply, ← map_e, prod_map_er]
     any_goals fun_prop
 
 theorem prod_noyau_proj {a b : ℕ} (hab : a ≤ b) :
@@ -153,12 +165,12 @@ theorem prod_noyau_proj {a b : ℕ} (hab : a ≤ b) :
   rcases eq_or_lt_of_le hab with rfl | hab
   · have : IsEmpty (Ioc a a) := by simp [Subtype.isEmpty_false]
     ext1 x
-    rw [ptraj_le _ le_rfl, Measure.pi_of_empty, Kernel.map_apply, prod_apply, const_apply,
+    rw [ptraj_le le_rfl, Measure.pi_of_empty, Kernel.map_apply, prod_apply, const_apply,
       id_apply, dirac_prod_dirac, map_dirac, deterministic_apply]
     congrm dirac (fun i ↦ ?_)
     simp [el, mem_Iic.1 i.2]
     any_goals fun_prop
-  · rw [ptraj_lt _ hab, kerNat_prod _ hab]
+  · rw [ptraj_lt_eq_prod hab.le, kerNat_prod _ hab]
 
 theorem Measure.map_bind {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     [MeasurableSpace Z]

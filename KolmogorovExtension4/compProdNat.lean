@@ -5,8 +5,11 @@ Authors: Rémy Degenne, Etienne Marion
 -/
 import KolmogorovExtension4.Annexe
 import KolmogorovExtension4.DependsOn
+import Mathlib.Probability.Kernel.Composition.MeasureComp
 
 open Finset ENNReal ProbabilityTheory MeasureTheory Function Preorder
+
+attribute [measurability, fun_prop] measurable_updateFinset
 
 noncomputable section
 
@@ -617,6 +620,12 @@ lemma ptraj_proj [∀ n, IsMarkovKernel (κ n)] (a : ℕ) {b c : ℕ} (hbc : b �
     rw [← hk, ← frestrictLe₂_comp_frestrictLe₂ h k.le_succ, ← map_map, ptraj_proj_succ]
     any_goals fun_prop
 
+variable (κ) in
+lemma ptraj_proj_apply [∀ n, IsMarkovKernel (κ n)] {a b c : ℕ} (x₀ : Π i : Iic a, X i)
+    (hbc : b ≤ c) :
+    (ptraj κ a c x₀).map (frestrictLe₂ hbc) = ptraj κ a b x₀ := by
+  rw [← map_apply _ (by fun_prop), ptraj_proj]
+
 theorem ptraj_comp' [∀ n, IsMarkovKernel (κ n)] {a b : ℕ} (c : ℕ) (hab : a ≤ b) :
     ptraj κ b c ∘ₖ ptraj κ a b = ptraj κ a c := by
   obtain hbc | hcb := le_total b c
@@ -636,17 +645,17 @@ theorem ptraj_lt_eq_prod [∀ n, IsSFiniteKernel (κ n)] {a b : ℕ} (hab : a �
     rw [ptraj_self, id_map, map_apply, prod_apply, el_self, ← Measure.fst, Measure.fst_prod]
     any_goals fun_prop
   | succ k h hk =>
-    rw [← ptraj_comp h k.le_succ, hk]
+    rw [← ptraj_comp h k.le_succ, hk, ptraj_self_succ]
     ext x s ms
     rw [comp_apply, map_apply, prod_apply, map_apply, map_apply, prod_apply, map_apply, comp_apply,
       map_apply, prod_apply, map_apply, Measure.bind_apply, MeasureTheory.lintegral_map,
       MeasureTheory.lintegral_prod, lintegral_id, MeasureTheory.lintegral_map,
-      Measure.map_apply, @Measure.prod_apply _ _ _ _ _ _ ?_, lintegral_id, Measure.map_apply,
+      Measure.map_apply, Measure.prod_apply, lintegral_id, Measure.map_apply,
       Measure.bind_apply, MeasureTheory.lintegral_map, MeasureTheory.lintegral_prod, lintegral_id,
       MeasureTheory.lintegral_map]
     · congr with y
-      rw [ptraj_self_succ, map_apply', prod_apply', lintegral_id, map_apply', map_apply',
-        prod_apply', lintegral_id, map_apply']
+      rw [map_apply', prod_apply', lintegral_id, map_apply', map_apply', prod_apply', lintegral_id,
+        map_apply']
       · congr
         ext z
         simp only [e, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, el, restrict₂, Set.mem_preimage,
@@ -656,47 +665,29 @@ theorem ptraj_lt_eq_prod [∀ n, IsSFiniteKernel (κ n)] {a b : ℕ} (hab : a �
         omega
       any_goals fun_prop
       any_goals try exact ms.preimage (by fun_prop)
+      have : MeasurableSet <| el k (k + 1) k.le_succ ⁻¹' (restrict₂ Ioc_subset_Iic_self ⁻¹'
+          (Prod.mk x ⁻¹' (el a (k + 1) (h.trans k.le_succ) ⁻¹' s))) := ms.preimage (by fun_prop)
       · change Measurable fun b ↦ (κ k).map _ _ (Prod.mk b ⁻¹' _)
-        conv =>
-          enter [1]
-          ext b
-          rw [← Measure.map_apply measurable_prod_mk_left]
-          rfl
-          exact ms.preimage (by fun_prop)
-        apply Measure.measurable_measure.1 Measurable.map_prod_mk_left
-        exact ms.preimage (by fun_prop)
+        simp_rw [← Measure.map_apply measurable_prod_mk_left this]
+        exact Measure.measurable_measure.1 Measurable.map_prod_mk_left _ this
       · change Measurable fun b ↦ (κ k).map _ _ (Prod.mk b ⁻¹' _)
-        conv =>
-          enter [1]
-          ext b
-          rw [← Measure.map_apply measurable_prod_mk_left]
-          rfl
-          exact (el ..).measurable ms
-        apply Measure.measurable_measure.1 Measurable.map_prod_mk_left
-        exact (el ..).measurable ms
+        simp_rw [← Measure.map_apply measurable_prod_mk_left ((el ..).measurable ms)]
+        exact Measure.measurable_measure.1 Measurable.map_prod_mk_left _ ((el ..).measurable ms)
       · exact (el ..).measurable ms
     any_goals fun_prop
     any_goals try exact ms.preimage (by fun_prop)
-    · refine (Kernel.measurable_coe _ ?_).comp ?_
-      · exact ms.preimage (by fun_prop)
-      · fun_prop
-    · apply Measurable.lintegral_prod_right' (f := fun z ↦ (ptraj _ _ _) (el _ _ _ z) _)
-      refine (Kernel.measurable_coe _ ?_).comp ?_
-      · exact ms.preimage (by fun_prop)
-      · fun_prop
-    · apply Measurable.aemeasurable
-      refine (Kernel.measurable_coe _ ?_).comp ?_
-      · exact ms.preimage (by fun_prop)
-      · fun_prop
-    · refine (Kernel.measurable_coe _ ?_).comp ?_
-      · exact ms.preimage (by fun_prop)
-      · fun_prop
+    any_goals exact (Kernel.measurable_coe _ (ms.preimage (by fun_prop))).comp (by fun_prop)
+    · apply Measurable.lintegral_prod_right' (f := fun z ↦ (_ ×ₖ _).map _ (el _ _ _ z) _)
+      exact (Kernel.measurable_coe _ (ms.preimage (by fun_prop))).comp (by fun_prop)
+    · exact (Kernel.measurable_coe _ (ms.preimage (by fun_prop))).comp (by fun_prop) |>.aemeasurable
     · exact Kernel.measurable _
-    · simp_rw [← Measure.map_apply measurable_prod_mk_left (ms.preimage (el ..).measurable)]
-      apply Measure.measurable_measure.1
-      · apply @Measurable.map_prod_mk_left _ _ _ _ _ ?_
-        apply @Measure.instSFiniteMap _ _ _ _ _ _ ?_
-        apply MeasureTheory.Measure.instSFiniteBindCoeKernelOfIsSFiniteKernel
+    · simp_rw [← Measure.map_apply measurable_prod_mk_left ((el ..).measurable ms)]
+      exact Measure.measurable_measure.1 Measurable.map_prod_mk_left _ ((el ..).measurable ms)
+    · exact (el ..).measurable ms
+    · apply Measurable.lintegral_prod_right' (f := fun z ↦ (_ ×ₖ _).map _ (el _ _ _ z) _)
+      exact (Kernel.measurable_coe _ ms).comp (by fun_prop)
+    · exact ((Kernel.measurable_coe _ ms).comp (by fun_prop)).aemeasurable
+    · exact Kernel.measurable _
 
 
 end Basic
@@ -724,19 +715,19 @@ theorem lmarginalPTraj_mono (a b : ℕ) {f g : ((n : ℕ) → X n) → ℝ≥0�
 
 /-- If `a < b`, then integrating `f` against the `ptraj κ a b` is the same as integrating
   against `kerNat a b`. -/
-theorem lmarginalPTraj_lt [∀ n, IsFiniteKernel (κ n)]
-    {a b : ℕ} (hab : a < b) {f : ((n : ℕ) → X n) → ℝ≥0∞}
+theorem lmarginalPTraj_lt [∀ n, IsSFiniteKernel (κ n)]
+    {a b : ℕ} (hab : a ≤ b) {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (mf : Measurable f) (x : (n : ℕ) → X n) :
     lmarginalPTraj κ a b f x =
-      ∫⁻ y : (i : Ioc a b) → X i, f (updateFinset x _ y) ∂kerNat κ a b (frestrictLe a x) := by
-  rw [lmarginalPTraj, ptraj, dif_pos hab, Kernel.lintegral_map, Kernel.lintegral_id_prod]
+      ∫⁻ y : Π i : Ioc a b, X i, f (updateFinset x _ y)
+        ∂(ptraj κ a b).map (restrict₂ Ioc_subset_Iic_self) (frestrictLe a x) := by
+  nth_rw 1 [lmarginalPTraj, ptraj_lt_eq_prod hab, lintegral_map, lintegral_id_prod]
   · congrm ∫⁻ y, f (fun i ↦ ?_) ∂_
-    simp only [updateFinset, mem_Iic, el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, mem_Ioc]
+    simp only [updateFinset, mem_Iic, el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
+      frestrictLe_apply, restrict₂, mem_Ioc]
     split_ifs <;> try rfl
     all_goals omega
-  · exact mf.comp <| measurable_updateFinset.comp (el a b hab.le).measurable
-  · exact (el ..).measurable
-  · exact mf.comp measurable_updateFinset
+  any_goals fun_prop
 
 /-- If `a < b`, then integrating `f` against the `ptraj κ a b` is the same as integrating
   against `kerNat a b`. -/
@@ -744,19 +735,21 @@ theorem lmarginalPTraj_succ [∀ n, IsFiniteKernel (κ n)]
     (a : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞} (mf : Measurable f) (x₀ : (n : ℕ) → X n) :
     lmarginalPTraj κ a (a + 1) f x₀ =
       ∫⁻ x : X (a + 1), f (update x₀ _ x) ∂κ a (frestrictLe a x₀) := by
-  rw [lmarginalPTraj_lt κ a.lt_succ_self mf, kerNat_succ_self, lintegral_map]
-  · congrm ∫⁻ y, f (fun i ↦ ?_) ∂_
-    simp [updateFinset, e, update]
-  · exact (e ..).measurable
-  · exact mf.comp measurable_updateFinset
+  rw [lmarginalPTraj, ptraj_self_succ, lintegral_map, lintegral_id_prod, lintegral_map]
+  · congrm ∫⁻ x, f (fun i ↦ ?_) ∂_
+    simp [updateFinset, e, el, update]
+    split_ifs with h1 h2 h3 <;> try rfl
+    any_goals omega
+  any_goals fun_prop
 
-theorem measurable_lmarginalPTraj (a b : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
+
+theorem measurable_lmarginalPTraj [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ)
+    {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
     Measurable (lmarginalPTraj κ a b f) := by
   unfold lmarginalPTraj
-  let g : ((i : Iic b) → X i) × ((n : ℕ) → X n) → ℝ≥0∞ :=
-    fun c ↦ f (updateFinset c.2 _ c.1)
-  let η : Kernel ((n : ℕ) → X n) ((i : Iic b) → X i) :=
-    Kernel.comap (ptraj κ a b) (frestrictLe a) (measurable_frestrictLe _)
+  let g : ((i : Iic b) → X i) × ((n : ℕ) → X n) → ℝ≥0∞ := fun c ↦ f (updateFinset c.2 _ c.1)
+  let η : Kernel (Π n, X n) (Π i : Iic b, X i) :=
+    (ptraj κ a b).comap (frestrictLe a) (measurable_frestrictLe _)
   change Measurable fun x ↦ ∫⁻ z : (i : Iic b) → X i, g (z, x) ∂η x
   refine Measurable.lintegral_kernel_prod_left' <| hf.comp ?_
   simp only [updateFinset, measurable_pi_iff]
@@ -776,11 +769,10 @@ theorem updateFinset_updateFinset_subset {ι : Type*} [DecidableEq ι] {α : ι 
   · exact (h1 (hst h2)).elim
   · rfl
 
-theorem lmarginalPTraj_self [∀ n, IsMarkovKernel (κ n)] {a b c : ℕ}
+theorem lmarginalPTraj_self [∀ n, IsSFiniteKernel (κ n)] {a b c : ℕ}
     (hab : a ≤ b) (hbc : b ≤ c)
     {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
-    lmarginalPTraj κ a b (lmarginalPTraj κ b c f) =
-      lmarginalPTraj κ a c f := by
+    lmarginalPTraj κ a b (lmarginalPTraj κ b c f) = lmarginalPTraj κ a c f := by
   ext x
   obtain rfl | hab := eq_or_lt_of_le hab <;> obtain rfl | hbc := eq_or_lt_of_le hbc
   · rw [lmarginalPTraj_le κ (_root_.le_refl a) (measurable_lmarginalPTraj _ _ _ hf)]
@@ -788,8 +780,8 @@ theorem lmarginalPTraj_self [∀ n, IsMarkovKernel (κ n)] {a b c : ℕ}
   · rw [lmarginalPTraj_le κ (_root_.le_refl b) hf]
   simp_rw [lmarginalPTraj, frestrictLe, restrict_updateFinset,
     updateFinset_updateFinset_subset _ _ (Iic_subset_Iic.2 hbc.le)]
-  rw [← lintegral_comp, ptraj_comp κ c hab.le]
-  exact hf.comp <| measurable_updateFinset
+  rw [← lintegral_comp, ptraj_comp hab.le hbc.le]
+  fun_prop
 
 end integral
 
@@ -805,19 +797,21 @@ namespace DependsOn
 theorem lmarginalPTraj_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (mf : Measurable f) (hf : DependsOn f (Iic a)) (hab : a ≤ b) :
     lmarginalPTraj κ b c f = f := by
-  rcases le_or_lt c b with hcb | hbc
+  obtain hcb | hbc := le_total c b
   · exact lmarginalPTraj_le κ hcb mf
   · ext x
-    have := isMarkovKernel_kerNat κ hbc
-    rw [lmarginalPTraj_lt κ hbc mf, ← mul_one (f x),
-      ← measure_univ (μ := kerNat κ b c (frestrictLe b x)), ← MeasureTheory.lintegral_const]
-    refine lintegral_congr fun y ↦ hf fun i hi ↦ ?_
-    simp only [updateFinset, mem_Iic, el, id_eq, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
-      dite_eq_right_iff, dite_eq_left_iff, not_le]
-    intro h
-    rw [mem_Ioc] at h
-    rw [mem_coe, mem_Iic] at hi
-    omega
+    rw [lmarginalPTraj_lt _ hbc mf, ← mul_one (f x),
+      ← @measure_univ _ _ ((ptraj κ b c).map (restrict₂ Ioc_subset_Iic_self) (frestrictLe b x)) ?_,
+      ← MeasureTheory.lintegral_const]
+    · refine lintegral_congr fun y ↦ hf fun i hi ↦ ?_
+      simp only [updateFinset, mem_Iic, el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
+        frestrictLe_apply, dite_eq_right_iff, dite_eq_left_iff, not_le]
+      intro h
+      rw [mem_Ioc] at h
+      rw [mem_coe, mem_Iic] at hi
+      omega
+    · refine @IsMarkovKernel.isProbabilityMeasure _ _ _ _ _ ?_ _
+      exact IsMarkovKernel.map _ (by fun_prop)
 
 theorem lmarginalPTraj_right {a : ℕ} (b : ℕ) {c d : ℕ}
     (mf : Measurable f) (hf : DependsOn f (Iic a)) (hac : a ≤ c) (had : a ≤ d) :
@@ -834,14 +828,14 @@ theorem dependsOn_lmarginalPTraj (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) �
     (hf : DependsOn f (Iic b)) (mf : Measurable f) :
     DependsOn (lmarginalPTraj κ a b f) (Iic a) := by
   intro x y hxy
-  rcases le_or_lt b a with hba | hab
+  obtain hba | hab := le_total b a
   · rw [lmarginalPTraj_le κ hba mf]
     exact hf fun i hi ↦ hxy i (Iic_subset_Iic.2 hba hi)
   · rw [lmarginalPTraj_lt _ hab mf, lmarginalPTraj_lt _ hab mf]
-    congrm ∫⁻ z : _, ?_ ∂kerNat κ a b (fun i ↦ ?_)
+    congrm ∫⁻ z : _, ?_ ∂(ptraj κ a b).map _ (fun i ↦ ?_)
     · exact hxy i.1 i.2
     · refine dependsOn_updateFinset hf _ _ ?_
-      rwa [← coe_sdiff, Iic_sdiff_Ioc_same hab.le]
+      rwa [← coe_sdiff, Iic_sdiff_Ioc_same hab]
 
 end DependsOn
 
