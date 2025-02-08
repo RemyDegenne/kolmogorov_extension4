@@ -13,16 +13,8 @@ attribute [measurability, fun_prop] measurable_updateFinset
 
 noncomputable section
 
-section compProdNat
-
 lemma measurable_cast {X Y : Type u} [mX : MeasurableSpace X] [mY : MeasurableSpace Y] (h : X = Y)
     (hm : HEq mX mY) : Measurable (cast h) := by
-  subst h
-  subst hm
-  exact measurable_id
-
-lemma measurable_eqRec {X Y : Type u} [mX : MeasurableSpace X] [mY : MeasurableSpace Y] (h : X = Y)
-    (hm : HEq mX mY) : Measurable (fun x : X ↦ h ▸ x) := by
   subst h
   subst hm
   exact measurable_id
@@ -38,12 +30,10 @@ theorem update_updateFinset_eq (x z : (n : ℕ) → X n) {m : ℕ} :
   cases h
   all_goals rfl
 
-variable [∀ i, MeasurableSpace (X i)]
-
 section equivs
 
 /-- Identifying `{n + 1}` with `Ioc n (n+1)`, as a measurable equiv on dependent functions. -/
-def e (n : ℕ) : (X (n + 1)) ≃ᵐ ((i : Ioc n (n + 1)) → X i) where
+def e [∀ n, MeasurableSpace (X n)] (n : ℕ) : (X (n + 1)) ≃ᵐ ((i : Ioc n (n + 1)) → X i) where
   toFun := fun x i ↦ (mem_Ioc_succ.1 i.2).symm ▸ x
   invFun := fun x ↦ x ⟨n + 1, right_mem_Ioc.2 n.lt_succ_self⟩
   left_inv := fun x ↦ by simp
@@ -56,9 +46,10 @@ def e (n : ℕ) : (X (n + 1)) ≃ᵐ ((i : Ioc n (n + 1)) → X i) where
 
 instance subsingleton_subtype {α : Type*} (a : α) : Subsingleton ({a} : Finset α) where
   allEq x y := by
-    rw [← Subtype.coe_inj, Finset.eq_of_mem_singleton x.2, Finset.eq_of_mem_singleton y.2]
+    rw [← Subtype.coe_inj, eq_of_mem_singleton x.2, eq_of_mem_singleton y.2]
 
-lemma MeasureTheory.Measure.map_e (μ : (n : ℕ) → Measure (X n)) [∀ n, SigmaFinite (μ n)] (n : ℕ) :
+lemma MeasureTheory.Measure.map_e [∀ n, MeasurableSpace (X n)] (μ : (n : ℕ) → Measure (X n))
+    [∀ n, SigmaFinite (μ n)] (n : ℕ) :
     Measure.pi (fun i : Ioc n (n + 1) ↦ μ i) = (μ (n + 1)).map (e n) := by
   refine Measure.pi_eq fun s hs ↦ ?_
   have : Subsingleton (Ioc n (n + 1)) := by
@@ -72,41 +63,57 @@ lemma MeasureTheory.Measure.map_e (μ : (n : ℕ) → Measure (X n)) [∀ n, Sig
   · exact (e n).measurable
   · exact MeasurableSet.univ_pi hs
 
-/-- Gluing `Iic m` and `Ioc m n` into `Iic n`, as a measurable equiv of dependent functions. -/
-def el (m n : ℕ) (hmn : m ≤ n) :
-    ((i : Iic m) → X i) × ((i : Ioc m n) → X i) ≃ᵐ ((i : Iic n) → X i) where
-  toFun := fun p x ↦ if h : x ≤ m then p.1 ⟨x, mem_Iic.2 h⟩
-    else p.2 ⟨x, mem_Ioc.2 ⟨not_le.mp h, mem_Iic.1 x.2⟩⟩
-  invFun := fun p ↦ ⟨fun x ↦ p ⟨x, mem_Iic.2 <| (mem_Iic.mp x.2).trans hmn⟩,
-    fun x ↦ p ⟨x, mem_Iic.2 (mem_Ioc.mp x.2).2⟩⟩
-  left_inv := fun p ↦ by
-    ext i
-    · simp [mem_Iic.1 i.2]
-    · simp [not_le.2 (mem_Ioc.mp i.2).1]
-  right_inv := fun p ↦ funext fun i ↦ by
-    by_cases hi : i.1 ≤ m <;> simp [hi]
-  measurable_toFun := by
-    apply measurable_pi_lambda _ (fun (x : Iic n) ↦ ?_)
-    by_cases h : x ≤ m
-    · simp only [Equiv.coe_fn_mk, h, dite_true]
-      exact measurable_fst.eval
-    · simp only [Equiv.coe_fn_mk, h, dite_false]
-      exact measurable_snd.eval
-  measurable_invFun := by
-    refine Measurable.prod_mk ?_ ?_ <;> exact measurable_pi_lambda _ (fun a ↦ measurable_id.eval)
+def el (m n : ℕ) (x : (Π i : Iic m, X i) × (Π i : Ioc m n, X i)) : Π i : Iic n, X i :=
+    fun i ↦ if h : i ≤ m then x.1 ⟨i, mem_Iic.2 h⟩
+      else x.2 ⟨i, mem_Ioc.2 ⟨not_le.1 h, mem_Iic.1 i.2⟩⟩
 
-lemma frestrictLe₂_comp_el (a b : ℕ) (hab : a ≤ b) :
-    (frestrictLe₂ hab) ∘ (el (X := X) a b hab) = Prod.fst := by
+lemma el_def (a b : ℕ) :
+    el (X := X) a b = fun x i ↦ if h : i.1 ≤ a then x.1 ⟨i, mem_Iic.2 h⟩
+      else x.2 ⟨i, mem_Ioc.2 ⟨not_le.1 h, mem_Iic.1 i.2⟩⟩ := rfl
+
+@[measurability, fun_prop]
+lemma measurable_el [∀ n, MeasurableSpace (X n)] {m n : ℕ} : Measurable (el (X := X) m n) := by
+  apply measurable_pi_lambda _ (fun (i : Iic n) ↦ ?_)
+  by_cases h : i ≤ m
+  · simpa [el, h] using measurable_fst.eval
+  · simpa [el, h] using measurable_snd.eval
+
+-- /-- Gluing `Iic m` and `Ioc m n` into `Iic n`, as a measurable equiv of dependent functions. -/
+-- def el (m n : ℕ) (hmn : m ≤ n) :
+--     ((i : Iic m) → X i) × ((i : Ioc m n) → X i) ≃ᵐ (Π i : Iic n, X i) where
+--   toFun := fun p x ↦ if h : x ≤ m then p.1 ⟨x, mem_Iic.2 h⟩
+--     else p.2 ⟨x, mem_Ioc.2 ⟨not_le.mp h, mem_Iic.1 x.2⟩⟩
+--   invFun := fun p ↦ ⟨fun x ↦ p ⟨x, mem_Iic.2 <| (mem_Iic.mp x.2).trans hmn⟩,
+--     fun x ↦ p ⟨x, mem_Iic.2 (mem_Ioc.mp x.2).2⟩⟩
+--   left_inv := fun p ↦ by
+--     ext i
+--     · simp [mem_Iic.1 i.2]
+--     · simp [not_le.2 (mem_Ioc.mp i.2).1]
+--   right_inv := fun p ↦ funext fun i ↦ by
+--     by_cases hi : i.1 ≤ m <;> simp [hi]
+--   measurable_toFun := by
+--     apply measurable_pi_lambda _ (fun (x : Iic n) ↦ ?_)
+--     by_cases h : x ≤ m
+--     · simp only [Equiv.coe_fn_mk, h, dite_true]
+--       exact measurable_fst.eval
+--     · simp only [Equiv.coe_fn_mk, h, dite_false]
+--       exact measurable_snd.eval
+--   measurable_invFun := by
+--     refine Measurable.prod_mk ?_ ?_ <;> exact measurable_pi_lambda _ (fun a ↦ measurable_id.eval)
+
+lemma frestrictLe₂_comp_el {a b : ℕ} (hab : a ≤ b) :
+    (frestrictLe₂ hab) ∘ (el (X := X) a b) = Prod.fst := by
   ext x i
   simp [el, mem_Iic.1 i.2]
 
-lemma el_self (a : ℕ) : ⇑(el (X := X) a a le_rfl) = Prod.fst := by
+lemma el_self (a : ℕ) : el (X := X) a a = Prod.fst := by
   ext x i
   simp [el, mem_Iic.1 i.2]
 
 /-- The union of `Iic n` and `Ioi n` is the whole `ℕ`, version as a measurable equivalence
 on dependent functions. -/
-def el' (n : ℕ) : (((i : Iic n) → X i) × ((i : Set.Ioi n) → X i)) ≃ᵐ ((n : ℕ) → X n) :=
+def el' [∀ n, MeasurableSpace (X n)] (n : ℕ) :
+    ((Π i : Iic n, X i) × ((i : Set.Ioi n) → X i)) ≃ᵐ ((n : ℕ) → X n) :=
   { toFun := fun p i ↦ if hi : i ≤ n
       then p.1 ⟨i, mem_Iic.2 hi⟩
       else p.2 ⟨i, Set.mem_Ioi.2 (not_le.1 hi)⟩
@@ -123,258 +130,266 @@ def el' (n : ℕ) : (((i : Iic n) → X i) × ((i : Set.Ioi n) → X i)) ≃ᵐ 
       · exact measurable_snd.eval
     measurable_invFun := Measurable.prod_mk (measurable_restrict _) (Set.measurable_restrict _) }
 
-/-- Gluing `Ioc i j` and `Ioc j k` into `Ioc i k`, as a measurable equiv of dependent functions. -/
-def er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k) :
-    ((l : Ioc i j) → X l) × ((l : Ioc j k) → X l) ≃ᵐ ((l : Ioc i k) → X l) where
-  toFun := fun p x ↦ if h : x ≤ j then p.1 ⟨x, mem_Ioc.2 ⟨(mem_Ioc.1 x.2).1, h⟩⟩
-    else p.2 ⟨x, mem_Ioc.2 ⟨not_le.mp h, (mem_Ioc.1 x.2).2⟩⟩
-  invFun := fun p ↦ ⟨fun x ↦ p ⟨x, mem_Ioc.2 ⟨(mem_Ioc.1 x.2).1, (mem_Ioc.1 x.2).2.trans hjk⟩⟩,
-    fun x ↦ p ⟨x, mem_Ioc.2 ⟨hij.trans (mem_Ioc.1 x.2).1, (mem_Ioc.1 x.2).2⟩⟩⟩
-  left_inv := fun p ↦ by
-    ext x
-    · simp only
-      rw [dif_pos (mem_Ioc.1 x.2).2]
-    · simp only
-      rw [dif_neg (not_le.mpr (mem_Ioc.1 x.2).1)]
-  right_inv := fun p ↦ by
-    ext x
-    simp only
-    split_ifs <;> rfl
-  measurable_toFun := by
-    apply measurable_pi_lambda _ (fun x ↦ ?_)
-    by_cases h : x ≤ j
-    · simp only [Equiv.coe_fn_mk, h, dite_true]
-      exact measurable_fst.eval
-    · simp only [Equiv.coe_fn_mk, h, dite_false]
-      exact measurable_snd.eval
-  measurable_invFun := by
-    refine Measurable.prod_mk ?_ ?_ <;> exact measurable_pi_lambda _ (fun a ↦ measurable_id.eval)
+def er (a b c : ℕ) (x : (Π i : Ioc a b, X i) × (Π i : Ioc b c, X i)) : Π i : Ioc a c, X i :=
+    fun i ↦ if h : i ≤ b then x.1 ⟨i, mem_Ioc.2 ⟨(mem_Ioc.1 i.2).1, h⟩⟩
+      else x.2 ⟨i, mem_Ioc.2 ⟨not_le.1 h, (mem_Ioc.1 i.2).2⟩⟩
 
-theorem restrict₂_er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k)
-    (y : (n : Ioc i j) → X n) (z : (n : Ioc j k) → X n) :
-    restrict₂ (Ioc_subset_Ioc_right hjk) (er i j k hij hjk (y, z)) = y := by
-  ext n
-  simp [er, (mem_Ioc.1 n.2).2]
+@[measurability, fun_prop]
+lemma measurable_er [∀ n, MeasurableSpace (X n)] {a b c : ℕ} : Measurable (er (X := X) a b c) := by
+  apply measurable_pi_lambda _ (fun i ↦ ?_)
+  by_cases h : i ≤ b
+  · simpa [er, h] using measurable_fst.eval
+  · simpa [er, h] using measurable_snd.eval
 
-lemma el_assoc {i j k : ℕ} (hij : i < j) (hjk : j ≤ k) (a : (x : Iic i) → X ↑x)
-    (b : (l : Ioc i j) → X l) (c : (l : Ioc j k) → X l) :
-    el j k hjk (el i j hij.le (a, b), c)
-      = el i k (hij.le.trans hjk) (a, er i j k hij hjk (b, c)) := by
-  ext x
-  simp only [el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, er]
-  split_ifs with h _ h3
-  · rfl
-  · rfl
-  · exfalso; exact h (h3.trans hij.le)
-  · rfl
+-- /-- Gluing `Ioc i j` and `Ioc j k` into `Ioc i k`, as a measurable equiv of dependent functions. -/
+-- def er (i j k : ℕ) (hij : i < j) (hjk : j ≤ k) :
+--     ((l : Ioc i j) → X l) × ((l : Ioc j k) → X l) ≃ᵐ ((l : Ioc i k) → X l) where
+--   toFun := fun p x ↦ if h : x ≤ j then p.1 ⟨x, mem_Ioc.2 ⟨(mem_Ioc.1 x.2).1, h⟩⟩
+--     else p.2 ⟨x, mem_Ioc.2 ⟨not_le.mp h, (mem_Ioc.1 x.2).2⟩⟩
+--   invFun := fun p ↦ ⟨fun x ↦ p ⟨x, mem_Ioc.2 ⟨(mem_Ioc.1 x.2).1, (mem_Ioc.1 x.2).2.trans hjk⟩⟩,
+--     fun x ↦ p ⟨x, mem_Ioc.2 ⟨hij.trans (mem_Ioc.1 x.2).1, (mem_Ioc.1 x.2).2⟩⟩⟩
+--   left_inv := fun p ↦ by
+--     ext x
+--     · simp only
+--       rw [dif_pos (mem_Ioc.1 x.2).2]
+--     · simp only
+--       rw [dif_neg (not_le.mpr (mem_Ioc.1 x.2).1)]
+--   right_inv := fun p ↦ by
+--     ext x
+--     simp only
+--     split_ifs <;> rfl
+--   measurable_toFun := by
+--     apply measurable_pi_lambda _ (fun x ↦ ?_)
+--     by_cases h : x ≤ j
+--     · simp only [Equiv.coe_fn_mk, h, dite_true]
+--       exact measurable_fst.eval
+--     · simp only [Equiv.coe_fn_mk, h, dite_false]
+--       exact measurable_snd.eval
+--   measurable_invFun := by
+--     refine Measurable.prod_mk ?_ ?_ <;> exact measurable_pi_lambda _ (fun a ↦ measurable_id.eval)
 
-lemma er_assoc {i j k l : ℕ} (hij : i < j) (hjk : j < k) (hkl : k ≤ l)
-    (b : (l : Ioc i j) → X l) (c : (l : Ioc j k) → X l) (d : (m : Ioc k l) → X m) :
-    er i j l hij (hjk.le.trans hkl) (b, er j k l hjk hkl (c, d))
-      = er i k l (hij.trans hjk) hkl (er i j k hij hjk.le (b, c), d) := by
-  ext x
-  simp only [MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, er]
-  split_ifs with h h2
-  · rfl
-  · exfalso; exact h2 (h.trans hjk.le)
-  · rfl
-  · rfl
+lemma restrict₂_comp_er_eq_fst {a b c : ℕ} (hbc : b ≤ c) :
+    (restrict₂ (Ioc_subset_Ioc_right hbc)) ∘ (er (X := X) a b c) = Prod.fst := by
+  ext x i
+  simp [er, (mem_Ioc.1 i.2).2]
+
+-- lemma el_assoc {i j k : ℕ} (hij : i < j) (hjk : j ≤ k) (a : (x : Iic i) → X ↑x)
+--     (b : (l : Ioc i j) → X l) (c : (l : Ioc j k) → X l) :
+--     el j k hjk (el i j hij.le (a, b), c)
+--       = el i k (hij.le.trans hjk) (a, er i j k hij hjk (b, c)) := by
+--   ext x
+--   simp only [el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, er]
+--   split_ifs with h _ h3
+--   · rfl
+--   · rfl
+--   · exfalso; exact h (h3.trans hij.le)
+--   · rfl
+
+-- lemma er_assoc {i j k l : ℕ} (hij : i < j) (hjk : j < k) (hkl : k ≤ l)
+--     (b : (l : Ioc i j) → X l) (c : (l : Ioc j k) → X l) (d : (m : Ioc k l) → X m) :
+--     er i j l hij (hjk.le.trans hkl) (b, er j k l hjk hkl (c, d))
+--       = er i k l (hij.trans hjk) hkl (er i j k hij hjk.le (b, c), d) := by
+--   ext x
+--   simp only [MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, er]
+--   split_ifs with h h2
+--   · rfl
+--   · exfalso; exact h2 (h.trans hjk.le)
+--   · rfl
+--   · rfl
 
 end equivs
 
-/-- When `j = k`, then `Ioc i j = Ioc i k`, as a measurable equiv of dependent functions. -/
-def e_path_eq {i j k : ℕ} (h : j = k) : ((l : Ioc i j) → X l) ≃ᵐ ((l : Ioc i k) → X l) :=
-  MeasurableEquiv.cast (by rw [h]) (by rw [h])
+-- /-- When `j = k`, then `Ioc i j = Ioc i k`, as a measurable equiv of dependent functions. -/
+-- def e_path_eq {i j k : ℕ} (h : j = k) : ((l : Ioc i j) → X l) ≃ᵐ ((l : Ioc i k) → X l) :=
+--   MeasurableEquiv.cast (by rw [h]) (by rw [h])
 
-/-- Given a kernel from variables in `Iic j`, split `Iic j` into the
-union of `Iic i` and `Ioc i j` and construct the resulting kernel.
-TODO: the target space could be anything, generalize. -/
-def split (i j k : ℕ) (hij : i < j)
-    (κ : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) :
-    Kernel (((l : Iic i) → X l) × ((l : Ioc i j) → X l)) ((l : Ioc j k) → X l) :=
-  Kernel.comap κ (el i j hij.le) (el i j hij.le).measurable
+-- /-- Given a kernel from variables in `Iic j`, split `Iic j` into the
+-- union of `Iic i` and `Ioc i j` and construct the resulting kernel.
+-- TODO: the target space could be anything, generalize. -/
+-- def split (i j k : ℕ) (hij : i < j)
+--     (κ : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l)) :
+--     Kernel ((Π i : Iic a, X i) × ((l : Ioc i j) → X l)) ((l : Ioc j k) → X l) :=
+--   Kernel.comap κ (el i j hij.le) (el i j hij.le).measurable
 
-lemma split_eq_comap (i j k : ℕ) (hij : i < j)
-    (κ : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) :
-    split i j k hij κ = Kernel.comap κ (el i j hij.le) (el i j hij.le).measurable := rfl
+-- lemma split_eq_comap (i j k : ℕ) (hij : i < j)
+--     (κ : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l)) :
+--     split i j k hij κ = Kernel.comap κ (el i j hij.le) (el i j hij.le).measurable := rfl
 
-instance {i j k : ℕ} (hij : i < j) (κ : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l))
-    [IsSFiniteKernel κ] :
-    IsSFiniteKernel (split i j k hij κ) := by
-  rw [split]
-  infer_instance
+-- instance {i j k : ℕ} (hij : i < j) (κ : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l))
+--     [IsSFiniteKernel κ] :
+--     IsSFiniteKernel (split i j k hij κ) := by
+--   rw [split]
+--   infer_instance
 
-instance {i j k : ℕ} (hij : i < j) (κ : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l))
-    [IsFiniteKernel κ] :
-    IsFiniteKernel (split i j k hij κ) := by
-  rw [split]
-  infer_instance
+-- instance {i j k : ℕ} (hij : i < j) (κ : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l))
+--     [IsFiniteKernel κ] :
+--     IsFiniteKernel (split i j k hij κ) := by
+--   rw [split]
+--   infer_instance
 
-@[simp]
-lemma split_zero (i j k : ℕ) (hij : i < j) :
-    split i j k hij (0 : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) = 0 := by
-  rw [split] -- todo: Kernel.comap_zero missing as simp lemma
-  ext1 a
-  rw [Kernel.comap_apply, Kernel.zero_apply, Kernel.zero_apply]
+-- @[simp]
+-- lemma split_zero (i j k : ℕ) (hij : i < j) :
+--     split i j k hij (0 : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l)) = 0 := by
+--   rw [split] -- todo: Kernel.comap_zero missing as simp lemma
+--   ext1 a
+--   rw [Kernel.comap_apply, Kernel.zero_apply, Kernel.zero_apply]
 
 open Classical
 
 namespace ProbabilityTheory
 namespace Kernel
 
-/-- Given a kernel from variables in `Ici i` to `Ioc i j`, and another one from variables in
-`Iic j` to `Ioc j k`, compose them to get a kernel from `Ici i` to `Ioc i k`. This makes sense
-only when `i < j` and `j < k`. Otherwise, use `0` as junk value. -/
-def compProdNat {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
-    (η : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) :
-    Kernel ((l : Iic i) → X l) ((l : Ioc i k) → X l) :=
-  if h : i < j ∧ j < k
-    then (κ ⊗ₖ split i j k h.1 η).map (er i j k h.1 h.2.le)
-    else 0
+-- /-- Given a kernel from variables in `Ici i` to `Ioc i j`, and another one from variables in
+-- `Iic j` to `Ioc j k`, compose them to get a kernel from `Ici i` to `Ioc i k`. This makes sense
+-- only when `i < j` and `j < k`. Otherwise, use `0` as junk value. -/
+-- def compProdNat {i j k : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l))
+--     (η : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l)) :
+--     Kernel (Π i : Iic a, X i) ((l : Ioc i k) → X l) :=
+--   if h : i < j ∧ j < k
+--     then (κ ⊗ₖ split i j k h.1 η).map (er i j k h.1 h.2.le)
+--     else 0
 
-lemma compProdNat_eq {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
-    (η : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) (hij : i < j) (hjk : j < k) :
-    compProdNat κ η = (κ ⊗ₖ split i j k hij η).map (er i j k hij hjk.le) := by
-  rw [compProdNat, dif_pos]
-  exact ⟨hij, hjk⟩
+-- lemma compProdNat_eq {i j k : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l))
+--     (η : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l)) (hij : i < j) (hjk : j < k) :
+--     compProdNat κ η = (κ ⊗ₖ split i j k hij η).map (er i j k hij hjk.le) := by
+--   rw [compProdNat, dif_pos]
+--   exact ⟨hij, hjk⟩
 
-instance {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
-    (η : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) :
-    IsSFiniteKernel (compProdNat κ η) := by
-  rw [compProdNat]
-  split_ifs <;> infer_instance
+-- instance {i j k : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l))
+--     (η : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l)) :
+--     IsSFiniteKernel (compProdNat κ η) := by
+--   rw [compProdNat]
+--   split_ifs <;> infer_instance
 
-instance {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
-    [IsFiniteKernel κ]
-    (η : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l))
-    [IsFiniteKernel η] :
-    IsFiniteKernel (compProdNat κ η) := by
-  rw [compProdNat]
-  split_ifs <;> infer_instance
+-- instance {i j k : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l))
+--     [IsFiniteKernel κ]
+--     (η : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l))
+--     [IsFiniteKernel η] :
+--     IsFiniteKernel (compProdNat κ η) := by
+--   rw [compProdNat]
+--   split_ifs <;> infer_instance
 
-@[inherit_doc]
-notation κ " ⊗ₖ' " η => compProdNat κ η
+-- @[inherit_doc]
+-- notation κ " ⊗ₖ' " η => compProdNat κ η
 
-lemma compProdNat_apply' {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
-    (η : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) [IsSFiniteKernel κ] [IsSFiniteKernel η]
-    (hij : i < j) (hjk : j < k) (a : (l : Iic i) → X l) {s : Set ((l : Ioc i k) → X l)}
-    (hs : MeasurableSet s) :
-    (κ ⊗ₖ' η) a s
-      = ∫⁻ b, η (el i j hij.le (a, b)) {c | (b, c) ∈ er i j k hij hjk.le ⁻¹' s} ∂(κ a) := by
-  rw [compProdNat_eq _ _ hij hjk, Kernel.map_apply' _ _ _ hs,
-    Kernel.compProd_apply ((er _ _ _ _ _).measurable hs)]
-  · simp_rw [split, Kernel.comap_apply]
-  · exact (er ..).measurable
+-- lemma compProdNat_apply' {i j k : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l))
+--     (η : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l)) [IsSFiniteKernel κ] [IsSFiniteKernel η]
+--     (hij : i < j) (hjk : j < k) (a : Π i : Iic a, X i) {s : Set ((l : Ioc i k) → X l)}
+--     (hs : MeasurableSet s) :
+--     (κ ⊗ₖ' η) a s
+--       = ∫⁻ b, η (el i j hij.le (a, b)) {c | (b, c) ∈ er i j k hij hjk.le ⁻¹' s} ∂(κ a) := by
+--   rw [compProdNat_eq _ _ hij hjk, Kernel.map_apply' _ _ _ hs,
+--     Kernel.compProd_apply ((er _ _ _ _ _).measurable hs)]
+--   · simp_rw [split, Kernel.comap_apply]
+--   · exact (er ..).measurable
 
-@[simp]
-lemma compProdNat_zero_right {i j : ℕ}
-    (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) (k : ℕ) :
-    (κ ⊗ₖ' (0 : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l))) = 0 := by
-  rw [compProdNat]
-  split_ifs
-  · simp only [split_zero, Kernel.compProd_zero_right, Kernel.map_zero]
-  · rfl
+-- @[simp]
+-- lemma compProdNat_zero_right {i j : ℕ}
+--     (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l)) (k : ℕ) :
+--     (κ ⊗ₖ' (0 : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l))) = 0 := by
+--   rw [compProdNat]
+--   split_ifs
+--   · simp only [split_zero, Kernel.compProd_zero_right, Kernel.map_zero]
+--   · rfl
 
-@[simp]
-lemma compProdNat_zero_left {j k : ℕ} (i : ℕ)
-    (κ : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) :
-    ((0 : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) ⊗ₖ' κ) = 0 := by
-  rw [compProdNat]
-  split_ifs
-  · simp only [Kernel.compProd_zero_left, Kernel.map_zero]
-  · rfl
+-- @[simp]
+-- lemma compProdNat_zero_left {j k : ℕ} (i : ℕ)
+--     (κ : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l)) :
+--     ((0 : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l)) ⊗ₖ' κ) = 0 := by
+--   rw [compProdNat]
+--   split_ifs
+--   · simp only [Kernel.compProd_zero_left, Kernel.map_zero]
+--   · rfl
 
-lemma compProdNat_undef_left {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
-    (η : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l)) (hij : i < j) (hjk : j < k)
-    (h : ¬ IsSFiniteKernel κ) :
-    (κ ⊗ₖ' η) = 0 := by
-  rw [compProdNat_eq _ _ hij hjk, Kernel.compProd_of_not_isSFiniteKernel_left _ _ h]
-  simp
+-- lemma compProdNat_undef_left {i j k : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l))
+--     (η : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l)) (hij : i < j) (hjk : j < k)
+--     (h : ¬ IsSFiniteKernel κ) :
+--     (κ ⊗ₖ' η) = 0 := by
+--   rw [compProdNat_eq _ _ hij hjk, Kernel.compProd_of_not_isSFiniteKernel_left _ _ h]
+--   simp
 
-lemma compProdNat_assoc {i j k l : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
-    (η : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l))
-    (ξ : Kernel ((l : Iic k) → X l) ((m : Ioc k l) → X m))
-    [IsSFiniteKernel η] [IsSFiniteKernel ξ]
-    (hij : i < j) (hjk : j < k) (hkl : k < l) :
-    (κ ⊗ₖ' (η ⊗ₖ' ξ)) = (κ ⊗ₖ' η) ⊗ₖ' ξ := by
-  by_cases hκ : IsSFiniteKernel κ
-  swap
-  · rw [compProdNat_undef_left _ _ hij (hjk.trans hkl) hκ, compProdNat_undef_left _ _ hij hjk hκ]
-    simp
-  ext a s hs
-  have h_comp_det : ∀ b, ξ (el i k (hij.trans hjk).le (a, b))
-      = (ξ ∘ₖ Kernel.deterministic (el i k (hij.trans hjk).le)
-          (el i k (hij.trans hjk).le).measurable) (a, b) := by
-    intro b
-    rw [Kernel.comp_deterministic_eq_comap, Kernel.comap_apply]
-  have h_meas_comp : Measurable fun b ↦
-      ξ (el i k (hij.trans hjk).le (a, b))
-        {c | (b, c) ∈ er i k l (hij.trans hjk) hkl.le ⁻¹' s} := by
-    simp_rw [h_comp_det]
-    exact Kernel.measurable_kernel_prod_mk_left' ((er _ _ _ _ _).measurable hs) a
-  rw [compProdNat_apply' _ _ hij (hjk.trans hkl) _ hs,
-    compProdNat_apply' _ _ (hij.trans hjk) hkl _ hs, compProdNat_eq _ _ hjk hkl,
-    compProdNat_eq _ _ hij hjk, map_apply,
-    MeasureTheory.lintegral_map h_meas_comp (er _ _ _ _ _).measurable]
-  have : ∀ b, MeasurableSet {c | (b, c) ∈ er i j l hij (hjk.trans hkl).le ⁻¹' s} :=
-    fun b ↦ (@measurable_prod_mk_left _ _ inferInstance _ b) ((er _ _ _ _ _).measurable hs)
-  simp_rw [Kernel.map_apply' _ (er ..).measurable _ (this _)]
-  have : ∀ b, MeasurableSet
-      (er j k l hjk hkl.le ⁻¹' {c | (b, c) ∈ er i j l hij (hjk.trans hkl).le ⁻¹' s}) :=
-    fun b ↦ (er _ _ _ _ _).measurable (this b)
-  simp_rw [compProd_apply (this _), split, Kernel.comap_apply]
-  rw [lintegral_compProd]
-  swap; exact h_meas_comp.comp (er i j k hij hjk.le).measurable
-  simp only [comap_apply, el_assoc, Set.mem_preimage, Set.preimage_setOf_eq, Set.mem_setOf_eq,
-    er_assoc]
-  simp_rw [el_assoc hij hjk.le]
-  exact (er ..).measurable
+-- lemma compProdNat_assoc {i j k l : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l))
+--     (η : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l))
+--     (ξ : Kernel ((l : Iic k) → X l) ((m : Ioc k l) → X m))
+--     [IsSFiniteKernel η] [IsSFiniteKernel ξ]
+--     (hij : i < j) (hjk : j < k) (hkl : k < l) :
+--     (κ ⊗ₖ' (η ⊗ₖ' ξ)) = (κ ⊗ₖ' η) ⊗ₖ' ξ := by
+--   by_cases hκ : IsSFiniteKernel κ
+--   swap
+--   · rw [compProdNat_undef_left _ _ hij (hjk.trans hkl) hκ, compProdNat_undef_left _ _ hij hjk hκ]
+--     simp
+--   ext a s hs
+--   have h_comp_det : ∀ b, ξ (el i k (hij.trans hjk).le (a, b))
+--       = (ξ ∘ₖ Kernel.deterministic (el i k (hij.trans hjk).le)
+--           (el i k (hij.trans hjk).le).measurable) (a, b) := by
+--     intro b
+--     rw [Kernel.comp_deterministic_eq_comap, Kernel.comap_apply]
+--   have h_meas_comp : Measurable fun b ↦
+--       ξ (el i k (hij.trans hjk).le (a, b))
+--         {c | (b, c) ∈ er i k l (hij.trans hjk) hkl.le ⁻¹' s} := by
+--     simp_rw [h_comp_det]
+--     exact Kernel.measurable_kernel_prod_mk_left' ((er _ _ _ _ _).measurable hs) a
+--   rw [compProdNat_apply' _ _ hij (hjk.trans hkl) _ hs,
+--     compProdNat_apply' _ _ (hij.trans hjk) hkl _ hs, compProdNat_eq _ _ hjk hkl,
+--     compProdNat_eq _ _ hij hjk, map_apply,
+--     MeasureTheory.lintegral_map h_meas_comp (er _ _ _ _ _).measurable]
+--   have : ∀ b, MeasurableSet {c | (b, c) ∈ er i j l hij (hjk.trans hkl).le ⁻¹' s} :=
+--     fun b ↦ (@measurable_prod_mk_left _ _ inferInstance _ b) ((er _ _ _ _ _).measurable hs)
+--   simp_rw [Kernel.map_apply' _ (er ..).measurable _ (this _)]
+--   have : ∀ b, MeasurableSet
+--       (er j k l hjk hkl.le ⁻¹' {c | (b, c) ∈ er i j l hij (hjk.trans hkl).le ⁻¹' s}) :=
+--     fun b ↦ (er _ _ _ _ _).measurable (this b)
+--   simp_rw [compProd_apply (this _), split, Kernel.comap_apply]
+--   rw [lintegral_compProd]
+--   swap; exact h_meas_comp.comp (er i j k hij hjk.le).measurable
+--   simp only [comap_apply, el_assoc, Set.mem_preimage, Set.preimage_setOf_eq, Set.mem_setOf_eq,
+--     er_assoc]
+--   simp_rw [el_assoc hij hjk.le]
+--   exact (er ..).measurable
 
-/-- Given a kernel taking values in `Ioc i j`, convert it to a kernel taking values
-in `Ioc i k` when `j = k`. -/
-def castPath {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) (h : j = k) :
-    Kernel ((l : Iic i) → X l) ((l : Ioc i k) → X l) :=
-  κ.map (e_path_eq h)
+-- /-- Given a kernel taking values in `Ioc i j`, convert it to a kernel taking values
+-- in `Ioc i k` when `j = k`. -/
+-- def castPath {i j k : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l)) (h : j = k) :
+--     Kernel (Π i : Iic a, X i) ((l : Ioc i k) → X l) :=
+--   κ.map (e_path_eq h)
 
-theorem castPath_self {i j : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) :
-    castPath κ (rfl : j = j) = κ := by
-  simp only [castPath, e_path_eq]
-  conv_lhs => enter [2]; change id
-  simp
+-- theorem castPath_self {i j : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l)) :
+--     castPath κ (rfl : j = j) = κ := by
+--   simp only [castPath, e_path_eq]
+--   conv_lhs => enter [2]; change id
+--   simp
 
-lemma castPath_apply {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) (h : j = k)
-    (a : (l : Iic i) → X l) (s : Set ((l : Ioc i k) → X l)) (hs : MeasurableSet s) :
-    castPath κ h a s = κ a (e_path_eq h ⁻¹' s) := by
-  rw [castPath, Kernel.map_apply' _ (e_path_eq h).measurable _ hs]
+-- lemma castPath_apply {i j k : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l)) (h : j = k)
+--     (a : Π i : Iic a, X i) (s : Set ((l : Ioc i k) → X l)) (hs : MeasurableSet s) :
+--     castPath κ h a s = κ a (e_path_eq h ⁻¹' s) := by
+--   rw [castPath, Kernel.map_apply' _ (e_path_eq h).measurable _ hs]
 
-instance {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) (h : j = k)
-    [IsSFiniteKernel κ] :
-    IsSFiniteKernel (castPath κ h) := by
-  rw [castPath]; infer_instance
+-- instance {i j k : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l)) (h : j = k)
+--     [IsSFiniteKernel κ] :
+--     IsSFiniteKernel (castPath κ h) := by
+--   rw [castPath]; infer_instance
 
-instance {i j k : ℕ} (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) (h : j = k)
-    [IsFiniteKernel κ] :
-    IsFiniteKernel (castPath κ h) := by
-  rw [castPath]; infer_instance
+-- instance {i j k : ℕ} (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l)) (h : j = k)
+--     [IsFiniteKernel κ] :
+--     IsFiniteKernel (castPath κ h) := by
+--   rw [castPath]; infer_instance
 
-instance {i j k : ℕ}
-    (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l)) [IsMarkovKernel κ] (hjk : j = k) :
-    IsMarkovKernel (castPath κ hjk) := IsMarkovKernel.map _ (e_path_eq hjk).measurable
+-- instance {i j k : ℕ}
+--     (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l)) [IsMarkovKernel κ] (hjk : j = k) :
+--     IsMarkovKernel (castPath κ hjk) := IsMarkovKernel.map _ (e_path_eq hjk).measurable
 
-section kerNat
-
-variable {i j k : ℕ}
+variable [∀ n, MeasurableSpace (X n)] {a b c : ℕ}
 
 /-- Given a family of kernels `κ k` from `X 0 × ... × X k` to `X (k + 1)` for all `k`,
 construct a kernel from `X 0 × ... × X i` to `X (i + 1) × ... × X j` by iterating `κ`. -/
-def ptraj (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : ℕ) :
-    Kernel ((l : Iic i) → X l) ((l : Iic j) → X l) := by
-  induction j with
-  | zero => exact deterministic (frestrictLe₂ (zero_le i)) (measurable_frestrictLe₂ _)
+def ptraj (κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))) (a b : ℕ) :
+    Kernel (Π i : Iic a, X i) (Π i : Iic b, X i) := by
+  induction b with
+  | zero => exact deterministic (frestrictLe₂ (zero_le a)) (measurable_frestrictLe₂ _)
   | succ k κ_k =>
-    exact if h : k + 1 ≤ i
+    exact if h : k + 1 ≤ a
       then deterministic (frestrictLe₂ h) (measurable_frestrictLe₂ h)
-      else ((Kernel.id ×ₖ ((κ k).map (e k))) ∘ₖ κ_k).map (el k (k + 1) k.le_succ)
+      else ((Kernel.id ×ₖ ((κ k).map (e k))) ∘ₖ κ_k).map (el k (k + 1))
     -- exact if h : i = k then h ▸ (κ i).map (e i)
     -- else (κ_k ⊗ₖ split i j k h.1 η).map (er i j k h.1 h.2.le)
     -- (κ_k ⊗ₖ' ((κ k).map (e k)))
@@ -455,8 +470,8 @@ def ptraj (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : �
 --     · rw [kerNat_succ_right _ _ _ (hij.trans_le (Nat.lt_succ_iff.mp hjk))]
 
 -- theorem isMarkovKernel_compProdNat {i j k : ℕ}
---     (κ : Kernel ((l : Iic i) → X l) ((l : Ioc i j) → X l))
---     (η : Kernel ((l : Iic j) → X l) ((l : Ioc j k) → X l))
+--     (κ : Kernel (Π i : Iic a, X i) ((l : Ioc i j) → X l))
+--     (η : Kernel (Π i : Iic b, X i) ((l : Ioc j k) → X l))
 --     [IsMarkovKernel κ] [IsMarkovKernel η] (hij : i < j) (hjk : j < k) :
 --     IsMarkovKernel (κ ⊗ₖ' η) := by
 --   simp only [compProdNat, hij, hjk, and_self, ↓reduceDIte, split]
@@ -499,24 +514,11 @@ def ptraj (κ : (k : ℕ) → Kernel ((l : Iic k) → X l) (X (k + 1))) (i j : �
 --         simpa [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, restrict₂_er] using hy
 --       · infer_instance
 
-end kerNat
-
-end Kernel
-end ProbabilityTheory
-
-end compProdNat
-
-section ptraj
-
-variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
-variable (κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1)))
-
-namespace ProbabilityTheory
-namespace Kernel
+variable {κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))}
 
 section Basic
 
--- /-- Given a family of kernels `κ : (n : ℕ) → Kernel ((i : Iic n) → X i) (X (n + 1))`, we can
+-- /-- Given a family of kernels `κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))`, we can
 -- compose them: if `a < b`, then `(κ a) ⊗ₖ ... ⊗ₖ (κ (b - 1))` is a kernel from
 -- `(i : Iic a) → X i` to `(i : Ioc a b) → X i`. This composition is called `kerNat κ a b`.
 
@@ -533,21 +535,19 @@ section Basic
 -- --     ptraj κ a b = (Kernel.id ×ₖ kerNat κ a b).map (el a b hab.le) := by
 -- --   rw [ptraj, dif_pos hab]
 
-variable {κ}
-
 lemma ptraj_succ_eq (a b : ℕ) :
     ptraj κ a (b + 1) =
     if hab : b + 1 ≤ a
       then deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ hab)
-      else ((Kernel.id ×ₖ ((κ b).map (e b))) ∘ₖ ptraj κ a b).map (el b (b + 1) b.le_succ) := rfl
+      else ((Kernel.id ×ₖ ((κ b).map (e b))) ∘ₖ ptraj κ a b).map (el b (b + 1)) := rfl
 
-lemma ptraj_le {a b : ℕ} (hab : b ≤ a) :
-    ptraj κ a b = deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ _) := by
+lemma ptraj_le {a b : ℕ} (hba : b ≤ a) :
+    ptraj κ a b = deterministic (frestrictLe₂ hba) (measurable_frestrictLe₂ _) := by
   induction b with
   | zero => rfl
-  | succ k hk => rw [ptraj_succ_eq, dif_pos hab]
+  | succ k hk => rw [ptraj_succ_eq, dif_pos hba]
 
-lemma ptraj_zero (a : ℕ) :
+lemma ptraj_zero {a : ℕ} :
     ptraj κ a 0 = deterministic (frestrictLe₂ (zero_le a)) (measurable_frestrictLe₂ _) := by
   rw [ptraj_le (zero_le a)]
 
@@ -565,15 +565,22 @@ instance [∀ n, IsFiniteKernel (κ n)] (a b : ℕ) : IsFiniteKernel (ptraj κ a
     rw [ptraj_succ_eq]
     split_ifs with hab <;> infer_instance
 
+instance [∀ n, IsZeroOrMarkovKernel (κ n)] (a b : ℕ) : IsZeroOrMarkovKernel (ptraj κ a b) := by
+  induction b with
+  | zero => rw [ptraj_zero]; infer_instance
+  | succ k hk =>
+    rw [ptraj_succ_eq]
+    split_ifs <;> infer_instance
+
 instance [∀ n, IsMarkovKernel (κ n)] (a b : ℕ) : IsMarkovKernel (ptraj κ a b) := by
   induction b with
   | zero => rw [ptraj_zero]; infer_instance
   | succ k hk =>
     rw [ptraj_succ_eq]
-    split_ifs with hab
+    split_ifs
     · infer_instance
     · have := IsMarkovKernel.map (κ k) (e k).measurable
-      exact IsMarkovKernel.map _ (el ..).measurable
+      exact IsMarkovKernel.map _ measurable_el
 
 @[simp]
 lemma ptraj_self (a : ℕ) : ptraj κ a a = Kernel.id := by
@@ -581,11 +588,11 @@ lemma ptraj_self (a : ℕ) : ptraj κ a a = Kernel.id := by
   rfl
 
 lemma ptraj_succ {a b : ℕ} (hab : a ≤ b) : ptraj κ a (b + 1) =
-    ((Kernel.id ×ₖ ((κ b).map (e b))) ∘ₖ (ptraj κ a b)).map (el b (b + 1) b.le_succ) := by
+    ((Kernel.id ×ₖ ((κ b).map (e b))) ∘ₖ (ptraj κ a b)).map (el b (b + 1)) := by
   rw [ptraj_succ_eq, dif_neg (by omega)]
 
 lemma ptraj_self_succ (a : ℕ) : ptraj κ a (a + 1) =
-    (Kernel.id ×ₖ ((κ a).map (e a))).map (el a (a + 1) a.le_succ) := by
+    (Kernel.id ×ₖ ((κ a).map (e a))).map (el a (a + 1)) := by
   rw [ptraj_succ le_rfl, ptraj_self, comp_id]
 
 theorem ptraj_succ' {a b : ℕ} (hab : a ≤ b) :
@@ -638,7 +645,7 @@ theorem ptraj_comp'' [∀ n, IsMarkovKernel (κ n)] (a : ℕ) {b c : ℕ} (hcb :
 
 theorem ptraj_lt_eq_prod [∀ n, IsSFiniteKernel (κ n)] {a b : ℕ} (hab : a ≤ b) :
     ptraj κ a b =
-      (Kernel.id ×ₖ (ptraj κ a b).map (restrict₂ Ioc_subset_Iic_self)).map (el a b hab) := by
+      (Kernel.id ×ₖ (ptraj κ a b).map (restrict₂ Ioc_subset_Iic_self)).map (el a b) := by
   induction b, hab using Nat.le_induction with
   | base =>
     ext1 x
@@ -658,33 +665,31 @@ theorem ptraj_lt_eq_prod [∀ n, IsSFiniteKernel (κ n)] {a b : ℕ} (hab : a �
         map_apply']
       · congr
         ext z
-        simp only [e, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, el, restrict₂, Set.mem_preimage,
+        simp only [e, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, el_def, restrict₂, Set.mem_preimage,
           Set.preimage_setOf_eq, Set.mem_setOf_eq, subset_refl, Set.coe_inclusion]
         congrm (fun i ↦ ?_) ∈ s
         split_ifs with h1 h2 h3 <;> try rfl
         omega
       any_goals fun_prop
       any_goals try exact ms.preimage (by fun_prop)
-      have : MeasurableSet <| el k (k + 1) k.le_succ ⁻¹' (restrict₂ Ioc_subset_Iic_self ⁻¹'
-          (Prod.mk x ⁻¹' (el a (k + 1) (h.trans k.le_succ) ⁻¹' s))) := ms.preimage (by fun_prop)
+      have : MeasurableSet <| el k (k + 1) ⁻¹' (restrict₂ Ioc_subset_Iic_self ⁻¹'
+          (Prod.mk x ⁻¹' (el a (k + 1) ⁻¹' s))) := ms.preimage (by fun_prop)
       · change Measurable fun b ↦ (κ k).map _ _ (Prod.mk b ⁻¹' _)
         simp_rw [← Measure.map_apply measurable_prod_mk_left this]
         exact Measure.measurable_measure.1 Measurable.map_prod_mk_left _ this
       · change Measurable fun b ↦ (κ k).map _ _ (Prod.mk b ⁻¹' _)
-        simp_rw [← Measure.map_apply measurable_prod_mk_left ((el ..).measurable ms)]
-        exact Measure.measurable_measure.1 Measurable.map_prod_mk_left _ ((el ..).measurable ms)
-      · exact (el ..).measurable ms
+        simp_rw [← Measure.map_apply measurable_prod_mk_left (measurable_el ms)]
+        exact Measure.measurable_measure.1 Measurable.map_prod_mk_left _ (measurable_el ms)
     any_goals fun_prop
     any_goals try exact ms.preimage (by fun_prop)
     any_goals exact (Kernel.measurable_coe _ (ms.preimage (by fun_prop))).comp (by fun_prop)
-    · apply Measurable.lintegral_prod_right' (f := fun z ↦ (_ ×ₖ _).map _ (el _ _ _ z) _)
+    · apply Measurable.lintegral_prod_right' (f := fun z ↦ (_ ×ₖ _).map _ (el _ _ z) _)
       exact (Kernel.measurable_coe _ (ms.preimage (by fun_prop))).comp (by fun_prop)
     · exact (Kernel.measurable_coe _ (ms.preimage (by fun_prop))).comp (by fun_prop) |>.aemeasurable
     · exact Kernel.measurable _
-    · simp_rw [← Measure.map_apply measurable_prod_mk_left ((el ..).measurable ms)]
-      exact Measure.measurable_measure.1 Measurable.map_prod_mk_left _ ((el ..).measurable ms)
-    · exact (el ..).measurable ms
-    · apply Measurable.lintegral_prod_right' (f := fun z ↦ (_ ×ₖ _).map _ (el _ _ _ z) _)
+    · simp_rw [← Measure.map_apply measurable_prod_mk_left (measurable_el ms)]
+      exact Measure.measurable_measure.1 Measurable.map_prod_mk_left _ (measurable_el ms)
+    · apply Measurable.lintegral_prod_right' (f := fun z ↦ (_ ×ₖ _).map _ (el _ _ z) _)
       exact (Kernel.measurable_coe _ ms).comp (by fun_prop)
     · exact ((Kernel.measurable_coe _ ms).comp (by fun_prop)).aemeasurable
     · exact Kernel.measurable _
@@ -693,6 +698,8 @@ theorem ptraj_lt_eq_prod [∀ n, IsSFiniteKernel (κ n)] {a b : ℕ} (hab : a �
 end Basic
 
 section integral
+
+variable (κ)
 
 /-- This function computes the integral of a function `f` against `ptraj`,
 and allows to view it as a function depending on all the variables. -/
@@ -708,6 +715,8 @@ theorem lmarginalPTraj_le {a b : ℕ} (hba : b ≤ a)
   · congr with i
     simp [updateFinset]
   · exact mf.comp measurable_updateFinset
+
+variable {κ}
 
 theorem lmarginalPTraj_mono (a b : ℕ) {f g : ((n : ℕ) → X n) → ℝ≥0∞} (hfg : f ≤ g)
     (x : (n : ℕ) → X n) : lmarginalPTraj κ a b f x ≤ lmarginalPTraj κ a b g x :=
@@ -742,7 +751,6 @@ theorem lmarginalPTraj_succ [∀ n, IsFiniteKernel (κ n)]
     any_goals omega
   any_goals fun_prop
 
-
 theorem measurable_lmarginalPTraj [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ)
     {f : ((n : ℕ) → X n) → ℝ≥0∞} (hf : Measurable f) :
     Measurable (lmarginalPTraj κ a b f) := by
@@ -775,9 +783,9 @@ theorem lmarginalPTraj_self [∀ n, IsSFiniteKernel (κ n)] {a b c : ℕ}
     lmarginalPTraj κ a b (lmarginalPTraj κ b c f) = lmarginalPTraj κ a c f := by
   ext x
   obtain rfl | hab := eq_or_lt_of_le hab <;> obtain rfl | hbc := eq_or_lt_of_le hbc
-  · rw [lmarginalPTraj_le κ (_root_.le_refl a) (measurable_lmarginalPTraj _ _ _ hf)]
-  · rw [lmarginalPTraj_le κ (_root_.le_refl a) (measurable_lmarginalPTraj _ _ _ hf)]
-  · rw [lmarginalPTraj_le κ (_root_.le_refl b) hf]
+  · rw [lmarginalPTraj_le κ le_rfl (measurable_lmarginalPTraj _ _ hf)]
+  · rw [lmarginalPTraj_le κ le_rfl (measurable_lmarginalPTraj _ _ hf)]
+  · rw [lmarginalPTraj_le κ le_rfl hf]
   simp_rw [lmarginalPTraj, frestrictLe, restrict_updateFinset,
     updateFinset_updateFinset_subset _ _ (Iic_subset_Iic.2 hbc.le)]
   rw [← lintegral_comp, ptraj_comp hab.le hbc.le]
@@ -790,7 +798,8 @@ end ProbabilityTheory
 
 open ProbabilityTheory Kernel
 
-variable [∀ n, IsMarkovKernel (κ n)]
+variable [∀ n, MeasurableSpace (X n)]
+  {κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))} [∀ n, IsMarkovKernel (κ n)]
 
 namespace DependsOn
 
@@ -800,7 +809,7 @@ theorem lmarginalPTraj_eq {a b : ℕ} (c : ℕ) {f : ((n : ℕ) → X n) → ℝ
   obtain hcb | hbc := le_total c b
   · exact lmarginalPTraj_le κ hcb mf
   · ext x
-    rw [lmarginalPTraj_lt _ hbc mf, ← mul_one (f x),
+    rw [lmarginalPTraj_lt hbc mf, ← mul_one (f x),
       ← @measure_univ _ _ ((ptraj κ b c).map (restrict₂ Ioc_subset_Iic_self) (frestrictLe b x)) ?_,
       ← MeasureTheory.lintegral_const]
     · refine lintegral_congr fun y ↦ hf fun i hi ↦ ?_
@@ -819,10 +828,9 @@ theorem lmarginalPTraj_right {a : ℕ} (b : ℕ) {c d : ℕ}
   wlog hcd : c ≤ d generalizing c d
   · rw [@this d c had hac (le_of_not_le hcd)]
   · obtain hbc | hcb := le_or_lt b c
-    · rw [← lmarginalPTraj_self κ hbc hcd mf,
-        hf.lmarginalPTraj_eq κ d mf hac]
-    · rw [hf.lmarginalPTraj_eq κ c mf (hac.trans hcb.le),
-        hf.lmarginalPTraj_eq κ d mf (hac.trans hcb.le)]
+    · rw [← lmarginalPTraj_self hbc hcd mf, hf.lmarginalPTraj_eq d mf hac]
+    · rw [hf.lmarginalPTraj_eq c mf (hac.trans hcb.le),
+        hf.lmarginalPTraj_eq d mf (hac.trans hcb.le)]
 
 theorem dependsOn_lmarginalPTraj (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) → ℝ≥0∞}
     (hf : DependsOn f (Iic b)) (mf : Measurable f) :
@@ -831,12 +839,10 @@ theorem dependsOn_lmarginalPTraj (a : ℕ) {b : ℕ} {f : ((n : ℕ) → X n) �
   obtain hba | hab := le_total b a
   · rw [lmarginalPTraj_le κ hba mf]
     exact hf fun i hi ↦ hxy i (Iic_subset_Iic.2 hba hi)
-  · rw [lmarginalPTraj_lt _ hab mf, lmarginalPTraj_lt _ hab mf]
+  · rw [lmarginalPTraj_lt hab mf, lmarginalPTraj_lt hab mf]
     congrm ∫⁻ z : _, ?_ ∂(ptraj κ a b).map _ (fun i ↦ ?_)
     · exact hxy i.1 i.2
     · refine dependsOn_updateFinset hf _ _ ?_
       rwa [← coe_sdiff, Iic_sdiff_Ioc_same hab]
 
 end DependsOn
-
-end ptraj

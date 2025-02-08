@@ -204,11 +204,11 @@ theorem le_lmarginalPTraj_succ {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} 
     lmarginalPTraj κ k (k + 1) (F n) x := by
     simp_rw [F]
     rcases lt_trichotomy (k + 1) (N n) with h | h | h
-    · rw [← lmarginalPTraj_self κ k.le_succ h.le (mf n)]
+    · rw [← lmarginalPTraj_self k.le_succ h.le (mf n)]
     · rw [← h, lmarginalPTraj_le _ (_root_.le_refl (k + 1)) (mf n)]
     · rw [lmarginalPTraj_le _ (by omega) (mf n),
-        (hcte n).lmarginalPTraj_eq _ _ (mf n) (by omega),
-        (hcte n).lmarginalPTraj_eq _ _ (mf n) (by omega)]
+        (hcte n).lmarginalPTraj_eq _ (mf n) (by omega),
+        (hcte n).lmarginalPTraj_eq _ (mf n) (by omega)]
   -- `F` is also a bounded sequence.
   have F_le n x : F n x ≤ bound := by
     simp_rw [F, lmarginalPTraj]
@@ -221,7 +221,7 @@ theorem le_lmarginalPTraj_succ {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} 
       (𝓝 (lmarginalPTraj κ k (k + 1) l x)) := by
     simp_rw [f_eq, lmarginalPTraj]
     exact tendsto_lintegral_of_dominated_convergence (fun _ ↦ bound)
-      (fun n ↦ (measurable_lmarginalPTraj _ _ _ (mf n)).comp measurable_updateFinset)
+      (fun n ↦ (measurable_lmarginalPTraj _ _ (mf n)).comp measurable_updateFinset)
       (fun n ↦ Eventually.of_forall <| fun y ↦ F_le n _)
       (by simp [fin_bound]) (Eventually.of_forall (fun _ ↦ tendstoF _))
   -- By hypothesis, we have `ε ≤ lmarginalPTraj κ k (k + 1) (F n) (updateFinset x _ y)`,
@@ -239,14 +239,14 @@ theorem le_lmarginalPTraj_succ {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} 
     refine ⟨x, (ε_le_lint x_).trans ?_⟩
     rwa [lmarginalPTraj_succ, frestrictLe_updateFinset]
     refine ENNReal.measurable_of_tendsto ?_ (tendsto_pi_nhds.2 htendsto)
-    exact fun n ↦ measurable_lmarginalPTraj _ _ _ (mf n)
+    exact fun n ↦ measurable_lmarginalPTraj _ _ (mf n)
   refine ⟨x, fun x' n ↦ ?_⟩
   -- As `F` is a non-increasing sequence, we have `ε ≤ Fₙ(y, x')` for any `n`.
   have := le_trans hx ((anti _).le_of_tendsto (tendstoF _) n)
   -- This part below is just to say that this is true for any `x : (i : ι) → X i`,
   -- as `Fₙ` technically depends on all the variables, but really depends only on the first `k + 1`.
   convert this using 1
-  refine (hcte n).dependsOn_lmarginalPTraj _ _ (mf n) fun i hi ↦ ?_
+  refine (hcte n).dependsOn_lmarginalPTraj _ (mf n) fun i hi ↦ ?_
   simp only [update, updateFinset, mem_Iic, F]
   split_ifs with h1 h2 <;> try rfl
   rw [mem_coe, mem_Iic] at hi
@@ -292,7 +292,7 @@ theorem trajContent_tendsto_zero (A : ℕ → Set (Π n : ℕ, X n))
   have lma_const x y n :
       lmarginalPTraj κ p (N n) (χ n) (updateFinset x _ x₀) =
       lmarginalPTraj κ p (N n) (χ n) (updateFinset y _ x₀) := by
-    refine (χ_dep n).dependsOn_lmarginalPTraj κ p (mχ n) fun i hi ↦ ?_
+    refine (χ_dep n).dependsOn_lmarginalPTraj p (mχ n) fun i hi ↦ ?_
     rw [mem_coe, mem_Iic] at hi
     simp [updateFinset, hi]
   -- As `(Aₙ)` is non-increasing, so is `(χₙ)`.
@@ -304,14 +304,14 @@ theorem trajContent_tendsto_zero (A : ℕ → Set (Π n : ℕ, X n))
   -- This is used to then show that the integral of `χₙ` from time `k` is non-increasing.
   have lma_inv k M n (h : N n ≤ M) :
       lmarginalPTraj κ k M (χ n) = lmarginalPTraj κ k (N n) (χ n) :=
-    (χ_dep n).lmarginalPTraj_right κ k (mχ n) h (_root_.le_refl _)
+    (χ_dep n).lmarginalPTraj_right k (mχ n) h (_root_.le_refl _)
   -- the integral of `χₙ` from time `k` is non-increasing.
   have anti_lma k x : Antitone fun n ↦ lmarginalPTraj κ k (N n) (χ n) x := by
     intro m n hmn
     simp only
     rw [← lma_inv k ((N n).max (N m)) n (le_max_left _ _),
       ← lma_inv k ((N n).max (N m)) m (le_max_right _ _)]
-    exact lmarginalPTraj_mono _ _ _ (χ_anti hmn) _
+    exact lmarginalPTraj_mono _ _ (χ_anti hmn) _
   -- Therefore it converges to some function `lₖ`.
   have this k x : ∃ l,
       Tendsto (fun n ↦ lmarginalPTraj κ k (N n) (χ n) x) atTop (𝓝 l) := by
@@ -554,13 +554,12 @@ theorem trajKernel_eq (n : ℕ) :
       ptraj_lt_eq_prod (by omega), map_apply' _ _ _ (hyp ms), id_prod_apply',
       map_apply' _ _ _ ms, id_prod_apply']
     · congr with y
-      simp only [id_eq, el, Nat.succ_eq_add_one, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
-        Set.mem_preimage, Set.mem_setOf_eq]
+      simp only [el_def, Set.mem_preimage]
       congrm (fun i ↦ ?_) ∈ s
       by_cases hi : i.1 ≤ n <;> simp [hi]
     any_goals fun_prop
-    · exact (el ..).measurable ms
-    · exact (el ..).measurable <| hyp ms
+    · exact measurable_el ms
+    · exact measurable_el <| hyp ms
     · exact hyp
     · exact hyp.comp (measurable_frestrictLe _)
   any_goals fun_prop

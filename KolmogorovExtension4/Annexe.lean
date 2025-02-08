@@ -307,6 +307,16 @@ lemma ProbabilityTheory.Kernel.prod_const_comp (κ : Kernel X Y) [IsSFiniteKerne
   rw [lintegral_comp]
   exact measurable_measure_prod_mk_left ms
 
+instance IsZeroOrMarkovKernel.compProd (κ : Kernel X Y) [IsZeroOrMarkovKernel κ]
+    (η : Kernel (X × Y) Z) [IsZeroOrMarkovKernel η] : IsZeroOrMarkovKernel (κ ⊗ₖ η) := by
+  obtain rfl | _ := eq_zero_or_isMarkovKernel κ <;> obtain rfl | _ := eq_zero_or_isMarkovKernel η
+  all_goals simpa using by infer_instance
+
+instance IsZeroOrMarkovKernel.comp (κ : Kernel X Y) [IsZeroOrMarkovKernel κ]
+    (η : Kernel Y Z) [IsZeroOrMarkovKernel η] : IsZeroOrMarkovKernel (η ∘ₖ κ) := by
+  obtain rfl | _ := eq_zero_or_isMarkovKernel κ <;> obtain rfl | _ := eq_zero_or_isMarkovKernel η
+  all_goals simpa using by infer_instance
+
 variable {E : Type*} [NormedAddCommGroup E]
 
 theorem MeasureTheory.AEStronglyMeasurable.compProd {μ : Measure X} [SFinite μ]
