@@ -6,7 +6,7 @@ Authors: Etienne Marion
 import KolmogorovExtension4.IonescuTulceaKernel
 import Mathlib.Probability.Kernel.Composition.MeasureComp
 
-open MeasureTheory MeasurableSpace ProbabilityTheory Finset ENNReal Filter Topology Kernel Preorder
+open MeasureTheory MeasurableSpace ProbabilityTheory Finset ENNReal Filter Topology Kernel Preorder MeasurableEquiv
 
 namespace MeasureTheory
 
@@ -85,12 +85,12 @@ instance : IsProbabilityMeasure (infinitePiNat μ) := by
   infer_instance
 
 omit [∀ n, MeasurableSpace (X n)] in
-lemma er_preim {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) (s : (i : Ioc a c) → Set (X i)) :
-    er a b c ⁻¹' (Set.univ.pi s) =
+lemma IocProdIoc_preim {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) (s : (i : Ioc a c) → Set (X i)) :
+    IocProdIoc a b c ⁻¹' (Set.univ.pi s) =
       (Set.univ.pi <| restrict₂ (π := (fun n ↦ Set (X n))) (Ioc_subset_Ioc_right hbc) s) ×ˢ
         (Set.univ.pi <| restrict₂ (π := (fun n ↦ Set (X n))) (Ioc_subset_Ioc_left hab.le) s) := by
   ext x
-  simp only [er, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage, Set.mem_pi,
+  simp only [IocProdIoc, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage, Set.mem_pi,
     Set.mem_univ, forall_const, Subtype.forall, mem_Ioc, Set.mem_prod, restrict₂]
   refine ⟨fun h ↦ ⟨fun i ⟨hi1, hi2⟩ ↦ ?_, fun i ⟨hi1, hi2⟩ ↦ ?_⟩, fun ⟨h1, h2⟩ i ⟨hi1, hi2⟩ ↦ ?_⟩
   · convert h i ⟨hi1, hi2.trans hbc⟩
@@ -101,23 +101,23 @@ lemma er_preim {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) (s : (i : Ioc a c) �
     · exact h1 i ⟨hi1, hi3⟩
     · exact h2 i ⟨not_le.1 hi3, hi2⟩
 
-lemma prod_map_er {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
+lemma prod_map_IocProdIoc {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
     ((Measure.pi (fun i : Ioc a b ↦ μ i)).prod (Measure.pi (fun i : Ioc b c ↦ μ i))).map
-      (er a b c) = Measure.pi (fun i : Ioc a c ↦ μ i) := by
+      (IocProdIoc a b c) = Measure.pi (fun i : Ioc a c ↦ μ i) := by
   refine (Measure.pi_eq fun s ms ↦ ?_).symm
-  rw [Measure.map_apply, er_preim hab hbc, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
+  rw [Measure.map_apply, IocProdIoc_preim hab hbc, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
     ← prod_Ioc hab.le hbc (f := fun i ↦ μ i (s i))]
   · rfl
   · fun_prop
   · exact MeasurableSet.univ_pi ms
 
 omit [∀ n, MeasurableSpace (X n)] in
-lemma el_preim {a b : ℕ} (hab : a ≤ b) (s : (i : Iic b) → Set (X i)) :
-    el a b ⁻¹' (Set.univ.pi s) =
+lemma IicProdIoc_preim {a b : ℕ} (hab : a ≤ b) (s : (i : Iic b) → Set (X i)) :
+    IicProdIoc a b ⁻¹' (Set.univ.pi s) =
       (Set.univ.pi <| frestrictLe₂ (π := (fun n ↦ Set (X n))) hab s) ×ˢ
         (Set.univ.pi <| restrict₂ (π := (fun n ↦ Set (X n))) Ioc_subset_Iic_self s) := by
   ext x
-  simp only [el, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage, Set.mem_pi,
+  simp only [IicProdIoc, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, Set.mem_preimage, Set.mem_pi,
     Set.mem_univ, forall_const, Subtype.forall, mem_Iic, Set.mem_prod, frestrictLe₂_apply,
     restrict₂, mem_Ioc]
   refine ⟨fun h ↦ ⟨fun i hi ↦ ?_, fun i ⟨hi1, hi2⟩ ↦ ?_⟩, fun ⟨h1, h2⟩ i hi ↦ ?_⟩
@@ -129,51 +129,67 @@ lemma el_preim {a b : ℕ} (hab : a ≤ b) (s : (i : Iic b) → Set (X i)) :
     · exact h1 i hi3
     · exact h2 i ⟨not_le.1 hi3, hi⟩
 
-lemma prod_map_el {a b : ℕ} (hab : a ≤ b) :
+lemma prod_map_IicProdIoc {a b : ℕ} (hab : a ≤ b) :
     ((Measure.pi (fun i : Iic a ↦ μ i)).prod (Measure.pi (fun i : Ioc a b ↦ μ i))).map
-      (el a b) = Measure.pi (fun i : Iic b ↦ μ i) := by
+      (IicProdIoc a b) = Measure.pi (fun i : Iic b ↦ μ i) := by
   refine (Measure.pi_eq fun s ms ↦ ?_).symm
-  rw [Measure.map_apply, el_preim hab, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
+  rw [Measure.map_apply, IicProdIoc_preim hab, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
     ← prod_Iic hab (f := fun i ↦ μ i (s i))]
   · rfl
   · fun_prop
   · exact MeasurableSet.univ_pi ms
 
 omit [∀ n, MeasurableSpace (X n)] in
-lemma restrict₂_el (a b : ℕ) :
-    (restrict₂ Ioc_subset_Iic_self) ∘ (el (X := X) a b) = Prod.snd := by
+lemma restrict₂_comp_IicProdIoc (a b : ℕ) :
+    (restrict₂ Ioc_subset_Iic_self) ∘ (IicProdIoc (X := X) a b) = Prod.snd := by
   ext x i
-  simp [el, not_le.2 (mem_Ioc.1 i.2).1]
+  simp [IicProdIoc, not_le.2 (mem_Ioc.1 i.2).1]
+
+lemma Measure.map_piSingleton (μ : (n : ℕ) → Measure (X n))
+    [∀ n, SigmaFinite (μ n)] (n : ℕ) :
+    (μ (n + 1)).map (piSingleton n) = Measure.pi (fun i : Ioc n (n + 1) ↦ μ i) := by
+  refine (Measure.pi_eq fun s hs ↦ ?_).symm
+  have : Subsingleton (Ioc n (n + 1)) := by
+    rw [Nat.Ioc_succ_singleton]
+    infer_instance
+  rw [Fintype.prod_subsingleton _ ⟨n + 1, mem_Ioc_succ.2 rfl⟩, Measure.map_apply]
+  · congr with x
+    simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_const, Subtype.forall,
+      Nat.Ioc_succ_singleton, mem_singleton]
+    exact ⟨fun h ↦ h (n + 1) rfl, fun h a b ↦ b.symm ▸ h⟩
+  · exact (piSingleton n).measurable
+  · exact MeasurableSet.univ_pi hs
 
 theorem kerNat_prod {a b : ℕ} (hab : a < b) :
     (ptraj (fun n ↦ const _ (μ (n + 1))) a b).map (restrict₂ (Ioc_subset_Iic_self (a := a))) =
     const _ (Measure.pi (fun i : Ioc a b ↦ μ i)) := by
   refine Nat.le_induction ?_ (fun n hn hind ↦ ?_) b (Nat.succ_le.2 hab) <;> ext1 x₀
-  · rw [ptraj_self_succ, Kernel.map_map, Kernel.map_apply, Kernel.prod_apply, Kernel.map_apply,
-      const_apply, const_apply, map_e, restrict₂_el, Measure.map_snd_prod, measure_univ, one_smul]
+  · rw [ptraj_succ_self, Kernel.map_map, Kernel.map_apply, Kernel.prod_apply, Kernel.map_apply,
+      const_apply, const_apply, map_piSingleton, restrict₂_comp_IicProdIoc, Measure.map_snd_prod,
+      measure_univ, one_smul]
     any_goals fun_prop
-  · have : (restrict₂ (Ioc_subset_Iic_self (a := a))) ∘ (el (X := X) n (n + 1)) =
-        (er a n (n + 1)) ∘ (Prod.map (restrict₂ Ioc_subset_Iic_self) id) := by
+  · have : (restrict₂ (Ioc_subset_Iic_self (a := a))) ∘ (IicProdIoc (X := X) n (n + 1)) =
+        (IocProdIoc a n (n + 1)) ∘ (Prod.map (restrict₂ Ioc_subset_Iic_self) id) := by
       ext x i
-      simp [el, er]
+      simp [IicProdIoc, IocProdIoc]
     rw [Kernel.const_apply, ptraj_succ (by omega), Kernel.map_const, Kernel.prod_const_comp,
       Kernel.id_comp, Kernel.map_map, this, ← Kernel.map_map, Kernel.map_prod, hind, Kernel.map_id,
-      Kernel.map_apply, prod_apply, const_apply, const_apply, ← map_e, prod_map_er]
+      Kernel.map_apply, prod_apply, const_apply, const_apply, map_piSingleton, prod_map_IocProdIoc]
     any_goals fun_prop
     any_goals omega
 
 theorem prod_noyau_proj {a b : ℕ} (hab : a ≤ b) :
     ptraj (fun n ↦ const _ (μ (n + 1))) a b =
-      (Kernel.id ×ₖ (const _ (Measure.pi (fun i : Ioc a b ↦ μ i)))).map (el a b) := by
+      (Kernel.id ×ₖ (const _ (Measure.pi (fun i : Ioc a b ↦ μ i)))).map (IicProdIoc a b) := by
   rcases eq_or_lt_of_le hab with rfl | hab
   · have : IsEmpty (Ioc a a) := by simp [Subtype.isEmpty_false]
     ext1 x
     rw [ptraj_le le_rfl, Measure.pi_of_empty, Kernel.map_apply, prod_apply, const_apply,
       id_apply, dirac_prod_dirac, map_dirac, deterministic_apply]
     congrm dirac (fun i ↦ ?_)
-    simp [el, mem_Iic.1 i.2]
+    simp [IicProdIoc, mem_Iic.1 i.2]
     any_goals fun_prop
-  · rw [ptraj_lt_eq_prod hab.le, kerNat_prod _ hab]
+  · rw [ptraj_eq_prod, kerNat_prod _ hab]
 
 theorem Measure.map_bind {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     [MeasurableSpace Z]
@@ -202,7 +218,7 @@ theorem isProjectiveLimit_infinitePiNat :
   simp_rw [isProjectiveMeasureFamily_pi μ _ _ I.sub_Iic]
   rw [← restrict₂_comp_restrict I.sub_Iic, ← Measure.map_map, ← frestrictLe, infinitePiNat,
     Measure.map_comp, frestrictLe_trajKernel, prod_noyau_proj _ (zero_le _), ← Measure.map_comp,
-    ← Measure.compProd_eq_comp_prod, Measure.compProd_const, prod_map_el _ (zero_le _)]
+    ← Measure.compProd_eq_comp_prod, Measure.compProd_const, prod_map_IicProdIoc _ (zero_le _)]
   any_goals fun_prop
 
 theorem kolContent_eq_infinitePiNat {A : Set ((n : ℕ) → X n)} (hA : A ∈ measurableCylinders X) :

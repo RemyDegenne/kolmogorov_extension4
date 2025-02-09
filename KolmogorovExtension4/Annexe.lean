@@ -78,13 +78,16 @@ lemma lintegral_le_mul [MeasurableSpace X] (μ : Measure X) {f : X → ℝ≥0�
     {b : ℝ≥0∞} (hf : ∀ x, f x ≤ b) : ∫⁻ x, f x ∂μ ≤ b * (μ Set.univ) :=
   lintegral_le_mul_ae (Filter.Eventually.of_forall hf)
 
-lemma lintegral_le_mul_ae' [MeasurableSpace X] {μ : Measure X} [IsProbabilityMeasure μ]
+lemma lintegral_le_ae [MeasurableSpace X] {μ : Measure X} [IsProbabilityMeasure μ]
     {f : X → ℝ≥0∞} {b : ℝ≥0∞} (hf : ∀ᵐ x ∂μ, f x ≤ b) : ∫⁻ x, f x ∂μ ≤ b := by
   simpa using lintegral_le_mul_ae hf
 
-lemma lintegral_le_mul' [MeasurableSpace X] (μ : Measure X) [IsProbabilityMeasure μ] {f : X → ℝ≥0∞}
+lemma lintegral_le [MeasurableSpace X] (μ : Measure X) [IsProbabilityMeasure μ] {f : X → ℝ≥0∞}
     {b : ℝ≥0∞} (hf : ∀ x, f x ≤ b) : ∫⁻ x, f x ∂μ ≤ b := by
   simpa using lintegral_le_mul μ hf
+
+lemma lintegral_eq_const [MeasurableSpace X] (μ : Measure X) [IsProbabilityMeasure μ] {f : X → ℝ≥0∞}
+    {c : ℝ≥0∞} (hf : ∀ x, f x = c) : ∫⁻ x, f x ∂μ = c := by simp [hf]
 
 /-- If a function `g` is measurable with respect to the pullback along some function `f`, then
 to prove `g x = g y` it is enough to prove `f x = f y`. -/
@@ -211,27 +214,27 @@ lemma ProbabilityTheory.Kernel.eq_zero_of_isEmpty [IsEmpty Y] (κ : Kernel X Y) 
   ext1 x
   rw [Measure.eq_zero_of_isEmpty (κ x), zero_apply]
 
-theorem Kernel.deterministic_prod_apply' {f : X → Y} (mf : Measurable f)
+theorem ProbabilityTheory.Kernel.deterministic_prod_apply' {f : X → Y} (mf : Measurable f)
     (η : Kernel X Z) [IsSFiniteKernel η] (x : X)
     {s : Set (Y × Z)} (ms : MeasurableSet s) :
     ((Kernel.deterministic f mf) ×ₖ η) x s = η x {z | (f x, z) ∈ s} := by
   rw [Kernel.prod_apply' _ _ _ ms, Kernel.lintegral_deterministic']
   exact measurable_measure_prod_mk_left ms
 
-theorem Kernel.id_prod_apply' (η : Kernel X Y) [IsSFiniteKernel η] (x : X)
+theorem ProbabilityTheory.Kernel.id_prod_apply' (η : Kernel X Y) [IsSFiniteKernel η] (x : X)
     {s : Set (X × Y)} (ms : MeasurableSet s) :
     (Kernel.id ×ₖ η) x s = η x (Prod.mk x ⁻¹' s) := by
   rw [Kernel.id, Kernel.deterministic_prod_apply']
   rfl
   exact ms
 
-theorem Kernel.prod_apply_symm' (κ : Kernel X Y) [IsSFiniteKernel κ]
+theorem ProbabilityTheory.Kernel.prod_apply_symm' (κ : Kernel X Y) [IsSFiniteKernel κ]
     (η : Kernel X Z) [IsSFiniteKernel η]
     (x : X) {s : Set (Y × Z)} (hs : MeasurableSet s) :
     (κ ×ₖ η) x s = ∫⁻ z, κ x ((fun y ↦ (y, z)) ⁻¹' s) ∂η x := by
   rw [Kernel.prod_apply, Measure.prod_apply_symm hs]
 
-theorem Kernel.prod_deterministic_apply' {f : X → Z} (mf : Measurable f)
+theorem ProbabilityTheory.Kernel.prod_deterministic_apply' {f : X → Z} (mf : Measurable f)
     (η : Kernel X Y) [IsSFiniteKernel η] (x : X)
     {s : Set (Y × Z)} (ms : MeasurableSet s) :
     (η ×ₖ (Kernel.deterministic f mf)) x s = η x {y | (y, f x) ∈ s} := by
@@ -239,7 +242,7 @@ theorem Kernel.prod_deterministic_apply' {f : X → Z} (mf : Measurable f)
   · rfl
   · exact measurable_measure_prod_mk_right ms
 
-theorem Kernel.comp_apply'' (κ : Kernel X Y) (η : Kernel Y Z) (x : X) :
+theorem ProbabilityTheory.Kernel.comp_apply'' (κ : Kernel X Y) (η : Kernel Y Z) (x : X) :
     (η ∘ₖ κ) x = (κ x).bind η := by
   ext s hs
   rw [Kernel.comp_apply' _ _ _ hs, Measure.bind_apply hs η.measurable]
