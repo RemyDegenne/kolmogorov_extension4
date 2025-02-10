@@ -9,8 +9,6 @@ import Mathlib.Probability.Kernel.Composition.MeasureComp
 
 open Finset ENNReal ProbabilityTheory MeasureTheory Function Preorder
 
-attribute [measurability, fun_prop] measurable_updateFinset
-
 noncomputable section
 
 section compProdNat
@@ -551,7 +549,7 @@ lemma ptraj_zero (a : ℕ) :
     ptraj κ a 0 = deterministic (frestrictLe₂ (zero_le a)) (measurable_frestrictLe₂ _) := by
   rw [ptraj_le (zero_le a)]
 
-instance [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ) : IsSFiniteKernel (ptraj κ a b) := by
+instance (a b : ℕ) : IsSFiniteKernel (ptraj κ a b) := by
   induction b with
   | zero => rw [ptraj_zero]; infer_instance
   | succ k hk =>
