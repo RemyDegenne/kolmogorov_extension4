@@ -173,9 +173,13 @@ of the trajectory up to time `b`. In particular if `b ≤ a`, this is just a det
 (see `ptraj_le`). The name `ptraj` stands for "partial trajectory".
 
 This kernel is extended in the file `IonescuTulcea` into a kernel with codomain `Π n, X n`. -/
-noncomputable def ptraj (a b : ℕ) : Kernel (Π i : Iic a, X i) (Π i : Iic b, X i) :=
-  Nat.recAux (deterministic (frestrictLe₂ (zero_le _)) (measurable_frestrictLe₂ _))
-    (fun k κ_k => ((Kernel.id ×ₖ ((κ k).map (piSingleton k))) ∘ₖ κ_k).map (IicProdIoc k (k + 1))) b
+noncomputable def ptraj (a b : ℕ) : Kernel (Π i : Iic a, X i) (Π i : Iic b, X i) := by
+  induction b with
+  | zero => exact deterministic (frestrictLe₂ (zero_le a)) (measurable_frestrictLe₂ _)
+  | succ k κ_k =>
+    exact if h : k + 1 ≤ a
+      then deterministic (frestrictLe₂ h) (measurable_frestrictLe₂ h)
+      else ((Kernel.id ×ₖ ((κ k).map (piSingleton k))) ∘ₖ κ_k).map (IicProdIoc k (k + 1))
 
 section Basic
 
