@@ -42,7 +42,26 @@ This is captured in the definition `ptraj κ a b` (`ptraj` stands for "partial t
 The advantage of this approach is that it allows us to write for instance
 `ptraj κ b c ∘ₖ ptraj κ a b = ptraj κ a c` (see `ptraj_comp_ptraj`.)
 
-In this file we therefore define this family of kernels and prove some properties of it, This construction is used in the file `IonescuTulcea` to build the kernel `eta` mentioned above.
+In this file we therefore define this family of kernels and prove some properties of it.
+In particular we provide at the end of the file some results to compute the integral of a function
+against `ptraj κ a b`, takin inspiration from `MeasureTheory.lmarginal`.
+
+This construction is used in the file `IonescuTulcea` to build the kernel `eta` mentioned above.
+
+## Main definitions
+
+* `ptraj κ a b`: Given the trajectory of a point up to time `a`, returns the distribution
+  of the trajectory up to time `b`.
+* `lmarginalPTraj κ a b f`: The integral of `f` against `ptraj κ a b`. This is essentially the
+  integral of `f` against `κ (a + 1) ⊗ₖ ... ⊗ₖ κ b` but seen as depending on all the variables,
+  mimicking `MeasureTheory.lmarginal`. This allows to write
+  `lmarginalPTraj κ b c (lmarginalPTraj κ a b f)`.
+
+## Main statements
+
+* `ptraj_comp_ptraj`: if `a ≤ b` and `b ≤ c` then `ptraj κ b c ∘ₖ ptraj κ a b = ptraj κ a c`.
+* `lmarginalPTraj_self` : if `a ≤ b` and `b ≤ c` then
+  `lmarginalPTraj κ b c (lmarginalPTraj κ a b f) = lmarginalPTraj κ a c`.
 
 -/
 
@@ -50,39 +69,9 @@ open ENNReal Finset Function MeasurableEquiv MeasureTheory Preorder ProbabilityT
 
 variable {X : ℕ → Type*}
 
-section Lemmas
+section Maps
 
-@[measurability, fun_prop]
-lemma measurable_cast {X Y : Type u} [mX : MeasurableSpace X] [mY : MeasurableSpace Y] (h : X = Y)
-    (hm : HEq mX mY) : Measurable (cast h) := by
-  subst h
-  subst hm
-  exact measurable_id
-
-theorem update_updateFinset_eq (x z : Π n, X n) {m : ℕ} :
-    update (updateFinset x (Iic m) (frestrictLe m z)) (m + 1) (z (m + 1)) =
-    updateFinset x (Iic (m + 1)) (frestrictLe (m + 1) z) := by
-  ext i
-  simp only [update, updateFinset, mem_Iic, dite_eq_ite]
-  split_ifs with h <;> try omega
-  cases h
-  all_goals rfl
-
-instance subsingleton_subtype {α : Type*} (a : α) : Subsingleton ({a} : Finset α) where
-  allEq x y := by
-    rw [← Subtype.coe_inj, eq_of_mem_singleton x.2, eq_of_mem_singleton y.2]
-
-lemma updateFinset_updateFinset_subset {ι : Type*} [DecidableEq ι] {α : ι → Type*}
-    {s t : Finset ι} (hst : s ⊆ t) (x : (i : ι) → α i) (y : (i : s) → α i) (z : (i : t) → α i) :
-    updateFinset (updateFinset x s y) t z = updateFinset x t z := by
-  ext i
-  simp only [updateFinset]
-  split_ifs with h1 h2 <;> try rfl
-  exact (h1 (hst h2)).elim
-
-end Lemmas
-
-section Mappings
+/-! ### Auxiliary maps for the definition -/
 
 /-- Gluing `Iic a` and `Ioc a b` into `Iic b`. If `b < a`, this is just a projection on the first
 coordinate followed by a restriction, see `IicProdIoc_le`. -/
@@ -163,12 +152,14 @@ def IicProdIoi (a : ℕ) : ((Π i : Iic a, X i) × ((i : Set.Ioi a) → X i)) �
       · exact measurable_snd.eval
     measurable_invFun := Measurable.prod_mk (measurable_restrict _) (Set.measurable_restrict _) }
 
-end Mappings
+end Maps
 
 variable [∀ n, MeasurableSpace (X n)] {a b c : ℕ}
   {κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))}
 
 section ptraj
+
+/-! ### Definition of `ptraj` -/
 
 namespace ProbabilityTheory
 namespace Kernel
@@ -182,14 +173,9 @@ of the trajectory up to time `b`. In particular if `b ≤ a`, this is just a det
 (see `ptraj_le`). The name `ptraj` stands for "partial trajectory".
 
 This kernel is extended in the file `IonescuTulcea` into a kernel with codomain `Π n, X n`. -/
-noncomputable def ptraj (κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))) (a b : ℕ) :
-    Kernel (Π i : Iic a, X i) (Π i : Iic b, X i) := by
-  induction b with
-  | zero => exact deterministic (frestrictLe₂ (zero_le a)) (measurable_frestrictLe₂ _)
-  | succ k κ_k =>
-    exact if h : k + 1 ≤ a
-      then deterministic (frestrictLe₂ h) (measurable_frestrictLe₂ h)
-      else ((Kernel.id ×ₖ ((κ k).map (piSingleton k))) ∘ₖ κ_k).map (IicProdIoc k (k + 1))
+noncomputable def ptraj (a b : ℕ) : Kernel (Π i : Iic a, X i) (Π i : Iic b, X i) :=
+  Nat.recAux (deterministic (frestrictLe₂ (zero_le _)) (measurable_frestrictLe₂ _))
+    (fun k κ_k => ((Kernel.id ×ₖ ((κ k).map (piSingleton k))) ∘ₖ κ_k).map (IicProdIoc k (k + 1))) b
 
 section Basic
 

@@ -15,7 +15,41 @@ import Mathlib.Probability.Process.Filtration
 New lemmas for mathlib
 -/
 
-open MeasureTheory ProbabilityTheory MeasurableSpace ENNReal Finset Function
+open MeasureTheory ProbabilityTheory MeasurableSpace ENNReal Finset Function Preorder
+
+
+
+section Lemmas
+
+@[measurability, fun_prop]
+lemma measurable_cast {X Y : Type u} [mX : MeasurableSpace X] [mY : MeasurableSpace Y] (h : X = Y)
+    (hm : HEq mX mY) : Measurable (cast h) := by
+  subst h
+  subst hm
+  exact measurable_id
+
+theorem update_updateFinset_eq {X : ℕ → Type*} (x z : Π n, X n) {m : ℕ} :
+    update (updateFinset x (Iic m) (frestrictLe m z)) (m + 1) (z (m + 1)) =
+    updateFinset x (Iic (m + 1)) (frestrictLe (m + 1) z) := by
+  ext i
+  simp only [update, updateFinset, mem_Iic, dite_eq_ite]
+  split_ifs with h <;> try omega
+  cases h
+  all_goals rfl
+
+instance subsingleton_subtype {α : Type*} (a : α) : Subsingleton ({a} : Finset α) where
+  allEq x y := by
+    rw [← Subtype.coe_inj, eq_of_mem_singleton x.2, eq_of_mem_singleton y.2]
+
+lemma updateFinset_updateFinset_subset {ι : Type*} [DecidableEq ι] {α : ι → Type*}
+    {s t : Finset ι} (hst : s ⊆ t) (x : (i : ι) → α i) (y : (i : s) → α i) (z : (i : t) → α i) :
+    updateFinset (updateFinset x s y) t z = updateFinset x t z := by
+  ext i
+  simp only [updateFinset]
+  split_ifs with h1 h2 <;> try rfl
+  exact (h1 (hst h2)).elim
+
+end Lemmas
 
 section indicator
 
@@ -487,7 +521,7 @@ theorem Finset.Iic_sdiff_Ioc_same {α : Type*} [LinearOrder α] [OrderBot α] [L
   rw [← coe_inj, coe_sdiff, coe_Iic, coe_Ioc, coe_Iic, Set.Iic_diff_Ioc_same hab]
 
 theorem Finset.right_mem_Iic {α : Type*} [Preorder α] [LocallyFiniteOrderBot α] (a : α) :
-    a ∈ Iic a := mem_Iic.2 <| le_refl a
+    a ∈ Iic a := mem_Iic.2 <| le_rfl
 
 theorem Finset.Iic_union_Ioc_eq_Iic {α : Type*} [LinearOrder α] [LocallyFiniteOrder α] [OrderBot α]
     {a b : α} (h : a ≤ b) : Iic a ∪ Ioc a b = Iic b := by
