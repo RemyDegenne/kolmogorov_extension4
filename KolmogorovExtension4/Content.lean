@@ -15,22 +15,6 @@ namespace MeasureTheory
 
 variable {α : Type*} {C : Set (Set α)} {s t : Set α}
 
-section ExtendContent
-
-variable {m : ∀ s : Set α, s ∈ C → ℝ≥0∞}
-
-end ExtendContent
-
-section TotalSetFunction
-
-section Semiring
-
-variable (hC : IsSetSemiring C) (m : Set α → ℝ≥0∞)
-  (m_add : ∀ (I : Finset (Set α)) (_h_ss : ↑I ⊆ C) (_h_dis : PairwiseDisjoint (I : Set (Set α)) id)
-    (_h_mem : ⋃₀ ↑I ∈ C), m (⋃₀ I) = ∑ u ∈ I, m u)
-
-end Semiring
-
 section Ring
 
 /-- If an additive content is σ-additive on a set ring, then the content of a monotone sequence of
@@ -96,11 +80,5 @@ theorem addContent_iUnion_le_of_addContent_iUnion_eq_tsum {m : AddContent C} (hC
   · exact Finset.sum_image_le_of_nonneg fun _ _ ↦ zero_le _
 
 end Ring
-
-end TotalSetFunction
-
-section PartialSetFunction
-
-end PartialSetFunction
 
 end MeasureTheory
