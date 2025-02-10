@@ -133,7 +133,8 @@ trajectory up to time `n` we can construct an additive content over cylinders. I
 to composing the kernels by starting at time `n + 1`. -/
 noncomputable def trajContent {n : ℕ} (x₀ : (i : Iic n) → X i) :
     AddContent (measurableCylinders X) :=
-  kolContent (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply' κ x₀))
+  kolContent (isProjectiveMeasureFamily_inducedFamily _
+    (fun _ _ ↦ ptraj_map_frestrictLe₂_apply' (κ := κ) x₀))
 
 /-- The `trajContent κ x₀` of a cylinder indexed by first coordinates is given by
 `ptraj`. -/
@@ -207,8 +208,8 @@ theorem le_lmarginalPTraj_succ {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} 
     · rw [← lmarginalPTraj_self k.le_succ h.le (mf n)]
     · rw [← h, lmarginalPTraj_le _ (_root_.le_refl (k + 1)) (mf n)]
     · rw [lmarginalPTraj_le _ (by omega) (mf n),
-        (hcte n).lmarginalPTraj_eq _ (mf n) (by omega),
-        (hcte n).lmarginalPTraj_eq _ (mf n) (by omega)]
+        (hcte n).lmarginalPTraj_le _ (mf n) (by omega),
+        (hcte n).lmarginalPTraj_le _ (mf n) (by omega)]
   -- `F` is also a bounded sequence.
   have F_le n x : F n x ≤ bound := by
     simp_rw [F, lmarginalPTraj]
@@ -233,7 +234,7 @@ theorem le_lmarginalPTraj_succ {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} 
   -- therefore there exists `x` such that `ε ≤ l(y, x)`.
   obtain ⟨x, hx⟩ : ∃ x, ε ≤ l (update (updateFinset x_ _ y) (k + 1) x) := by
     have : ∫⁻ x, l (update (updateFinset x_ _ y) (k + 1) x) ∂(κ k y) ≠ ∞ :=
-      ne_top_of_le_ne_top fin_bound <| lintegral_le_mul' _
+      ne_top_of_le_ne_top fin_bound <| lintegral_le _
         fun y ↦ le_of_tendsto' (tendstoF _) <| fun _ ↦ F_le _ _
     obtain ⟨x, hx⟩ := exists_lintegral_le this
     refine ⟨x, (ε_le_lint x_).trans ?_⟩
@@ -394,7 +395,7 @@ theorem trajContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) → X i)
     let x_ : (n : ℕ) → X n := Classical.ofNonempty
     rw [s_eq, ← frestrictLe_updateFinset x_ x₀,
       trajContent_eq_lmarginalPTraj κ mS (updateFinset x_ _ x₀)]
-    refine ne_of_lt <| lt_of_le_of_lt (lintegral_le_mul' _ (Set.indicator_le (by simp)))
+    refine ne_of_lt <| lt_of_le_of_lt (lintegral_le _ (Set.indicator_le (by simp)))
       (by norm_num : (1 : ℝ≥0∞) < ∞)
   · exact fun s hs anti_s inter_s ↦ trajContent_tendsto_zero κ s hs anti_s inter_s x₀
 
@@ -415,8 +416,8 @@ theorem isProbabilityMeasure_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
 
 theorem isProjectiveLimit_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     IsProjectiveLimit (trajFun κ p x₀) (inducedFamily (fun n ↦ ptraj κ p n x₀)) := by
-  refine isProjectiveLimit_nat_iff _
-    (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply' κ x₀)) _ |>.2 fun n ↦ ?_
+  refine isProjectiveLimit_nat_iff _ (isProjectiveMeasureFamily_inducedFamily _
+    (fun _ _ ↦ ptraj_map_frestrictLe₂_apply' x₀)) _ |>.2 fun n ↦ ?_
   ext s ms
   rw [Measure.map_apply (measurable_frestrictLe n) ms]
   have h_mem : (frestrictLe n) ⁻¹' s ∈ measurableCylinders X :=
@@ -480,7 +481,7 @@ theorem eq_trajKernel' {a : ℕ} (n : ℕ) (η : Kernel ((i : Iic a) → X i) ((
   rw [isProjectiveLimit_nat_iff' _ _ _ n]
   · intro k hk
     rw [inducedFamily_Iic, ← map_apply _ (measurable_frestrictLe k), hη k hk]
-  · exact (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply' κ x₀))
+  · exact (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply' x₀))
 
 theorem eq_trajKernel {a : ℕ} (η : Kernel ((i : Iic a) → X i) ((n : ℕ) → X n))
     (hη : ∀ b, η.map (frestrictLe b) = ptraj κ a b) :

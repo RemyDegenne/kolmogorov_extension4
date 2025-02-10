@@ -457,9 +457,8 @@ theorem kolContent_pi_sigma_subadditive ⦃f : ℕ → Set ((i : ι) → X i)⦄
 extension of the function which gives to cylinders the measure given by the associated product
 measure. -/
 noncomputable def productMeasure : Measure ((i : ι) → X i) := by
-  exact Measure.ofAddContent isSetSemiring_measurableCylinders generateFrom_measurableCylinders
-    (kolContent (isProjectiveMeasureFamily_pi μ))
-    (kolContent_pi_sigma_subadditive μ)
+  exact (kolContent (isProjectiveMeasureFamily_pi μ)).measure isSetSemiring_measurableCylinders
+    generateFrom_measurableCylinders.ge (kolContent_pi_sigma_subadditive μ)
 
 /-- The product measure is the projective limit of the partial product measures. This ensures
 uniqueness and expresses the value of the product measures applied to cylinders. -/
@@ -472,7 +471,7 @@ theorem isProjectiveLimit_productMeasure :
   have h_mem : I.restrict ⁻¹' s ∈ measurableCylinders X := by
     rw [mem_measurableCylinders]; exact ⟨I, s, hs, rfl⟩
   conv_lhs => change (productMeasure μ) (I.restrict ⁻¹' s)
-  rw [productMeasure, Measure.ofAddContent_eq _ _ _ _ h_mem,
+  rw [productMeasure, AddContent.measure_eq _ _ generateFrom_measurableCylinders.symm _ h_mem,
     kolContent_congr _ (I.restrict ⁻¹' s) rfl hs]
 
 instance : IsProbabilityMeasure (productMeasure μ) := by

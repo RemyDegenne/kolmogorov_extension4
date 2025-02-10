@@ -1,13 +1,52 @@
 /-
-Copyright (c) 2023 Rémy Degenne. All rights reserved.
+Copyright (c) 2025 Etienne Marion. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Rémy Degenne, Etienne Marion
+Authors: Etienne Marion
 -/
 import KolmogorovExtension4.Annexe
 import KolmogorovExtension4.DependsOn
 import Mathlib.Probability.Kernel.Composition.MeasureComp
 
-open Finset ENNReal ProbabilityTheory MeasureTheory Function Preorder MeasurableEquiv
+/-!
+# Consecutive composition of kernels
+
+This file is the first step towards Ionescu-Tulcea theorem, which allows for instance to construct
+the product of an infinite family of probability measures. The idea of the statement is as follows:
+consider a family of kernels `κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))`.
+One can interpret `κ n` as a kernel which takes as an input the trajectory of a point started in
+`X 0` and moving `X 0 → X 1 → X 2 → ... → X n` and which outputs the distribution of the next
+position of the point in `X (n + 1)`. If `a b : ℕ` and `a < b`, we can compose the kernels,
+and `κ a ⊗ₖ κ (a + 1) ⊗ₖ ... ⊗ₖ κ b` will take the trajectory up to time `a` as input and outputs
+the distrbution of the trajectory on `X (a + 1) × ... × X (b + 1)`.
+
+The Ionescu-Tulcea theorem then tells us that these compositions can be extend into a kernel
+`η : Kernel (Π i : Iic a, X i) → Π n ≥ a, X n` which given the trajectory up to time `a` outputs
+the distribution of the infinite trajectory started in `X (a + 1)`. In other words this theorem
+makes sense of composing infinitely many kernels together.
+
+To be able to even state the theorem we want to take the composition-product
+(see `ProbabilityTheory.Kernel.compProd`) of consecutive kernels.
+This however is not straight forward.
+
+Consider `n : ℕ`. We cannot write `(κ n) ⊗ₖ (κ (n + 1))` directly, we need to first
+introduce an equivalence to see `κ (n + 1)` as a kernel with codomain
+`(Π i : Iic n, X i) × X (n + 1)`, and we get a `Kernel (Π i : Iic n, X i) (X (n + 1) × (X (n + 2))`.
+However we want to do multiple compostion at ones, i.e. write
+`(κ n) ⊗ₖ ... ⊗ₖ (κ m)` for `n < m`. This requires even more equivalence to make sense of, and at
+the end of the day we get kernels which still cannot be composed together.
+
+To tackle this issue, we decide here to only consider kernels of the form
+`Kernel (Π i : Iic a, X i) (Π i : Iic b, X i)`. In other words these kernels take as input
+a trajectory up to time `a` and outputs the distribution of the full trajectory up to time `b`.
+This is captured in the definition `ptraj κ a b` (`ptraj` stands for "partial trajectory").
+The advantage of this approach is that it allows us to write for instance
+`ptraj κ b c ∘ₖ ptraj κ a b = ptraj κ a c` (see `ptraj_comp_ptraj`.)
+
+In this file we therefore define this family of kernels and prove some properties of it, This construction is used in the file `IonescuTulcea` to build the kernel `eta` mentioned above.
+
+-/
+
+open ENNReal Finset Function MeasurableEquiv MeasureTheory Preorder ProbabilityTheory
 
 variable {X : ℕ → Type*}
 
