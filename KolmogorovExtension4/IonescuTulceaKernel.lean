@@ -401,15 +401,16 @@ theorem trajContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) → X i)
 /-- This function is the kernel given by the Ionescu-Tulcea theorem. -/
 noncomputable def trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     Measure ((n : ℕ) → X n) :=
-  Measure.ofAddContent isSetSemiring_measurableCylinders generateFrom_measurableCylinders
-    (trajContent κ x₀) (trajContent_sigma_subadditive κ x₀)
+  (trajContent κ x₀).measure isSetSemiring_measurableCylinders generateFrom_measurableCylinders.ge
+     (trajContent_sigma_subadditive κ x₀)
 
 theorem isProbabilityMeasure_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     IsProbabilityMeasure (trajFun κ p x₀) where
   measure_univ := by
-    rw [← cylinder_univ (Iic 0), trajFun, Measure.ofAddContent_eq,
+    rw [← cylinder_univ (Iic 0), trajFun, AddContent.measure_eq,
       trajContent_cylinder _ _ MeasurableSet.univ]
     · exact measure_univ
+    · exact generateFrom_measurableCylinders.symm
     · exact (mem_measurableCylinders _).2 ⟨Iic 0, Set.univ, MeasurableSet.univ, rfl⟩
 
 theorem isProjectiveLimit_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
@@ -420,7 +421,7 @@ theorem isProjectiveLimit_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
   rw [Measure.map_apply (measurable_frestrictLe n) ms]
   have h_mem : (frestrictLe n) ⁻¹' s ∈ measurableCylinders X :=
     (mem_measurableCylinders _).2 ⟨Iic n, s, ms, rfl⟩
-  rw [trajFun, Measure.ofAddContent_eq _ _ _ _ h_mem, trajContent,
+  rw [trajFun, AddContent.measure_eq _ _ generateFrom_measurableCylinders.symm _ h_mem, trajContent,
     kolContent_congr _ (frestrictLe n ⁻¹' s) rfl ms]
 
 theorem measurable_trajFun (p : ℕ) : Measurable (trajFun κ p) := by
@@ -432,7 +433,7 @@ theorem measurable_trajFun (p : ℕ) : Measurable (trajFun κ p) := by
     (fun f disf mf hf ↦ ?union)
   · obtain ⟨N, S, mS, t_eq⟩ : ∃ N S, MeasurableSet S ∧ t = cylinder (Iic N) S := by
       simpa [cylinders_nat] using ht
-    simp_rw [trajFun, Measure.ofAddContent_eq _ _ _ _ ht, trajContent,
+    simp_rw [trajFun, AddContent.measure_eq _ _ generateFrom_measurableCylinders.symm _ ht, trajContent,
       kolContent_congr _ t t_eq mS, inducedFamily]
     refine Measure.measurable_measure.1 ?_ _ mS
     exact (Measure.measurable_map _ (measurable_restrict₂ _)).comp (measurable _)

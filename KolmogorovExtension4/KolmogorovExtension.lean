@@ -3,10 +3,10 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
-import KolmogorovExtension4.CaratheodoryExtension
 import KolmogorovExtension4.RegularContent
-import Mathlib.MeasureTheory.Measure.RegularityCompacts
 import Mathlib.MeasureTheory.Constructions.Projective
+import Mathlib.MeasureTheory.Measure.RegularityCompacts
+import Mathlib.MeasureTheory.OuterMeasure.OfAddContent
 
 open Set
 
@@ -202,8 +202,8 @@ noncomputable def projectiveLimitWithWeakestHypotheses [∀ i, PseudoEMetricSpac
     [∀ i, BorelSpace (α i)] [∀ i, SecondCountableTopology (α i)]
     [∀ i, CompleteSpace (α i)] (P : ∀ J : Finset ι, Measure (Π j : J, α j))
     [∀ i, IsFiniteMeasure (P i)] (hP : IsProjectiveMeasureFamily P) : Measure (Π i, α i) :=
-  Measure.ofAddContent isSetSemiring_measurableCylinders generateFrom_measurableCylinders
-    (kolContent hP)
+  (kolContent hP).measure isSetSemiring_measurableCylinders
+    generateFrom_measurableCylinders.symm.le
     (kolContent_iUnion_le_sum_of_innerRegular hP fun J ↦
       innerRegular_isCompact_isClosed_measurableSet_of_finite (P J))
 
@@ -228,8 +228,9 @@ theorem kolContent_iUnion_le_sum (hP : IsProjectiveMeasureFamily P) ⦃f : ℕ �
 /-- Projective limit of a projective measure family. -/
 noncomputable def projectiveLimit (P : ∀ J : Finset ι, Measure (Π j : J, α j))
     [∀ i, IsFiniteMeasure (P i)] (hP : IsProjectiveMeasureFamily P) : Measure (Π i, α i) :=
-  Measure.ofAddContent isSetSemiring_measurableCylinders generateFrom_measurableCylinders
-    (kolContent hP) (kolContent_iUnion_le_sum hP)
+  (kolContent hP).measure isSetSemiring_measurableCylinders
+      generateFrom_measurableCylinders.symm.le
+     (kolContent_iUnion_le_sum hP)
 
 /-- **Kolmogorov extension theorem**: for any projective measure family `P`, there exists a measure
 on `Π i, α i` which is the projective limit of `P`. That measure is given by
@@ -243,7 +244,8 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
   swap; · exact J.measurable_restrict
   have h_mem : J.restrict ⁻¹' s ∈ measurableCylinders α :=
     (mem_measurableCylinders _).mpr ⟨J, s, hs, rfl⟩
-  rw [projectiveLimit, Measure.ofAddContent_eq _ _ _ _ h_mem, kolContent_congr hP (_ ⁻¹' _) rfl hs]
+  rw [projectiveLimit, AddContent.measure_eq _ _ _ _ h_mem, kolContent_congr hP (_ ⁻¹' _) rfl hs]
+  exact generateFrom_measurableCylinders.symm
 
 instance isFiniteMeasure_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
     IsFiniteMeasure (projectiveLimit P hP) :=
