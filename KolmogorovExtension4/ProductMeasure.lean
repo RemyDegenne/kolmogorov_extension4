@@ -172,7 +172,7 @@ theorem kerNat_prod {a b : ℕ} (hab : a < b) :
         (IocProdIoc a n (n + 1)) ∘ (Prod.map (restrict₂ Ioc_subset_Iic_self) id) := by
       ext x i
       simp [IicProdIoc, IocProdIoc]
-    rw [Kernel.const_apply, ptraj_succ (by omega), Kernel.map_const, Kernel.prod_const_comp,
+    rw [Kernel.const_apply, ptraj_succ_of_le (by omega), Kernel.map_const, Kernel.prod_const_comp,
       Kernel.id_comp, Kernel.map_map, this, ← Kernel.map_map, Kernel.map_prod, hind, Kernel.map_id,
       Kernel.map_apply, prod_apply, const_apply, const_apply, map_piSingleton, prod_map_IocProdIoc]
     any_goals fun_prop

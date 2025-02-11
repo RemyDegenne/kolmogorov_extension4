@@ -3,7 +3,7 @@ Copyright (c) 2024 Etienne Marion. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Etienne Marion
 -/
-import KolmogorovExtension4.compProdNat
+import KolmogorovExtension4.PTraj
 import KolmogorovExtension4.DependsOn
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import KolmogorovExtension4.KolmogorovExtension
@@ -134,7 +134,7 @@ to composing the kernels by starting at time `n + 1`. -/
 noncomputable def trajContent {n : ℕ} (x₀ : (i : Iic n) → X i) :
     AddContent (measurableCylinders X) :=
   kolContent (isProjectiveMeasureFamily_inducedFamily _
-    (fun _ _ ↦ ptraj_map_frestrictLe₂_apply' (κ := κ) x₀))
+    (fun _ _ ↦ ptraj_map_frestrictLe₂_apply (κ := κ) x₀))
 
 /-- The `trajContent κ x₀` of a cylinder indexed by first coordinates is given by
 `ptraj`. -/
@@ -305,7 +305,7 @@ theorem trajContent_tendsto_zero (A : ℕ → Set (Π n : ℕ, X n))
   -- This is used to then show that the integral of `χₙ` from time `k` is non-increasing.
   have lma_inv k M n (h : N n ≤ M) :
       lmarginalPTraj κ k M (χ n) = lmarginalPTraj κ k (N n) (χ n) :=
-    (χ_dep n).lmarginalPTraj_right k (mχ n) h (_root_.le_refl _)
+    (χ_dep n).lmarginalPTraj_right (mχ n) h (_root_.le_refl _)
   -- the integral of `χₙ` from time `k` is non-increasing.
   have anti_lma k x : Antitone fun n ↦ lmarginalPTraj κ k (N n) (χ n) x := by
     intro m n hmn
@@ -417,7 +417,7 @@ theorem isProbabilityMeasure_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
 theorem isProjectiveLimit_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     IsProjectiveLimit (trajFun κ p x₀) (inducedFamily (fun n ↦ ptraj κ p n x₀)) := by
   refine isProjectiveLimit_nat_iff _ (isProjectiveMeasureFamily_inducedFamily _
-    (fun _ _ ↦ ptraj_map_frestrictLe₂_apply' x₀)) _ |>.2 fun n ↦ ?_
+    (fun _ _ ↦ ptraj_map_frestrictLe₂_apply x₀)) _ |>.2 fun n ↦ ?_
   ext s ms
   rw [Measure.map_apply (measurable_frestrictLe n) ms]
   have h_mem : (frestrictLe n) ⁻¹' s ∈ measurableCylinders X :=
@@ -481,7 +481,7 @@ theorem eq_trajKernel' {a : ℕ} (n : ℕ) (η : Kernel ((i : Iic a) → X i) ((
   rw [isProjectiveLimit_nat_iff' _ _ _ n]
   · intro k hk
     rw [inducedFamily_Iic, ← map_apply _ (measurable_frestrictLe k), hη k hk]
-  · exact (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply' x₀))
+  · exact (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply x₀))
 
 theorem eq_trajKernel {a : ℕ} (η : Kernel ((i : Iic a) → X i) ((n : ℕ) → X n))
     (hη : ∀ b, η.map (frestrictLe b) = ptraj κ a b) :
