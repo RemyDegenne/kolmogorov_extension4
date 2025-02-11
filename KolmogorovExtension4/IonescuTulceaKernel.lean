@@ -9,49 +9,45 @@ import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import KolmogorovExtension4.KolmogorovExtension
 import Batteries.Data.Nat.Lemmas
 
-open MeasureTheory ProbabilityTheory Finset ENNReal Filter Topology Function MeasurableSpace Preorder
+open ENNReal Filter Finset Function MeasurableSpace MeasureTheory Preorder ProbabilityTheory Topology
 
 section castLemmas
 
 variable {X : ℕ → Type*}
+
+/-- This function takes a trajectory up to time `p` and a way of building the next step of the
+trajectory and returns a whole trajectory whose first steps correspond
+to the initial ones provided. -/
+def iterate_induction {a : ℕ} (x₀ : Π i : Iic a, X i)
+    (ind : (n : ℕ) → (Π i : Iic n, X i) → X (n + 1)) : Π n, X n
+  | 0 => x₀ ⟨0, mem_Iic.2 <| zero_le a⟩
+  | k + 1 => if h : k + 1 ≤ a
+      then x₀ ⟨k + 1, mem_Iic.2 h⟩
+      else ind k (fun i ↦ iterate_induction x₀ ind i)
+  decreasing_by exact Nat.lt_succ.2 (mem_Iic.1 i.2)
+
+theorem iterate_induction_le {a : ℕ} (x₀ : Π i : Iic a, X i)
+    (ind : (n : ℕ) → (Π i : Iic n, X i) → X (n + 1)) (k : Iic a) :
+    iterate_induction x₀ ind k = x₀ k := by
+  obtain ⟨(zero | j), hi⟩ := k <;> rw [iterate_induction]
+  rw [dif_pos (mem_Iic.1 hi)]
+
+lemma frestrictLe_iterate_induction {a : ℕ} (x₀ : Π i : Iic a, X i)
+    (ind : (n : ℕ) → (Π i : Iic n, X i) → X (n + 1)) :
+    frestrictLe a (iterate_induction x₀ ind) = x₀ := by
+  ext i
+  simp [iterate_induction_le]
 
 private lemma Iic_pi_eq {a b : ℕ} (h : a = b) :
     ((i : Iic a) → X i) = ((i : Iic b) → X i) := by cases h; rfl
 
 private lemma cast_pi {s t : Set ℕ} (h : s = t) (x : (i : s) → X i) (i : t) :
     cast (congrArg (fun u : Set ℕ ↦ (Π i : u, X i)) h) x i = x ⟨i.1, h.symm ▸ i.2⟩ := by
-  subst h
-  rfl
-
-/-- This function takes a trajectory up to time `p` and a way of building the next step of the
-trajectory and returns a whole trajectory whose first steps correspond
-to the initial ones provided. -/
-def iterate_induction {p : ℕ} (x₀ : (i : Iic p) → X i)
-    (ind : (k : ℕ) → ((n : Iic k) → X n) → X (k + 1)) : (k : ℕ) → X k
-  | 0 => x₀ ⟨0, mem_Iic.2 <| zero_le p⟩
-  | q + 1 =>
-    if hq : q + 1 ≤ p
-      then x₀ ⟨q + 1, mem_Iic.2 hq⟩
-      else ind q (fun i ↦ iterate_induction x₀ ind i)
-  decreasing_by exact Nat.lt_succ.2 (mem_Iic.1 i.2)
-
-theorem iterate_induction_le {p : ℕ} (x₀ : (i : Iic p) → X i)
-    (ind : (k : ℕ) → ((n : Iic k) → X n) → X (k + 1)) (k : Iic p) :
-    iterate_induction x₀ ind k = x₀ k := by
-  obtain ⟨(zero | j), hi⟩ := k
-  · rw [iterate_induction]
-  · rw [iterate_induction]
-    simp [mem_Iic.1 hi]
-
-lemma frestrictLe_iterate_induction {p : ℕ} (x₀ : (i : Iic p) → X i)
-    (ind : (k : ℕ) → ((n : Iic k) → X n) → X (k + 1)) :
-    frestrictLe p (iterate_induction x₀ ind) = x₀ := by
-  ext i
-  simp [iterate_induction_le]
+  cases h; rfl
 
 variable [∀ n, MeasurableSpace (X n)]
 
-private lemma measure_cast {a b : ℕ} (h : a = b) (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) :
+private lemma measure_cast {a b : ℕ} (h : a = b) (μ : (n : ℕ) → Measure (Π i : Iic n, X i)) :
     (μ a).map (cast (Iic_pi_eq h)) = μ b := by
   subst h
   exact Measure.map_id
@@ -69,8 +65,8 @@ variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
 /-- To check that a measure `ν` is the projective limit of a projective family of measures indexed
 by `Finset ℕ`, it is enough to check on intervals of the form `Iic n`, where `n` is larger than
 a given integer. -/
-theorem isProjectiveLimit_nat_iff' (μ : (I : Finset ℕ) → Measure ((i : I) → X i))
-    (hμ : IsProjectiveMeasureFamily μ) (ν : Measure ((n : ℕ) → X n)) (a : ℕ) :
+theorem isProjectiveLimit_nat_iff' {μ : (I : Finset ℕ) → Measure (Π i : I, X i)}
+    (hμ : IsProjectiveMeasureFamily μ) (ν : Measure (Π n, X n)) (a : ℕ) :
     IsProjectiveLimit ν μ ↔ ∀ ⦃n⦄, n ≥ a → ν.map (frestrictLe n) = μ (Iic n) := by
   refine ⟨fun h n _ ↦ h (Iic n), fun h I ↦ ?_⟩
   have := (I.sub_Iic.trans (Iic_subset_Iic.2 (le_max_left (I.sup id) a)))
@@ -79,35 +75,44 @@ theorem isProjectiveLimit_nat_iff' (μ : (I : Finset ℕ) → Measure ((i : I) �
 
 /-- To check that a measure `ν` is the projective limit of a projective family of measures indexed
 by `Finset ℕ`, it is enough to check on intervals of the form `Iic n`. -/
-theorem isProjectiveLimit_nat_iff (μ : (I : Finset ℕ) → Measure ((i : I) → X i))
-    (hμ : IsProjectiveMeasureFamily μ) (ν : Measure ((n : ℕ) → X n)) :
+theorem isProjectiveLimit_nat_iff {μ : (I : Finset ℕ) → Measure (Π i : I, X i)}
+    (hμ : IsProjectiveMeasureFamily μ) (ν : Measure (Π n, X n)) :
     IsProjectiveLimit ν μ ↔ ∀ n, ν.map (frestrictLe n) = μ (Iic n) := by
-  rw [isProjectiveLimit_nat_iff' _ hμ _ 0]
+  rw [isProjectiveLimit_nat_iff' hμ _ 0]
   simp
 
-/-- Given a family of measures `μ : (n : ℕ) → Measure ((i : Iic n) → X i)`, we can define a family
+variable (μ : (n : ℕ) → Measure (Π i : Iic n, X i))
+
+/-- Given a family of measures `μ : (n : ℕ) → Measure (Π i : Iic n, X i)`, we can define a family
 of measures indexed by `Finset ℕ` by projecting the measures. -/
-noncomputable def inducedFamily (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) :
-    (S : Finset ℕ) → Measure ((k : S) → X k) :=
-  fun S ↦ (μ (S.sup id)).map (restrict₂ S.sub_Iic)
+noncomputable def inducedFamily (S : Finset ℕ) :
+    Measure ((k : S) → X k) := (μ (S.sup id)).map (restrict₂ S.sub_Iic)
 
-instance (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) [∀ n, IsFiniteMeasure (μ n)] (I : Finset ℕ) :
-    IsFiniteMeasure (inducedFamily μ I) := by
+instance [∀ n, SFinite (μ n)] (I : Finset ℕ) :
+    SFinite (inducedFamily μ I) := by rw [inducedFamily]; infer_instance
+
+instance [∀ n, IsFiniteMeasure (μ n)] (I : Finset ℕ) :
+    IsFiniteMeasure (inducedFamily μ I) := by rw [inducedFamily]; infer_instance
+
+instance [∀ n, IsZeroOrProbabilityMeasure (μ n)] (I : Finset ℕ) :
+    IsZeroOrProbabilityMeasure (inducedFamily μ I) := by rw [inducedFamily]; infer_instance
+
+instance [∀ n, IsProbabilityMeasure (μ n)] (I : Finset ℕ) :
+    IsProbabilityMeasure (inducedFamily μ I) := by
   rw [inducedFamily]
-  infer_instance
+  exact isProbabilityMeasure_map (measurable_restrict₂ _).aemeasurable
 
-/-- Given a family of measures `μ : (n : ℕ) → Measure ((i : Iic n) → X i)`, the induced family
+/-- Given a family of measures `μ : (n : ℕ) → Measure (Π i : Iic n, X i)`, the induced family
 equals `μ` over the intervals `Iic n`. -/
-theorem inducedFamily_Iic (μ : (n : ℕ) → Measure ((i : Iic n) → X i)) (n : ℕ) :
-    inducedFamily μ (Iic n) = μ n := by
+theorem inducedFamily_Iic (n : ℕ) : inducedFamily μ (Iic n) = μ n := by
   rw [inducedFamily, ← measure_cast (sup_Iic n) μ]
   congr with x i
   rw [restrict₂, cast_pi (by rw [sup_Iic n])]
 
-/-- Given a family of measures `μ : (n : ℕ) → Measure ((i : Iic n) → X i)`, the induced family
+/-- Given a family of measures `μ : (n : ℕ) → Measure (Π i : Iic n, X i)`, the induced family
 will be projective only if `μ` is projective, in the sense that if `a ≤ b`, then projecting
 `μ b` gives `μ a`. -/
-theorem isProjectiveMeasureFamily_inducedFamily (μ : (n : ℕ) → Measure ((i : Iic n) → X i))
+theorem isProjectiveMeasureFamily_inducedFamily
     (h : ∀ a b : ℕ, ∀ hab : a ≤ b, (μ b).map (frestrictLe₂ hab) = μ a) :
     IsProjectiveMeasureFamily (inducedFamily μ) := by
   intro I J hJI
@@ -116,7 +121,7 @@ theorem isProjectiveMeasureFamily_inducedFamily (μ : (n : ℕ) → Measure ((i 
   rw [Measure.map_map, restrict₂_comp_restrict₂,
     ← restrict₂_comp_restrict₂ J.sub_Iic (Iic_subset_Iic.2 sls), ← Measure.map_map, ← frestrictLe₂,
     h (J.sup id) (I.sup id) sls]
-  any_goals fun_prop
+  all_goals fun_prop
 
 end ProjectiveFamily
 
@@ -125,13 +130,12 @@ open Kernel
 section definition
 
 variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
-  (κ : (k : ℕ) → Kernel (Π i : Iic k, X i) (X (k + 1)))
-  [∀ k, IsMarkovKernel (κ k)]
+  (κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))) [∀ n, IsMarkovKernel (κ n)]
 
-/-- Given a family of kernels `κ : (n : ℕ) → Kernel (Π i : Iic k, X i) (X (n + 1))`, and the
+/-- Given a family of kernels `κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))`, and the
 trajectory up to time `n` we can construct an additive content over cylinders. It corresponds
 to composing the kernels by starting at time `n + 1`. -/
-noncomputable def trajContent {n : ℕ} (x₀ : (i : Iic n) → X i) :
+noncomputable def trajContent {n : ℕ} (x₀ : Π i : Iic n, X i) :
     AddContent (measurableCylinders X) :=
   kolContent (isProjectiveMeasureFamily_inducedFamily _
     (fun _ _ ↦ ptraj_map_frestrictLe₂_apply (κ := κ) x₀))
@@ -144,8 +148,8 @@ theorem trajContent_cylinder {a b : ℕ} (x₀ : (i : Iic a) → X i)
   rw [trajContent, kolContent_cylinder _ mS, inducedFamily_Iic]
 
 /-- The `trajContent` of a cylinder is equal to the integral of its indicator function. -/
-theorem trajContent_eq_lmarginalPTraj {N : ℕ} {S : Set ((i : Iic N) → X i)}
-    (mS : MeasurableSet S) (x₀ : (n : ℕ) → X n) (n : ℕ) :
+theorem trajContent_eq_lmarginalPTraj {N : ℕ} {S : Set (Π i : Iic N, X i)}
+    (mS : MeasurableSet S) (x₀ : Π n, X n) (n : ℕ) :
     trajContent κ (frestrictLe n x₀) (cylinder _ S) =
       lmarginalPTraj κ n N ((cylinder _ S).indicator 1) x₀ := by
   rw [trajContent_cylinder _ _ mS, ← lintegral_indicator_one mS, lmarginalPTraj]
@@ -179,11 +183,11 @@ Assume then that there exists `ε` and `y : (n : Iic k) → X n` such that
 when integrating `f n` against `ptraj k (N n) y`, you get something at least
 `ε` for all `n`. Then there exists `z` such that this remains true when integrating
 `f` against `ptraj (k + 1) (N n) (update y (k + 1) z)`. -/
-theorem le_lmarginalPTraj_succ {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} {N : ℕ → ℕ}
+theorem le_lmarginalPTraj_succ {f : ℕ → (Π n, X n) → ℝ≥0∞} {N : ℕ → ℕ}
     (hcte : ∀ n, DependsOn (f n) (Iic (N n))) (mf : ∀ n, Measurable (f n))
     {bound : ℝ≥0∞} (fin_bound : bound ≠ ∞) (le_bound : ∀ n x, f n x ≤ bound) {k : ℕ}
     (anti : ∀ x, Antitone (fun n ↦ lmarginalPTraj κ (k + 1) (N n) (f n) x))
-    {l : ((n : ℕ) → X n) → ℝ≥0∞}
+    {l : (Π n, X n) → ℝ≥0∞}
     (htendsto : ∀ x, Tendsto (fun n ↦ lmarginalPTraj κ (k + 1) (N n) (f n) x)
       atTop (𝓝 (l x)))
     (ε : ℝ≥0∞) (y : (n : Iic k) → X n)
@@ -193,10 +197,10 @@ theorem le_lmarginalPTraj_succ {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} 
   have _ n : Nonempty (X n) := by
     refine Nat.case_strong_induction_on (p := fun n ↦ Nonempty (X n)) _ inferInstance
       fun n hind ↦ ?_
-    have : Nonempty ((i : Iic n) → X i) :=
+    have : Nonempty (Π i : Iic n, X i) :=
       Nonempty.intro fun i ↦ @Classical.ofNonempty _ (hind i.1 (mem_Iic.1 i.2))
     exact ProbabilityMeasure.nonempty ⟨κ n Classical.ofNonempty, inferInstance⟩
-  let F : ℕ → ((n : ℕ) → X n) → ℝ≥0∞ := fun n ↦ lmarginalPTraj κ (k + 1) (N n) (f n)
+  let F : ℕ → (Π n, X n) → ℝ≥0∞ := fun n ↦ lmarginalPTraj κ (k + 1) (N n) (f n)
   -- `Fₙ` converges to `l` by hypothesis.
   have tendstoF x : Tendsto (F · x) atTop (𝓝 (l x)) := htendsto x
   -- Integrating `fₙ` between time `k` and `Nₙ` is the same as integrating
@@ -229,7 +233,7 @@ theorem le_lmarginalPTraj_succ {f : ℕ → ((n : ℕ) → X n) → ℝ≥0∞} 
   -- so this is also true for `l`.
   have ε_le_lint x : ε ≤ lmarginalPTraj κ k (k + 1) l (updateFinset x _ y) :=
     ge_of_tendsto (tendsto_int _) (by simp [hpos])
-  let x_ : (n : ℕ) → X n := Classical.ofNonempty
+  let x_ : Π n, X n := Classical.ofNonempty
   -- We now have that the integral of `l` with respect to a probability measure is greater than `ε`,
   -- therefore there exists `x` such that `ε ≤ l(y, x)`.
   obtain ⟨x, hx⟩ : ∃ x, ε ≤ l (update (updateFinset x_ _ y) (k + 1) x) := by
@@ -272,7 +276,7 @@ theorem trajContent_tendsto_zero (A : ℕ → Set (Π n : ℕ, X n))
   have _ n : Nonempty (X n) := by
     refine Nat.case_strong_induction_on (p := fun n ↦ Nonempty (X n)) _ inferInstance
       fun n hind ↦ ?_
-    have : Nonempty ((i : Iic n) → X i) :=
+    have : Nonempty (Π i : Iic n, X i) :=
       Nonempty.intro fun i ↦ @Classical.ofNonempty _ (hind i.1 (mem_Iic.1 i.2))
     exact ProbabilityMeasure.nonempty ⟨κ n Classical.ofNonempty, inferInstance⟩
   -- `Aₙ` is a cylinder, it can be written `cylinder (Iic (N n)) Sₙ`.
@@ -280,7 +284,7 @@ theorem trajContent_tendsto_zero (A : ℕ → Set (Π n : ℕ, X n))
     simpa [cylinders_nat] using A_mem n
   choose N S mS A_eq using A_cyl
   -- We write `χₙ` for the indicator function of `Aₙ`.
-  let χ n := (A n).indicator (1 : ((n : ℕ) → X n) → ℝ≥0∞)
+  let χ n := (A n).indicator (1 : (Π n, X n) → ℝ≥0∞)
   -- `χₙ` is measurable.
   have mχ n : Measurable (χ n) := by
     simp_rw [χ, A_eq]
@@ -377,13 +381,13 @@ theorem trajContent_tendsto_zero (A : ℕ → Set (Π n : ℕ, X n))
 
 /-- The `trajContent` is sigma-subadditive. -/
 theorem trajContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) → X i)
-    ⦃f : ℕ → Set ((n : ℕ) → X n)⦄ (hf : ∀ n, f n ∈ measurableCylinders X)
+    ⦃f : ℕ → Set (Π n, X n)⦄ (hf : ∀ n, f n ∈ measurableCylinders X)
     (hf_Union : (⋃ n, f n) ∈ measurableCylinders X) :
     trajContent κ x₀ (⋃ n, f n) ≤ ∑' n, trajContent κ x₀ (f n) := by
   have _ n : Nonempty (X n) := by
     refine Nat.case_strong_induction_on (p := fun n ↦ Nonempty (X n)) _ inferInstance
       fun n hind ↦ ?_
-    have : Nonempty ((i : Iic n) → X i) :=
+    have : Nonempty (Π i : Iic n, X i) :=
       Nonempty.intro fun i ↦ @Classical.ofNonempty _ (hind i.1 (mem_Iic.1 i.2))
     exact ProbabilityMeasure.nonempty ⟨κ n Classical.ofNonempty, inferInstance⟩
   refine addContent_iUnion_le_of_addContent_iUnion_eq_tsum
@@ -392,7 +396,7 @@ theorem trajContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) → X i)
     (trajContent κ x₀) (fun s hs ↦ ?_) ?_ hf hf_Union hf'
   · obtain ⟨N, S, mS, s_eq⟩ : ∃ N S, MeasurableSet S ∧ s = cylinder (Iic N) S := by
       simpa [cylinders_nat] using hs
-    let x_ : (n : ℕ) → X n := Classical.ofNonempty
+    let x_ : Π n, X n := Classical.ofNonempty
     rw [s_eq, ← frestrictLe_updateFinset x_ x₀,
       trajContent_eq_lmarginalPTraj κ mS (updateFinset x_ _ x₀)]
     refine ne_of_lt <| lt_of_le_of_lt (lintegral_le _ (Set.indicator_le (by simp)))
@@ -401,7 +405,7 @@ theorem trajContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) → X i)
 
 /-- This function is the kernel given by the Ionescu-Tulcea theorem. -/
 noncomputable def trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
-    Measure ((n : ℕ) → X n) :=
+    Measure (Π n, X n) :=
   (trajContent κ x₀).measure isSetSemiring_measurableCylinders generateFrom_measurableCylinders.ge
      (trajContent_sigma_subadditive κ x₀)
 
@@ -416,7 +420,7 @@ theorem isProbabilityMeasure_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
 
 theorem isProjectiveLimit_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
     IsProjectiveLimit (trajFun κ p x₀) (inducedFamily (fun n ↦ ptraj κ p n x₀)) := by
-  refine isProjectiveLimit_nat_iff _ (isProjectiveMeasureFamily_inducedFamily _
+  refine isProjectiveLimit_nat_iff (isProjectiveMeasureFamily_inducedFamily _
     (fun _ _ ↦ ptraj_map_frestrictLe₂_apply x₀)) _ |>.2 fun n ↦ ?_
   ext s ms
   rw [Measure.map_apply (measurable_frestrictLe n) ms]
@@ -452,7 +456,7 @@ kernels `κ p`, then `κ (p+1)`, and so on.
 
 The fact that such a kernel exists on infinite trajectories is not obvious, and is the content of
 the Ionescu-Tulcea theorem. -/
-noncomputable def trajKernel (p : ℕ) : Kernel ((i : Iic p) → X i) ((n : ℕ) → X n) where
+noncomputable def trajKernel (p : ℕ) : Kernel ((i : Iic p) → X i) (Π n, X n) where
   toFun := trajFun κ p
   measurable' := measurable_trajFun κ p
 
@@ -473,17 +477,17 @@ theorem frestrictLe_trajKernel_le {a b : ℕ} (hab : a ≤ b) :
       deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ _) := by
   rw [frestrictLe_trajKernel, ptraj_le]
 
-theorem eq_trajKernel' {a : ℕ} (n : ℕ) (η : Kernel ((i : Iic a) → X i) ((n : ℕ) → X n))
+theorem eq_trajKernel' {a : ℕ} (n : ℕ) (η : Kernel ((i : Iic a) → X i) (Π n, X n))
     (hη : ∀ b ≥ n, η.map (frestrictLe b) = ptraj κ a b) :
     η = trajKernel κ a := by
   ext1 x₀
   refine ((isProjectiveLimit_trajFun _ _ _).unique ?_).symm
-  rw [isProjectiveLimit_nat_iff' _ _ _ n]
+  rw [isProjectiveLimit_nat_iff' _ _ n]
   · intro k hk
     rw [inducedFamily_Iic, ← map_apply _ (measurable_frestrictLe k), hη k hk]
   · exact (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply x₀))
 
-theorem eq_trajKernel {a : ℕ} (η : Kernel ((i : Iic a) → X i) ((n : ℕ) → X n))
+theorem eq_trajKernel {a : ℕ} (η : Kernel ((i : Iic a) → X i) (Π n, X n))
     (hη : ∀ b, η.map (frestrictLe b) = ptraj κ a b) :
     η = trajKernel κ a := eq_trajKernel' κ 0 η fun b _ ↦ hη b
 
@@ -507,7 +511,7 @@ variable {ι : Type*} [Preorder ι] [LocallyFiniteOrderBot ι]
 /-- The canonical filtration on dependent functions indexed by `ℕ`, where `𝓕 n` consists of
 measurable sets depending only on coordinates `≤ n`. -/
 def Filtration.pi_preorder : @Filtration ((i : ι) → X i) ι _ inferInstance where
-  seq n := (inferInstance : MeasurableSpace ((i : Iic n) → X i)).comap (frestrictLe n)
+  seq n := (inferInstance : MeasurableSpace (Π i : Iic n, X i)).comap (frestrictLe n)
   mono' i j hij := by
     simp only
     rw [← frestrictLe₂_comp_frestrictLe hij, ← comap_comp]
@@ -571,12 +575,12 @@ theorem trajKernel_eq (n : ℕ) :
 @[measurability, fun_prop]
 theorem measurable_updateFinset' {ι : Type*} [DecidableEq ι] {I : Finset ι}
     {X : ι → Type*} [∀ i, MeasurableSpace (X i)]
-    {y : (i : I) → X i} : Measurable (fun x ↦ updateFinset x I y) := by
+    {y : Π i : I, X i} : Measurable (fun x ↦ updateFinset x I y) := by
   refine measurable_pi_lambda _ (fun i ↦ ?_)
   by_cases hi : i ∈ I <;> simp only [updateFinset, hi, ↓reduceDIte, measurable_const]
   exact measurable_pi_apply _
 
-theorem trajKernel_map_updateFinset {n : ℕ} (x₀ : (i : Iic n) → X i) :
+theorem trajKernel_map_updateFinset {n : ℕ} (x₀ : Π i : Iic n, X i) :
     (trajKernel κ n x₀).map (fun y ↦ updateFinset y _ x₀) = trajKernel κ n x₀ := by
   ext s ms
   nth_rw 2 [trajKernel_eq]
@@ -590,7 +594,7 @@ theorem trajKernel_map_updateFinset {n : ℕ} (x₀ : (i : Iic n) → X i) :
 
 variable {E : Type*} [NormedAddCommGroup E]
 
-theorem integrable_trajKernel {a b : ℕ} (hab : a ≤ b) {f : ((n : ℕ) → X n) → E}
+theorem integrable_trajKernel {a b : ℕ} (hab : a ≤ b) {f : (Π n, X n) → E}
     (x₀ : (i : Iic a) → X i) (i_f : Integrable f (trajKernel κ a x₀)) :
     ∀ᵐ x ∂trajKernel κ a x₀, Integrable f (trajKernel κ b (frestrictLe b x)) := by
   rw [← trajKernel_comp_ptraj _ hab, integrable_comp_iff] at i_f
@@ -601,7 +605,7 @@ theorem integrable_trajKernel {a b : ℕ} (hab : a ≤ b) {f : ((n : ℕ) → X 
   · exact i_f.aestronglyMeasurable
 
 theorem aestronglyMeasurable_trajKernel {a b : ℕ} (hab : a ≤ b)
-    {f : ((n : ℕ) → X n) → E} {x₀ : (i : Iic a) → X i}
+    {f : (Π n, X n) → E} {x₀ : (i : Iic a) → X i}
     (hf : AEStronglyMeasurable f (trajKernel κ a x₀)) :
     ∀ᵐ x ∂ptraj κ a b x₀, AEStronglyMeasurable f (trajKernel κ b x) := by
   rw [← trajKernel_comp_ptraj κ hab] at hf
@@ -612,7 +616,7 @@ variable [NormedSpace ℝ E]
 variable {κ} in
 /-- When computing `∫ x, f x ∂trajKernel κ n x₀`, because the trajectory up to time `n` is
 determined by `x₀` we can replace `x` by `updateFinset x _ x₀`. -/
-theorem integral_trajKernel {n : ℕ} (x₀ : (i : Iic n) → X i) {f : ((n : ℕ) → X n) → E}
+theorem integral_trajKernel {n : ℕ} (x₀ : Π i : Iic n, X i) {f : (Π n, X n) → E}
     (mf : AEStronglyMeasurable f (trajKernel κ n x₀)) :
     ∫ x, f x ∂trajKernel κ n x₀ = ∫ x, f (updateFinset x _ x₀) ∂trajKernel κ n x₀ := by
   nth_rw 1 [← trajKernel_map_updateFinset, integral_map]
@@ -706,7 +710,7 @@ theorem setIntegral_trajKernel_ptraj {a b : ℕ} (hab : a ≤ b) {x₀ : (Π i :
 variable [CompleteSpace E]
 
 theorem condExp_trajKernel
-    {a b : ℕ} (hab : a ≤ b) {x₀ : (i : Iic a) → X i} {f : ((n : ℕ) → X n) → E}
+    {a b : ℕ} (hab : a ≤ b) {x₀ : (i : Iic a) → X i} {f : (Π n, X n) → E}
     (i_f : Integrable f (trajKernel κ a x₀)) :
     (trajKernel κ a x₀)[f|pi_preorder b] =ᵐ[trajKernel κ a x₀]
       fun x ↦ ∫ y, f y ∂trajKernel κ b (frestrictLe b x) := by
@@ -728,7 +732,7 @@ theorem condExp_trajKernel
 variable (κ)
 
 theorem condExp_trajKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
-    (x₀ : (i : Iic a) → X i) (f : ((n : ℕ) → X n) → E) :
+    (x₀ : (i : Iic a) → X i) (f : (Π n, X n) → E) :
     (trajKernel κ a x₀)[f|pi_preorder b] =ᵐ[trajKernel κ a x₀]
       fun x ↦ ∫ y, ((trajKernel κ a x₀)[f|pi_preorder c]) (updateFinset x _ y)
         ∂ptraj κ b c (frestrictLe b x) := by
