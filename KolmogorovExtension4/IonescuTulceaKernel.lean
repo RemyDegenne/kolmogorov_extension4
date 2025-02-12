@@ -11,35 +11,12 @@ import Batteries.Data.Nat.Lemmas
 
 open ENNReal Filter Finset Function MeasurableSpace MeasureTheory Preorder ProbabilityTheory Topology
 
-section castLemmas
-
 variable {X : ℕ → Type*}
 
-/-- This function takes a trajectory up to time `p` and a way of building the next step of the
-trajectory and returns a whole trajectory whose first steps correspond
-to the initial ones provided. -/
-def iterate_induction {a : ℕ} (x₀ : Π i : Iic a, X i)
-    (ind : (n : ℕ) → (Π i : Iic n, X i) → X (n + 1)) : Π n, X n
-  | 0 => x₀ ⟨0, mem_Iic.2 <| zero_le a⟩
-  | k + 1 => if h : k + 1 ≤ a
-      then x₀ ⟨k + 1, mem_Iic.2 h⟩
-      else ind k (fun i ↦ iterate_induction x₀ ind i)
-  decreasing_by exact Nat.lt_succ.2 (mem_Iic.1 i.2)
-
-theorem iterate_induction_le {a : ℕ} (x₀ : Π i : Iic a, X i)
-    (ind : (n : ℕ) → (Π i : Iic n, X i) → X (n + 1)) (k : Iic a) :
-    iterate_induction x₀ ind k = x₀ k := by
-  obtain ⟨(zero | j), hi⟩ := k <;> rw [iterate_induction]
-  rw [dif_pos (mem_Iic.1 hi)]
-
-lemma frestrictLe_iterate_induction {a : ℕ} (x₀ : Π i : Iic a, X i)
-    (ind : (n : ℕ) → (Π i : Iic n, X i) → X (n + 1)) :
-    frestrictLe a (iterate_induction x₀ ind) = x₀ := by
-  ext i
-  simp [iterate_induction_le]
+section castLemmas
 
 private lemma Iic_pi_eq {a b : ℕ} (h : a = b) :
-    ((i : Iic a) → X i) = ((i : Iic b) → X i) := by cases h; rfl
+    (Π i : Iic a, X i) = (Π i : Iic b, X i) := by cases h; rfl
 
 private lemma cast_pi {s t : Set ℕ} (h : s = t) (x : (i : s) → X i) (i : t) :
     cast (congrArg (fun u : Set ℕ ↦ (Π i : u, X i)) h) x i = x ⟨i.1, h.symm ▸ i.2⟩ := by
@@ -53,14 +30,41 @@ private lemma measure_cast {a b : ℕ} (h : a = b) (μ : (n : ℕ) → Measure (
   exact Measure.map_id
 
 private lemma heq_measurableSpace_Iic_pi {a b : ℕ} (h : a = b) :
-    HEq (inferInstance : MeasurableSpace ((i : Iic a) → X i))
-    (inferInstance : MeasurableSpace ((i : Iic b) → X i)) := by cases h; rfl
+    HEq (inferInstance : MeasurableSpace (Π i : Iic a, X i))
+    (inferInstance : MeasurableSpace (Π i : Iic b, X i)) := by cases h; rfl
 
 end castLemmas
 
+section iterateInduction
+
+/-- This function takes as input a tuple `(x_₀, ..., x_ₐ)` and `ind` a function which
+given `(y_₀, ...,y_ₙ)` outputs `x_{n+1} : X (n + 1)`, and it builds an element of `Π n, X n`
+by starting with `(x_₀, ..., x_ₐ)` and then iterating `ind`. -/
+def iterateInduction {a : ℕ} (x : Π i : Iic a, X i)
+    (ind : (n : ℕ) → (Π i : Iic n, X i) → X (n + 1)) : Π n, X n
+  | 0 => x ⟨0, mem_Iic.2 <| zero_le a⟩
+  | k + 1 => if h : k + 1 ≤ a
+      then x ⟨k + 1, mem_Iic.2 h⟩
+      else ind k (fun i ↦ iterateInduction x ind i)
+  decreasing_by exact Nat.lt_succ.2 (mem_Iic.1 i.2)
+
+lemma frestrictLe_iterateInduction {a : ℕ} (x : Π i : Iic a, X i)
+    (ind : (n : ℕ) → (Π i : Iic n, X i) → X (n + 1)) :
+    frestrictLe a (iterateInduction x ind) = x := by
+  ext i
+  simp only [frestrictLe_apply]
+  obtain ⟨(zero | j), hj⟩ := i <;> rw [iterateInduction]
+  rw [dif_pos (mem_Iic.1 hj)]
+
+end iterateInduction
+
 section ProjectiveFamily
 
-variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
+namespace MeasureTheory
+
+/-! ### Projective families indexed by `Finset ℕ` -/
+
+variable [∀ n, MeasurableSpace (X n)] {μ : (n : ℕ) → Measure (Π i : Iic n, X i)}
 
 /-- To check that a measure `ν` is the projective limit of a projective family of measures indexed
 by `Finset ℕ`, it is enough to check on intervals of the form `Iic n`, where `n` is larger than
@@ -71,7 +75,7 @@ theorem isProjectiveLimit_nat_iff' {μ : (I : Finset ℕ) → Measure (Π i : I,
   refine ⟨fun h n _ ↦ h (Iic n), fun h I ↦ ?_⟩
   have := (I.sub_Iic.trans (Iic_subset_Iic.2 (le_max_left (I.sup id) a)))
   rw [← restrict₂_comp_restrict this, ← Measure.map_map, ← frestrictLe, h (le_max_right _ _), ← hμ]
-  any_goals fun_prop
+  all_goals fun_prop
 
 /-- To check that a measure `ν` is the projective limit of a projective family of measures indexed
 by `Finset ℕ`, it is enough to check on intervals of the form `Iic n`. -/
@@ -85,8 +89,8 @@ variable (μ : (n : ℕ) → Measure (Π i : Iic n, X i))
 
 /-- Given a family of measures `μ : (n : ℕ) → Measure (Π i : Iic n, X i)`, we can define a family
 of measures indexed by `Finset ℕ` by projecting the measures. -/
-noncomputable def inducedFamily (S : Finset ℕ) :
-    Measure ((k : S) → X k) := (μ (S.sup id)).map (restrict₂ S.sub_Iic)
+noncomputable def inducedFamily (S : Finset ℕ) : Measure ((k : S) → X k) :=
+    (μ (S.sup id)).map (restrict₂ S.sub_Iic)
 
 instance [∀ n, SFinite (μ n)] (I : Finset ℕ) :
     SFinite (inducedFamily μ I) := by rw [inducedFamily]; infer_instance
@@ -123,9 +127,11 @@ theorem isProjectiveMeasureFamily_inducedFamily
     h (J.sup id) (I.sup id) sls]
   all_goals fun_prop
 
+end MeasureTheory
+
 end ProjectiveFamily
 
-open Kernel
+namespace ProbabilityTheory.Kernel
 
 section definition
 
@@ -133,25 +139,25 @@ variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
   (κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))) [∀ n, IsMarkovKernel (κ n)]
 
 /-- Given a family of kernels `κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))`, and the
-trajectory up to time `n` we can construct an additive content over cylinders. It corresponds
-to composing the kernels by starting at time `n + 1`. -/
-noncomputable def trajContent {n : ℕ} (x₀ : Π i : Iic n, X i) :
+trajectory up to time `a` we can construct an additive content over cylinders. It corresponds
+to composing the kernels, starting at time `a + 1`. -/
+noncomputable def trajContent {a : ℕ} (x₀ : Π i : Iic a, X i) :
     AddContent (measurableCylinders X) :=
   kolContent (isProjectiveMeasureFamily_inducedFamily _
     (fun _ _ ↦ ptraj_map_frestrictLe₂_apply (κ := κ) x₀))
 
-/-- The `trajContent κ x₀` of a cylinder indexed by first coordinates is given by
-`ptraj`. -/
-theorem trajContent_cylinder {a b : ℕ} (x₀ : (i : Iic a) → X i)
-    {S : Set ((i : Iic b) → X i)} (mS : MeasurableSet S) :
+/-- The `trajContent κ x₀` of a cylinder indexed by first coordinates is given by `ptraj`. -/
+theorem trajContent_cylinder {a b : ℕ} (x₀ : Π i : Iic a, X i)
+    {S : Set (Π i : Iic b, X i)} (mS : MeasurableSet S) :
     trajContent κ x₀ (cylinder _ S) = ptraj κ a b x₀ S := by
   rw [trajContent, kolContent_cylinder _ mS, inducedFamily_Iic]
 
-/-- The `trajContent` of a cylinder is equal to the integral of its indicator function. -/
-theorem trajContent_eq_lmarginalPTraj {N : ℕ} {S : Set (Π i : Iic N, X i)}
-    (mS : MeasurableSet S) (x₀ : Π n, X n) (n : ℕ) :
-    trajContent κ (frestrictLe n x₀) (cylinder _ S) =
-      lmarginalPTraj κ n N ((cylinder _ S).indicator 1) x₀ := by
+/-- The `trajContent` of a cylinder is equal to the integral of its indicator function against
+`ptraj`. -/
+theorem trajContent_eq_lmarginalPTraj {b : ℕ} {S : Set (Π i : Iic b, X i)}
+    (mS : MeasurableSet S) (x₀ : Π n, X n) (a : ℕ) :
+    trajContent κ (frestrictLe a x₀) (cylinder _ S) =
+      lmarginalPTraj κ a b ((cylinder _ S).indicator 1) x₀ := by
   rw [trajContent_cylinder _ _ mS, ← lintegral_indicator_one mS, lmarginalPTraj]
   congr with x
   apply indicator_const_eq
@@ -160,9 +166,9 @@ theorem trajContent_eq_lmarginalPTraj {N : ℕ} {S : Set (Π i : Iic N, X i)}
   simp [updateFinset, i.2]
 
 /-- The cylinders of a product space indexed by `ℕ` can be seen as depending on the first
-corrdinates. -/
+coordinates. -/
 theorem cylinders_nat :
-    measurableCylinders X = ⋃ (N) (S) (_ : MeasurableSet S), {cylinder (Iic N) S} := by
+    measurableCylinders X = ⋃ (a) (S) (_ : MeasurableSet S), {cylinder (Iic a) S} := by
   ext s
   simp only [mem_measurableCylinders, exists_prop, Set.mem_iUnion, mem_singleton]
   refine ⟨?_, fun ⟨N, S, mS, s_eq⟩ ↦ ⟨Iic N, S, mS, s_eq⟩⟩
@@ -172,57 +178,58 @@ theorem cylinders_nat :
   rw [← Set.preimage_comp, restrict₂_comp_restrict]
   exact Set.mem_singleton _
 
-variable [Nonempty (X 0)]
+lemma trajContent_ne_top {a : ℕ} (x : Π i : Iic a, X i)
+    {s : Set (Π n, X n)} (hs : s ∈ measurableCylinders X) :
+    trajContent κ x s ≠ ⊤ := by
+  obtain ⟨N, S, mS, rfl⟩ : ∃ N S, MeasurableSet S ∧ s = cylinder (Iic N) S := by
+    simpa [cylinders_nat] using hs
+  simp [trajContent_cylinder _ _ mS]
 
-/-- This is an auxiliary result for `trajContent_tendsto_zero`.
-Consider `f` a sequence of bounded measurable
-functions such that `f n` depends only on the first coordinates up to `N n`.
-Assume that when integrating `f n` against `ptraj (k + 1) (N n)`,
-one gets a non-increasing sequence of functions wich converges to `l`.
-Assume then that there exists `ε` and `y : (n : Iic k) → X n` such that
-when integrating `f n` against `ptraj k (N n) y`, you get something at least
+/-- This is an auxiliary result for `trajContent_tendsto_zero`. Consider `f` a sequence of bounded
+measurable functions such that `f n` depends only on the first coordinates up to `a n`.
+Assume that when integrating `f n` against `ptraj (k + 1) (a n)`, one gets a non-increasing
+sequence of functions wich converges to `l`.
+Assume then that there exists `ε` and `y : Π i : Iic k, X i` such that
+when integrating `f n` against `ptraj k (a n) y`, you get something at least
 `ε` for all `n`. Then there exists `z` such that this remains true when integrating
-`f` against `ptraj (k + 1) (N n) (update y (k + 1) z)`. -/
-theorem le_lmarginalPTraj_succ {f : ℕ → (Π n, X n) → ℝ≥0∞} {N : ℕ → ℕ}
-    (hcte : ∀ n, DependsOn (f n) (Iic (N n))) (mf : ∀ n, Measurable (f n))
+`f` against `ptraj (k + 1) (a n) (update y (k + 1) z)`. -/
+theorem le_lmarginalPTraj_succ {f : ℕ → (Π n, X n) → ℝ≥0∞} {a : ℕ → ℕ}
+    (hcte : ∀ n, DependsOn (f n) (Iic (a n))) (mf : ∀ n, Measurable (f n))
     {bound : ℝ≥0∞} (fin_bound : bound ≠ ∞) (le_bound : ∀ n x, f n x ≤ bound) {k : ℕ}
-    (anti : ∀ x, Antitone (fun n ↦ lmarginalPTraj κ (k + 1) (N n) (f n) x))
+    (anti : ∀ x, Antitone (fun n ↦ lmarginalPTraj κ (k + 1) (a n) (f n) x))
     {l : (Π n, X n) → ℝ≥0∞}
-    (htendsto : ∀ x, Tendsto (fun n ↦ lmarginalPTraj κ (k + 1) (N n) (f n) x)
-      atTop (𝓝 (l x)))
-    (ε : ℝ≥0∞) (y : (n : Iic k) → X n)
-    (hpos : ∀ x n, ε ≤ lmarginalPTraj κ k (N n) (f n) (updateFinset x _ y)) :
-    ∃ z, ∀ x n, ε ≤ lmarginalPTraj κ (k + 1) (N n) (f n)
-      (update (updateFinset x _ y) (k + 1) z) := by
+    (htendsto : ∀ x, Tendsto (fun n ↦ lmarginalPTraj κ (k + 1) (a n) (f n) x) atTop (𝓝 (l x)))
+    (ε : ℝ≥0∞) (y : Π i : Iic k, X i)
+    (hpos : ∀ x n, ε ≤ lmarginalPTraj κ k (a n) (f n) (updateFinset x _ y)) :
+    ∃ z, ∀ x n,
+      ε ≤ lmarginalPTraj κ (k + 1) (a n) (f n) (update (updateFinset x _ y) (k + 1) z) := by
   have _ n : Nonempty (X n) := by
-    refine Nat.case_strong_induction_on (p := fun n ↦ Nonempty (X n)) _ inferInstance
-      fun n hind ↦ ?_
-    have : Nonempty (Π i : Iic n, X i) :=
-      Nonempty.intro fun i ↦ @Classical.ofNonempty _ (hind i.1 (mem_Iic.1 i.2))
-    exact ProbabilityMeasure.nonempty ⟨κ n Classical.ofNonempty, inferInstance⟩
-  let F : ℕ → (Π n, X n) → ℝ≥0∞ := fun n ↦ lmarginalPTraj κ (k + 1) (N n) (f n)
+    induction n using Nat.case_strong_induction_on with
+    | hz => exact ⟨y ⟨0, mem_Iic.2 (zero_le _)⟩⟩
+    | hi m hm =>
+      have : Nonempty (Π i : Iic m, X i) :=
+        ⟨fun i ↦ @Classical.ofNonempty _ (hm i.1 (mem_Iic.1 i.2))⟩
+      exact ProbabilityMeasure.nonempty ⟨κ m Classical.ofNonempty, inferInstance⟩
+  -- `Fₙ` is the integral of `fₙ` from time `k + 1` to `aₙ`.
+  let F n : (Π n, X n) → ℝ≥0∞ := lmarginalPTraj κ (k + 1) (a n) (f n)
   -- `Fₙ` converges to `l` by hypothesis.
   have tendstoF x : Tendsto (F · x) atTop (𝓝 (l x)) := htendsto x
-  -- Integrating `fₙ` between time `k` and `Nₙ` is the same as integrating
-  -- `Fₙ` between time `k` and time `k + 1` variable.
-  have f_eq x n : lmarginalPTraj κ k (N n) (f n) x =
-    lmarginalPTraj κ k (k + 1) (F n) x := by
+  -- Integrating `fₙ` between time `k` and `aₙ` is the same as integrating
+  -- `Fₙ` between time `k` and time `k + 1`.
+  have f_eq x n : lmarginalPTraj κ k (a n) (f n) x = lmarginalPTraj κ k (k + 1) (F n) x := by
     simp_rw [F]
-    rcases lt_trichotomy (k + 1) (N n) with h | h | h
+    obtain h | h | h := lt_trichotomy (k + 1) (a n)
     · rw [← lmarginalPTraj_self k.le_succ h.le (mf n)]
-    · rw [← h, lmarginalPTraj_le _ (_root_.le_refl (k + 1)) (mf n)]
-    · rw [lmarginalPTraj_le _ (by omega) (mf n),
-        (hcte n).lmarginalPTraj_le _ (mf n) (by omega),
-        (hcte n).lmarginalPTraj_le _ (mf n) (by omega)]
+    · rw [← h, lmarginalPTraj_le _ le_rfl (mf n)]
+    · rw [lmarginalPTraj_le _ _ (mf n), (hcte n).lmarginalPTraj_le _ (mf n),
+        (hcte n).lmarginalPTraj_le _ (mf n)]
+      all_goals omega
   -- `F` is also a bounded sequence.
   have F_le n x : F n x ≤ bound := by
-    simp_rw [F, lmarginalPTraj]
-    rw [← mul_one bound, ← measure_univ (μ := ptraj κ (k + 1) (N n) (frestrictLe (k + 1) x)),
-        ← MeasureTheory.lintegral_const]
-    exact lintegral_mono fun _ ↦ le_bound _ _
-  -- By dominated convergence, the integral of `fₙ` between time `k` and time `N n` converges
+    simpa [F, lmarginalPTraj] using lintegral_le _ fun z ↦ le_bound _ _
+  -- By dominated convergence, the integral of `fₙ` between time `k` and time `a n` converges
   -- to the integral of `l` between time `k` and time `k + 1`.
-  have tendsto_int x : Tendsto (fun n ↦ lmarginalPTraj κ k (N n) (f n) x) atTop
+  have tendsto_int x : Tendsto (fun n ↦ lmarginalPTraj κ k (a n) (f n) x) atTop
       (𝓝 (lmarginalPTraj κ k (k + 1) l x)) := by
     simp_rw [f_eq, lmarginalPTraj]
     exact tendsto_lintegral_of_dominated_convergence (fun _ ↦ bound)
@@ -243,10 +250,9 @@ theorem le_lmarginalPTraj_succ {f : ℕ → (Π n, X n) → ℝ≥0∞} {N : ℕ
     obtain ⟨x, hx⟩ := exists_lintegral_le this
     refine ⟨x, (ε_le_lint x_).trans ?_⟩
     rwa [lmarginalPTraj_succ, frestrictLe_updateFinset]
-    refine ENNReal.measurable_of_tendsto ?_ (tendsto_pi_nhds.2 htendsto)
-    exact fun n ↦ measurable_lmarginalPTraj _ _ (mf n)
+    exact ENNReal.measurable_of_tendsto (by fun_prop) (tendsto_pi_nhds.2 htendsto)
   refine ⟨x, fun x' n ↦ ?_⟩
-  -- As `F` is a non-increasing sequence, we have `ε ≤ Fₙ(y, x')` for any `n`.
+  -- As `F` is a non-increasing sequence, we have `ε ≤ Fₙ(y, x)` for any `n`.
   have := le_trans hx ((anti _).le_of_tendsto (tendstoF _) n)
   -- This part below is just to say that this is true for any `x : (i : ι) → X i`,
   -- as `Fₙ` technically depends on all the variables, but really depends only on the first `k + 1`.
@@ -260,29 +266,30 @@ theorem le_lmarginalPTraj_succ {f : ℕ → (Π n, X n) → ℝ≥0∞} {N : ℕ
 /-- The indicator of a cylinder only depends on the variables whose the cylinder depends on. -/
 theorem dependsOn_cylinder_indicator {ι : Type*} {α : ι → Type*} {I : Finset ι}
     (S : Set ((i : I) → α i)) :
-    DependsOn ((cylinder I S).indicator (1 : ((i : ι) → α i) → ℝ≥0∞)) I :=
+    DependsOn ((cylinder I S).indicator (1 : ((Π i, α i) → ℝ≥0∞))) I :=
   fun x y hxy ↦ indicator_const_eq _ (by simp [restrict_def, hxy])
 
 /-- This is the key theorem to prove the existence of the `trajKernel`:
-the `trajContent` of a decresaing sequence of cylinders with empty intersection
+the `trajContent` of a decreasing sequence of cylinders with empty intersection
 converges to `0`.
-This implies the `σ`-additivity of `trajContent`
-(see `sigma_additive_addContent_of_tendsto_zero`), which allows to extend it to the
-`σ`-algebra by Carathéodory's theorem. -/
-theorem trajContent_tendsto_zero (A : ℕ → Set (Π n : ℕ, X n))
+
+This implies the `σ`-additivity of `trajContent` (see `sigma_additive_addContent_of_tendsto_zero`),
+which allows to extend it to the `σ`-algebra by Carathéodory's theorem. -/
+theorem trajContent_tendsto_zero {A : ℕ → Set (Π n, X n)}
     (A_mem : ∀ n, A n ∈ measurableCylinders X) (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅)
     {p : ℕ} (x₀ : Π i : Iic p, X i) :
     Tendsto (fun n ↦ trajContent κ x₀ (A n)) atTop (𝓝 0) := by
   have _ n : Nonempty (X n) := by
-    refine Nat.case_strong_induction_on (p := fun n ↦ Nonempty (X n)) _ inferInstance
-      fun n hind ↦ ?_
-    have : Nonempty (Π i : Iic n, X i) :=
-      Nonempty.intro fun i ↦ @Classical.ofNonempty _ (hind i.1 (mem_Iic.1 i.2))
-    exact ProbabilityMeasure.nonempty ⟨κ n Classical.ofNonempty, inferInstance⟩
-  -- `Aₙ` is a cylinder, it can be written `cylinder (Iic (N n)) Sₙ`.
-  have A_cyl n : ∃ N S, MeasurableSet S ∧ A n = cylinder (Iic N) S := by
+    induction n using Nat.case_strong_induction_on with
+    | hz => exact ⟨x₀ ⟨0, mem_Iic.2 (zero_le _)⟩⟩
+    | hi m hm =>
+      have : Nonempty (Π i : Iic m, X i) :=
+        ⟨fun i ↦ @Classical.ofNonempty _ (hm i.1 (mem_Iic.1 i.2))⟩
+      exact ProbabilityMeasure.nonempty ⟨κ m Classical.ofNonempty, inferInstance⟩
+  -- `Aₙ` is a cylinder, it can be written as `cylinder (Iic (a n)) Sₙ`.
+  have A_cyl n : ∃ a S, MeasurableSet S ∧ A n = cylinder (Iic a) S := by
     simpa [cylinders_nat] using A_mem n
-  choose N S mS A_eq using A_cyl
+  choose a S mS A_eq using A_cyl
   -- We write `χₙ` for the indicator function of `Aₙ`.
   let χ n := (A n).indicator (1 : (Π n, X n) → ℝ≥0∞)
   -- `χₙ` is measurable.
@@ -290,37 +297,34 @@ theorem trajContent_tendsto_zero (A : ℕ → Set (Π n : ℕ, X n))
     simp_rw [χ, A_eq]
     exact (measurable_indicator_const_iff 1).2 <| (mS n).cylinder
   -- `χₙ` only depends on the first coordinates.
-  have χ_dep n : DependsOn (χ n) (Iic (N n)) := by
+  have χ_dep n : DependsOn (χ n) (Iic (a n)) := by
     simp_rw [χ, A_eq]
     exact dependsOn_cylinder_indicator _
-  -- Therefore its integral against `ptraj κ k (N n)` is constant.
+  -- Therefore its integral against `ptraj κ k (a n)` is constant.
   have lma_const x y n :
-      lmarginalPTraj κ p (N n) (χ n) (updateFinset x _ x₀) =
-      lmarginalPTraj κ p (N n) (χ n) (updateFinset y _ x₀) := by
+      lmarginalPTraj κ p (a n) (χ n) (updateFinset x _ x₀) =
+      lmarginalPTraj κ p (a n) (χ n) (updateFinset y _ x₀) := by
     refine (χ_dep n).dependsOn_lmarginalPTraj p (mχ n) fun i hi ↦ ?_
     rw [mem_coe, mem_Iic] at hi
     simp [updateFinset, hi]
   -- As `(Aₙ)` is non-increasing, so is `(χₙ)`.
-  have χ_anti : Antitone χ := by
-    refine fun m n hmn y ↦ ?_
+  have χ_anti : Antitone χ := fun m n hmn y ↦ by
     apply Set.indicator_le fun a ha ↦ ?_
     simp [χ, A_anti hmn ha]
   -- Integrating `χₙ` further than the last coordinate it depends on does nothing.
   -- This is used to then show that the integral of `χₙ` from time `k` is non-increasing.
-  have lma_inv k M n (h : N n ≤ M) :
-      lmarginalPTraj κ k M (χ n) = lmarginalPTraj κ k (N n) (χ n) :=
-    (χ_dep n).lmarginalPTraj_right (mχ n) h (_root_.le_refl _)
+  have lma_inv k M n (h : a n ≤ M) : lmarginalPTraj κ k M (χ n) = lmarginalPTraj κ k (a n) (χ n) :=
+    (χ_dep n).lmarginalPTraj_right (mχ n) h le_rfl
   -- the integral of `χₙ` from time `k` is non-increasing.
-  have anti_lma k x : Antitone fun n ↦ lmarginalPTraj κ k (N n) (χ n) x := by
+  have anti_lma k x : Antitone fun n ↦ lmarginalPTraj κ k (a n) (χ n) x := by
     intro m n hmn
     simp only
-    rw [← lma_inv k ((N n).max (N m)) n (le_max_left _ _),
-      ← lma_inv k ((N n).max (N m)) m (le_max_right _ _)]
+    rw [← lma_inv k ((a n).max (a m)) n (le_max_left _ _),
+      ← lma_inv k ((a n).max (a m)) m (le_max_right _ _)]
     exact lmarginalPTraj_mono _ _ (χ_anti hmn) _
   -- Therefore it converges to some function `lₖ`.
-  have this k x : ∃ l,
-      Tendsto (fun n ↦ lmarginalPTraj κ k (N n) (χ n) x) atTop (𝓝 l) := by
-    rcases tendsto_of_antitone <| anti_lma k x with h | h
+  have this k x : ∃ l, Tendsto (fun n ↦ lmarginalPTraj κ k (a n) (χ n) x) atTop (𝓝 l) := by
+    obtain h | h := tendsto_of_antitone (anti_lma k x)
     · rw [OrderBot.atBot_eq] at h
       exact ⟨0, h.mono_right <| pure_le_nhds 0⟩
     · exact h
@@ -333,7 +337,7 @@ theorem trajContent_tendsto_zero (A : ℕ → Set (Π n : ℕ, X n))
   obtain ⟨ε, hε⟩ : ∃ ε, ∀ x, l p (updateFinset x _ x₀) = ε :=
       ⟨l p (updateFinset Classical.ofNonempty _ x₀), fun x ↦ l_const _ _⟩
   -- As the sequence is decreasing, `ε ≤ ∫ χₙ`.
-  have hpos x n : ε ≤ lmarginalPTraj κ p (N n) (χ n) (updateFinset x _ x₀) :=
+  have hpos x n : ε ≤ lmarginalPTraj κ p (a n) (χ n) (updateFinset x _ x₀) :=
     hε x ▸ ((anti_lma p _).le_of_tendsto (hl p _)) n
   -- Also, the indicators are bounded by `1`.
   have χ_le n x : χ n x ≤ 1 := by
@@ -341,112 +345,96 @@ theorem trajContent_tendsto_zero (A : ℕ → Set (Π n : ℕ, X n))
     simp
   -- We have all the conditions to apply `le_lmarginalPTraj_succ`.
   -- This allows us to recursively build a sequence `z` with the following property:
-  -- for any `k ≥ p` and `n`, integrating `χ n` from time `k` to time `N n`
+  -- for any `k ≥ p` and `n`, integrating `χ n` from time `k` to time `a n`
   -- with the trajectory up to `k` being equal to `z` gives something greater than `ε`.
   choose! ind hind using
     fun k y h ↦ le_lmarginalPTraj_succ κ χ_dep mχ (by norm_num : (1 : ℝ≥0∞) ≠ ∞)
       χ_le (anti_lma (k + 1)) (hl (k + 1)) ε y h
-  let z := iterate_induction x₀ ind
+  let z := iterateInduction x₀ ind
   have main k (hk : p ≤ k) : ∀ x n,
-      ε ≤ lmarginalPTraj κ k (N n) (χ n) (updateFinset x (Iic k) (frestrictLe k z)) := by
-    refine Nat.le_induction (fun x n ↦ ?_) (fun k hn h x n ↦ ?_) k hk
-    · rw [frestrictLe_iterate_induction]
-      exact hpos x n
-    · rw [← update_updateFinset_eq]
+      ε ≤ lmarginalPTraj κ k (a n) (χ n) (updateFinset x _ (frestrictLe k z)) := by
+    induction k, hk using Nat.le_induction with
+    | base => exact fun x n ↦ by simpa [z, frestrictLe_iterateInduction] using hpos x n
+    | succ k hn h =>
+      intro x n
+      rw [← update_updateFinset_eq]
       convert hind k (fun i ↦ z i.1) h x n
-      simp_rw [z, iterate_induction]
-      simp [Nat.lt_succ.2 hn]
+      simp [z, iterateInduction, Nat.lt_succ.2 hn]
   -- We now want to prove that the integral of `χₙ`, which is equal to the `trajContent`
   -- of `Aₙ`, converges to `0`.
-  have aux x n : trajContent κ x₀ (A n) =
-      lmarginalPTraj κ p (N n) (χ n) (updateFinset x _ x₀) := by
+  have aux x n : trajContent κ x₀ (A n) = lmarginalPTraj κ p (a n) (χ n) (updateFinset x _ x₀) := by
     simp_rw [χ, A_eq]
     nth_rw 1 [← frestrictLe_updateFinset x x₀]
-    exact trajContent_eq_lmarginalPTraj κ (mS n) (updateFinset x _ x₀) p
-  simp_rw [aux Classical.ofNonempty]
-  convert hl p (updateFinset Classical.ofNonempty _ x₀)
+    exact trajContent_eq_lmarginalPTraj _ (mS n) ..
+  simp_rw [aux z]
+  convert hl p _
   rw [hε]
-  by_contra!
   -- Which means that we want to prove that `ε = 0`. But if `ε > 0`, then for any `n`,
-  -- choosing `k > Nₙ` we get `ε ≤ χₙ(z₀, ..., z_{Nₙ})` and therefore `z ∈ Aₙ`.
+  -- choosing `k > aₙ` we get `ε ≤ χₙ(z₀, ..., z_{aₙ})` and therefore `z ∈ Aₙ`.
   -- This contradicts the fact that `(Aₙ)` has an empty intersection.
-  have ε_pos : 0 < ε := this.symm.bot_lt
+  by_contra!
   have mem n : z ∈ A n := by
-    have : 0 < χ n (z) := by
-      rw [← lmarginalPTraj_le κ (le_max_right p (N n)) (mχ n),
-        ← updateFinset_frestrictLe (i := N n) z]
-      simpa using lt_of_lt_of_le ε_pos (main _ (le_max_left _ _) z n)
+    have : 0 < χ n z := by
+      rw [← lmarginalPTraj_le κ (le_max_right p (a n)) (mχ n),
+        ← updateFinset_frestrictLe (i := a n) z]
+      simpa using lt_of_lt_of_le this.symm.bot_lt (main _ (le_max_left _ _) z n)
     exact Set.mem_of_indicator_ne_zero (ne_of_lt this).symm
   exact (A_inter ▸ Set.mem_iInter.2 mem).elim
 
 /-- The `trajContent` is sigma-subadditive. -/
-theorem trajContent_sigma_subadditive {p : ℕ} (x₀ : (i : Iic p) → X i)
+theorem trajContent_sigma_subadditive {a : ℕ} (x₀ : Π i : Iic a, X i)
     ⦃f : ℕ → Set (Π n, X n)⦄ (hf : ∀ n, f n ∈ measurableCylinders X)
     (hf_Union : (⋃ n, f n) ∈ measurableCylinders X) :
     trajContent κ x₀ (⋃ n, f n) ≤ ∑' n, trajContent κ x₀ (f n) := by
-  have _ n : Nonempty (X n) := by
-    refine Nat.case_strong_induction_on (p := fun n ↦ Nonempty (X n)) _ inferInstance
-      fun n hind ↦ ?_
-    have : Nonempty (Π i : Iic n, X i) :=
-      Nonempty.intro fun i ↦ @Classical.ofNonempty _ (hind i.1 (mem_Iic.1 i.2))
-    exact ProbabilityMeasure.nonempty ⟨κ n Classical.ofNonempty, inferInstance⟩
   refine addContent_iUnion_le_of_addContent_iUnion_eq_tsum
     isSetRing_measurableCylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
   refine addContent_iUnion_eq_sum_of_tendsto_zero isSetRing_measurableCylinders
-    (trajContent κ x₀) (fun s hs ↦ ?_) ?_ hf hf_Union hf'
-  · obtain ⟨N, S, mS, s_eq⟩ : ∃ N S, MeasurableSet S ∧ s = cylinder (Iic N) S := by
-      simpa [cylinders_nat] using hs
-    let x_ : Π n, X n := Classical.ofNonempty
-    rw [s_eq, ← frestrictLe_updateFinset x_ x₀,
-      trajContent_eq_lmarginalPTraj κ mS (updateFinset x_ _ x₀)]
-    refine ne_of_lt <| lt_of_le_of_lt (lintegral_le _ (Set.indicator_le (by simp)))
-      (by norm_num : (1 : ℝ≥0∞) < ∞)
-  · exact fun s hs anti_s inter_s ↦ trajContent_tendsto_zero κ s hs anti_s inter_s x₀
+    (trajContent κ x₀) (fun s hs ↦ trajContent_ne_top _ _ hs) ?_ hf hf_Union hf'
+  exact fun s hs anti_s inter_s ↦ trajContent_tendsto_zero κ hs anti_s inter_s x₀
 
 /-- This function is the kernel given by the Ionescu-Tulcea theorem. -/
-noncomputable def trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
+noncomputable def trajFun (a : ℕ) (x₀ : Π i : Iic a, X i) :
     Measure (Π n, X n) :=
   (trajContent κ x₀).measure isSetSemiring_measurableCylinders generateFrom_measurableCylinders.ge
-     (trajContent_sigma_subadditive κ x₀)
+    (trajContent_sigma_subadditive κ x₀)
 
-theorem isProbabilityMeasure_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
-    IsProbabilityMeasure (trajFun κ p x₀) where
+theorem isProbabilityMeasure_trajFun (a : ℕ) (x₀ : Π i : Iic a, X i) :
+    IsProbabilityMeasure (trajFun κ a x₀) where
   measure_univ := by
     rw [← cylinder_univ (Iic 0), trajFun, AddContent.measure_eq,
       trajContent_cylinder _ _ MeasurableSet.univ]
     · exact measure_univ
     · exact generateFrom_measurableCylinders.symm
-    · exact (mem_measurableCylinders _).2 ⟨Iic 0, Set.univ, MeasurableSet.univ, rfl⟩
+    · exact cylinder_mem_measurableCylinders _ _ MeasurableSet.univ
 
-theorem isProjectiveLimit_trajFun (p : ℕ) (x₀ : (i : Iic p) → X i) :
-    IsProjectiveLimit (trajFun κ p x₀) (inducedFamily (fun n ↦ ptraj κ p n x₀)) := by
+theorem isProjectiveLimit_trajFun (a : ℕ) (x₀ : Π i : Iic a, X i) :
+    IsProjectiveLimit (trajFun κ a x₀) (inducedFamily (fun n ↦ ptraj κ a n x₀)) := by
   refine isProjectiveLimit_nat_iff (isProjectiveMeasureFamily_inducedFamily _
     (fun _ _ ↦ ptraj_map_frestrictLe₂_apply x₀)) _ |>.2 fun n ↦ ?_
   ext s ms
   rw [Measure.map_apply (measurable_frestrictLe n) ms]
   have h_mem : (frestrictLe n) ⁻¹' s ∈ measurableCylinders X :=
-    (mem_measurableCylinders _).2 ⟨Iic n, s, ms, rfl⟩
-  rw [trajFun, AddContent.measure_eq _ _ generateFrom_measurableCylinders.symm _ h_mem, trajContent,
-    kolContent_congr _ (frestrictLe n ⁻¹' s) rfl ms]
+    cylinder_mem_measurableCylinders _ _ ms
+  rw [trajFun, AddContent.measure_eq, trajContent, kolContent_congr _ (frestrictLe n ⁻¹' s) rfl ms]
+  · exact generateFrom_measurableCylinders.symm
+  · exact cylinder_mem_measurableCylinders _ _ ms
 
-theorem measurable_trajFun (p : ℕ) : Measurable (trajFun κ p) := by
+theorem measurable_trajFun (a : ℕ) : Measurable (trajFun κ a) := by
   apply Measure.measurable_of_measurable_coe
   refine MeasurableSpace.induction_on_inter
-    (C := fun t ht ↦ Measurable (fun x₀ ↦ trajFun κ p x₀ t))
+    (C := fun t ht ↦ Measurable (fun x₀ ↦ trajFun κ a x₀ t))
     (s := measurableCylinders X) generateFrom_measurableCylinders.symm
     isPiSystem_measurableCylinders (by simp) (fun t ht ↦ ?cylinder) (fun t mt ht ↦ ?compl)
     (fun f disf mf hf ↦ ?union)
   · obtain ⟨N, S, mS, t_eq⟩ : ∃ N S, MeasurableSet S ∧ t = cylinder (Iic N) S := by
       simpa [cylinders_nat] using ht
-    simp_rw [trajFun, AddContent.measure_eq _ _ generateFrom_measurableCylinders.symm _ ht, trajContent,
-      kolContent_congr _ t t_eq mS, inducedFamily]
+    simp_rw [trajFun, AddContent.measure_eq _ _ generateFrom_measurableCylinders.symm _ ht,
+      trajContent, kolContent_congr _ t t_eq mS, inducedFamily]
     refine Measure.measurable_measure.1 ?_ _ mS
     exact (Measure.measurable_map _ (measurable_restrict₂ _)).comp (measurable _)
-  · have := isProbabilityMeasure_trajFun κ p
-    simp_rw [measure_compl mt (measure_ne_top _ _), measure_univ]
-    exact Measurable.const_sub ht _
-  · simp_rw [measure_iUnion disf mf]
-    exact Measurable.ennreal_tsum hf
+  · have := isProbabilityMeasure_trajFun κ a
+    simpa [measure_compl mt (measure_ne_top _ _)] using Measurable.const_sub ht _
+  · simpa [measure_iUnion disf mf] using Measurable.ennreal_tsum hf
 
 /-- *Ionescu-Tulcea Theorem* : Given a family of kernels `κ k` taking variables in `Iic k` with
 value in `X (k+1)`, the kernel `trajKernel κ p` takes a variable `x` depending on the
@@ -456,12 +444,12 @@ kernels `κ p`, then `κ (p+1)`, and so on.
 
 The fact that such a kernel exists on infinite trajectories is not obvious, and is the content of
 the Ionescu-Tulcea theorem. -/
-noncomputable def trajKernel (p : ℕ) : Kernel ((i : Iic p) → X i) (Π n, X n) where
-  toFun := trajFun κ p
-  measurable' := measurable_trajFun κ p
+noncomputable def trajKernel (a : ℕ) : Kernel (Π i : Iic a, X i) (Π n, X n) where
+  toFun := trajFun κ a
+  measurable' := measurable_trajFun κ a
 
-theorem trajKernel_apply (p : ℕ) (x₀ : (i : Iic p) → X i) :
-    trajKernel κ p x₀ = trajFun κ p x₀ := rfl
+theorem trajKernel_apply (a : ℕ) (x₀ : Π i : Iic a, X i) :
+    trajKernel κ a x₀ = trajFun κ a x₀ := rfl
 
 instance (p : ℕ) : IsMarkovKernel (trajKernel κ p) :=
   ⟨fun _ ↦ isProbabilityMeasure_trajFun ..⟩
@@ -477,7 +465,7 @@ theorem frestrictLe_trajKernel_le {a b : ℕ} (hab : a ≤ b) :
       deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ _) := by
   rw [frestrictLe_trajKernel, ptraj_le]
 
-theorem eq_trajKernel' {a : ℕ} (n : ℕ) (η : Kernel ((i : Iic a) → X i) (Π n, X n))
+theorem eq_trajKernel' {a : ℕ} (n : ℕ) (η : Kernel (Π i : Iic a, X i) (Π n, X n))
     (hη : ∀ b ≥ n, η.map (frestrictLe b) = ptraj κ a b) :
     η = trajKernel κ a := by
   ext1 x₀
@@ -487,7 +475,7 @@ theorem eq_trajKernel' {a : ℕ} (n : ℕ) (η : Kernel ((i : Iic a) → X i) (�
     rw [inducedFamily_Iic, ← map_apply _ (measurable_frestrictLe k), hη k hk]
   · exact (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply x₀))
 
-theorem eq_trajKernel {a : ℕ} (η : Kernel ((i : Iic a) → X i) (Π n, X n))
+theorem eq_trajKernel {a : ℕ} (η : Kernel (Π i : Iic a, X i) (Π n, X n))
     (hη : ∀ b, η.map (frestrictLe b) = ptraj κ a b) :
     η = trajKernel κ a := eq_trajKernel' κ 0 η fun b _ ↦ hη b
 
@@ -534,8 +522,6 @@ variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
 variable (κ : (k : ℕ) → Kernel ((i : Iic k) → X i) (X (k + 1)))
 variable [∀ k, IsMarkovKernel (κ k)]
 
-variable [Nonempty (X 0)]
-
 /-- This theorem shows that `trajKernel κ n` is, up to an equivalence, the product of
 a determinstic kernel with another kernel. This is an intermediate result to compute integrals
 with respect to this kernel. -/
@@ -550,7 +536,7 @@ theorem trajKernel_eq (n : ℕ) :
           (frestrictLe a) := by
       ext x i
       by_cases hi : i.1 ≤ n <;> simp [hi, IicProdIoi]
-    have hyp : Measurable (fun (y : (i : Iic a) → X i) (i : Iic a) ↦
+    have hyp : Measurable (fun (y : Π i : Iic a, X i) (i : Iic a) ↦
         if hi : i.1 ≤ n then x ⟨i.1, mem_Iic.2 hi⟩ else y i) := by
       refine measurable_pi_lambda _ (fun i ↦ ?_)
       by_cases hi : i.1 ≤ n <;> simp only [hi, ↓reduceDIte, measurable_const]
@@ -595,7 +581,7 @@ theorem trajKernel_map_updateFinset {n : ℕ} (x₀ : Π i : Iic n, X i) :
 variable {E : Type*} [NormedAddCommGroup E]
 
 theorem integrable_trajKernel {a b : ℕ} (hab : a ≤ b) {f : (Π n, X n) → E}
-    (x₀ : (i : Iic a) → X i) (i_f : Integrable f (trajKernel κ a x₀)) :
+    (x₀ : Π i : Iic a, X i) (i_f : Integrable f (trajKernel κ a x₀)) :
     ∀ᵐ x ∂trajKernel κ a x₀, Integrable f (trajKernel κ b (frestrictLe b x)) := by
   rw [← trajKernel_comp_ptraj _ hab, integrable_comp_iff] at i_f
   · apply ae_of_ae_map (p := fun x ↦ Integrable f (trajKernel κ b x))
@@ -605,7 +591,7 @@ theorem integrable_trajKernel {a b : ℕ} (hab : a ≤ b) {f : (Π n, X n) → E
   · exact i_f.aestronglyMeasurable
 
 theorem aestronglyMeasurable_trajKernel {a b : ℕ} (hab : a ≤ b)
-    {f : (Π n, X n) → E} {x₀ : (i : Iic a) → X i}
+    {f : (Π n, X n) → E} {x₀ : Π i : Iic a, X i}
     (hf : AEStronglyMeasurable f (trajKernel κ a x₀)) :
     ∀ᵐ x ∂ptraj κ a b x₀, AEStronglyMeasurable f (trajKernel κ b x) := by
   rw [← trajKernel_comp_ptraj κ hab] at hf
@@ -644,7 +630,7 @@ lemma ptraj_comp_ptrajProd_trajKernel {a b : ℕ} (hab : a ≤ b) (u : Π i : Ii
 
 variable {κ}
 
-theorem integral_trajKernel_ptraj' {a b : ℕ} (hab : a ≤ b) {x₀ : (i : Iic a) → X i}
+theorem integral_trajKernel_ptraj' {a b : ℕ} (hab : a ≤ b) {x₀ : Π i : Iic a, X i}
     {f : (Π i : Iic b, X i) → (Π n : ℕ, X n) → E}
     (hf : Integrable f.uncurry ((ptraj κ a b x₀) ⊗ₘ (trajKernel κ b))) :
     ∫ x, ∫ y, f x y ∂trajKernel κ b x ∂ptraj κ a b x₀ =
@@ -663,7 +649,7 @@ theorem integral_trajKernel_ptraj' {a b : ℕ} (hab : a ≤ b) {x₀ : (i : Iic 
     · exact h2
   · rwa [trajKernel_comp_ptraj _ hab]
 
-theorem integral_trajKernel_ptraj {a b : ℕ} (hab : a ≤ b) {x₀ : (i : Iic a) → X i}
+theorem integral_trajKernel_ptraj {a b : ℕ} (hab : a ≤ b) {x₀ : Π i : Iic a, X i}
     {f : (Π n : ℕ, X n) → E} (hf : Integrable f (trajKernel κ a x₀)) :
     ∫ x, ∫ y, f y ∂trajKernel κ b x ∂ptraj κ a b x₀ = ∫ x, f x ∂trajKernel κ a x₀ := by
   apply integral_trajKernel_ptraj' hab
@@ -710,7 +696,7 @@ theorem setIntegral_trajKernel_ptraj {a b : ℕ} (hab : a ≤ b) {x₀ : (Π i :
 variable [CompleteSpace E]
 
 theorem condExp_trajKernel
-    {a b : ℕ} (hab : a ≤ b) {x₀ : (i : Iic a) → X i} {f : (Π n, X n) → E}
+    {a b : ℕ} (hab : a ≤ b) {x₀ : Π i : Iic a, X i} {f : (Π n, X n) → E}
     (i_f : Integrable f (trajKernel κ a x₀)) :
     (trajKernel κ a x₀)[f|pi_preorder b] =ᵐ[trajKernel κ a x₀]
       fun x ↦ ∫ y, f y ∂trajKernel κ b (frestrictLe b x) := by
@@ -732,7 +718,7 @@ theorem condExp_trajKernel
 variable (κ)
 
 theorem condExp_trajKernel' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
-    (x₀ : (i : Iic a) → X i) (f : (Π n, X n) → E) :
+    (x₀ : Π i : Iic a, X i) (f : (Π n, X n) → E) :
     (trajKernel κ a x₀)[f|pi_preorder b] =ᵐ[trajKernel κ a x₀]
       fun x ↦ ∫ y, ((trajKernel κ a x₀)[f|pi_preorder c]) (updateFinset x _ y)
         ∂ptraj κ b c (frestrictLe b x) := by
