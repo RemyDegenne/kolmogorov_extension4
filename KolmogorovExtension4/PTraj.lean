@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Etienne Marion
 -/
 import KolmogorovExtension4.Annexe
-import KolmogorovExtension4.DependsOn
 import Mathlib.Probability.Kernel.Composition.MeasureComp
 
 /-!
