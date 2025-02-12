@@ -69,20 +69,11 @@ lemma mem_Iic_bot {ι : Type*} [PartialOrder ι] [LocallyFiniteOrder ι] [OrderB
 /-- Infinite product measure indexed by `ℕ`. Use instead `Measure.productMeasure` for the case of a
 general index space. -/
 noncomputable def Measure.infinitePiNat : Measure ((n : ℕ) → X n) :=
-  (Measure.pi (fun i : Iic 0 ↦ μ i)).bind
-    (@trajKernel _ _ (fun n ↦ const _ (μ (n + 1))) _ (ProbabilityMeasure.nonempty ⟨μ 0, hμ 0⟩) 0)
+  (trajKernel (fun n ↦ const _ (μ (n + 1))) 0) ∘ₘ (Measure.pi (fun i : Iic 0 ↦ μ i))
 
 open Measure
 
-instance {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {κ : Kernel X Y}
-    [IsProbabilityMeasure μ] [IsMarkovKernel κ] : IsProbabilityMeasure (μ.bind κ) where
-  measure_univ := by
-    rw [bind_apply MeasurableSet.univ (Kernel.measurable κ)]
-    simp
-
-instance : IsProbabilityMeasure (infinitePiNat μ) := by
-  rw [infinitePiNat]
-  infer_instance
+instance : IsProbabilityMeasure (infinitePiNat μ) := by rw [infinitePiNat]; infer_instance
 
 omit [∀ n, MeasurableSpace (X n)] in
 lemma IocProdIoc_preim {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) (s : (i : Ioc a c) → Set (X i)) :
