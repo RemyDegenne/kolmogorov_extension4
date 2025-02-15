@@ -235,7 +235,7 @@ theorem ProbabilityTheory.Kernel.lintegral_id_prod (κ : Kernel X Y) [IsSFiniteK
   rw [lintegral_prod _ _ _ hf, lintegral_id]
   exact hf.lintegral_prod_right'
 
-theorem Measure.map_prod (μ : Measure X) [IsFiniteMeasure μ]
+theorem MeasureTheory.Measure.map_prod (μ : Measure X) [IsFiniteMeasure μ]
     (ν : Measure Y) [IsFiniteMeasure ν] {f : X → Z} (hf : Measurable f)
     {g : Y → T} (hg : Measurable g) :
     (μ.prod ν).map (Prod.map f g) = (μ.map f).prod (ν.map g) := by
@@ -244,19 +244,30 @@ theorem Measure.map_prod (μ : Measure X) [IsFiniteMeasure μ]
   · have : Prod.map f g ⁻¹' s ×ˢ t = (f ⁻¹' s) ×ˢ (g ⁻¹' t) := Set.prod_preimage_eq.symm
     rw [this, Measure.prod_prod, Measure.map_apply hf ms, Measure.map_apply hg mt]
 
-theorem Kernel.map_prod (κ : Kernel X Y) [IsFiniteKernel κ] (η : Kernel X T) [IsFiniteKernel η]
+theorem ProbabilityTheory.Kernel.map_prod (κ : Kernel X Y) [IsFiniteKernel κ]
+    (η : Kernel X T) [IsFiniteKernel η]
     {f : Y → Z} (hf : Measurable f) {g : T → U} (hg : Measurable g) :
     (κ ×ₖ η).map (Prod.map f g) = (κ.map f) ×ₖ (η.map g) := by
   ext1 x
   rw [Kernel.map_apply _ (hf.prod_map hg), Kernel.prod_apply, Measure.map_prod _ _ hf hg,
     Kernel.prod_apply, Kernel.map_apply _ hf, Kernel.map_apply _ hg]
 
-theorem Kernel.map_prod_fst (κ : Kernel X Y) [IsSFiniteKernel κ]
+theorem ProbabilityTheory.Kernel.map_prod_mk_left (κ : Kernel X Z) [IsSFiniteKernel κ] (y : Y) :
+    κ.map (Prod.mk y) = (Kernel.const X (Measure.dirac y)) ×ₖ κ := by
+  ext1 x
+  rw [map_apply _ measurable_prod_mk_left, prod_apply, const_apply, Measure.dirac_prod]
+
+theorem ProbabilityTheory.Kernel.map_prod_mk_right (κ : Kernel X Y) [IsSFiniteKernel κ] (z : Z) :
+    κ.map (fun y ↦ (y, z)) = κ ×ₖ (Kernel.const X (Measure.dirac z)) := by
+  ext1 x
+  rw [map_apply _ measurable_prod_mk_right, prod_apply, const_apply, Measure.prod_dirac]
+
+theorem ProbabilityTheory.Kernel.map_prod_fst (κ : Kernel X Y) [IsSFiniteKernel κ]
     (η : Kernel X Z) [IsMarkovKernel η] :
     (κ ×ₖ η).map Prod.fst = κ := by
   rw [← Kernel.fst_eq, Kernel.fst_prod κ η]
 
-theorem Kernel.map_prod_snd (κ : Kernel X Y) [IsMarkovKernel κ]
+theorem ProbabilityTheory.Kernel.map_prod_snd (κ : Kernel X Y) [IsMarkovKernel κ]
     (η : Kernel X Z) [IsSFiniteKernel η] :
     (κ ×ₖ η).map Prod.snd = η := by
   rw [← Kernel.snd_eq, Kernel.snd_prod κ η]
@@ -307,21 +318,14 @@ theorem ProbabilityTheory.Kernel.comp_apply'' (κ : Kernel X Y) (η : Kernel Y Z
   ext s hs
   rw [Kernel.comp_apply' _ _ _ hs, Measure.bind_apply hs η.measurable]
 
-theorem Measure.map_snd_compProd (μ : Measure X) [IsProbabilityMeasure μ] (κ : Kernel X Y)
-    [IsSFiniteKernel κ] {f : Y → Z} (hf : Measurable f) :
+theorem MeasureTheory.Measure.map_snd_compProd (μ : Measure X) [IsProbabilityMeasure μ]
+    (κ : Kernel X Y) [IsSFiniteKernel κ] {f : Y → Z} (hf : Measurable f) :
     (μ ⊗ₘ κ).snd.map f = (μ ⊗ₘ (κ.map f)).snd := by
   ext s ms
   rw [Measure.map_apply hf ms, Measure.snd_apply (hf ms), ← Set.univ_prod,
     Measure.compProd_apply_prod MeasurableSet.univ (hf ms), Measure.snd_apply ms, ← Set.univ_prod,
     Measure.compProd_apply_prod MeasurableSet.univ ms]
   simp_rw [Kernel.map_apply' _ hf _ ms]
-
-theorem Measure.fst_compProd (μ : Measure X) [SFinite μ]
-    (κ : Kernel X Y) [IsMarkovKernel κ] :
-    (μ ⊗ₘ κ).fst = μ := by
-  ext s ms
-  rw [Measure.fst_apply ms, ← Set.prod_univ, Measure.compProd_apply_prod ms MeasurableSet.univ]
-  simp
 
 /-- from #19639 -/
 @[simp]

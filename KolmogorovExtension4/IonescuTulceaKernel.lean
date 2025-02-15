@@ -6,7 +6,6 @@ Authors: Etienne Marion
 import KolmogorovExtension4.PTraj
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import KolmogorovExtension4.KolmogorovExtension
-import Batteries.Data.Nat.Lemmas
 
 open ENNReal Filter Finset Filtration Function MeasurableSpace MeasureTheory Preorder ProbabilityTheory Topology
 
@@ -457,6 +456,10 @@ lemma traj_map_frestrictLe (a b : ℕ) : (traj κ a).map (frestrictLe b) = ptraj
   rw [map_apply, traj_apply, frestrictLe, isProjectiveLimit_trajFun, inducedFamily_Iic]
   fun_prop
 
+lemma traj_map_frestrictLe_apply (a b : ℕ) (x : Π i : Iic a, X i) :
+    (traj κ a x).map (frestrictLe b) = ptraj κ a b x := by
+  rw [← map_apply _ (measurable_frestrictLe b), traj_map_frestrictLe]
+
 lemma traj_map_frestrictLe_of_le {a b : ℕ} (hab : a ≤ b) :
     (traj κ b).map (frestrictLe a) =
       deterministic (frestrictLe₂ hab) (measurable_frestrictLe₂ _) := by
@@ -527,14 +530,13 @@ theorem integrable_traj {a b : ℕ} (hab : a ≤ b) {f : (Π n, X n) → E}
     ∀ᵐ x ∂traj κ a x₀, Integrable f (traj κ b (frestrictLe b x)) := by
   rw [← traj_comp_ptraj _ hab, integrable_comp_iff] at i_f
   · apply ae_of_ae_map (p := fun x ↦ Integrable f (traj κ b x))
-    · exact (measurable_frestrictLe b).aemeasurable
+    · fun_prop
     · convert i_f.1
       rw [← traj_map_frestrictLe, Kernel.map_apply _ (measurable_frestrictLe _)]
   · exact i_f.aestronglyMeasurable
 
-theorem aestronglyMeasurable_traj {a b : ℕ} (hab : a ≤ b)
-    {f : (Π n, X n) → E} {x₀ : Π i : Iic a, X i}
-    (hf : AEStronglyMeasurable f (traj κ a x₀)) :
+theorem aestronglyMeasurable_traj {a b : ℕ} (hab : a ≤ b) {f : (Π n, X n) → E}
+    {x₀ : Π i : Iic a, X i} (hf : AEStronglyMeasurable f (traj κ a x₀)) :
     ∀ᵐ x ∂ptraj κ a b x₀, AEStronglyMeasurable f (traj κ b x) := by
   rw [← traj_comp_ptraj κ hab] at hf
   exact hf.comp
@@ -544,47 +546,39 @@ variable [NormedSpace ℝ E]
 variable {κ} in
 /-- When computing `∫ x, f x ∂traj κ n x₀`, because the trajectory up to time `n` is
 determined by `x₀` we can replace `x` by `updateFinset x _ x₀`. -/
-theorem integral_traj {n : ℕ} (x₀ : Π i : Iic n, X i) {f : (Π n, X n) → E}
-    (mf : AEStronglyMeasurable f (traj κ n x₀)) :
-    ∫ x, f x ∂traj κ n x₀ = ∫ x, f (updateFinset x _ x₀) ∂traj κ n x₀ := by
+theorem integral_traj {a : ℕ} (x₀ : Π i : Iic a, X i) {f : (Π n, X n) → E}
+    (mf : AEStronglyMeasurable f (traj κ a x₀)) :
+    ∫ x, f x ∂traj κ a x₀ = ∫ x, f (updateFinset x _ x₀) ∂traj κ a x₀ := by
   nth_rw 1 [← traj_map_updateFinset, integral_map]
   · exact measurable_updateFinset'.aemeasurable
   · convert mf
-    nth_rw 2 [← traj_map_updateFinset]
+    rw [traj_map_updateFinset]
 
 lemma ptraj_comp_ptrajProd_traj {a b : ℕ} (hab : a ≤ b) (u : Π i : Iic a, X i) :
-    (traj κ a u).map (fun x ↦ (frestrictLe b x, x)) =
-      (ptraj κ a b u) ⊗ₘ (traj κ b) := by
+    (traj κ a u).map (fun x ↦ (frestrictLe b x, x)) = (ptraj κ a b u) ⊗ₘ (traj κ b) := by
   ext s ms
-  rw [Measure.map_apply (by fun_prop) ms, Measure.compProd_apply ms, ← traj_comp_ptraj κ hab,
-    comp_apply' _ _ _ (ms.preimage (by fun_prop))]
-  conv_rhs => enter [2]; ext a; rw [← traj_map_updateFinset]
-  conv_lhs =>
-    enter [2]
-    ext a
-    rw [← traj_map_updateFinset, Measure.map_apply measurable_updateFinset']
-    rfl
-    exact ((measurable_frestrictLe b).prod_mk measurable_id) ms
-  simp_rw [Measure.map_apply measurable_updateFinset' (measurable_prod_mk_left ms),
-    ← Set.preimage_comp]
-  congrm ∫⁻ x, (traj _ _ _) ((fun y ↦ ?_) ⁻¹' _) ∂_
-  ext i <;> simp [updateFinset]
+  rw [Measure.map_apply, Measure.compProd_apply, ← traj_comp_ptraj _ hab, comp_apply']
+  congr with x
+  rw [← traj_map_updateFinset, Measure.map_apply, Measure.map_apply]
+  congr with y
+  simp only [Set.mem_preimage]
+  congrm (fun i ↦ ?_, fun i ↦ ?_) ∈ s <;> simp [updateFinset]
+  any_goals fun_prop
+  all_goals exact ms.preimage (by fun_prop)
 
 variable {κ}
 
 theorem integral_traj_ptraj' {a b : ℕ} (hab : a ≤ b) {x₀ : Π i : Iic a, X i}
     {f : (Π i : Iic b, X i) → (Π n : ℕ, X n) → E}
     (hf : Integrable f.uncurry ((ptraj κ a b x₀) ⊗ₘ (traj κ b))) :
-    ∫ x, ∫ y, f x y ∂traj κ b x ∂ptraj κ a b x₀ =
-      ∫ x, f (frestrictLe b x) x ∂traj κ a x₀ := by
+    ∫ x, ∫ y, f x y ∂traj κ b x ∂ptraj κ a b x₀ = ∫ x, f (frestrictLe b x) x ∂traj κ a x₀ := by
   have hf1 := hf
   rw [← ptraj_comp_ptrajProd_traj κ hab] at hf1
   replace hf1 := hf1.comp_measurable (by fun_prop)
   have hf2 := aestronglyMeasurable_traj κ hab hf1.1
   rw [← traj_comp_ptraj κ hab, Kernel.integral_comp]
   · apply integral_congr_ae
-    filter_upwards [hf.1.compProd, hf2]
-    intro x h1 h2
+    filter_upwards [hf.1.compProd, hf2] with x h1 h2
     rw [integral_traj _ h1]
     nth_rw 2 [integral_traj]
     · simp_rw [frestrictLe_updateFinset]
@@ -637,23 +631,22 @@ theorem setIntegral_traj_ptraj {a b : ℕ} (hab : a ≤ b) {x₀ : (Π i : Iic a
 
 variable [CompleteSpace E]
 
-theorem condExp_traj
-    {a b : ℕ} (hab : a ≤ b) {x₀ : Π i : Iic a, X i} {f : (Π n, X n) → E}
-    (i_f : Integrable f (traj κ a x₀)) :
+theorem condExp_traj {a b : ℕ} (hab : a ≤ b) {x₀ : Π i : Iic a, X i}
+    {f : (Π n, X n) → E} (i_f : Integrable f (traj κ a x₀)) :
     (traj κ a x₀)[f|pi_preorder b] =ᵐ[traj κ a x₀]
       fun x ↦ ∫ y, f y ∂traj κ b (frestrictLe b x) := by
-  have mf : Integrable (fun x ↦ ∫ y, f y ∂(traj κ b) x)
+  have i_f' : Integrable (fun x ↦ ∫ y, f y ∂(traj κ b) x)
       (((traj κ a) x₀).map (frestrictLe b)) := by
     rw [← map_apply _ (measurable_frestrictLe _), traj_map_frestrictLe _ _]
     rw [← traj_comp_ptraj _ hab] at i_f
     exact i_f.integral_comp
+  have i_f'' := i_f'.comp_aemeasurable (measurable_frestrictLe b).aemeasurable
   refine ae_eq_condExp_of_forall_setIntegral_eq (pi_preorder.le _) i_f
-    (fun s _ _ ↦
-      (integrable_map_measure mf.1 (measurable_frestrictLe b).aemeasurable).1 mf |>.integrableOn)
-    ?_ (mf.1.comp_ae_measurable' (measurable_frestrictLe b).aemeasurable) |>.symm
+    (fun s _ _ ↦ i_f'.comp_aemeasurable (measurable_frestrictLe b).aemeasurable |>.integrableOn)
+    ?_ (i_f'.1.comp_ae_measurable' (measurable_frestrictLe b).aemeasurable) |>.symm
   rintro - ⟨t, mt, rfl⟩ -
   simp_rw [Function.comp_apply]
-  rw [← setIntegral_map mt mf.1, ← map_apply, traj_map_frestrictLe,
+  rw [← setIntegral_map mt i_f'.1, ← map_apply, traj_map_frestrictLe,
     setIntegral_traj_ptraj hab i_f mt]
   any_goals fun_prop
 
@@ -668,8 +661,7 @@ theorem condExp_traj' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
     integrable_condExp
   have mcf : StronglyMeasurable ((traj κ a x₀)[f|pi_preorder c]) :=
     stronglyMeasurable_condExp.mono (pi_preorder.le c)
-  filter_upwards [pi_preorder.condExp_condExp f hbc, condExp_traj hab i_cf]
-  intro x h1 h2
+  filter_upwards [pi_preorder.condExp_condExp f hbc, condExp_traj hab i_cf] with x h1 h2
   rw [← h1, h2, ← traj_map_frestrictLe, Kernel.map_apply, integral_map]
   · congr with y
     apply dependsOn_of_stronglyMeasurable stronglyMeasurable_condExp
