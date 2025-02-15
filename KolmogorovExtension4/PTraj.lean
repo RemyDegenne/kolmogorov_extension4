@@ -62,6 +62,9 @@ This construction is used in the file `IonescuTulcea` to build the kernel `eta` 
 * `lmarginalPTraj_self` : if `a ≤ b` and `b ≤ c` then
   `lmarginalPTraj κ b c (lmarginalPTraj κ a b f) = lmarginalPTraj κ a c`.
 
+## Tags
+
+Ionescu-Tulcea theorem, composition of kernels
 -/
 
 open ENNReal Finset Function MeasurableEquiv MeasureTheory Preorder ProbabilityTheory
@@ -134,22 +137,22 @@ def MeasurableEquiv.piSingleton (a : ℕ) : (X (a + 1)) ≃ᵐ ((i : Ioc a (a + 
 
 /-- Gluing `Iic a` and `Ioi a` into `ℕ`, version as a measurable equivalence
 on dependent functions. -/
-def IicProdIoi (a : ℕ) : ((Π i : Iic a, X i) × ((i : Set.Ioi a) → X i)) ≃ᵐ (Π n, X n) :=
-  { toFun := fun x i ↦ if hi : i ≤ a
-      then x.1 ⟨i, mem_Iic.2 hi⟩
-      else x.2 ⟨i, Set.mem_Ioi.2 (not_le.1 hi)⟩
-    invFun := fun x ↦ (fun i ↦ x i, fun i ↦ x i)
-    left_inv := fun x ↦ by
-      ext i
-      · simp [mem_Iic.1 i.2]
-      · simp [not_le.2 <| Set.mem_Ioi.1 i.2]
-    right_inv := fun x ↦ by simp
-    measurable_toFun := by
-      refine measurable_pi_lambda _ (fun i ↦ ?_)
-      by_cases hi : i ≤ a <;> simp only [Equiv.coe_fn_mk, hi, ↓reduceDIte]
-      · exact measurable_fst.eval
-      · exact measurable_snd.eval
-    measurable_invFun := Measurable.prod_mk (measurable_restrict _) (Set.measurable_restrict _) }
+def IicProdIoi (a : ℕ) : ((Π i : Iic a, X i) × ((i : Set.Ioi a) → X i)) ≃ᵐ (Π n, X n) where
+  toFun := fun x i ↦ if hi : i ≤ a
+    then x.1 ⟨i, mem_Iic.2 hi⟩
+    else x.2 ⟨i, Set.mem_Ioi.2 (not_le.1 hi)⟩
+  invFun := fun x ↦ (fun i ↦ x i, fun i ↦ x i)
+  left_inv := fun x ↦ by
+    ext i
+    · simp [mem_Iic.1 i.2]
+    · simp [not_le.2 <| Set.mem_Ioi.1 i.2]
+  right_inv := fun x ↦ by simp
+  measurable_toFun := by
+    refine measurable_pi_lambda _ (fun i ↦ ?_)
+    by_cases hi : i ≤ a <;> simp only [Equiv.coe_fn_mk, hi, ↓reduceDIte]
+    · exact measurable_fst.eval
+    · exact measurable_snd.eval
+  measurable_invFun := Measurable.prod_mk (measurable_restrict _) (Set.measurable_restrict _)
 
 end Maps
 
@@ -266,7 +269,7 @@ lemma ptraj_eq_prod [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ) : ptraj κ a b =
       ext1 x
       rw [ptraj_self, id_map, map_apply, prod_apply, IicProdIoc_self, ← Measure.fst,
         Measure.fst_prod]
-      any_goals fun_prop
+      all_goals fun_prop
     | succ k h hk =>
       rw [← ptraj_comp_ptraj h k.le_succ, hk, ptraj_succ_self]
       ext x s ms
@@ -278,7 +281,7 @@ lemma ptraj_eq_prod [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ) : ptraj κ a b =
         · congr with z
           simp only [IicProdIoc_def, restrict₂, Set.mem_preimage, subset_refl, Set.coe_inclusion]
           congrm (fun i ↦ ?_) ∈ s
-          split_ifs with h1 h2 h3 <;> try rfl
+          split_ifs <;> try rfl
           omega
         any_goals fun_prop
         all_goals exact ms.preimage (by fun_prop)

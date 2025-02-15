@@ -7,6 +7,67 @@ import KolmogorovExtension4.PTraj
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import KolmogorovExtension4.KolmogorovExtension
 
+/-!
+# Ionescu-Tulcea theorem
+
+This file proves the *Ionescu-Tulcea theorem*. The idea of the statement is as follows:
+consider a family of kernels `κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))`.
+One can interpret `κ n` as a kernel which takes as an input the trajectory of a point started in
+`X 0` and moving `X 0 → X 1 → X 2 → ... → X n` and which outputs the distribution of the next
+position of the point in `X (n + 1)`. If `a b : ℕ` and `a < b`, we can compose the kernels,
+and `κ a ⊗ₖ κ (a + 1) ⊗ₖ ... ⊗ₖ κ b` will take the trajectory up to time `a` as input and outputs
+the distrbution of the trajectory on `X (a + 1) × ... × X (b + 1)`.
+
+The Ionescu-Tulcea theorem tells us that these compositions can be extended into a
+`Kernel (Π i : Iic a, X i) (Π n ≥ a, X n)` which given the trajectory up to time `a` outputs
+the distribution of the infinite trajectory started in `X (a + 1)`. In other words this theorem
+makes sense of composing infinitely many kernels together.
+
+In this file we construct this "limit" kernel given the family `κ`. More precisely, for any `a : ℕ`,
+we construct the kernel `traj κ a : Kernel (Π i : Iic a, X i) (Π n, X n)`, which takes as input
+the trajectory in `X 0 × ... × X a` and outputs the distribution of the whole trajectory. The name
+`traj` thus stands for "trajectory". We build a kernel with output in `Π n, X n` instead of
+`Π i : Iic a, X i` to make manipulations easier. The first coordinates are deterministic.
+
+We also provide to compute integrals against `traj κ a` and an expression for the conditional
+expectation.
+
+## Main definition
+
+* `traj κ a`: a kernel from `Π i : Iic a, X i` to `Π n, X n` which takes as input a trajectory
+  up to time `a` ad outputs the distribution of the trajectory obtained by iterating the kernels
+  `κ`. Its existence is given by the Ionescu-Tulcea theorem.
+
+## Main statements
+
+* `eq_traj`: Uniqueness of `traj`: to check that `η = traj κ a` it is enough to show that
+  the restriction of `η` to variables `≤ b` is `ptraj κ a b`.
+* `traj_comp_ptraj`: Given the distribution up to tome `a`, `ptraj κ a b` gives the distribution of
+  the trajectory up to time `b`, and composing this with `traj κ b` gives the distribution
+  of the whole trajectory.
+* `condExp_traj`: If `a ≤ b`, the conditional expectation of `f` with respect to `traj κ a`
+  given the information up to time `b` is obtained by integrating `f` against `traj κ b`.
+
+## Implementation notes
+
+The kernel `traj κ a` is built using the Carathéodory extension theorem. First we build a projective
+family of measures using `inducedFamily` and `ptraj κ a`. Then we build an
+`MeasureTheory.AddContent` on `MeasureTheory.measurableCylinders` called `trajContent` using
+`kolContent`. Finally we prove `trajContent_tendsto_zero` which implies the `σ`-additivity of the
+content, allowing to turn it into a measure.
+
+## References
+
+We follow the proof of Theorem 8.24 in
+[O. Kallenberg, *Foundations of Modern Probability*][kallenberg2021]. For a more detailed proof
+in the case of constant kernels (i.e. measures),
+see Proposition 10.6.1 in [D. L. Cohn, *Measure Theory*][cohn2013measure].
+
+## Tags
+
+Ionescu-Tulcea theorem
+-/
+
 open ENNReal Filter Finset Filtration Function MeasurableSpace MeasureTheory Preorder ProbabilityTheory Topology
 
 variable {X : ℕ → Type*}
@@ -24,7 +85,7 @@ variable [∀ n, MeasurableSpace (X n)]
 
 private lemma measure_cast {a b : ℕ} (h : a = b) (μ : (n : ℕ) → Measure (Π i : Iic n, X i)) :
     (μ a).map (cast (Iic_pi_eq h)) = μ b := by
-  subst h
+  cases h
   exact Measure.map_id
 
 private lemma heq_measurableSpace_Iic_pi {a b : ℕ} (h : a = b) :
@@ -442,7 +503,10 @@ where the entries with index `≤ a` are those of `x`, and then one follows iter
 kernels `κ a`, then `κ (a + 1)`, and so on.
 
 The fact that such a kernel exists on infinite trajectories is not obvious, and is the content of
-the Ionescu-Tulcea theorem. -/
+the Ionescu-Tulcea theorem. We follow the proof of Theorem 8.24 in
+[O. Kallenberg, *Foundations of Modern Probability*][kallenberg2021]. For a more detailed proof
+in the case of constant kernels (i.e. measures),
+see Proposition 10.6.1 in [D. L. Cohn, *Measure Theory*][cohn2013measure]. -/
 noncomputable def traj (a : ℕ) : Kernel (Π i : Iic a, X i) (Π n, X n) where
   toFun := trajFun κ a
   measurable' := measurable_trajFun κ a
@@ -640,7 +704,6 @@ theorem condExp_traj {a b : ℕ} (hab : a ≤ b) {x₀ : Π i : Iic a, X i}
     rw [← map_apply _ (measurable_frestrictLe _), traj_map_frestrictLe _ _]
     rw [← traj_comp_ptraj _ hab] at i_f
     exact i_f.integral_comp
-  have i_f'' := i_f'.comp_aemeasurable (measurable_frestrictLe b).aemeasurable
   refine ae_eq_condExp_of_forall_setIntegral_eq (pi_preorder.le _) i_f
     (fun s _ _ ↦ i_f'.comp_aemeasurable (measurable_frestrictLe b).aemeasurable |>.integrableOn)
     ?_ (i_f'.1.comp_ae_measurable' (measurable_frestrictLe b).aemeasurable) |>.symm
