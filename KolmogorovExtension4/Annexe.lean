@@ -8,6 +8,7 @@ import Mathlib.Data.Finset.Basic
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.MeasurableSpace.PreorderRestrict
+import Mathlib.Probability.Kernel.Composition.CompNotation
 import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 import Mathlib.Probability.Kernel.Integral
 import Mathlib.Probability.Process.Filtration
@@ -250,6 +251,24 @@ theorem MeasureTheory.Measure.map_prod (μ : Measure X) [IsFiniteMeasure μ]
   rw [Measure.map_apply (hf.prod_map hg) (ms.prod mt)]
   · have : Prod.map f g ⁻¹' s ×ˢ t = (f ⁻¹' s) ×ˢ (g ⁻¹' t) := Set.prod_preimage_eq.symm
     rw [this, Measure.prod_prod, Measure.map_apply hf ms, Measure.map_apply hg mt]
+
+theorem MeasureTheory.Measure.map_comp
+    (μ : Measure X) (κ : Kernel X Y) (f : Y → Z) (mf : Measurable f) :
+    (κ ∘ₘ μ).map f = μ.bind (κ.map f) := by
+  ext s ms
+  rw [Measure.map_apply mf ms, Measure.bind_apply ms (Kernel.measurable _),
+    Measure.bind_apply (mf ms) (Kernel.measurable _)]
+  simp_rw [Kernel.map_apply' _ mf _ ms]
+
+theorem MeasureTheory.Measure.map_bind_eq_bind_comap
+    (μ : Measure X) (κ : Kernel Y Z) (f : X → Y) (mf : Measurable f) :
+    κ ∘ₘ μ.map f = μ.bind (Kernel.comap κ f mf) := by
+  ext s ms
+  rw [Measure.bind_apply ms (Kernel.measurable _), lintegral_map, Measure.bind_apply ms]
+  · rfl
+  · exact Kernel.measurable _
+  · exact Kernel.measurable_coe _ ms
+  · exact mf
 
 theorem ProbabilityTheory.Kernel.map_prod (κ : Kernel X Y) [IsFiniteKernel κ]
     (η : Kernel X T) [IsFiniteKernel η]

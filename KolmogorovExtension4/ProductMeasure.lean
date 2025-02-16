@@ -107,7 +107,7 @@ open Measure
 
 instance : IsProbabilityMeasure (infinitePiNat μ) := by rw [infinitePiNat]; infer_instance
 
-lemma prod_map_IocProdIoc {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
+lemma pi_prod_map_IocProdIoc {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
     ((Measure.pi (fun i : Ioc a b ↦ μ i)).prod (Measure.pi (fun i : Ioc b c ↦ μ i))).map
       (IocProdIoc a b c) = Measure.pi (fun i : Ioc a c ↦ μ i) := by
   refine (Measure.pi_eq fun s ms ↦ ?_).symm
@@ -117,7 +117,7 @@ lemma prod_map_IocProdIoc {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
   · fun_prop
   · exact MeasurableSet.univ_pi ms
 
-lemma prod_map_IicProdIoc {a b : ℕ} :
+lemma pi_prod_map_IicProdIoc {a b : ℕ} :
     ((Measure.pi (fun i : Iic a ↦ μ i)).prod (Measure.pi (fun i : Ioc a b ↦ μ i))).map
       (IicProdIoc a b) = Measure.pi (fun i : Iic b ↦ μ i) := by
   obtain hab | hba := le_total a b
@@ -159,7 +159,7 @@ theorem ptraj_const' {a b : ℕ} :
       rw [Kernel.const_apply, ptraj_succ_of_le (by omega), Kernel.map_const, Kernel.prod_const_comp,
         Kernel.id_comp, Kernel.map_map, this, ← Kernel.map_map, Kernel.map_prod, hind,
         Kernel.map_id, Kernel.map_apply, prod_apply, const_apply, const_apply, map_piSingleton,
-        prod_map_IocProdIoc]
+        pi_prod_map_IocProdIoc]
       any_goals fun_prop
       all_goals omega
   · have : IsEmpty (Ioc a b) := by simpa [hba] using Subtype.isEmpty_false
@@ -175,26 +175,6 @@ theorem prod_noyau_proj {a b : ℕ} :
       (Kernel.id ×ₖ (const _ (Measure.pi (fun i : Ioc a b ↦ μ i)))).map (IicProdIoc a b) := by
   rw [ptraj_eq_prod, ptraj_const']
 
-theorem Measure.map_bind {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y]
-    [MeasurableSpace Z]
-    (μ : Measure X) (κ : Kernel X Y) (f : Y → Z) (mf : Measurable f) :
-    (μ.bind κ).map f = μ.bind (κ.map f) := by
-  ext s ms
-  rw [Measure.map_apply mf ms, Measure.bind_apply ms (Kernel.measurable _),
-    Measure.bind_apply (mf ms) (Kernel.measurable _)]
-  simp_rw [Kernel.map_apply' _ mf _ ms]
-
-theorem map_bind_eq_bind_comap {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y]
-    [MeasurableSpace Z]
-    (μ : Measure X) (κ : Kernel Y Z) (f : X → Y) (mf : Measurable f) :
-    (μ.map f).bind κ = μ.bind (Kernel.comap κ f mf) := by
-  ext s ms
-  rw [Measure.bind_apply ms (Kernel.measurable _), lintegral_map, Measure.bind_apply ms]
-  · rfl
-  · exact Kernel.measurable _
-  · exact Kernel.measurable_coe _ ms
-  · exact mf
-
 theorem isProjectiveLimit_infinitePiNat :
     IsProjectiveLimit (infinitePiNat μ) (fun I : Finset ℕ ↦ (Measure.pi (fun i : I ↦ μ i))) := by
   have _ := ProbabilityMeasure.nonempty ⟨μ 0, hμ 0⟩
@@ -202,7 +182,7 @@ theorem isProjectiveLimit_infinitePiNat :
   simp_rw [isProjectiveMeasureFamily_pi μ _ _ I.sub_Iic]
   rw [← restrict₂_comp_restrict I.sub_Iic, ← Measure.map_map, ← frestrictLe, infinitePiNat,
     Measure.map_comp, traj_map_frestrictLe, prod_noyau_proj, ← Measure.map_comp,
-    ← Measure.compProd_eq_comp_prod, Measure.compProd_const, prod_map_IicProdIoc]
+    ← Measure.compProd_eq_comp_prod, Measure.compProd_const, pi_prod_map_IicProdIoc]
   any_goals fun_prop
 
 theorem kolContent_eq_infinitePiNat {A : Set ((n : ℕ) → X n)} (hA : A ∈ measurableCylinders X) :
