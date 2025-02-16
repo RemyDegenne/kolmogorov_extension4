@@ -30,7 +30,7 @@ variable (μ : (i : ι) → Measure (X i)) [hμ : ∀ i, IsProbabilityMeasure (�
 
 /-- Consider a family of probability measures. You can take their products for any fimite
 subfamily. This gives a projective family of measures, see `IsProjectiveMeasureFamily`. -/
-theorem isProjectiveMeasureFamily_pi :
+lemma isProjectiveMeasureFamily_pi :
     IsProjectiveMeasureFamily (fun I : Finset ι ↦ (Measure.pi (fun i : I ↦ μ i))) := by
   refine fun I J hJI ↦ Measure.pi_eq (fun s ms ↦ ?_)
   classical
@@ -60,22 +60,8 @@ end Preliminaries
 
 section Nat
 
-variable {X : ℕ → Type*} [∀ n, MeasurableSpace (X n)]
-variable (μ : (n : ℕ) → Measure (X n)) [hμ : ∀ n, IsProbabilityMeasure (μ n)]
+variable {X : ℕ → Type*}
 
-lemma mem_Iic_bot {ι : Type*} [PartialOrder ι] [LocallyFiniteOrder ι] [OrderBot ι] {i : ι}
-    (hi : i ∈ Iic ⊥) : i = ⊥ := bot_unique (mem_Iic.1 hi)
-
-/-- Infinite product measure indexed by `ℕ`. Use instead `Measure.productMeasure` for the case of a
-general index space. -/
-noncomputable def Measure.infinitePiNat : Measure ((n : ℕ) → X n) :=
-  (traj (fun n ↦ const _ (μ (n + 1))) 0) ∘ₘ (Measure.pi (fun i : Iic 0 ↦ μ i))
-
-open Measure
-
-instance : IsProbabilityMeasure (infinitePiNat μ) := by rw [infinitePiNat]; infer_instance
-
-omit [∀ n, MeasurableSpace (X n)] in
 lemma IocProdIoc_preim {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) (s : (i : Ioc a c) → Set (X i)) :
     IocProdIoc a b c ⁻¹' (Set.univ.pi s) =
       (Set.univ.pi <| restrict₂ (π := (fun n ↦ Set (X n))) (Ioc_subset_Ioc_right hbc) s) ×ˢ
@@ -92,17 +78,6 @@ lemma IocProdIoc_preim {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) (s : (i : Ioc
     · exact h1 i ⟨hi1, hi3⟩
     · exact h2 i ⟨not_le.1 hi3, hi2⟩
 
-lemma prod_map_IocProdIoc {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
-    ((Measure.pi (fun i : Ioc a b ↦ μ i)).prod (Measure.pi (fun i : Ioc b c ↦ μ i))).map
-      (IocProdIoc a b c) = Measure.pi (fun i : Ioc a c ↦ μ i) := by
-  refine (Measure.pi_eq fun s ms ↦ ?_).symm
-  rw [Measure.map_apply, IocProdIoc_preim hab hbc, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
-    ← prod_Ioc hab.le hbc (f := fun i ↦ μ i (s i))]
-  · rfl
-  · fun_prop
-  · exact MeasurableSet.univ_pi ms
-
-omit [∀ n, MeasurableSpace (X n)] in
 lemma IicProdIoc_preim {a b : ℕ} (hab : a ≤ b) (s : (i : Iic b) → Set (X i)) :
     IicProdIoc a b ⁻¹' (Set.univ.pi s) =
       (Set.univ.pi <| frestrictLe₂ (π := (fun n ↦ Set (X n))) hab s) ×ˢ
@@ -120,24 +95,43 @@ lemma IicProdIoc_preim {a b : ℕ} (hab : a ≤ b) (s : (i : Iic b) → Set (X i
     · exact h1 i hi3
     · exact h2 i ⟨not_le.1 hi3, hi⟩
 
-lemma prod_map_IicProdIoc {a b : ℕ} (hab : a ≤ b) :
-    ((Measure.pi (fun i : Iic a ↦ μ i)).prod (Measure.pi (fun i : Ioc a b ↦ μ i))).map
-      (IicProdIoc a b) = Measure.pi (fun i : Iic b ↦ μ i) := by
+variable [∀ n, MeasurableSpace (X n)]
+  (μ : (n : ℕ) → Measure (X n)) [hμ : ∀ n, IsProbabilityMeasure (μ n)]
+
+/-- Infinite product measure indexed by `ℕ`. Use instead `Measure.productMeasure` for the case of a
+general index space. -/
+noncomputable def Measure.infinitePiNat : Measure ((n : ℕ) → X n) :=
+  (traj (fun n ↦ const _ (μ (n + 1))) 0) ∘ₘ (Measure.pi (fun i : Iic 0 ↦ μ i))
+
+open Measure
+
+instance : IsProbabilityMeasure (infinitePiNat μ) := by rw [infinitePiNat]; infer_instance
+
+lemma prod_map_IocProdIoc {a b c : ℕ} (hab : a < b) (hbc : b ≤ c) :
+    ((Measure.pi (fun i : Ioc a b ↦ μ i)).prod (Measure.pi (fun i : Ioc b c ↦ μ i))).map
+      (IocProdIoc a b c) = Measure.pi (fun i : Ioc a c ↦ μ i) := by
   refine (Measure.pi_eq fun s ms ↦ ?_).symm
-  rw [Measure.map_apply, IicProdIoc_preim hab, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
-    ← prod_Iic hab (f := fun i ↦ μ i (s i))]
+  rw [Measure.map_apply, IocProdIoc_preim hab hbc, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
+    ← prod_Ioc hab.le hbc]
   · rfl
   · fun_prop
   · exact MeasurableSet.univ_pi ms
 
-omit [∀ n, MeasurableSpace (X n)] in
-lemma restrict₂_comp_IicProdIoc (a b : ℕ) :
-    (restrict₂ Ioc_subset_Iic_self) ∘ (IicProdIoc (X := X) a b) = Prod.snd := by
-  ext x i
-  simp [IicProdIoc, not_le.2 (mem_Ioc.1 i.2).1]
+lemma prod_map_IicProdIoc {a b : ℕ} :
+    ((Measure.pi (fun i : Iic a ↦ μ i)).prod (Measure.pi (fun i : Ioc a b ↦ μ i))).map
+      (IicProdIoc a b) = Measure.pi (fun i : Iic b ↦ μ i) := by
+  obtain hab | hba := le_total a b
+  · refine (Measure.pi_eq fun s ms ↦ ?_).symm
+    rw [Measure.map_apply, IicProdIoc_preim hab, Measure.prod_prod, Measure.pi_pi, Measure.pi_pi,
+      ← prod_Iic hab (f := fun i ↦ μ i (s i))]
+    · rfl
+    · fun_prop
+    · exact MeasurableSet.univ_pi ms
+  · rw [IicProdIoc_le hba, ← Measure.map_map, ← Measure.fst, Measure.fst_prod]
+    exact isProjectiveMeasureFamily_pi μ (Iic a) (Iic b) (Iic_subset_Iic.2 hba) |>.symm
+    all_goals fun_prop
 
-lemma Measure.map_piSingleton (μ : (n : ℕ) → Measure (X n))
-    [∀ n, SigmaFinite (μ n)] (n : ℕ) :
+lemma Measure.map_piSingleton (μ : (n : ℕ) → Measure (X n)) [∀ n, SigmaFinite (μ n)] (n : ℕ) :
     (μ (n + 1)).map (piSingleton n) = Measure.pi (fun i : Ioc n (n + 1) ↦ μ i) := by
   refine (Measure.pi_eq fun s hs ↦ ?_).symm
   have : Subsingleton (Ioc n (n + 1)) := by
@@ -151,36 +145,35 @@ lemma Measure.map_piSingleton (μ : (n : ℕ) → Measure (X n))
   · exact (piSingleton n).measurable
   · exact MeasurableSet.univ_pi hs
 
-theorem kerNat_prod {a b : ℕ} (hab : a < b) :
+theorem ptraj_const' {a b : ℕ} :
     (ptraj (fun n ↦ const _ (μ (n + 1))) a b).map (restrict₂ (Ioc_subset_Iic_self (a := a))) =
     const _ (Measure.pi (fun i : Ioc a b ↦ μ i)) := by
-  refine Nat.le_induction ?_ (fun n hn hind ↦ ?_) b (Nat.succ_le.2 hab) <;> ext1 x₀
-  · rw [ptraj_succ_self, Kernel.map_map, Kernel.map_apply, Kernel.prod_apply, Kernel.map_apply,
-      const_apply, const_apply, map_piSingleton, restrict₂_comp_IicProdIoc, Measure.map_snd_prod,
-      measure_univ, one_smul]
-    any_goals fun_prop
-  · have : (restrict₂ (Ioc_subset_Iic_self (a := a))) ∘ (IicProdIoc (X := X) n (n + 1)) =
-        (IocProdIoc a n (n + 1)) ∘ (Prod.map (restrict₂ Ioc_subset_Iic_self) id) := by
-      ext x i
-      simp [IicProdIoc, IocProdIoc]
-    rw [Kernel.const_apply, ptraj_succ_of_le (by omega), Kernel.map_const, Kernel.prod_const_comp,
-      Kernel.id_comp, Kernel.map_map, this, ← Kernel.map_map, Kernel.map_prod, hind, Kernel.map_id,
-      Kernel.map_apply, prod_apply, const_apply, const_apply, map_piSingleton, prod_map_IocProdIoc]
-    any_goals fun_prop
-    any_goals omega
+  obtain hab | hba := lt_or_le a b
+  · refine Nat.le_induction ?_ (fun n hn hind ↦ ?_) b (Nat.succ_le.2 hab) <;> ext1 x₀
+    · rw [ptraj_succ_self, Kernel.map_map, Kernel.map_apply, Kernel.prod_apply, Kernel.map_apply,
+        const_apply, const_apply, map_piSingleton, restrict₂_comp_IicProdIoc, Measure.map_snd_prod,
+        measure_univ, one_smul]
+      all_goals fun_prop
+    · have : (restrict₂ (Ioc_subset_Iic_self (a := a))) ∘ (IicProdIoc (X := X) n (n + 1)) =
+          (IocProdIoc a n (n + 1)) ∘ (Prod.map (restrict₂ Ioc_subset_Iic_self) id) := rfl
+      rw [Kernel.const_apply, ptraj_succ_of_le (by omega), Kernel.map_const, Kernel.prod_const_comp,
+        Kernel.id_comp, Kernel.map_map, this, ← Kernel.map_map, Kernel.map_prod, hind,
+        Kernel.map_id, Kernel.map_apply, prod_apply, const_apply, const_apply, map_piSingleton,
+        prod_map_IocProdIoc]
+      any_goals fun_prop
+      all_goals omega
+  · have : IsEmpty (Ioc a b) := by simpa [hba] using Subtype.isEmpty_false
+    ext x s ms
+    by_cases hs : s.Nonempty
+    · rw [Subsingleton.eq_univ_of_nonempty hs, @measure_univ .., measure_univ]
+      exact (IsMarkovKernel.map _ (measurable_restrict₂ _)) |>.isProbabilityMeasure x
+    · rw [Set.not_nonempty_iff_eq_empty.1 hs]
+      simp
 
-theorem prod_noyau_proj {a b : ℕ} (hab : a ≤ b) :
+theorem prod_noyau_proj {a b : ℕ} :
     ptraj (fun n ↦ const _ (μ (n + 1))) a b =
       (Kernel.id ×ₖ (const _ (Measure.pi (fun i : Ioc a b ↦ μ i)))).map (IicProdIoc a b) := by
-  rcases eq_or_lt_of_le hab with rfl | hab
-  · have : IsEmpty (Ioc a a) := by simp [Subtype.isEmpty_false]
-    ext1 x
-    rw [ptraj_le le_rfl, Measure.pi_of_empty, Kernel.map_apply, prod_apply, const_apply,
-      id_apply, dirac_prod_dirac, map_dirac, deterministic_apply]
-    congrm dirac (fun i ↦ ?_)
-    simp [IicProdIoc, mem_Iic.1 i.2]
-    any_goals fun_prop
-  · rw [ptraj_eq_prod, kerNat_prod _ hab]
+  rw [ptraj_eq_prod, ptraj_const']
 
 theorem Measure.map_bind {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y]
     [MeasurableSpace Z]
@@ -208,8 +201,8 @@ theorem isProjectiveLimit_infinitePiNat :
   intro I
   simp_rw [isProjectiveMeasureFamily_pi μ _ _ I.sub_Iic]
   rw [← restrict₂_comp_restrict I.sub_Iic, ← Measure.map_map, ← frestrictLe, infinitePiNat,
-    Measure.map_comp, traj_map_frestrictLe, prod_noyau_proj _ (zero_le _), ← Measure.map_comp,
-    ← Measure.compProd_eq_comp_prod, Measure.compProd_const, prod_map_IicProdIoc _ (zero_le _)]
+    Measure.map_comp, traj_map_frestrictLe, prod_noyau_proj, ← Measure.map_comp,
+    ← Measure.compProd_eq_comp_prod, Measure.compProd_const, prod_map_IicProdIoc]
   any_goals fun_prop
 
 theorem kolContent_eq_infinitePiNat {A : Set ((n : ℕ) → X n)} (hA : A ∈ measurableCylinders X) :

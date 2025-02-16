@@ -22,6 +22,9 @@ open MeasureTheory ProbabilityTheory MeasurableSpace ENNReal Finset Function Pre
 
 section Lemmas
 
+lemma mem_Iic_bot {ι : Type*} [PartialOrder ι] [LocallyFiniteOrder ι] [OrderBot ι] {i : ι}
+    (hi : i ∈ Iic ⊥) : i = ⊥ := bot_unique (mem_Iic.1 hi)
+
 @[measurability, fun_prop]
 lemma measurable_cast {X Y : Type u} [mX : MeasurableSpace X] [mY : MeasurableSpace Y] (h : X = Y)
     (hm : HEq mX mY) : Measurable (cast h) := by

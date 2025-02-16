@@ -93,6 +93,12 @@ lemma frestrictLe₂_comp_IicProdIoc {a b : ℕ} (hab : a ≤ b) :
   ext x i
   simp [IicProdIoc, mem_Iic.1 i.2]
 
+lemma restrict₂_comp_IicProdIoc (a b : ℕ) :
+    (restrict₂ Ioc_subset_Iic_self) ∘ (IicProdIoc (X := X) a b) = Prod.snd := by
+  ext x i
+  simp [IicProdIoc, not_le.2 (mem_Ioc.1 i.2).1]
+
+@[simp]
 lemma IicProdIoc_self (a : ℕ) : IicProdIoc (X := X) a a = Prod.fst := by
   ext x i
   simp [IicProdIoc, mem_Iic.1 i.2]
@@ -233,7 +239,8 @@ instance [∀ n, IsZeroOrMarkovKernel (κ n)] (a b : ℕ) : IsZeroOrMarkovKernel
     | succ k hak => rw [ptraj_succ_of_le hak]; infer_instance
   · rw [ptraj_le hba]; infer_instance
 
-instance [∀ n, IsMarkovKernel (κ n)] (a b : ℕ) : IsMarkovKernel (ptraj κ a b) := by
+instance IsMarkovKernel.ptraj [∀ n, IsMarkovKernel (κ n)] (a b : ℕ) :
+    IsMarkovKernel (ptraj κ a b) := by
   obtain hab | hba := le_total a b
   · induction b, hab using Nat.le_induction with
     | base => rw [ptraj_self]; infer_instance
