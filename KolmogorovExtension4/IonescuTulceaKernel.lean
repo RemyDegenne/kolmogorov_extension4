@@ -198,6 +198,8 @@ namespace ProbabilityTheory.Kernel
 
 section definition
 
+/-! ### Definition and basic properties of `traj` -/
+
 /-- Given a family of kernels `κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))`, and the
 trajectory up to time `a` we can construct an additive content over cylinders. It corresponds
 to composing the kernels, starting at time `a + 1`. -/
@@ -238,9 +240,8 @@ theorem cylinders_nat :
   rw [← Set.preimage_comp, restrict₂_comp_restrict]
   exact Set.mem_singleton _
 
-lemma trajContent_ne_top {a : ℕ} (x : Π i : Iic a, X i)
-    {s : Set (Π n, X n)} (hs : s ∈ measurableCylinders X) :
-    trajContent κ x s ≠ ⊤ := by
+lemma trajContent_ne_top {a : ℕ} (x : Π i : Iic a, X i) {s : Set (Π n, X n)}
+    (hs : s ∈ measurableCylinders X) : trajContent κ x s ≠ ∞ := by
   obtain ⟨N, S, mS, rfl⟩ : ∃ N S, MeasurableSet S ∧ s = cylinder (Iic N) S := by
     simpa [cylinders_nat] using hs
   simp [trajContent_cylinder _ _ mS]
@@ -511,6 +512,10 @@ noncomputable def traj (a : ℕ) : Kernel (Π i : Iic a, X i) (Π n, X n) where
   toFun := trajFun κ a
   measurable' := measurable_trajFun κ a
 
+end definition
+
+section basic
+
 lemma traj_apply (a : ℕ) (x : Π i : Iic a, X i) : traj κ a x = trajFun κ a x := rfl
 
 instance (a : ℕ) : IsMarkovKernel (traj κ a) := ⟨fun _ ↦ isProbabilityMeasure_trajFun ..⟩
@@ -538,7 +543,7 @@ theorem eq_traj' {a : ℕ} (n : ℕ) (η : Kernel (Π i : Iic a, X i) (Π n, X n
   rw [isProjectiveLimit_nat_iff' _ _ n]
   · intro k hk
     rw [inducedFamily_Iic, ← map_apply _ (measurable_frestrictLe k), hη k hk]
-  · exact (isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply x))
+  · exact isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply x)
 
 
 /-- To check that `η = traj κ a` it is enough to show that the restriction of `η` to variables `≤ b`
@@ -554,8 +559,6 @@ theorem traj_comp_ptraj {a b : ℕ} (hab : a ≤ b) : (traj κ b) ∘ₖ (ptraj 
   refine eq_traj _ _ fun n ↦ ?_
   rw [map_comp, traj_map_frestrictLe, ptraj_comp_ptraj' _ hab]
 
-end definition
-
 /-- This theorem shows that `traj κ n` is, up to an equivalence, the product of
 a determinstic kernel with another kernel. This is an intermediate result to compute integrals
 with respect to this kernel. -/
@@ -570,14 +573,6 @@ theorem traj_eq_prod (a : ℕ) :
   rw [← map_map, traj_map_frestrictLe, map_id, ← ptraj_eq_prod]
   all_goals fun_prop
 
-@[measurability, fun_prop]
-theorem measurable_updateFinset' {ι : Type*} [DecidableEq ι] {I : Finset ι}
-    {X : ι → Type*} [∀ i, MeasurableSpace (X i)]
-    {y : Π i : I, X i} : Measurable (fun x ↦ updateFinset x I y) := by
-  refine measurable_pi_lambda _ (fun i ↦ ?_)
-  by_cases hi : i ∈ I <;> simp only [updateFinset, hi, ↓reduceDIte, measurable_const]
-  exact measurable_pi_apply _
-
 theorem traj_map_updateFinset {n : ℕ} (x : Π i : Iic n, X i) :
     (traj κ n x).map (updateFinset · _ x) = traj κ n x := by
   nth_rw 2 [traj_eq_prod]
@@ -586,6 +581,12 @@ theorem traj_map_updateFinset {n : ℕ} (x : Π i : Iic n, X i) :
   rw [this, ← Function.comp_assoc, ← Measure.map_map, ← Measure.map_map, map_apply, prod_apply,
     map_apply, id_apply, Measure.dirac_prod]
   all_goals fun_prop
+
+end basic
+
+section integral
+
+/-! ### Integrals and `traj` -/
 
 variable {E : Type*} [NormedAddCommGroup E]
 
@@ -614,7 +615,7 @@ theorem integral_traj {a : ℕ} (x₀ : Π i : Iic a, X i) {f : (Π n, X n) → 
     (mf : AEStronglyMeasurable f (traj κ a x₀)) :
     ∫ x, f x ∂traj κ a x₀ = ∫ x, f (updateFinset x _ x₀) ∂traj κ a x₀ := by
   nth_rw 1 [← traj_map_updateFinset, integral_map]
-  · exact measurable_updateFinset'.aemeasurable
+  · exact measurable_updateFinset_left.aemeasurable
   · convert mf
     rw [traj_map_updateFinset]
 
@@ -656,33 +657,19 @@ theorem integral_traj_ptraj {a b : ℕ} (hab : a ≤ b) {x₀ : Π i : Iic a, X 
   rw [← traj_comp_ptraj κ hab, ← snd_compProd_kernel] at hf
   exact hf.comp_measurable measurable_snd
 
--- theorem setIntegral_traj_ptraj' {a b : ℕ} (hab : a ≤ b) {u : (Π i : Iic a, X i)}
---     {f : (Π i : Iic b, X i) → (Π n : ℕ, X n) → E}
---     (hf : Integrable f.uncurry ((ptraj κ a b u) ⊗ₘ (traj κ b)))
---     {A : Set (Π n, X n)} (hA : MeasurableSet[pi_preorder b] A) :
---     ∫ x in A, ∫ y, f x y ∂traj κ b (frestrictLe b x) ∂traj κ a u =
---       ∫ y in A, f (frestrictLe b y) y ∂traj κ a u := by
---   simp_rw [setIntegral_eq _ hA, ← integral_smul]
---   rw [integral_traj_ptraj' hab]
---   simp_rw [← preimage_indicator, ← setIntegral_eq _ (measurable_frestrictLe b hA)]
---   refine hf.smul_of_top_right <| memℒp_top_of_bound (C := 1)
---     (((measurable_indicator_const_iff 1).2 hA).comp measurable_fst).aestronglyMeasurable
---     <| Eventually.of_forall fun x ↦ ?_
---   by_cases hx : x.1 ∈ A <;> simp [hx]
-
 theorem setIntegral_traj_ptraj' {a b : ℕ} (hab : a ≤ b) {u : (Π i : Iic a, X i)}
     {f : (Π i : Iic b, X i) → (Π n : ℕ, X n) → E}
     (hf : Integrable f.uncurry ((ptraj κ a b u) ⊗ₘ (traj κ b)))
     {A : Set (Π i : Iic b, X i)} (hA : MeasurableSet A) :
     ∫ x in A, ∫ y, f x y ∂traj κ b x ∂ptraj κ a b u =
       ∫ y in frestrictLe b ⁻¹' A, f (frestrictLe b y) y ∂traj κ a u := by
-  simp_rw [setIntegral_eq _ hA, ← integral_smul]
+  simp_rw [← integral_indicator hA, ← integral_indicator'']
   rw [integral_traj_ptraj' hab]
-  simp_rw [← preimage_indicator, ← setIntegral_eq _ (measurable_frestrictLe b hA)]
-  refine hf.smul_of_top_right <| memℒp_top_of_bound (C := 1)
-    (((measurable_indicator_const_iff 1).2 hA).comp measurable_fst).aestronglyMeasurable
-    <| Eventually.of_forall fun x ↦ ?_
-  by_cases hx : x.1 ∈ A <;> simp [hx]
+  simp_rw [← preimage_indicator, ← integral_indicator (hA.preimage (measurable_frestrictLe b))]
+  · rfl
+  convert hf.indicator (hA.prod MeasurableSet.univ)
+  ext ⟨x, y⟩
+  by_cases hx : x ∈ A <;> simp [uncurry_def, hx]
 
 theorem setIntegral_traj_ptraj {a b : ℕ} (hab : a ≤ b) {x₀ : (Π i : Iic a, X i)}
     {f : (Π n : ℕ, X n) → E} (hf : Integrable f (traj κ a x₀))
@@ -711,7 +698,7 @@ theorem condExp_traj {a b : ℕ} (hab : a ≤ b) {x₀ : Π i : Iic a, X i}
   simp_rw [Function.comp_apply]
   rw [← setIntegral_map mt i_f'.1, ← map_apply, traj_map_frestrictLe,
     setIntegral_traj_ptraj hab i_f mt]
-  any_goals fun_prop
+  all_goals fun_prop
 
 variable (κ)
 
@@ -732,3 +719,7 @@ theorem condExp_traj' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
     exact fun i hi ↦ (if_pos hi).symm
   any_goals fun_prop
   · exact (mcf.comp_measurable measurable_updateFinset).aestronglyMeasurable
+
+end integral
+
+end ProbabilityTheory.Kernel

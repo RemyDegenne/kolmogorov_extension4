@@ -62,7 +62,11 @@ lemma indicator_one_mul_const' {α M : Type*} [MonoidWithZero M] (s : Set α) (c
     (s.indicator (fun _ ↦ 1 : α → M) a) * c = s.indicator (fun _ ↦ c) a := by
   simp [Set.indicator]
 
-theorem preimage_indicator {α β M : Type*} [Zero M] (f : α → β) (s : Set β) (a : α) (c : M) :
+theorem preimage_indicator {α β M : Type*} [Zero M] (f : α → β) (s : Set β) (a : α) (g : β → M) :
+    (f ⁻¹' s).indicator (g ∘ f) a = s.indicator g (f a) := by
+  by_cases h : f a ∈ s <;> simp [h]
+
+theorem preimage_indicator_const {α β M : Type*} [Zero M] (f : α → β) (s : Set β) (a : α) (c : M) :
     (f ⁻¹' s).indicator (fun _ ↦ c) a = s.indicator (fun _ ↦ c) (f a) := by
   by_cases h : f a ∈ s <;> simp [h]
 
@@ -277,7 +281,7 @@ theorem ProbabilityTheory.Kernel.map_deterministic {f : X → Y} (hf : Measurabl
     (Kernel.deterministic f hf).map g = Kernel.deterministic (g ∘ f) (hg.comp hf) := by
   ext x s ms
   rw [Kernel.map_apply' _ hg _ ms, Kernel.deterministic_apply' _ _ (hg ms),
-    Kernel.deterministic_apply' _ _ ms, preimage_indicator]
+    Kernel.deterministic_apply' _ _ ms, preimage_indicator_const]
   rfl
 
 lemma ProbabilityTheory.Kernel.eq_zero_of_isEmpty [IsEmpty Y] (κ : Kernel X Y) :
@@ -495,6 +499,15 @@ theorem setIntegral_eq {μ : Measure X} (f : X → E) {s : Set X} (hs : Measurab
     ∫ x in s, f x ∂μ = ∫ x, (s.indicator (fun _ ↦ (1 : ℝ)) x) • (f x) ∂μ := by
   simp_rw [← Set.indicator_one_smul_apply]
   rw [integral_indicator hs]
+
+omit [MeasurableSpace X] in
+lemma integral_indicator' (μ : Measure Y) (f : X → Y → E) (s : Set X) (x : X) :
+    ∫ y, s.indicator (f · y) x ∂μ = s.indicator (fun x ↦ ∫ y, f x y ∂μ) x := by
+  by_cases hx : x ∈ s <;> simp [hx]
+
+lemma integral_indicator'' (κ : Kernel X Y) (f : X → Y → E) (s : Set X) (x : X) :
+    ∫ y, s.indicator (f · y) x ∂κ x = s.indicator (fun x ↦ ∫ y, f x y ∂κ x) x := by
+  by_cases hx : x ∈ s <;> simp [hx]
 
 variable [CompleteSpace E]
 
