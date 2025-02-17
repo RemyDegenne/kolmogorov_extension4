@@ -200,13 +200,15 @@ section definition
 
 /-! ### Definition and basic properties of `traj` -/
 
+lemma isProjectiveMeasureFamily_ptraj {a : ℕ} (x₀ : Π i : Iic a, X i) :
+    IsProjectiveMeasureFamily (inducedFamily (fun b ↦ ptraj κ a b x₀)) :=
+  isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply (κ := κ) x₀)
+
 /-- Given a family of kernels `κ : (n : ℕ) → Kernel (Π i : Iic n, X i) (X (n + 1))`, and the
 trajectory up to time `a` we can construct an additive content over cylinders. It corresponds
 to composing the kernels, starting at time `a + 1`. -/
 noncomputable def trajContent {a : ℕ} (x₀ : Π i : Iic a, X i) :
-    AddContent (measurableCylinders X) :=
-  kolContent (isProjectiveMeasureFamily_inducedFamily _
-    (fun _ _ ↦ ptraj_map_frestrictLe₂_apply (κ := κ) x₀))
+    AddContent (measurableCylinders X) := kolContent (isProjectiveMeasureFamily_ptraj κ x₀)
 
 /-- The `trajContent κ x₀` of a cylinder indexed by first coordinates is given by `ptraj`. -/
 theorem trajContent_cylinder {a b : ℕ} (x₀ : Π i : Iic a, X i)
@@ -240,11 +242,10 @@ theorem cylinders_nat :
   rw [← Set.preimage_comp, restrict₂_comp_restrict]
   exact Set.mem_singleton _
 
-lemma trajContent_ne_top {a : ℕ} (x : Π i : Iic a, X i) {s : Set (Π n, X n)}
-    (hs : s ∈ measurableCylinders X) : trajContent κ x s ≠ ∞ := by
-  obtain ⟨N, S, mS, rfl⟩ : ∃ N S, MeasurableSet S ∧ s = cylinder (Iic N) S := by
-    simpa [cylinders_nat] using hs
-  simp [trajContent_cylinder _ _ mS]
+variable {κ} in
+lemma trajContent_ne_top {a : ℕ} {x : Π i : Iic a, X i} {s : Set (Π n, X n)} :
+    trajContent κ x s ≠ ∞ :=
+  kolContent_ne_top (isProjectiveMeasureFamily_ptraj κ x)
 
 /-- This is an auxiliary result for `trajContent_tendsto_zero`. Consider `f` a sequence of bounded
 measurable functions such that `f n` depends only on the first coordinates up to `a n`.
@@ -450,7 +451,7 @@ theorem trajContent_sigma_subadditive {a : ℕ} (x₀ : Π i : Iic a, X i)
   refine addContent_iUnion_le_of_addContent_iUnion_eq_tsum
     isSetRing_measurableCylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
   refine addContent_iUnion_eq_sum_of_tendsto_zero isSetRing_measurableCylinders
-    (trajContent κ x₀) (fun s hs ↦ trajContent_ne_top _ _ hs) ?_ hf hf_Union hf'
+    (trajContent κ x₀) (fun _ _ ↦ trajContent_ne_top) ?_ hf hf_Union hf'
   exact fun s hs anti_s inter_s ↦ trajContent_tendsto_zero κ hs anti_s inter_s x₀
 
 /-- This function is the kernel given by the Ionescu-Tulcea theorem. -/
@@ -463,20 +464,16 @@ theorem isProbabilityMeasure_trajFun (a : ℕ) (x₀ : Π i : Iic a, X i) :
     IsProbabilityMeasure (trajFun κ a x₀) where
   measure_univ := by
     rw [← cylinder_univ (Iic 0), trajFun, AddContent.measure_eq,
-      trajContent_cylinder _ _ MeasurableSet.univ]
-    · exact measure_univ
+      trajContent_cylinder _ _ MeasurableSet.univ, measure_univ]
     · exact generateFrom_measurableCylinders.symm
     · exact cylinder_mem_measurableCylinders _ _ MeasurableSet.univ
 
 theorem isProjectiveLimit_trajFun (a : ℕ) (x₀ : Π i : Iic a, X i) :
     IsProjectiveLimit (trajFun κ a x₀) (inducedFamily (fun n ↦ ptraj κ a n x₀)) := by
-  refine isProjectiveLimit_nat_iff (isProjectiveMeasureFamily_inducedFamily _
-    (fun _ _ ↦ ptraj_map_frestrictLe₂_apply x₀)) _ |>.2 fun n ↦ ?_
+  refine isProjectiveLimit_nat_iff (isProjectiveMeasureFamily_ptraj κ x₀) _ |>.2 fun n ↦ ?_
   ext s ms
-  rw [Measure.map_apply (measurable_frestrictLe n) ms]
-  have h_mem : (frestrictLe n) ⁻¹' s ∈ measurableCylinders X :=
-    cylinder_mem_measurableCylinders _ _ ms
-  rw [trajFun, AddContent.measure_eq, trajContent, kolContent_congr _ (frestrictLe n ⁻¹' s) rfl ms]
+  rw [Measure.map_apply (measurable_frestrictLe n) ms, trajFun, AddContent.measure_eq, trajContent,
+    kolContent_congr _ (frestrictLe n ⁻¹' s) rfl ms]
   · exact generateFrom_measurableCylinders.symm
   · exact cylinder_mem_measurableCylinders _ _ ms
 
@@ -543,7 +540,7 @@ theorem eq_traj' {a : ℕ} (n : ℕ) (η : Kernel (Π i : Iic a, X i) (Π n, X n
   rw [isProjectiveLimit_nat_iff' _ _ n]
   · intro k hk
     rw [inducedFamily_Iic, ← map_apply _ (measurable_frestrictLe k), hη k hk]
-  · exact isProjectiveMeasureFamily_inducedFamily _ (fun _ _ ↦ ptraj_map_frestrictLe₂_apply x)
+  · exact isProjectiveMeasureFamily_ptraj κ x
 
 
 /-- To check that `η = traj κ a` it is enough to show that the restriction of `η` to variables `≤ b`

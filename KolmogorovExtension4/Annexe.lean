@@ -252,23 +252,19 @@ theorem MeasureTheory.Measure.map_prod (μ : Measure X) [IsFiniteMeasure μ]
   · have : Prod.map f g ⁻¹' s ×ˢ t = (f ⁻¹' s) ×ˢ (g ⁻¹' t) := Set.prod_preimage_eq.symm
     rw [this, Measure.prod_prod, Measure.map_apply hf ms, Measure.map_apply hg mt]
 
-theorem MeasureTheory.Measure.map_comp
+theorem MeasureTheory.Measure.map_comp_left
     (μ : Measure X) (κ : Kernel X Y) (f : Y → Z) (mf : Measurable f) :
-    (κ ∘ₘ μ).map f = μ.bind (κ.map f) := by
+    (κ ∘ₘ μ).map f = κ.map f ∘ₘ μ := by
   ext s ms
-  rw [Measure.map_apply mf ms, Measure.bind_apply ms (Kernel.measurable _),
-    Measure.bind_apply (mf ms) (Kernel.measurable _)]
-  simp_rw [Kernel.map_apply' _ mf _ ms]
+  simp_rw [map_apply mf ms, bind_apply ms (κ.map f).measurable, bind_apply (mf ms) κ.measurable,
+    ← κ.map_apply' mf _ ms]
 
-theorem MeasureTheory.Measure.map_bind_eq_bind_comap
+theorem MeasureTheory.Measure.comp_map_eq_comap_comp
     (μ : Measure X) (κ : Kernel Y Z) (f : X → Y) (mf : Measurable f) :
-    κ ∘ₘ μ.map f = μ.bind (Kernel.comap κ f mf) := by
+    κ ∘ₘ μ.map f = κ.comap f mf ∘ₘ μ := by
   ext s ms
-  rw [Measure.bind_apply ms (Kernel.measurable _), lintegral_map, Measure.bind_apply ms]
-  · rfl
-  · exact Kernel.measurable _
-  · exact Kernel.measurable_coe _ ms
-  · exact mf
+  simp_rw [bind_apply ms κ.measurable, lintegral_map (κ.measurable_coe ms) mf,
+    bind_apply ms (Kernel.measurable _), κ.comap_apply]
 
 theorem ProbabilityTheory.Kernel.map_prod (κ : Kernel X Y) [IsFiniteKernel κ]
     (η : Kernel X T) [IsFiniteKernel η]
