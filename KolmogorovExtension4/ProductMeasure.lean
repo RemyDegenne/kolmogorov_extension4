@@ -313,6 +313,26 @@ theorem secondLemma
     (fun n ↦ (MeasurableSet.of_mem_measurableCylinders (B_mem n)).nullMeasurableSet)
     B_anti ⟨0, measure_ne_top _ _⟩
 
+def Equiv.restrict {α β : Type*} (e : α ≃ β) (s : Set β) : e ⁻¹' s ≃ s :=
+  { toFun := fun a ↦ ⟨e a, a.2⟩
+    invFun := fun b ↦ ⟨e.symm b, by simp⟩
+    left_inv := fun _ ↦ by simp
+    right_inv := fun _ ↦ by simp }
+
+lemma lol {α β : Type*} (X : β → Type*) (e : α ≃ β) (s : Set β) :
+    s.restrict ∘ ⇑(Equiv.piCongrLeft X e) =
+    ⇑(Equiv.piCongrLeft (fun b : s ↦ (X b)) (e.restrict s)) ∘ (e ⁻¹' s).restrict := by
+  ext x b
+  simp only [Function.comp_apply, Set.restrict_apply, Equiv.piCongrLeft_apply_eq_cast]
+  rfl
+
+
+lemma test (e : ℕ ≃ ι) {s : Set (Π i, X i)} (hs : s ∈ measurableCylinders X) :
+    (Measure.infinitePiNat (fun n ↦ μ (e n))).map (piCongrLeft X e) s = piContent μ s := by
+  obtain ⟨I, S, hS, rfl⟩ := (mem_measurableCylinders s).1 hs
+  rw [Measure.map_apply, cylinder, ← Set.preimage_comp, coe_piCongrLeft, lol X e I,
+    Set.preimage_comp]
+
 theorem thirdLemma {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measurableCylinders X)
     (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅) :
     Tendsto (fun n ↦ piContent μ (A n)) atTop (𝓝 0) := by
@@ -389,6 +409,10 @@ theorem thirdLemma {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measura
   · -- If `u` is infinite, then we have an equivalence with `ℕ` so we can apply `secondLemma`.
     have count_u : Countable u := Set.countable_iUnion (fun n ↦ (s n).countable_toSet)
     obtain ⟨φ, -⟩ := Classical.exists_true_of_nonempty (α := ℕ ≃ u) nonempty_equiv_of_countable
+    have {s : Set (Π i : u, X i)} (hs : MeasurableSet s) :
+        (Measure.infinitePiNat (fun n ↦ μ (φ n))).map (piCongrLeft (fun i : u ↦ X i) φ) s =
+        piContent ν s := by
+
     simp_rw [kol]
     exact secondLemma (fun i : u ↦ μ i) φ B_mem B_anti B_inter
 
