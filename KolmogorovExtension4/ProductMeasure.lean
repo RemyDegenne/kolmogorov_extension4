@@ -44,8 +44,15 @@ lemma isProjectiveMeasureFamily_pi :
     Finset.prod_congr rfl (by simp [g])
   rw [h2, prod_coe_sort, prod_coe_sort, prod_subset hJI (fun _ h h' ↦ by simp [g, h, h'])]
 
-theorem kolContent_eq_measure_pi [Fintype ι] {s : Set (Π i, X i)} (hs : MeasurableSet s) :
-    kolContent (isProjectiveMeasureFamily_pi μ) s = Measure.pi μ s := by
+noncomputable def piContent : AddContent (measurableCylinders X) :=
+  kolContent (isProjectiveMeasureFamily_pi μ)
+
+lemma piContent_cylinder {I : Finset ι} {S : Set (Π i : I, X i)} (hS : MeasurableSet S) :
+    piContent μ (cylinder I S) = Measure.pi (fun i : I ↦ μ i) S :=
+  kolContent_cylinder _ hS
+
+theorem piContent_eq_measure_pi [Fintype ι] {s : Set (Π i, X i)} (hs : MeasurableSet s) :
+    piContent μ s = Measure.pi μ s := by
   let aux : (Π i : univ, X i) → (Π i, X i) := fun x i ↦ x ⟨i, mem_univ i⟩
   have maux : Measurable aux := measurable_pi_lambda _ (fun _ ↦ measurable_pi_apply _)
   have pi_eq : Measure.pi μ = (Measure.pi (fun i : univ ↦ μ i)).map aux := by
@@ -56,7 +63,7 @@ theorem kolContent_eq_measure_pi [Fintype ι] {s : Set (Π i, X i)} (hs : Measur
     simp
   have : s = cylinder univ (aux ⁻¹' s) := by ext x; simp [aux]
   nth_rw 1 [this]
-  rw [kolContent_cylinder _ (maux hs), pi_eq, Measure.map_apply maux hs]
+  rw [piContent_cylinder _ (maux hs), pi_eq, Measure.map_apply maux hs]
 
 end Preliminaries
 
@@ -189,11 +196,11 @@ theorem isProjectiveLimit_infinitePiNat :
     ← Measure.compProd_eq_comp_prod, Measure.compProd_const, Measure.pi_prod_map_IicProdIoc]
   any_goals fun_prop
 
-theorem kolContent_eq_infinitePiNat {A : Set ((n : ℕ) → X n)} (hA : A ∈ measurableCylinders X) :
-    kolContent (isProjectiveMeasureFamily_pi μ) A = Measure.infinitePiNat μ A := by
-  obtain ⟨s, S, mS, A_eq⟩ : ∃ s S, MeasurableSet S ∧ A = cylinder s S := by
+theorem piContent_eq_infinitePiNat {A : Set ((n : ℕ) → X n)} (hA : A ∈ measurableCylinders X) :
+    piContent μ A = Measure.infinitePiNat μ A := by
+  obtain ⟨s, S, mS, rfl⟩ : ∃ s S, MeasurableSet S ∧ A = cylinder s S := by
     simpa [mem_measurableCylinders] using hA
-  rw [kolContent_congr _ A A_eq mS, A_eq, cylinder, ← Measure.map_apply (measurable_restrict _) mS,
+  rw [piContent_cylinder _ mS, cylinder, ← Measure.map_apply (measurable_restrict _) mS,
     isProjectiveLimit_infinitePiNat μ]
 
 end Nat
@@ -308,9 +315,8 @@ theorem secondLemma
 
 theorem thirdLemma {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measurableCylinders X)
     (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅) :
-    Tendsto (fun n ↦ kolContent (isProjectiveMeasureFamily_pi μ) (A n)) atTop (𝓝 0) := by
+    Tendsto (fun n ↦ piContent μ (A n)) atTop (𝓝 0) := by
   have : ∀ i, Nonempty (X i) := fun i ↦ ProbabilityMeasure.nonempty ⟨μ i, hμ i⟩
-  set μ_proj := isProjectiveMeasureFamily_pi μ
   have A_cyl n : ∃ s S, MeasurableSet S ∧ A n = cylinder s S :=
     (mem_measurableCylinders _).1 (A_mem n)
   choose s S mS A_eq using A_cyl
@@ -319,7 +325,7 @@ theorem thirdLemma {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measura
   -- so that we can apply `secondLemma`. The proof is very similar to the previous one, except
   -- that the use of coercions avoids manipulating `cast`, as types will be definitionally equal.
   let u := ⋃ n, (s n).toSet
-  let μ_fproj := isProjectiveMeasureFamily_pi (fun i : u ↦ μ i)
+  let ν := fun i : u ↦ μ i
   -- `tₙ` will be `sₙ` seen as a subset of `u`.
   let t n : Finset u := (s n).preimage Subtype.val Subtype.val_injective.injOn
   -- These are a few lemmas to move between `sₙ` and `tₙ`.
@@ -367,14 +373,14 @@ theorem thirdLemma {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measura
     · simp [aux]
     · exact MeasurableSet.pi Set.countable_univ (by simp [mx])
   -- This yields the desired result: the `kolContent` of `Aₙ` is the same as the one of `Bₙ`.
-  have kol n : kolContent μ_proj (A n) = kolContent μ_fproj (B n) := by
-    rw [kolContent_congr μ_proj _ (A_eq n) (mS n), kolContent_congr μ_fproj _ (B_eq n) (mT n),
+  have kol n : piContent μ (A n) = piContent ν (B n) := by
+    rw [A_eq, piContent_cylinder μ (mS n), B_eq, piContent_cylinder ν (mT n),
       pi_s n, Measure.map_apply (mg n) (mS n)]
   -- We now have two cases: if `u` is finite, then the result is simple because
   -- we have an actual measure.
   obtain u_fin | u_inf := finite_or_infinite u
   · have := Fintype.ofFinite u
-    simp_rw [kol, fun n ↦ kolContent_eq_measure_pi (fun i : u ↦ μ i)
+    simp_rw [kol, fun n ↦ piContent_eq_measure_pi ν
       (MeasurableSet.of_mem_measurableCylinders (B_mem n)),
       ← measure_empty (μ := Measure.pi (fun i : u ↦ μ i)), ← B_inter]
     exact tendsto_measure_iInter_atTop
