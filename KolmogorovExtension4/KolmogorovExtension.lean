@@ -256,7 +256,7 @@ instance isProbabilityMeasure_projectiveLimit [hι : Nonempty ι]
     (hP : IsProjectiveMeasureFamily P) : IsProbabilityMeasure (projectiveLimit P hP) := by
   constructor
   rw [← cylinder_univ ({hι.some} : Finset ι),
-    (isProjectiveLimit_projectiveLimit hP).measure_cylinder _ MeasurableSet.univ]
+    (isProjectiveLimit_projectiveLimit hP).measure_cylinder _ .univ]
   exact measure_univ
 
 end Polish

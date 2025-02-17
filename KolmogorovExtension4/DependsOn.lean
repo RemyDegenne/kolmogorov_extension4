@@ -11,7 +11,7 @@ import Mathlib.Order.Restriction
 /-!
 # Functions depending only on some variables
 
-When dealing with a function `f : (i : ι) → α i` depending on many variables, some operations
+When dealing with a function `f : Π i, α i` depending on many variables, some operations
 may get rid of the dependency on some variables
 (see `Function.updateFinset` or `lmarginal` for example). However considering this new function
 as having a different domain with fewer points is not comfortable in Lean, as it requires the use
@@ -41,24 +41,31 @@ depends on, updateFinset, update, lmarginal
 open MeasureTheory ENNReal Set Finset symmDiff Preorder
 
 variable {ι : Type*} {α : ι → Type*} {β : Type*}
-variable {f : ((i : ι) → α i) → β}
 
 /-- A function `f` depends on `s` if, whenever `x` and `y` coincide over `s`, `f x = f y`. -/
-def DependsOn (f : ((i : ι) → α i) → β) (s : Set ι) : Prop :=
+def DependsOn (f : (Π i, α i) → β) (s : Set ι) : Prop :=
   ∀ ⦃x y⦄, (∀ i ∈ s, x i = y i) → f x = f y
 
-theorem dependsOn_univ (f : ((i : ι) → α i) → β) : DependsOn f univ := by
+lemma dependsOn_iff_factorsThrough {f : (Π i, α i) → β} {s : Set ι} :
+    DependsOn f s ↔ Function.FactorsThrough f s.restrict := by
+  rw [DependsOn, Function.FactorsThrough]
+  congrm ∀ x y, ?_ → _
+  simp [funext_iff]
+
+theorem dependsOn_univ (f : (Π i, α i) → β) : DependsOn f univ := by
   intro x y hxy
   have : x = y := by
     ext i
     exact hxy i trivial
   rw [this]
 
+variable {f : (Π i, α i) → β}
+
 /-- A constant function does not depend on any variable. -/
-theorem dependsOn_const (b : β) : DependsOn (fun _ : (i : ι) → α i ↦ b) ∅ := by simp [DependsOn]
+theorem dependsOn_const (b : β) : DependsOn (fun _ : Π i, α i ↦ b) ∅ := by simp [DependsOn]
 
 /-- A function which depends on the empty set is constant. -/
-theorem dependsOn_empty (hf : DependsOn f ∅) (x y : (i : ι) → α i) : f x = f y := hf (by simp)
+theorem dependsOn_empty (hf : DependsOn f ∅) (x y : Π i, α i) : f x = f y := hf (by simp)
 
 theorem Set.dependsOn_restrict (s : Set ι) : DependsOn (s.restrict (π := α)) s :=
   fun _ _ h ↦ funext fun i ↦ h i.1 i.2

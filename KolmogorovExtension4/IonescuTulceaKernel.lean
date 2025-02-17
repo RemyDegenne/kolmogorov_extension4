@@ -464,9 +464,9 @@ theorem isProbabilityMeasure_trajFun (a : ℕ) (x₀ : Π i : Iic a, X i) :
     IsProbabilityMeasure (trajFun κ a x₀) where
   measure_univ := by
     rw [← cylinder_univ (Iic 0), trajFun, AddContent.measure_eq,
-      trajContent_cylinder _ _ MeasurableSet.univ, measure_univ]
+      trajContent_cylinder _ _ .univ, measure_univ]
     · exact generateFrom_measurableCylinders.symm
-    · exact cylinder_mem_measurableCylinders _ _ MeasurableSet.univ
+    · exact cylinder_mem_measurableCylinders _ _ .univ
 
 theorem isProjectiveLimit_trajFun (a : ℕ) (x₀ : Π i : Iic a, X i) :
     IsProjectiveLimit (trajFun κ a x₀) (inducedFamily (fun n ↦ ptraj κ a n x₀)) := by
@@ -664,7 +664,7 @@ theorem setIntegral_traj_ptraj' {a b : ℕ} (hab : a ≤ b) {u : (Π i : Iic a, 
   rw [integral_traj_ptraj' hab]
   simp_rw [← preimage_indicator, ← integral_indicator (hA.preimage (measurable_frestrictLe b))]
   · rfl
-  convert hf.indicator (hA.prod MeasurableSet.univ)
+  convert hf.indicator (hA.prod .univ)
   ext ⟨x, y⟩
   by_cases hx : x ∈ A <;> simp [uncurry_def, hx]
 
@@ -681,14 +681,14 @@ variable [CompleteSpace E]
 
 theorem condExp_traj {a b : ℕ} (hab : a ≤ b) {x₀ : Π i : Iic a, X i}
     {f : (Π n, X n) → E} (i_f : Integrable f (traj κ a x₀)) :
-    (traj κ a x₀)[f|pi_preorder b] =ᵐ[traj κ a x₀]
+    (traj κ a x₀)[f|piPreorder b] =ᵐ[traj κ a x₀]
       fun x ↦ ∫ y, f y ∂traj κ b (frestrictLe b x) := by
   have i_f' : Integrable (fun x ↦ ∫ y, f y ∂(traj κ b) x)
       (((traj κ a) x₀).map (frestrictLe b)) := by
     rw [← map_apply _ (measurable_frestrictLe _), traj_map_frestrictLe _ _]
     rw [← traj_comp_ptraj _ hab] at i_f
     exact i_f.integral_comp
-  refine ae_eq_condExp_of_forall_setIntegral_eq (pi_preorder.le _) i_f
+  refine ae_eq_condExp_of_forall_setIntegral_eq (piPreorder.le _) i_f
     (fun s _ _ ↦ i_f'.comp_aemeasurable (measurable_frestrictLe b).aemeasurable |>.integrableOn)
     ?_ (i_f'.1.comp_ae_measurable' (measurable_frestrictLe b).aemeasurable) |>.symm
   rintro - ⟨t, mt, rfl⟩ -
@@ -701,14 +701,14 @@ variable (κ)
 
 theorem condExp_traj' {a b c : ℕ} (hab : a ≤ b) (hbc : b ≤ c)
     (x₀ : Π i : Iic a, X i) (f : (Π n, X n) → E) :
-    (traj κ a x₀)[f|pi_preorder b] =ᵐ[traj κ a x₀]
-      fun x ↦ ∫ y, ((traj κ a x₀)[f|pi_preorder c]) (updateFinset x _ y)
+    (traj κ a x₀)[f|piPreorder b] =ᵐ[traj κ a x₀]
+      fun x ↦ ∫ y, ((traj κ a x₀)[f|piPreorder c]) (updateFinset x _ y)
         ∂ptraj κ b c (frestrictLe b x) := by
-  have i_cf : Integrable ((traj κ a x₀)[f|pi_preorder c]) (traj κ a x₀) :=
+  have i_cf : Integrable ((traj κ a x₀)[f|piPreorder c]) (traj κ a x₀) :=
     integrable_condExp
-  have mcf : StronglyMeasurable ((traj κ a x₀)[f|pi_preorder c]) :=
-    stronglyMeasurable_condExp.mono (pi_preorder.le c)
-  filter_upwards [pi_preorder.condExp_condExp f hbc, condExp_traj hab i_cf] with x h1 h2
+  have mcf : StronglyMeasurable ((traj κ a x₀)[f|piPreorder c]) :=
+    stronglyMeasurable_condExp.mono (piPreorder.le c)
+  filter_upwards [piPreorder.condExp_condExp f hbc, condExp_traj hab i_cf] with x h1 h2
   rw [← h1, h2, ← traj_map_frestrictLe, Kernel.map_apply, integral_map]
   · congr with y
     apply dependsOn_of_stronglyMeasurable stronglyMeasurable_condExp

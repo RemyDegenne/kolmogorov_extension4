@@ -181,8 +181,7 @@ theorem proj' (P : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (P i)]
       = Measure.map ((fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hJI i.prop⟩))
         (Measure.subset_pi P I) := by
   let C := (fun (i : ι) ↦ {s : Set (α i) | MeasurableSet s})
-  have hu : ∀ i, univ ∈ C i := by
-    simp only [C, mem_setOf_eq, MeasurableSet.univ, implies_true]
+  have hu : ∀ i, univ ∈ C i := by simp [C]
   apply MeasureTheory.ext_of_generate_finite _ (generateFrom_boxesI J)
   · exact @isPiSystem_boxesI_of_measurable ι α _ J
   · intros s hs
