@@ -313,25 +313,40 @@ theorem secondLemma
     (fun n ↦ (MeasurableSet.of_mem_measurableCylinders (B_mem n)).nullMeasurableSet)
     B_anti ⟨0, measure_ne_top _ _⟩
 
-def Equiv.restrict {α β : Type*} (e : α ≃ β) (s : Set β) : e ⁻¹' s ≃ s :=
-  { toFun := fun a ↦ ⟨e a, a.2⟩
+def Equiv.frestrict {α β : Type*} (e : α ≃ β) (s : Finset β) :
+    (s.preimage e e.injective.injOn) ≃ s :=
+  { toFun := fun a ↦ ⟨e a, mem_preimage.1 a.2⟩
     invFun := fun b ↦ ⟨e.symm b, by simp⟩
     left_inv := fun _ ↦ by simp
     right_inv := fun _ ↦ by simp }
 
-lemma lol {α β : Type*} (X : β → Type*) (e : α ≃ β) (s : Set β) :
+lemma lol {α β : Type*} (X : β → Type*) (e : α ≃ β) (s : Finset β) :
     s.restrict ∘ ⇑(Equiv.piCongrLeft X e) =
-    ⇑(Equiv.piCongrLeft (fun b : s ↦ (X b)) (e.restrict s)) ∘ (e ⁻¹' s).restrict := by
+    ⇑(Equiv.piCongrLeft (fun b : s ↦ (X b)) (e.frestrict s)) ∘
+    (s.preimage e e.injective.injOn).restrict := by
   ext x b
-  simp only [Function.comp_apply, Set.restrict_apply, Equiv.piCongrLeft_apply_eq_cast]
+  simp only [Function.comp_apply, restrict, Equiv.piCongrLeft_apply_eq_cast, cast_inj]
   rfl
-
 
 lemma test (e : ℕ ≃ ι) {s : Set (Π i, X i)} (hs : s ∈ measurableCylinders X) :
     (Measure.infinitePiNat (fun n ↦ μ (e n))).map (piCongrLeft X e) s = piContent μ s := by
   obtain ⟨I, S, hS, rfl⟩ := (mem_measurableCylinders s).1 hs
   rw [Measure.map_apply, cylinder, ← Set.preimage_comp, coe_piCongrLeft, lol X e I,
-    Set.preimage_comp]
+    Set.preimage_comp, ← Measure.map_apply, isProjectiveLimit_infinitePiNat (fun n ↦ μ (e n)),
+    ← cylinder, piContent_cylinder μ hS,
+    ← Measure.map_apply (f := (⇑(Equiv.piCongrLeft (fun b : I ↦ X ↑b) (e.frestrict I))))]
+  · congr
+    refine (Measure.pi_eq fun s hs ↦ ?_).symm
+    rw [Measure.map_apply, Equiv.piCongrLeft_preimage_univ_pi]
+    · exact (Measure.pi_pi _ _).trans <| Fintype.prod_equiv (e.frestrict I) _ _ fun x ↦ by congr
+    · rw [← coe_piCongrLeft]; fun_prop
+    · exact .pi Set.countable_univ (fun i _ ↦ hs i)
+  · rw [← coe_piCongrLeft]; fun_prop
+  any_goals fun_prop
+  · exact hS
+  · rw [← coe_piCongrLeft]
+    exact hS.preimage (by fun_prop)
+  · exact hS.cylinder
 
 theorem thirdLemma {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measurableCylinders X)
     (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅) :
@@ -362,13 +377,13 @@ theorem thirdLemma {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measura
       left_inv := fun i ↦ by simp
       right_inv := fun i ↦ by simp }
   let g n : (Π i : t n, X i) → Π i : s n, X i := fun x i ↦ x (aux n i)
-  have test n : (s n).restrict ∘ f = (g n) ∘ (fun (x : (i : u) → X i) i ↦ x i) := by
+  have test' n : (s n).restrict ∘ f = (g n) ∘ (fun (x : (i : u) → X i) i ↦ x i) := by
     ext x i
     simp [f, g, aux, su n i.2]
   let B n := f ⁻¹' (A n)
   let T n := (g n) ⁻¹' (S n)
   have B_eq n : B n = cylinder (t n) (T n) := by
-    simp_rw [B, A_eq, cylinder, ← Set.preimage_comp, test]
+    simp_rw [B, A_eq, cylinder, ← Set.preimage_comp, test']
     rfl
   have mg n : Measurable (g n) := by fun_prop
   have mT n : MeasurableSet (T n) := mg n (mS n)
@@ -409,12 +424,18 @@ theorem thirdLemma {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measura
   · -- If `u` is infinite, then we have an equivalence with `ℕ` so we can apply `secondLemma`.
     have count_u : Countable u := Set.countable_iUnion (fun n ↦ (s n).countable_toSet)
     obtain ⟨φ, -⟩ := Classical.exists_true_of_nonempty (α := ℕ ≃ u) nonempty_equiv_of_countable
-    have {s : Set (Π i : u, X i)} (hs : MeasurableSet s) :
-        (Measure.infinitePiNat (fun n ↦ μ (φ n))).map (piCongrLeft (fun i : u ↦ X i) φ) s =
-        piContent ν s := by
+    -- have {s : Set (Π i : u, X i)} (hs : MeasurableSet s) :
+    --     (Measure.infinitePiNat (fun n ↦ μ (φ n))).map (piCongrLeft (fun i : u ↦ X i) φ) s =
+    --     piContent ν s := by
 
-    simp_rw [kol]
-    exact secondLemma (fun i : u ↦ μ i) φ B_mem B_anti B_inter
+    simp_rw [kol, ← measure_empty
+      (μ := (Measure.infinitePiNat (fun n ↦ μ (φ n))).map (piCongrLeft (fun i : u ↦ X i) φ)),
+      ← B_inter]
+    conv => enter [1]; ext n; rw [← test (fun i : u ↦ μ i) φ (B_mem n)]
+    -- , ← fun n ↦ test (fun i : u ↦ μ i) φ (B_mem n)]
+    exact tendsto_measure_iInter_atTop
+      (fun n ↦ (MeasurableSet.of_mem_measurableCylinders (B_mem n)).nullMeasurableSet)
+      B_anti ⟨0, measure_ne_top _ _⟩
 
 /-- The `kolContent` associated to a family of probability measures is σ-subadditive. -/
 theorem kolContent_pi_sigma_subadditive ⦃f : ℕ → Set (Π i, X i)⦄

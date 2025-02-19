@@ -556,6 +556,18 @@ theorem traj_comp_ptraj {a b : ℕ} (hab : a ≤ b) : (traj κ b) ∘ₖ (ptraj 
   refine eq_traj _ _ fun n ↦ ?_
   rw [map_comp, traj_map_frestrictLe, ptraj_comp_ptraj' _ hab]
 
+def _root_.restrictf {ι : Type*} {α : ι → Type*} {s : Finset ι} {t : Set ι} (hst : s.toSet ⊆ t)
+    (a : Π i : t, α i) (i : s) : α i := a ⟨i.1, hst i.2⟩
+
+@[measurability, fun_prop]
+lemma measurable_restrictf {ι : Type*} {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
+    {s : Finset ι} {t : Set ι} (hst : s.toSet ⊆ t) :
+    Measurable (restrictf (α := α) hst) :=
+  measurable_pi_lambda _ fun _ ↦ measurable_pi_apply _
+
+lemma restrictf_comp_restrict {ι : Type*} {α : ι → Type*} {s : Finset ι} {t : Set ι}
+    (hst : s.toSet ⊆ t) : (restrictf (α := α) hst) ∘ t.restrict = s.restrict := rfl
+
 /-- This theorem shows that `traj κ n` is, up to an equivalence, the product of
 a determinstic kernel with another kernel. This is an intermediate result to compute integrals
 with respect to this kernel. -/
@@ -564,10 +576,10 @@ theorem traj_eq_prod (a : ℕ) :
   refine (eq_traj' _ (a + 1) _ fun b hb ↦ ?_).symm
   rw [map_map]
   conv_lhs => enter [2]; change (IicProdIoc a b) ∘
-    (Prod.map id (fun x (i : Ioc a b) ↦ x ⟨i.1, Set.mem_Ioi.2 (mem_Ioc.1 i.2).1⟩))
-  rw [← map_map, Kernel.map_prod, map_map]
-  conv_lhs => enter [1, 2, 2]; change (restrict₂ Ioc_subset_Iic_self) ∘ (frestrictLe b)
-  rw [← map_map, traj_map_frestrictLe, map_id, ← ptraj_eq_prod]
+    (Prod.map id (restrictf (coe_Ioc a b ▸ Set.Ioc_subset_Ioi_self)))
+  rw [← map_map, Kernel.map_prod, map_map, restrictf_comp_restrict,
+    ← restrict₂_comp_restrict Ioc_subset_Iic_self, ← frestrictLe, ← map_map, traj_map_frestrictLe,
+    map_id, ← ptraj_eq_prod]
   all_goals fun_prop
 
 theorem traj_map_updateFinset {n : ℕ} (x : Π i : Iic n, X i) :
