@@ -6,7 +6,7 @@ Authors: Etienne Marion
 import KolmogorovExtension4.IonescuTulceaKernel
 import Mathlib.Probability.Kernel.Composition.MeasureComp
 
-open MeasureTheory ProbabilityTheory Finset Filter Topology Kernel Preorder MeasurableEquiv
+open MeasureTheory ProbabilityTheory Finset Filter Topology Preorder MeasurableEquiv
 
 open scoped ENNReal
 
@@ -68,6 +68,8 @@ theorem piContent_eq_measure_pi [Fintype ι] {s : Set (Π i, X i)} (hs : Measura
 end Preliminaries
 
 section Nat
+
+open Kernel
 
 /-! ### Product of measures indexed by `ℕ` -/
 
@@ -196,6 +198,10 @@ theorem isProjectiveLimit_infinitePiNat :
     ← Measure.compProd_eq_comp_prod, Measure.compProd_const, Measure.pi_prod_map_IicProdIoc]
   any_goals fun_prop
 
+lemma infinitePiNat_map_restrict {I : Finset ℕ} :
+    (Measure.infinitePiNat μ).map I.restrict = Measure.pi fun i : I ↦ μ i :=
+  isProjectiveLimit_infinitePiNat μ I
+
 theorem piContent_eq_infinitePiNat {A : Set ((n : ℕ) → X n)} (hA : A ∈ measurableCylinders X) :
     piContent μ A = Measure.infinitePiNat μ A := by
   obtain ⟨s, S, mS, rfl⟩ : ∃ s S, MeasurableSet S ∧ A = cylinder s S := by
@@ -207,148 +213,30 @@ end Nat
 
 section ProductMeasure
 
+open Measure
+
 /-! ### Product of infinitely many probability measures -/
 
-variable {ι : Type*} {X : ι → Type*}
-
-section castLemmas
-
-lemma cast_pi_eval (s : Set ι) (x : Π i : s, X i) (i j : s) (h : i = j) :
-    cast (congrArg X (Subtype.coe_inj.2 h)) (x i) = x j := by cases h; rfl
-
-lemma cast_mem_cast (α β : Type u) (h : α = β) (a : α) (s : Set α) :
-    (cast h a ∈ cast (congrArg Set h) s) = (a ∈ s) := by cases h; rfl
-
-variable [mX : ∀ i, MeasurableSpace (X i)]
-
-lemma HEq_measurableSpace {i j : ι} (hij : i = j) : HEq (mX i) (mX j) := by cases hij; rfl
-
-end castLemmas
-
-variable [∀ i, MeasurableSpace (X i)]
+variable {ι : Type*} {X : ι → Type*} [∀ i, MeasurableSpace (X i)]
   (μ : (i : ι) → Measure (X i)) [hμ : ∀ i, IsProbabilityMeasure (μ i)]
 
-/-- This theorem is used to prove the existence of the product measure: the `kolContent` of
-a decreasing sequence of cylinders with empty intersection converges to `0`, in the case where
-the measurable spaces are indexed by a countable type. This implies the σ-additivity of
-`kolContent` (see `sigma_additive_addContent_of_tendsto_zero`),
-which allows to extend it to the σ-algebra by Carathéodory's theorem. -/
-theorem secondLemma
-    (φ : ℕ ≃ ι) {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measurableCylinders X)
-    (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅) :
-    Tendsto (fun n ↦ kolContent (isProjectiveMeasureFamily_pi μ) (A n)) atTop (𝓝 0) := by
-  set μ_proj := isProjectiveMeasureFamily_pi μ
-  let μ_fproj := isProjectiveMeasureFamily_pi (fun k : ℕ ↦ μ (φ k))
-  have A_cyl n : ∃ s S, MeasurableSet S ∧ A n = cylinder s S := by
-    simpa [mem_measurableCylinders] using A_mem n
-  choose s S mS A_eq using A_cyl
-  -- The goal of the proof is to apply the same result when the index set is `ℕ`. To do so we
-  -- have to pull back the sets `sₙ` and `Sₙ` using equivalences.
-  let t n := (s n).preimage φ φ.injective.injOn
-  have h i : X (φ (φ.symm i)) = X i := congrArg X (φ.apply_symm_apply i)
-  have e n i (h : i ∈ s n) : φ.symm i ∈ t n := by simpa [t] using h
-  have e' n k (h : k ∈ t n) : φ k ∈ s n := by simpa [t] using h
-  -- The function `f` does the link between families indexed by `ℕ` and those indexed by `ι`.
-  -- Here we have to use `cast` because otherwhise we land in `X (φ (φ.symm i))`, which is not
-  -- definitionally equal to X i.
-  have meas_cast i : Measurable (cast (h i)) := measurable_cast _ (HEq_measurableSpace (by simp))
-  let f : (Π k, X (φ k)) → Π i, X i := fun x i ↦ cast (h i) (x (φ.symm i))
-  -- `aux n` is an equivalence between `sₙ` ans `tₙ`, it will be used to link the two.
-  let aux n : s n ≃ t n :=
-    { toFun := fun i ↦ ⟨φ.symm i, e n i.1 i.2⟩
-      invFun := fun k ↦ ⟨φ k, e' n k.1 k.2⟩
-      left_inv := fun _ ↦ by simp
-      right_inv := fun _ ↦ by simp }
-  -- `gₙ` is the equivalent of `f` for families indexed by `tₙ` and `sₙ`.
-  let g n : (Π k : t n, X (φ k)) → Π i : s n, X i := fun x i ↦ cast (h i) (x (aux n i))
-  -- Now fe define `Bₙ` and `Tₙ` as follows. `Bₙ` is a cylinder.
-  let B n := f ⁻¹' (A n)
-  let T n := (g n) ⁻¹' (S n)
-  have B_eq n : B n = cylinder (t n) (T n) := by
-    simp_rw [B, A_eq]
-    rfl
-  -- `gₙ` is measurable. We have to play with `Heq` to prove measurability of `cast`.
-  have mg n : Measurable (g n) :=
-    measurable_pi_lambda _ (fun i ↦ (meas_cast _).comp <| measurable_pi_apply _)
-  -- We deduce that `Tₙ` is measurable.
-  have mT n : MeasurableSet (T n) := (mS n).preimage (mg n)
-  -- The sequence `(Bₙ)` satisfies the hypotheses of `firstLemma`, we now have to prove that we can
-  -- rewrite the goal in terms of `B`.
-  have B_anti : Antitone B := fun m n hmn ↦ Set.preimage_mono <| A_anti hmn
-  have B_inter : ⋂ n, B n = ∅ := by
-    simp_rw [B, ← Set.preimage_iInter, A_inter, Set.preimage_empty]
-  have B_mem n : B n ∈ measurableCylinders (fun k ↦ X (φ k)) :=
-    (mem_measurableCylinders (B n)).2 ⟨t n, T n, mT n, B_eq n⟩
-  -- Taking the preimage of a product indexed by `sₙ` by `gₙ` yields a product indexed by `tₙ`,
-  -- again we have to play with `cast`.
-  have g_preim n (u : (i : s n) → Set (X i)) : (g n) ⁻¹' (Set.univ.pi u) =
-      Set.univ.pi (fun k : t n ↦ u ((aux n).symm k)) := by
-    ext x
-    simp [Equiv.coe_fn_mk, Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies,
-      Subtype.forall, Equiv.coe_fn_symm_mk, g, aux]
-    refine ⟨fun h' k hk ↦ ?_, fun h' i hi ↦ ?_⟩
-    · convert h' (φ k) (e' n k hk)
-      rw [@cast_pi_eval ℕ (fun k ↦ X (φ k)) (t n) x ⟨φ.symm (φ k), by simp [hk]⟩ ⟨k, hk⟩ (by simp)]
-    · convert h' (φ.symm i) (e n i hi)
-      rw [← @cast_pi_eval ι (fun i ↦ Set (X i)) (s n) u ⟨φ (φ.symm i), by simp [hi]⟩
-          ⟨i, hi⟩ (by simp),
-        cast_mem_cast (X (φ (φ.symm i))) (X i) (by simp) (x ⟨φ.symm i, e n i hi⟩)
-          (u ⟨φ (φ.symm i), by simp [hi]⟩)]
-  -- The pushforward measure of the product measure of `(μ_{φ k})_{k ∈ tₙ}` by `gₙ` is the
-  -- product measre of `(μᵢ)_{i ∈ sₙ}`.
-  have pi_s n : Measure.pi (fun i : s n ↦ μ i) =
-      (Measure.pi (fun k : t n ↦ μ (φ k))).map (g n) := by
-    refine Measure.pi_eq (fun x mx ↦ ?_)
-    rw [Measure.map_apply (mg n), g_preim n, Measure.pi_pi,
-      Fintype.prod_equiv (aux n).symm _ (fun i ↦ (μ i) (x i))]
-    · simp [aux]
-    · exact MeasurableSet.pi Set.countable_univ (by simp [mx])
-  -- This yields the desired result: the `kolContent` of `Aₙ` is the same as the one of `Bₙ`.
-  have kol n : kolContent μ_proj (A n) = kolContent μ_fproj (B n) := by
-    rw [kolContent_congr μ_proj _ (A_eq n) (mS n), kolContent_congr μ_fproj _ (B_eq n) (mT n),
-      pi_s n, Measure.map_apply (mg n) (mS n)]
-  simp_rw [kol, fun n ↦ kolContent_eq_infinitePiNat (fun k ↦ μ (φ k)) (B_mem n),
-    ← measure_empty (μ := Measure.infinitePiNat (fun k ↦ μ (φ k))), ← B_inter]
-  exact tendsto_measure_iInter_atTop
-    (fun n ↦ (MeasurableSet.of_mem_measurableCylinders (B_mem n)).nullMeasurableSet)
-    B_anti ⟨0, measure_ne_top _ _⟩
-
-def Equiv.frestrict {α β : Type*} (e : α ≃ β) (s : Finset β) :
-    (s.preimage e e.injective.injOn) ≃ s :=
-  { toFun := fun a ↦ ⟨e a, mem_preimage.1 a.2⟩
-    invFun := fun b ↦ ⟨e.symm b, by simp⟩
-    left_inv := fun _ ↦ by simp
-    right_inv := fun _ ↦ by simp }
-
-lemma lol {α β : Type*} (X : β → Type*) (e : α ≃ β) (s : Finset β) :
-    s.restrict ∘ ⇑(Equiv.piCongrLeft X e) =
-    ⇑(Equiv.piCongrLeft (fun b : s ↦ (X b)) (e.frestrict s)) ∘
-    (s.preimage e e.injective.injOn).restrict := by
-  ext x b
-  simp only [Function.comp_apply, restrict, Equiv.piCongrLeft_apply_eq_cast, cast_inj]
-  rfl
-
-lemma test (e : ℕ ≃ ι) {s : Set (Π i, X i)} (hs : s ∈ measurableCylinders X) :
-    (Measure.infinitePiNat (fun n ↦ μ (e n))).map (piCongrLeft X e) s = piContent μ s := by
+lemma infinitePiNat_map_piCongrLeft (e : ℕ ≃ ι) {s : Set (Π i, X i)}
+    (hs : s ∈ measurableCylinders X) :
+    (infinitePiNat (fun n ↦ μ (e n))).map (piCongrLeft X e) s = piContent μ s := by
   obtain ⟨I, S, hS, rfl⟩ := (mem_measurableCylinders s).1 hs
-  rw [Measure.map_apply, cylinder, ← Set.preimage_comp, coe_piCongrLeft, lol X e I,
-    Set.preimage_comp, ← Measure.map_apply, isProjectiveLimit_infinitePiNat (fun n ↦ μ (e n)),
-    ← cylinder, piContent_cylinder μ hS,
-    ← Measure.map_apply (f := (⇑(Equiv.piCongrLeft (fun b : I ↦ X ↑b) (e.frestrict I))))]
-  · congr
-    refine (Measure.pi_eq fun s hs ↦ ?_).symm
-    rw [Measure.map_apply, Equiv.piCongrLeft_preimage_univ_pi]
-    · exact (Measure.pi_pi _ _).trans <| Fintype.prod_equiv (e.frestrict I) _ _ fun x ↦ by congr
-    · rw [← coe_piCongrLeft]; fun_prop
-    · exact .pi Set.countable_univ (fun i _ ↦ hs i)
-  · rw [← coe_piCongrLeft]; fun_prop
+  rw [map_apply _ hS.cylinder, cylinder, ← Set.preimage_comp, coe_piCongrLeft,
+    restrict_comp_piCongrLeft, Set.preimage_comp, ← map_apply,
+    infinitePiNat_map_restrict (fun n ↦ μ (e n)), ← cylinder, piContent_cylinder μ hS,
+    ← pi_map_piCongrLeft (e.frestrict I), map_apply _ hS]; rfl
   any_goals fun_prop
-  · exact hS
-  · rw [← coe_piCongrLeft]
-    exact hS.preimage (by fun_prop)
-  · exact hS.cylinder
+  exact hS.preimage (by fun_prop)
 
-theorem thirdLemma {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measurableCylinders X)
+/-- This is the key theorem to build the product of an arbitrary family of probability measures:
+the `piContent` of a decreasing sequence of cylinders with empty intersection converges to `0`.
+
+This implies the `σ`-additivity of `piContent` (see `sigma_additive_addContent_of_tendsto_zero`),
+which allows to extend it to the `σ`-algebra by Carathéodory's theorem. -/
+theorem piContent_tendsto_zero {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measurableCylinders X)
     (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅) :
     Tendsto (fun n ↦ piContent μ (A n)) atTop (𝓝 0) := by
   have : ∀ i, Nonempty (X i) := fun i ↦ ProbabilityMeasure.nonempty ⟨μ i, hμ i⟩
@@ -356,105 +244,87 @@ theorem thirdLemma {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n ∈ measura
     (mem_measurableCylinders _).1 (A_mem n)
   choose s S mS A_eq using A_cyl
   -- The family `(Aₙ)` only depends on a countable set of coordinates, called `u`. Therefore our
-  -- goal is to see it as a family indexed by this countable set,
-  -- so that we can apply `secondLemma`. The proof is very similar to the previous one, except
-  -- that the use of coercions avoids manipulating `cast`, as types will be definitionally equal.
+  -- goal is to see it as a family indexed by this countable set, because on the product indexed
+  -- by this countable set we can build a measure. To do so we have to pull back our cylinders
+  -- along the injection from `Π i : u, X i` to `Π i, X i`.
   let u := ⋃ n, (s n).toSet
   let ν := fun i : u ↦ μ i
   -- `tₙ` will be `sₙ` seen as a subset of `u`.
   let t n : Finset u := (s n).preimage Subtype.val Subtype.val_injective.injOn
-  -- These are a few lemmas to move between `sₙ` and `tₙ`.
-  have su n : (s n).toSet ⊆ u := Set.subset_iUnion (fun n ↦ (s n).toSet) n
-  have st n i (hi : i ∈ s n) : ⟨i, su n hi⟩ ∈ t n := by simpa [t] using hi
-  have ts n i (hi : i ∈ t n) : i.1 ∈ s n := by simpa [t] using hi
   classical
+  -- The map `f` allows to pull back `Aₙ`
   let f : (Π i : u, X i) → Π i, X i :=
     fun x i ↦ if hi : i ∈ u then x ⟨i, hi⟩ else Classical.ofNonempty
-  -- This brings again `aux`.
-  let aux n : s n ≃ t n :=
-    { toFun := fun i ↦ ⟨⟨i.1, su n i.2⟩, st n i i.2⟩
-      invFun := fun i ↦ ⟨i.1.1, ts n i i.2⟩
+  -- `aux` is the obvious equivalence between `sₙ` and `tₙ`
+  let aux n : t n ≃ s n :=
+    { toFun := fun i ↦ ⟨i.1.1, mem_preimage.1 i.2⟩
+      invFun := fun i ↦ ⟨⟨i.1, Set.mem_iUnion.2 ⟨n, i.2⟩⟩, mem_preimage.2 i.2⟩
       left_inv := fun i ↦ by simp
       right_inv := fun i ↦ by simp }
-  let g n : (Π i : t n, X i) → Π i : s n, X i := fun x i ↦ x (aux n i)
-  have test' n : (s n).restrict ∘ f = (g n) ∘ (fun (x : (i : u) → X i) i ↦ x i) := by
+  -- Finally `gₙ` is the equivalence between the product indexed by `tₙ` and the one indexed by `sₙ`
+  let g n := (aux n).piCongrLeft (fun i : s n ↦ X i)
+  -- Mapping from the product indexed by `u` by `f` and then restricting to `sₙ` is the same as
+  -- first restricting to `tₙ` and then mapping by `gₙ`
+  have r_comp_f n : (s n).restrict ∘ f = (g n) ∘ (fun (x : Π i : u, X i) i ↦ x i) := by
     ext x i
-    simp [f, g, aux, su n i.2]
+    simp only [Function.comp_apply, Finset.restrict, subset_refl, Set.coe_inclusion,
+      Equiv.piCongrLeft_apply, Equiv.coe_fn_symm_mk, f, aux, g, t]
+    rw [dif_pos (Set.mem_iUnion.2 ⟨n, i.2⟩)]
+  -- `Bₙ` is the same as `Aₙ` but in the product indexed by `u`
   let B n := f ⁻¹' (A n)
+  -- `Tₙ` is the same as `Sₙ` but in the product indexed by `u`
   let T n := (g n) ⁻¹' (S n)
+  -- We now tranfer the properties of `Aₙ` and `Sₙ` to `Bₙ` and `Tₙ`
   have B_eq n : B n = cylinder (t n) (T n) := by
-    simp_rw [B, A_eq, cylinder, ← Set.preimage_comp, test']
-    rfl
+    simp_rw [B, A_eq, cylinder, ← Set.preimage_comp, r_comp_f]; rfl
   have mg n : Measurable (g n) := by fun_prop
-  have mT n : MeasurableSet (T n) := mg n (mS n)
+  have mT n : MeasurableSet (T n) := (mS n).preimage (mg n)
+  have B_mem n : B n ∈ measurableCylinders (fun i : u ↦ X i) :=
+    (mem_measurableCylinders (B n)).2 ⟨t n, T n, mT n, B_eq n⟩
+  have mB n : MeasurableSet (B n) := .of_mem_measurableCylinders (B_mem n)
   have B_anti : Antitone B := fun m n hmn ↦ Set.preimage_mono <| A_anti hmn
   have B_inter : ⋂ n, B n = ∅ := by
     simp_rw [B, ← Set.preimage_iInter, A_inter, Set.preimage_empty]
-  have B_mem n : B n ∈ measurableCylinders (fun i : u ↦ X i) :=
-    (mem_measurableCylinders (B n)).2 ⟨t n, T n, mT n, B_eq n⟩
-  have g_preim n (a : Π i : s n, Set (X i)) : (g n) ⁻¹' (Set.univ.pi a) =
-      Set.univ.pi (fun i : t n ↦ a ((aux n).symm i)) := by
-    ext x
-    simp only [Equiv.coe_fn_mk, Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies,
-      Equiv.coe_fn_symm_mk, g]
-    exact ⟨fun h i ↦ h ((aux n).symm i), fun h i ↦ h (aux n i)⟩
-  -- The pushforward measure of the product measure of `(μᵢ)_{i ∈ tₙ}` by `gₙ` is the
-  -- product measre of `(μᵢ)_{i ∈ sₙ}`.
-  have pi_s n : Measure.pi (fun i : s n ↦ μ i) =
-      (Measure.pi (fun i : t n ↦ μ i)).map (g n) := by
-    refine Measure.pi_eq (fun x mx ↦ ?_)
-    rw [Measure.map_apply (mg n), g_preim n, Measure.pi_pi,
-      Fintype.prod_equiv (aux n).symm _ (fun i ↦ (μ i) (x i))]
-    · simp [aux]
-    · exact MeasurableSet.pi Set.countable_univ (by simp [mx])
-  -- This yields the desired result: the `kolContent` of `Aₙ` is the same as the one of `Bₙ`.
-  have kol n : piContent μ (A n) = piContent ν (B n) := by
-    rw [A_eq, piContent_cylinder μ (mS n), B_eq, piContent_cylinder ν (mT n),
-      pi_s n, Measure.map_apply (mg n) (mS n)]
-  -- We now have two cases: if `u` is finite, then the result is simple because
-  -- we have an actual measure.
+  -- We now rewrite `piContent μ (A n)` as `piContent (fun i : u ↦ μ i) (B n)`. Then there are two
+  -- cases: either `u` is finite and we rewrite it to the finite product measure, either
+  -- it is countable and we rewrite it to the pushforward measure of `infinitePiNat`. In both cases
+  -- we have an actual measure and we can conclude with `tendsto_measure_iInter_atTop`.
+  conv =>
+    enter [1]; ext n
+    rw [A_eq, piContent_cylinder μ (mS n), ← pi_map_piCongrLeft (aux n),
+      map_apply (by fun_prop) (mS n)]
+    change (Measure.pi (fun i : t n ↦ μ i)) (T n)
+    rw [← piContent_cylinder (fun i : u ↦ μ i) (mT n), ← B_eq n]
   obtain u_fin | u_inf := finite_or_infinite u
-  · have := Fintype.ofFinite u
-    simp_rw [kol, fun n ↦ piContent_eq_measure_pi ν
-      (MeasurableSet.of_mem_measurableCylinders (B_mem n)),
-      ← measure_empty (μ := Measure.pi (fun i : u ↦ μ i)), ← B_inter]
-    exact tendsto_measure_iInter_atTop
-      (fun n ↦ (MeasurableSet.of_mem_measurableCylinders (B_mem n)).nullMeasurableSet)
-      B_anti ⟨0, measure_ne_top _ _⟩
+  · let _ := Fintype.ofFinite u
+    simp_rw [fun n ↦ piContent_eq_measure_pi (fun i : u ↦ μ i) (mB n)]
+    convert tendsto_measure_iInter_atTop (fun n ↦ (mB n).nullMeasurableSet) B_anti
+      ⟨0, measure_ne_top _ _⟩
+    rw [B_inter, measure_empty]; infer_instance
   · -- If `u` is infinite, then we have an equivalence with `ℕ` so we can apply `secondLemma`.
     have count_u : Countable u := Set.countable_iUnion (fun n ↦ (s n).countable_toSet)
     obtain ⟨φ, -⟩ := Classical.exists_true_of_nonempty (α := ℕ ≃ u) nonempty_equiv_of_countable
-    -- have {s : Set (Π i : u, X i)} (hs : MeasurableSet s) :
-    --     (Measure.infinitePiNat (fun n ↦ μ (φ n))).map (piCongrLeft (fun i : u ↦ X i) φ) s =
-    --     piContent ν s := by
-
-    simp_rw [kol, ← measure_empty
-      (μ := (Measure.infinitePiNat (fun n ↦ μ (φ n))).map (piCongrLeft (fun i : u ↦ X i) φ)),
-      ← B_inter]
-    conv => enter [1]; ext n; rw [← test (fun i : u ↦ μ i) φ (B_mem n)]
-    -- , ← fun n ↦ test (fun i : u ↦ μ i) φ (B_mem n)]
-    exact tendsto_measure_iInter_atTop
-      (fun n ↦ (MeasurableSet.of_mem_measurableCylinders (B_mem n)).nullMeasurableSet)
-      B_anti ⟨0, measure_ne_top _ _⟩
+    conv => enter [1]; ext n; rw [← infinitePiNat_map_piCongrLeft _ φ (B_mem n)]
+    convert tendsto_measure_iInter_atTop (fun n ↦ (mB n).nullMeasurableSet) B_anti
+      ⟨0, measure_ne_top _ _⟩
+    rw [B_inter, measure_empty]; infer_instance
 
 /-- The `kolContent` associated to a family of probability measures is σ-subadditive. -/
 theorem kolContent_pi_sigma_subadditive ⦃f : ℕ → Set (Π i, X i)⦄
     (hf : ∀ n, f n ∈ measurableCylinders X) (hf_Union : (⋃ n, f n) ∈ measurableCylinders X) :
     kolContent (isProjectiveMeasureFamily_pi μ) (⋃ n, f n) ≤
     ∑' n, kolContent (isProjectiveMeasureFamily_pi μ) (f n) := by
-  classical
-  have : ∀ i, Nonempty (X i) := fun i ↦ ProbabilityMeasure.nonempty ⟨μ i, hμ i⟩
   refine addContent_iUnion_le_of_addContent_iUnion_eq_tsum
     isSetRing_measurableCylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
   exact addContent_iUnion_eq_sum_of_tendsto_zero isSetRing_measurableCylinders
     (kolContent (isProjectiveMeasureFamily_pi μ)) (fun s hs ↦ kolContent_ne_top _)
-    (fun _ ↦ thirdLemma μ) hf hf_Union hf'
+    (fun _ ↦ piContent_tendsto_zero μ) hf hf_Union hf'
 
 /-- The product measure of an arbitrary family of probability measures. It is defined as the unique
 extension of the function which gives to cylinders the measure given by the associated product
 measure. -/
-noncomputable def Measure.productMeasure : Measure (Π i, X i) := by
-  exact (kolContent (isProjectiveMeasureFamily_pi μ)).measure isSetSemiring_measurableCylinders
+noncomputable def Measure.productMeasure : Measure (Π i, X i) :=
+  (piContent μ).measure isSetSemiring_measurableCylinders
     generateFrom_measurableCylinders.ge (kolContent_pi_sigma_subadditive μ)
 
 open Measure
@@ -465,26 +335,24 @@ theorem isProjectiveLimit_productMeasure :
     IsProjectiveLimit (productMeasure μ) (fun I : Finset ι ↦ (Measure.pi (fun i : I ↦ μ i))) := by
   intro I
   ext1 s hs
-  rw [Measure.map_apply (measurable_restrict I) hs, productMeasure, AddContent.measure_eq,
-    kolContent_congr _ (_ ⁻¹' s) rfl hs]
+  rw [map_apply (measurable_restrict I) hs, productMeasure, AddContent.measure_eq,
+    ← cylinder, piContent_cylinder μ hs]
   · exact generateFrom_measurableCylinders.symm
   · exact cylinder_mem_measurableCylinders _ _ hs
 
 instance : IsProbabilityMeasure (productMeasure μ) := by
   constructor
-  rw [← cylinder_univ ∅, cylinder, ← Measure.map_apply, isProjectiveLimit_productMeasure μ,
-    measure_univ]
-  · exact measurable_restrict _
-  · exact .univ
+  rw [← cylinder_univ ∅, cylinder, ← map_apply (measurable_restrict _) .univ,
+    isProjectiveLimit_productMeasure μ, measure_univ]
 
+-- TODO: add a version for an infinite product
 lemma productMeasure_boxes {s : Finset ι} {t : (i : ι) → Set (X i)}
     (mt : ∀ i ∈ s, MeasurableSet (t i)) :
     productMeasure μ (Set.pi s t) = ∏ i ∈ s, (μ i) (t i) := by
   have : Set.pi s t = cylinder s ((@Set.univ s).pi (fun i : s ↦ t i)) := by
     ext x
     simp
-  rw [this, cylinder, ← Measure.map_apply, isProjectiveLimit_productMeasure μ,
-    Measure.pi_pi]
+  rw [this, cylinder, ← map_apply, isProjectiveLimit_productMeasure μ, pi_pi]
   · rw [Finset.univ_eq_attach, Finset.prod_attach _ (fun i ↦ (μ i) (t i))]
   · exact measurable_restrict _
   · exact MeasurableSet.pi Set.countable_univ fun i _ ↦ mt i.1 i.2

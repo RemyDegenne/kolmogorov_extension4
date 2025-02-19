@@ -19,7 +19,35 @@ New lemmas for mathlib
 
 open MeasureTheory ProbabilityTheory MeasurableSpace ENNReal Finset Function Preorder
 
+section Equiv
 
+variable {α β : Type*} (e : α ≃ β) (s : Finset β)
+
+/-- Corestriction of an equivalence to a `Finset`. -/
+def Equiv.frestrict :
+    (s.preimage e e.injective.injOn) ≃ s :=
+  { toFun := fun a ↦ ⟨e a, mem_preimage.1 a.2⟩
+    invFun := fun b ↦ ⟨e.symm b, by simp⟩
+    left_inv := fun _ ↦ by simp
+    right_inv := fun _ ↦ by simp }
+
+@[simp]
+lemma Equiv.frestrict_apply (a : s.preimage e e.injective.injOn) : e.frestrict s a = e a := rfl
+
+@[simp]
+lemma Equiv.frestrict_symm_apply (b : s) : (e.frestrict s).symm b = e.symm b := rfl
+
+/-- Reindexing and then restricting to a `Finset` is the same as first restricting to the preimage
+of this `Finset` and then reindexing. -/
+lemma Finset.restrict_comp_piCongrLeft (X : β → Type*) :
+    s.restrict ∘ ⇑(e.piCongrLeft X) =
+    ⇑((e.frestrict s).piCongrLeft (fun b : s ↦ (X b))) ∘
+    (s.preimage e e.injective.injOn).restrict := by
+  ext x b
+  simp only [comp_apply, restrict, Equiv.piCongrLeft_apply_eq_cast, cast_inj]
+  rfl
+
+end Equiv
 
 section Lemmas
 
@@ -209,14 +237,6 @@ lemma ae_comp_of_ae_ae {κ : Kernel X Y} {η : Kernel Y Z}
 lemma ae_comp_iff {p : Z → Prop} (hp : MeasurableSet {z | p z}) :
     (∀ᵐ z ∂(η ∘ₖ κ) x, p z) ↔ ∀ᵐ y ∂κ x, ∀ᵐ z ∂η y, p z :=
   ⟨fun h ↦ ae_ae_of_ae_comp h, fun h ↦ ae_comp_of_ae_ae hp h⟩
-
-theorem ProbabilityTheory.Kernel.compProd_apply_prod (κ : Kernel X Y) [IsSFiniteKernel κ]
-    (η : Kernel (X × Y) Z) [IsSFiniteKernel η]
-    {s : Set Y} (hs : MeasurableSet s) {t : Set Z} (ht : MeasurableSet t) (x : X) :
-    (κ ⊗ₖ η) x (s ×ˢ t) = ∫⁻ y in s, η (x, y) t ∂κ x := by
-  rw [Kernel.compProd_apply (hs.prod ht), ← lintegral_indicator hs]
-  congr with y
-  by_cases hy : y ∈ s <;> simp [Set.indicator, hy]
 
 theorem ProbabilityTheory.Kernel.map_map (κ : Kernel X Y) {f : Y → Z} (hf : Measurable f)
     {g : Z → T} (hg : Measurable g) :
