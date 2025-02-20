@@ -302,8 +302,6 @@ theorem ptraj_comp_ptraj (hab : a ≤ b) (hbc : b ≤ c) :
   | base => simp
   | succ k h hk => rw [ptraj_succ_eq_comp h, comp_assoc, hk, ← ptraj_succ_eq_comp (hab.trans h)]
 
--- lemma lol {X Y Z : Type*} : ⇑(Equiv.prodAssoc X Y Z) = fun p : (X × Y) × Z ↦ (p.1.1, Prod.map snd id p.2) := sorry
-
 /-- This is a technical lemma saying that `ptraj κ a b` consists of two independent parts, the
 first one being the identity. It allows to compute integrals. -/
 lemma ptraj_eq_prod [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ) : ptraj κ a b =
@@ -485,7 +483,7 @@ theorem lmarginalPTraj_le [∀ n, IsMarkovKernel (κ n)] (c : ℕ) {f : (Π n, X
   refine @lintegral_eq_const _ _ _ ?_ _ _ fun y ↦ hf fun i hi ↦ ?_
   · refine @IsMarkovKernel.isProbabilityMeasure _ _ _ _ _ ?_ _
     exact IsMarkovKernel.map _ (by fun_prop)
-  · simp_all only [coe_Iic, Set.mem_Iic, updateFinset, mem_Ioc, dite_eq_right_iff]
+  · simp_all [coe_Iic, Set.mem_Iic, Function.updateFinset, mem_Ioc, dite_eq_right_iff]
     exact fun h ↦ by omega
 
 /-- If `f` only depends on the variables uo to rank `a`, integrating beyond rank `a` is the same
@@ -511,7 +509,7 @@ theorem dependsOn_lmarginalPTraj [∀ n, IsSFiniteKernel (κ n)] (a : ℕ) {f : 
   · rw [lmarginalPTraj_eq_lintegral_map mf, lmarginalPTraj_eq_lintegral_map mf]
     congrm ∫⁻ z : _, ?_ ∂(ptraj κ a b).map _ (fun i ↦ ?_)
     · exact hxy i.1 i.2
-    · refine dependsOn_updateFinset hf _ _ ?_
+    · refine hf.updateFinset _ ?_
       rwa [← coe_sdiff, Iic_sdiff_Ioc_same hab]
 
 end DependsOn

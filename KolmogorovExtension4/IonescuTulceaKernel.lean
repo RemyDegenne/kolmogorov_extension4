@@ -68,7 +68,7 @@ see Proposition 10.6.1 in [D. L. Cohn, *Measure Theory*][cohn2013measure].
 Ionescu-Tulcea theorem
 -/
 
-open ENNReal Filter Finset Filtration Function MeasurableSpace MeasureTheory Preorder ProbabilityTheory Topology
+open ENNReal Filter Finset Filtration Function MeasurableEquiv MeasurableSpace MeasureTheory Preorder ProbabilityTheory Topology
 
 variable {X : ℕ → Type*}
 
@@ -541,7 +541,6 @@ theorem eq_traj' {a : ℕ} (n : ℕ) (η : Kernel (Π i : Iic a, X i) (Π n, X n
   · intro k hk
     rw [inducedFamily_Iic, ← map_apply _ (measurable_frestrictLe k), hη k hk]
   · exact isProjectiveMeasureFamily_ptraj κ x
-
 
 /-- To check that `η = traj κ a` it is enough to show that the restriction of `η` to variables `≤ b`
 is `ptraj κ a b`. -/

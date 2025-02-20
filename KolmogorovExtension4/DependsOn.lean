@@ -4,8 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Etienne Marion
 -/
 
-import Mathlib.MeasureTheory.Integral.Marginal
 import Mathlib.Data.Finset.Update
+import Mathlib.Data.Set.Basic
+import Mathlib.MeasureTheory.Integral.Marginal
 import Mathlib.Order.Restriction
 
 /-!
@@ -52,17 +53,16 @@ lemma dependsOn_iff_factorsThrough {f : (Π i, α i) → β} {s : Set ι} :
   congrm ∀ x y, ?_ → _
   simp [funext_iff]
 
-theorem dependsOn_univ (f : (Π i, α i) → β) : DependsOn f univ := by
-  intro x y hxy
-  have : x = y := by
-    ext i
-    exact hxy i trivial
-  rw [this]
+theorem dependsOn_univ (f : (Π i, α i) → β) : DependsOn f univ :=
+  fun _ _ h ↦ congrArg _ <| funext fun i ↦ h i trivial
 
 variable {f : (Π i, α i) → β}
 
 /-- A constant function does not depend on any variable. -/
 theorem dependsOn_const (b : β) : DependsOn (fun _ : Π i, α i ↦ b) ∅ := by simp [DependsOn]
+
+lemma DependsOn.mono {s t : Set ι} (hst : s ⊆ t) (hf : DependsOn f s) : DependsOn f t :=
+  fun _ _ h ↦ hf fun i hi ↦ h i (hst hi)
 
 /-- A function which depends on the empty set is constant. -/
 theorem dependsOn_empty (hf : DependsOn f ∅) (x y : Π i, α i) : f x = f y := hf (by simp)
@@ -85,37 +85,29 @@ variable [DecidableEq ι]
 
 /-- If one replaces the variables indexed by a finite set `t`, then `f` no longer depends on
 these variables. -/
-theorem dependsOn_updateFinset {s : Set ι} (hf : DependsOn f s) (t : Finset ι) (y : (i : t) → α i) :
+theorem DependsOn.updateFinset {s : Set ι} (hf : DependsOn f s) {t : Finset ι} (y : (i : t) → α i) :
     DependsOn (fun x ↦ f (Function.updateFinset x t y)) (s \ t) := by
-  intro x₁ x₂ h
-  refine hf (fun i hi ↦ ?_)
+  refine fun x₁ x₂ h ↦ hf (fun i hi ↦ ?_)
   simp only [Function.updateFinset]
   split_ifs with h'
   · rfl
-  · exact h i <| (mem_diff _).2 ⟨hi, h'⟩
+  · simp_all
 
 /-- If one replaces the variable indexed by `i`, then `f` no longer depends on
 this variable. -/
-theorem dependsOn_update {s : Finset ι} (hf : DependsOn f s) (i : ι) (y : α i) :
+theorem DependsOn.update {s : Finset ι} (hf : DependsOn f s) (i : ι) (y : α i) :
     DependsOn (fun x ↦ f (Function.update x i y)) (s.erase i) := by
   simp_rw [Function.update_eq_updateFinset, erase_eq, coe_sdiff]
-  exact dependsOn_updateFinset hf _ _
+  exact hf.updateFinset _
 
 variable {X : ι → Type*} [∀ i, MeasurableSpace (X i)]
 variable {μ : (i : ι) → Measure (X i)} {f : ((i : ι) → X i) → ℝ≥0∞} {s : Set ι}
 
 /-- If a function depends on `s`, then its `lmarginal` with respect to a finite set `t` only
 depends on `s \ t`. -/
-theorem dependsOn_lmarginal (hf : DependsOn f s) (t : Finset ι) :
-    DependsOn (∫⋯∫⁻_t, f ∂μ) (s \ t) := by
-  intro x y hxy
-  have aux z : f (Function.updateFinset x t z) = f (Function.updateFinset y t z) := by
-    refine hf (fun i hi ↦ ?_)
-    simp only [Function.updateFinset]
-    split_ifs with h
-    · rfl
-    · exact hxy i ((mem_diff _).2 ⟨hi, h⟩)
-  exact lintegral_congr aux
+theorem DependsOn.lmarginal (hf : DependsOn f s) (t : Finset ι) :
+    DependsOn (∫⋯∫⁻_t, f ∂μ) (s \ t) :=
+  fun _ _ h ↦ lintegral_congr fun z ↦ hf.updateFinset z h
 
 variable [∀ i, IsProbabilityMeasure (μ i)]
 
@@ -126,10 +118,7 @@ theorem lmarginal_eq_of_disjoint (hf : DependsOn f s) {t : Finset ι} (hst : Dis
   ext x
   have aux y : f (Function.updateFinset x t y) = f x := by
     refine hf (fun i hi ↦ ?_)
-    simp only [Function.updateFinset]
-    split_ifs with h
-    · exact (Set.not_disjoint_iff.2 ⟨i, hi, h⟩ hst).elim
-    · rfl
+    simp [Function.updateFinset, mem_coe.not.1 <| hst.not_mem_of_mem_left hi]
   simp [lmarginal, lintegral_congr aux]
 
 /-- Integrating a constant over some variables with respect to probability measures does nothing. -/
@@ -155,7 +144,7 @@ theorem lmarginal_eq_of_disjoint_symmDiff (mf : Measurable f) (hf : DependsOn f 
     {t u : Finset ι} (hstu : Disjoint s (t ∆ u)) :
     ∫⋯∫⁻_t, f ∂μ = ∫⋯∫⁻_u, f ∂μ := by
   rw [symmDiff_def, disjoint_sup_right] at hstu
-  rcases hstu with ⟨h1, h2⟩
+  obtain ⟨h1, h2⟩ := hstu
   rw [← coe_sdiff] at h1 h2
   have : ∫⋯∫⁻_u ∪ t, f ∂μ = ∫⋯∫⁻_u, f ∂μ := by
     rw [← union_sdiff_self_eq_union, lmarginal_union _ _ mf disjoint_sdiff_self_right]

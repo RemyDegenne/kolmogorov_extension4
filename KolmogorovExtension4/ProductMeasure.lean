@@ -97,8 +97,8 @@ lemma _root_.IicProdIoc_preim {a b : ℕ} (hab : a ≤ b) (s : (i : Iic b) → S
       (Set.univ.pi <| frestrictLe₂ (π := (fun n ↦ Set (X n))) hab s) ×ˢ
         (Set.univ.pi <| restrict₂ (π := (fun n ↦ Set (X n))) Ioc_subset_Iic_self s) := by
   ext x
-  simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, IicProdIoc, forall_const, Subtype.forall,
-    mem_Iic, Set.mem_prod, frestrictLe₂_apply, restrict₂, mem_Ioc]
+  simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, IicProdIoc_def, forall_const,
+    Subtype.forall, mem_Iic, Set.mem_prod, frestrictLe₂_apply, restrict₂, mem_Ioc]
   refine ⟨fun h ↦ ⟨fun i hi ↦ ?_, fun i ⟨hi1, hi2⟩ ↦ ?_⟩, fun ⟨h1, h2⟩ i hi ↦ ?_⟩
   · convert h i (hi.trans hab)
     rw [dif_pos hi]
