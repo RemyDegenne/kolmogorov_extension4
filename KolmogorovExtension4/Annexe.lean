@@ -260,14 +260,22 @@ theorem ProbabilityTheory.Kernel.lintegral_id_prod (κ : Kernel X Y) [IsSFiniteK
   rw [lintegral_prod _ _ _ hf, lintegral_id]
   exact hf.lintegral_prod_right'
 
-theorem MeasureTheory.Measure.map_prod (μ : Measure X) [IsFiniteMeasure μ]
-    (ν : Measure Y) [IsFiniteMeasure ν] {f : X → Z} (hf : Measurable f)
+theorem MeasureTheory.Measure.map_prod (μ : Measure X) [SFinite μ]
+    (ν : Measure Y) [SFinite ν] {f : X → Z} (hf : Measurable f)
     {g : Y → T} (hg : Measurable g) :
     (μ.prod ν).map (Prod.map f g) = (μ.map f).prod (ν.map g) := by
-  refine (Measure.prod_eq fun s t ms mt ↦ ?_).symm
-  rw [Measure.map_apply (hf.prod_map hg) (ms.prod mt)]
-  · have : Prod.map f g ⁻¹' s ×ˢ t = (f ⁻¹' s) ×ˢ (g ⁻¹' t) := Set.prod_preimage_eq.symm
-    rw [this, Measure.prod_prod, Measure.map_apply hf ms, Measure.map_apply hg mt]
+  ext s ms
+  rw [map_apply, prod_apply, prod_apply, lintegral_map]
+  · congr with x
+    rw [map_apply]
+    congr
+    · exact hg
+    · exact measurable_prod_mk_left ms
+  any_goals fun_prop
+  · exact measurable_measure_prod_mk_left ms
+  · exact ms
+  · exact hf.prod_map hg ms
+  · exact ms
 
 theorem MeasureTheory.Measure.map_comp_left
     (μ : Measure X) (κ : Kernel X Y) (f : Y → Z) (mf : Measurable f) :
@@ -283,13 +291,18 @@ theorem MeasureTheory.Measure.comp_map_eq_comap_comp
   simp_rw [bind_apply ms κ.measurable, lintegral_map (κ.measurable_coe ms) mf,
     bind_apply ms (Kernel.measurable _), κ.comap_apply]
 
-theorem ProbabilityTheory.Kernel.map_prod (κ : Kernel X Y) [IsFiniteKernel κ]
-    (η : Kernel X T) [IsFiniteKernel η]
+theorem ProbabilityTheory.Kernel.map_prod (κ : Kernel X Y) [IsSFiniteKernel κ]
+    (η : Kernel X T) [IsSFiniteKernel η]
     {f : Y → Z} (hf : Measurable f) {g : T → U} (hg : Measurable g) :
     (κ ×ₖ η).map (Prod.map f g) = (κ.map f) ×ₖ (η.map g) := by
   ext1 x
   rw [Kernel.map_apply _ (hf.prod_map hg), Kernel.prod_apply, Measure.map_prod _ _ hf hg,
     Kernel.prod_apply, Kernel.map_apply _ hf, Kernel.map_apply _ hg]
+
+lemma ProbabilityTheory.Kernel.map_prod_eq (κ : Kernel X Y) [IsSFiniteKernel κ]
+    (η : Kernel X Z) [IsSFiniteKernel η]
+    {f : Y → T} (hf : Measurable f) : (κ.map f) ×ₖ η = (κ ×ₖ η).map (Prod.map f id) := by
+  rw [map_prod _ _ hf measurable_id, map_id]
 
 theorem ProbabilityTheory.Kernel.map_prod_mk_left (κ : Kernel X Z) [IsSFiniteKernel κ] (y : Y) :
     κ.map (Prod.mk y) = (Kernel.const X (Measure.dirac y)) ×ₖ κ := by
@@ -337,6 +350,63 @@ theorem ProbabilityTheory.Kernel.id_prod_apply' (η : Kernel X Y) [IsSFiniteKern
   rw [Kernel.id, Kernel.deterministic_prod_apply']
   rfl
   exact ms
+
+lemma ProbabilityTheory.Kernel.fst_comp_id_prod (κ : Kernel X Y) [IsSFiniteKernel κ]
+    (η : Kernel (X × Y) T) [IsSFiniteKernel η] :
+    ((deterministic Prod.fst measurable_fst) ×ₖ η) ∘ₖ (Kernel.id ×ₖ κ) =
+    Kernel.id ×ₖ (η ∘ₖ (Kernel.id ×ₖ κ)) := by
+  ext x s ms
+  rw [comp_apply', lintegral_id_prod, id_prod_apply', comp_apply', lintegral_id_prod]
+  · congr with y
+    rw [prod_apply, deterministic_apply, Measure.dirac_prod, Measure.map_apply]
+    · exact measurable_prod_mk_left
+    · exact ms
+  · exact η.measurable_coe (measurable_prod_mk_left ms)
+  · exact measurable_prod_mk_left ms
+  · exact ms
+  · exact Kernel.measurable_coe _ ms
+  · exact ms
+
+lemma MeasurableEquiv.coe_prodAssoc :
+    ⇑(MeasurableEquiv.prodAssoc) = ⇑(Equiv.prodAssoc X Y Z) := rfl
+
+lemma ProbabilityTheory.Kernel.map_prodAssoc (κ : Kernel X Y) [IsSFiniteKernel κ]
+    (η : Kernel X Z) [IsSFiniteKernel η] (ξ : Kernel X T) [IsSFiniteKernel ξ] :
+    ((κ ×ₖ ξ) ×ₖ η).map MeasurableEquiv.prodAssoc = κ ×ₖ (ξ ×ₖ η) := by
+  ext x s ms
+  rw [map_apply', prod_apply', lintegral_prod, prod_apply']
+  · congr with y
+    rw [prod_apply']
+    · congr
+    · exact measurable_prod_mk_left ms
+  · exact ms
+  · exact measurable_measure_prod_mk_left (ms.preimage (by fun_prop))
+  · exact ms.preimage (by fun_prop)
+  · fun_prop
+  · exact ms
+
+lemma ProbabilityTheory.Kernel.id_prod_id :
+    @Kernel.id (X × Y) inferInstance =
+    (deterministic (@Prod.fst X Y) measurable_fst) ×ₖ
+    (deterministic (@Prod.snd X Y) measurable_snd) := by
+  rw [deterministic_prod_deterministic]
+  rfl
+
+lemma ProbabilityTheory.Kernel.deterministic_congr {f g : X → Y} {hf : Measurable f} (h : f = g) :
+    deterministic f hf = deterministic g (h ▸ hf) := by
+  conv_lhs => enter [1]; rw [h]
+
+lemma ProbabilityTheory.Kernel.map_apply_eq_iff_map_symm_apply_eq (κ : Kernel X Y) {f : Y ≃ᵐ Z}
+    (η : Kernel X Z) :
+    κ.map f = η ↔ κ = η.map f.symm := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> ext1 x
+  · symm
+    rw [map_apply, ← MeasurableEquiv.map_apply_eq_iff_map_symm_apply_eq, ← map_apply _ f.measurable,
+      h]
+    exact f.symm.measurable
+  · rw [map_apply, MeasurableEquiv.map_apply_eq_iff_map_symm_apply_eq,
+      ← map_apply _ f.symm.measurable, h]
+    exact f.measurable
 
 theorem ProbabilityTheory.Kernel.prod_apply_symm' (κ : Kernel X Y) [IsSFiniteKernel κ]
     (η : Kernel X Z) [IsSFiniteKernel η]
@@ -397,6 +467,15 @@ lemma ProbabilityTheory.Kernel.prod_comap (κ : Kernel Y Z) [IsSFiniteKernel κ]
     (κ ×ₖ η).comap f hf = (κ.comap f hf) ×ₖ (η.comap f hf) := by
   ext1 x
   rw [comap_apply, prod_apply, prod_apply, comap_apply, comap_apply]
+
+lemma ProbabilityTheory.Kernel.id_comap {f : X → Y} (hf : Measurable f) :
+    Kernel.id.comap f hf = deterministic f hf := by
+  ext1 x
+  rw [comap_apply, id_apply, deterministic_apply]
+
+lemma ProbabilityTheory.Kernel.id_map_eq_id_comap {f : X → Y} (hf : Measurable f) :
+    Kernel.id.map f = Kernel.id.comap f hf := by
+  rw [id_map hf, id_comap]
 
 lemma ProbabilityTheory.Kernel.const_compProd_const (μ : Measure Y) [SFinite μ]
     (ν : Measure Z) [SFinite ν] :

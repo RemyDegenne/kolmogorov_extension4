@@ -67,7 +67,7 @@ This construction is used in the file `IonescuTulcea` to build the kernel `eta` 
 Ionescu-Tulcea theorem, composition of kernels
 -/
 
-open ENNReal Finset Function MeasurableEquiv MeasureTheory Preorder ProbabilityTheory
+open ENNReal Finset Function MeasureTheory Preorder ProbabilityTheory
 
 variable {X : ℕ → Type*}
 
@@ -108,6 +108,11 @@ lemma IicProdIoc_le {a b : ℕ} (hba : b ≤ a) :
   ext x i
   simp [IicProdIoc, (mem_Iic.1 i.2).trans hba]
 
+lemma IicProdIoc_comp_restrict₂ {a b : ℕ} :
+    (restrict₂ Ioc_subset_Iic_self) ∘ (IicProdIoc (X := X) a b) = Prod.snd := by
+  ext x i
+  simp [IicProdIoc, not_le.2 (mem_Ioc.1 i.2).1]
+
 /-- Gluing `Ioc a b` and `Ioc b c` into `Ioc a c`. -/
 def IocProdIoc (a b c : ℕ) (x : (Π i : Ioc a b, X i) × (Π i : Ioc b c, X i)) : Π i : Ioc a c, X i :=
     fun i ↦ if h : i ≤ b then x.1 ⟨i, mem_Ioc.2 ⟨(mem_Ioc.1 i.2).1, h⟩⟩
@@ -141,9 +146,38 @@ def MeasurableEquiv.piSingleton (a : ℕ) : (X (a + 1)) ≃ᵐ ((i : Ioc a (a + 
     cases mem_Ioc_succ' i; rfl
   measurable_invFun := measurable_pi_apply _
 
+/-- Gluing `Iic a` and `Ioc a b` into `Iic b`. This version requires `a ≤ b` to get a measurable
+equivalence. -/
+def MeasurableEquiv.IicProdIoc {a b : ℕ} (hab : a ≤ b) :
+    ((Π i : Iic a, X i) × (Π i : Ioc a b, X i)) ≃ᵐ Π i : Iic b, X i where
+  toFun x i := if h : i ≤ a then x.1 ⟨i, mem_Iic.2 h⟩
+    else x.2 ⟨i, mem_Ioc.2 ⟨not_le.1 h, mem_Iic.1 i.2⟩⟩
+  invFun x := ⟨fun i ↦ x ⟨i.1, Iic_subset_Iic.2 hab i.2⟩, fun i ↦ x ⟨i.1, Ioc_subset_Iic_self i.2⟩⟩
+  left_inv := fun x ↦ by
+    ext i
+    · simp [mem_Iic.1 i.2]
+    · simp [not_le.2 (mem_Ioc.1 i.2).1]
+  right_inv := fun x ↦ funext fun i ↦ by
+    by_cases hi : i.1 ≤ a <;> simp [hi]
+  measurable_toFun := by
+    refine measurable_pi_lambda _ (fun x ↦ ?_)
+    by_cases h : x ≤ a
+    · simpa [h] using measurable_fst.eval
+    · simpa [h] using measurable_snd.eval
+  measurable_invFun := by
+    refine Measurable.prod_mk ?_ ?_ <;> exact measurable_pi_lambda _ (fun a ↦ measurable_id.eval)
+
+lemma MeasurableEquiv.coe_IicProdIoc {a b : ℕ} (hab : a ≤ b) :
+    ⇑(IicProdIoc (X := X) hab) = _root_.IicProdIoc a b := rfl
+
+lemma MeasurableEquiv.coe_IicProdIoc_symm {a b : ℕ} (hab : a ≤ b) :
+    ⇑(IicProdIoc (X := X) hab).symm =
+    fun x ↦ (frestrictLe₂ hab x, restrict₂ Ioc_subset_Iic_self x) := rfl
+
 /-- Gluing `Iic a` and `Ioi a` into `ℕ`, version as a measurable equivalence
 on dependent functions. -/
-def IicProdIoi (a : ℕ) : ((Π i : Iic a, X i) × ((i : Set.Ioi a) → X i)) ≃ᵐ (Π n, X n) where
+def MeasurableEquiv.IicProdIoi (a : ℕ) :
+    ((Π i : Iic a, X i) × ((i : Set.Ioi a) → X i)) ≃ᵐ (Π n, X n) where
   toFun := fun x i ↦ if hi : i ≤ a
     then x.1 ⟨i, mem_Iic.2 hi⟩
     else x.2 ⟨i, Set.mem_Ioi.2 (not_le.1 hi)⟩
@@ -171,6 +205,8 @@ section ptraj
 
 namespace ProbabilityTheory
 namespace Kernel
+
+open MeasurableEquiv
 
 variable (κ) in
 /-- Given a family of kernels `κ n` from `X 0 × ... × X n` to `X (n + 1)` for all `n`,
@@ -266,6 +302,8 @@ theorem ptraj_comp_ptraj (hab : a ≤ b) (hbc : b ≤ c) :
   | base => simp
   | succ k h hk => rw [ptraj_succ_eq_comp h, comp_assoc, hk, ← ptraj_succ_eq_comp (hab.trans h)]
 
+-- lemma lol {X Y Z : Type*} : ⇑(Equiv.prodAssoc X Y Z) = fun p : (X × Y) × Z ↦ (p.1.1, Prod.map snd id p.2) := sorry
+
 /-- This is a technical lemma saying that `ptraj κ a b` consists of two independent parts, the
 first one being the identity. It allows to compute integrals. -/
 lemma ptraj_eq_prod [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ) : ptraj κ a b =
@@ -278,23 +316,25 @@ lemma ptraj_eq_prod [∀ n, IsSFiniteKernel (κ n)] (a b : ℕ) : ptraj κ a b =
         Measure.fst_prod]
       all_goals fun_prop
     | succ k h hk =>
-      rw [← ptraj_comp_ptraj h k.le_succ, hk, ptraj_succ_self]
-      ext x s ms
-      rw [comp_apply', map_apply, MeasureTheory.lintegral_map, lintegral_id_prod, lintegral_map,
-        map_apply', id_prod_apply', map_apply', comp_apply', lintegral_map, lintegral_id_prod,
-        lintegral_map]
-      · congr with y
-        rw [map_apply', id_prod_apply', map_apply' (_ ×ₖ _), id_prod_apply']
-        · congr with z
-          simp only [IicProdIoc_def, restrict₂, Set.mem_preimage, subset_refl, Set.coe_inclusion]
-          congrm (fun i ↦ ?_) ∈ s
-          split_ifs <;> try rfl
-          omega
-        any_goals fun_prop
-        all_goals exact ms.preimage (by fun_prop)
+      have : (IicProdIoc (X := X) k (k + 1)) ∘ (Prod.map (IicProdIoc a k) id) =
+          (IicProdIoc (h.trans k.le_succ) ∘ (Prod.map id (IocProdIoc a k (k + 1)))) ∘
+          prodAssoc := by
+        ext x i
+        simp only [IicProdIoc_def, MeasurableEquiv.IicProdIoc, MeasurableEquiv.coe_mk,
+          Equiv.coe_fn_mk, Function.comp_apply, Prod.map_fst, Prod.map_snd, id_eq,
+          Nat.succ_eq_add_one, Equiv.prodAssoc_apply, Prod.map_apply, IocProdIoc]
+        split_ifs with h1 h2 h3 <;> try rfl
+        omega
+      nth_rw 1 [← ptraj_comp_ptraj h k.le_succ, hk, ptraj_succ_self, comp_map, comap_map_comm,
+        prod_comap, ← id_map_eq_id_comap, map_prod_eq, map_map, this, ← map_map, id_prod_id,
+        map_prodAssoc, ← map_map, map_prod, map_id, ← map_comp, map_apply_eq_iff_map_symm_apply_eq,
+        fst_comp_id_prod, map_map, ← coe_IicProdIoc (h.trans k.le_succ), symm_comp_self, map_id,
+        deterministic_congr IicProdIoc_comp_restrict₂.symm, ← deterministic_comp_deterministic,
+        comp_deterministic_eq_comap, ← prod_comap, ← map_comp, ← comp_map, ← hk,
+        ← ptraj_comp_ptraj h k.le_succ, ptraj_succ_self, map_comp, map_comp, map_map, ← id_map,
+        map_prod_eq, map_map]
+      congr
       any_goals fun_prop
-      any_goals exact ms.preimage (by fun_prop)
-      all_goals exact (Kernel.measurable_coe _ (ms.preimage (by fun_prop))).comp (by fun_prop)
   · rw [ptraj_le hba, IicProdIoc_le hba, ← map_map _ measurable_fst (measurable_frestrictLe₂ _),
       ← fst_eq, @fst_prod _ _ _ _ _ _ _ _ _ ?_, id_map]
     exact IsMarkovKernel.map _ (measurable_restrict₂ _)
@@ -377,7 +417,7 @@ lemma lmarginalPTraj_eq_lintegral_map [∀ n, IsSFiniteKernel (κ n)] {f : (Π n
       ∂(ptraj κ a b).map (restrict₂ Ioc_subset_Iic_self) (frestrictLe a x) := by
   nth_rw 1 [lmarginalPTraj, ptraj_eq_prod, lintegral_map, lintegral_id_prod]
   · congrm ∫⁻ y, f (fun i ↦ ?_) ∂_
-    simp only [updateFinset, mem_Iic, IicProdIoc, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
+    simp only [updateFinset, mem_Iic, IicProdIoc_def, MeasurableEquiv.coe_mk, Equiv.coe_fn_mk,
       frestrictLe_apply, restrict₂, mem_Ioc]
     split_ifs <;> try rfl
     all_goals omega
@@ -390,7 +430,7 @@ lemma lmarginalPTraj_succ [∀ n, IsSFiniteKernel (κ n)] (a : ℕ)
       ∫⁻ x : X (a + 1), f (update x₀ _ x) ∂κ a (frestrictLe a x₀) := by
   rw [lmarginalPTraj, ptraj_succ_self, lintegral_map, lintegral_id_prod, lintegral_map]
   · congrm ∫⁻ x, f (fun i ↦ ?_) ∂_
-    simp only [updateFinset, mem_Iic, IicProdIoc, frestrictLe_apply, piSingleton,
+    simp only [updateFinset, mem_Iic, IicProdIoc_def, frestrictLe_apply, piSingleton,
       MeasurableEquiv.coe_mk, Equiv.coe_fn_mk, update]
     split_ifs with h1 h2 h3 <;> try rfl
     all_goals omega
