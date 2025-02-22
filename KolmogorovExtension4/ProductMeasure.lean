@@ -6,6 +6,45 @@ Authors: Etienne Marion
 import KolmogorovExtension4.IonescuTulceaKernel
 import Mathlib.Probability.Kernel.Composition.MeasureComp
 
+/-!
+# Infinite product of probability measures
+
+This files provides a definition for the product measure of an arbitrary family of probability
+measures. Given `μ : (i : ι) → Measure (X i)`, `productMeasure μ` is the only probability measure
+ `ν` over `Π i, X i` such that `ν (Set.pi s t) = ∏ i ∈ s, μ i (t i)`, with `s : Finset ι` and
+such that `∀ i ∈ s, MeasurableSet (t i)` (see `eq_productMeasure` and `productMeasure_boxes`).
+We also provide a few results regarding integration against this measure.
+
+## Main definition
+
+* `productMeasure μ`: The product measure of the family of probability measures `μ`.
+
+## Main statements
+
+* `eq_productMeasure`: Any measure which gives to a finite product of sets the mass which is the
+  product of their measures is the product measure.
+
+* `productMeasure_boxes`: the product measure gives to finite products of sets a mass which is
+  the product of their masses.
+
+* `productMeasure_cylinder`: `productMeasure μ (cylinder s S) = Measure.pi (fun i : s ↦ μ i) S`
+
+## Implementation notes
+
+To construct the product measure we first use the kernel `traj` obtained via the Ionescu-Tulcea
+theorem to construct the measure over a product indexed by `ℕ`, which is `infinitePiNat`. This
+is an implementation detail and should not be used directly. Then we construct the product measure
+over an arbitrary type by extending `piContent μ` thanks to Carathéodory's theorem. The key lemma
+to do so is `piContent_tendsto_zero`, which states that `piContent μ (A n)` tends to zero if
+`⋂ n, A n = ∅`. We prove this lemma by reducing to the case of an at most countable product,
+in which case `piContent μ` is known to be a true measure (see `piContent_eq_measure_pi` and
+piContent_eq_infinitePiNat).
+
+## Tags
+
+infinite product measure
+-/
+
 open MeasureTheory ProbabilityTheory Finset Filter Topology Preorder MeasurableEquiv
 
 open scoped ENNReal
@@ -14,9 +53,9 @@ namespace MeasureTheory
 
 section Preliminaries
 
-variable {ι : Type*}
+variable {ι : Type*} {α : ι → Type*}
 
-theorem _root_.preimage_restrict₂ {α : ι → Type*} {I J : Finset ι} [∀ i : ι, Decidable (i ∈ I)]
+lemma _root_.preimage_restrict₂ {I J : Finset ι} [∀ i : ι, Decidable (i ∈ I)]
     (hIJ : I ⊆ J) (s : (i : I) → Set (α i)) :
     (restrict₂ hIJ) ⁻¹' (Set.univ.pi s) =
       (@Set.univ J).pi (fun j ↦ if h : j.1 ∈ I then s ⟨j.1, h⟩ else Set.univ) := by
@@ -26,6 +65,17 @@ theorem _root_.preimage_restrict₂ {α : ι → Type*} {I J : Finset ι} [∀ i
   split_ifs with i_mem
   · exact h i i_mem
   · trivial
+
+lemma _root_.preimage_restrict {I : Finset ι} [∀ i : ι, Decidable (i ∈ I)]
+    (s : (i : I) → Set (α i)) :
+    I.restrict ⁻¹' (Set.univ.pi s) =
+      Set.pi I (fun i ↦ if h : i ∈ I then s ⟨i, h⟩ else Set.univ) := by
+  ext x
+  simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, restrict, forall_const, Subtype.forall,
+    mem_coe]
+  refine ⟨fun h i hi ↦ by simpa [hi] using h i hi, fun h i hi ↦ ?_⟩
+  convert h i hi
+  rw [dif_pos hi]
 
 variable {X : ι → Type*} [∀ i, MeasurableSpace (X i)]
 variable (μ : (i : ι) → Measure (X i)) [hμ : ∀ i, IsProbabilityMeasure (μ i)]
@@ -310,14 +360,14 @@ theorem piContent_tendsto_zero {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n
     rw [B_inter, measure_empty]; infer_instance
 
 /-- The `kolContent` associated to a family of probability measures is σ-subadditive. -/
-theorem kolContent_pi_sigma_subadditive ⦃f : ℕ → Set (Π i, X i)⦄
+theorem piContent_sigma_subadditive ⦃f : ℕ → Set (Π i, X i)⦄
     (hf : ∀ n, f n ∈ measurableCylinders X) (hf_Union : (⋃ n, f n) ∈ measurableCylinders X) :
-    kolContent (isProjectiveMeasureFamily_pi μ) (⋃ n, f n) ≤
-    ∑' n, kolContent (isProjectiveMeasureFamily_pi μ) (f n) := by
+    piContent μ (⋃ n, f n) ≤
+    ∑' n, piContent μ (f n) := by
   refine addContent_iUnion_le_of_addContent_iUnion_eq_tsum
     isSetRing_measurableCylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
   exact addContent_iUnion_eq_sum_of_tendsto_zero isSetRing_measurableCylinders
-    (kolContent (isProjectiveMeasureFamily_pi μ)) (fun s hs ↦ kolContent_ne_top _)
+    (piContent μ) (fun s hs ↦ kolContent_ne_top _)
     (fun _ ↦ piContent_tendsto_zero μ) hf hf_Union hf'
 
 /-- The product measure of an arbitrary family of probability measures. It is defined as the unique
@@ -325,7 +375,7 @@ extension of the function which gives to cylinders the measure given by the asso
 measure. -/
 noncomputable def Measure.productMeasure : Measure (Π i, X i) :=
   (piContent μ).measure isSetSemiring_measurableCylinders
-    generateFrom_measurableCylinders.ge (kolContent_pi_sigma_subadditive μ)
+    generateFrom_measurableCylinders.ge (piContent_sigma_subadditive μ)
 
 open Measure
 
@@ -345,6 +395,20 @@ instance : IsProbabilityMeasure (productMeasure μ) := by
   rw [← cylinder_univ ∅, cylinder, ← map_apply (measurable_restrict _) .univ,
     isProjectiveLimit_productMeasure μ, measure_univ]
 
+theorem eq_productMeasure {ν : Measure (Π i, X i)}
+    (hν : ∀ s : Finset ι, ∀ t : (i : ι) → Set (X i),
+      (∀ i ∈ s, MeasurableSet (t i)) → ν (Set.pi s t) = ∏ i ∈ s, μ i (t i)) :
+    ν = productMeasure μ := by
+  refine (isProjectiveLimit_productMeasure μ).unique ?_ |>.symm
+  refine fun s ↦ (pi_eq fun t ht ↦ ?_).symm
+  classical
+  rw [Measure.map_apply, preimage_restrict, hν, ← prod_attach, univ_eq_attach]
+  · congr with i
+    rw [dif_pos i.2]
+  any_goals fun_prop
+  · exact fun i hi ↦ dif_pos hi ▸ ht ⟨i, hi⟩
+  · exact .univ_pi ht
+
 -- TODO: add a version for an infinite product
 lemma productMeasure_boxes {s : Finset ι} {t : (i : ι) → Set (X i)}
     (mt : ∀ i ∈ s, MeasurableSet (t i)) :
@@ -355,7 +419,7 @@ lemma productMeasure_boxes {s : Finset ι} {t : (i : ι) → Set (X i)}
   rw [this, cylinder, ← map_apply, isProjectiveLimit_productMeasure μ, pi_pi]
   · rw [Finset.univ_eq_attach, Finset.prod_attach _ (fun i ↦ (μ i) (t i))]
   · exact measurable_restrict _
-  · exact MeasurableSet.pi Set.countable_univ fun i _ ↦ mt i.1 i.2
+  · exact .univ_pi fun i ↦ mt i.1 i.2
 
 theorem productMeasure_eq_pi [Fintype ι] : productMeasure μ = Measure.pi μ := by
   refine (pi_eq fun s hs ↦ ?_).symm
@@ -429,6 +493,6 @@ theorem lintegral_measurable_piFinset [DecidableEq ι] {s : Finset ι}
   simp_rw [← this]
   rw [lintegral_dep]
   · rfl
-  · exact mf.comp (measurable_updateFinset.mono (_root_.le_refl _) (piFinset.le s))
+  · exact mf.comp (measurable_updateFinset.mono le_rfl (piFinset.le s))
 
 end ProductMeasure
