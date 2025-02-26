@@ -4,67 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import Mathlib.Topology.Homeomorph
-import Mathlib.MeasureTheory.MeasurableSpace.Basic
 
 /-! # Results about projections
 
--/
-
-open MeasureTheory Set
-
-/-
--- Commented out since unused. We should use continuous_restrict and measurable_restrict instead.
-
-theorem continuous_cast {α β : Type u} [tα : TopologicalSpace α] [tβ : TopologicalSpace β]
-    (h : α = β) (ht : HEq tα tβ) : Continuous fun x : α ↦ cast h x := by
-  subst h
-  convert continuous_id
-  rw [← heq_iff_eq]
-  exact ht.symm
-
-variable {ι : Type*} {α : ι → Type*}
-
-section Measurable
-
-variable [∀ i, MeasurableSpace (α i)]
-
-theorem measurable_proj (I : Set ι) : Measurable fun (f : Π i, α i) (i : I) ↦ f i := by
-  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
-
-theorem measurable_proj' (I : Finset ι) : Measurable fun (f : Π i, α i) (i : I) ↦ f i := by
-  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
-
-theorem measurable_proj₂ (I J : Set ι) (hIJ : J ⊆ I) :
-    Measurable fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ := by
-  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
-
-theorem measurable_proj₂' (I J : Finset ι) (hIJ : J ⊆ I) :
-    Measurable fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ := by
-  rw [measurable_pi_iff]; exact fun i ↦ measurable_pi_apply _
-
-end Measurable
-
-section Continuous
-
-variable [∀ i, TopologicalSpace (α i)]
-
-theorem continuous_proj (I : Set ι) : Continuous fun (f : Π i, α i) (i : I) ↦ f i :=
-  continuous_pi fun i : ↥I ↦ by apply continuous_apply
-
-theorem continuous_proj₂ (I J : Set ι) (hIJ : J ⊆ I) :
-    Continuous fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ :=
-  continuous_pi fun i : ↥J ↦ by apply continuous_apply
-
-theorem continuous_proj₂' (I J : Finset ι) (hIJ : J ⊆ I) :
-    Continuous fun (f : (i : I) → α i) (i : J) ↦ f ⟨i, hIJ i.prop⟩ :=
-  continuous_pi fun i : ↥J ↦ by apply continuous_apply
-
-end Continuous
--/
-
-section isClosed_proj
-
-/-! We show that the image of a compact closed set `s` in a product `Π i : ι, α i` by
+We show that the image of a compact closed set `s` in a product `Π i : ι, α i` by
 the restriction to a subset of coordinates `S : Set ι` is a closed set.
 
 The idea of the proof is to use `isClosedMap_snd_of_compactSpace`, which is the fact that if
@@ -75,7 +18,13 @@ In order to be able to use the lemma `isClosedMap_snd_of_compactSpace`, we have 
 `X` and `Y` appear explicitly.
 We remark that `s` belongs to the set `Sᶜ.restrict  ⁻¹' (Sᶜ.restrict '' s)`, and we build
 an homeomorphism `Sᶜ.restrict ⁻¹' (Sᶜ.restrict '' s) ≃ₜ Sᶜ.restrict '' s × Π i : S, α i`.
-`Sᶜ.restrict '' s` is a compact space since `s` is compact, and the lemma applies. -/
+`Sᶜ.restrict '' s` is a compact space since `s` is compact, and the lemma applies.
+
+-/
+
+open Set
+
+section isClosed_proj
 
 -- TODO: change names
 
