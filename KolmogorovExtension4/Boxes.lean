@@ -3,9 +3,8 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
-import KolmogorovExtension4.Semiring
-import Mathlib.MeasureTheory.Constructions.Cylinders
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+import Mathlib.MeasureTheory.Constructions.Cylinders
 
 /-! # π-systems generating `MeasurableSpace.pi`
 
@@ -15,30 +14,6 @@ import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 open MeasureTheory Set
 
 variable {ι : Type*} {α : ι → Type*}
-
-section measurableCylinders
-
-variable [∀ i, MeasurableSpace (α i)]
-
-theorem isSetRing_measurableCylinders : IsSetRing (measurableCylinders α) where
-  empty_mem := empty_mem_measurableCylinders α
-  union_mem := fun _ _ ↦ union_mem_measurableCylinders
-  diff_mem := fun _ _ ↦ diff_mem_measurableCylinders
-
-theorem isSetSemiring_measurableCylinders : MeasureTheory.IsSetSemiring (measurableCylinders α) :=
-  isSetRing_measurableCylinders.isSetSemiring
-
-theorem iUnion_le_mem_measurableCylinders {s : ℕ → Set (∀ i : ι, α i)}
-    (hs : ∀ n, s n ∈ measurableCylinders α) (n : ℕ) :
-    (⋃ i ≤ n, s i) ∈ measurableCylinders α :=
-  isSetRing_measurableCylinders.iUnion_le_mem hs n
-
-theorem iInter_le_mem_measurableCylinders {s : ℕ → Set (∀ i : ι, α i)}
-    (hs : ∀ n, s n ∈ measurableCylinders α) (n : ℕ) :
-    (⋂ i ≤ n, s i) ∈ measurableCylinders α :=
-  isSetRing_measurableCylinders.iInter_le_mem hs n
-
-end measurableCylinders
 
 section closedCompactCylinders
 

@@ -95,11 +95,11 @@ lemma isProjectiveMeasureFamily_pi :
   rw [h2, prod_coe_sort, prod_coe_sort, prod_subset hJI (fun _ h h' ↦ by simp [g, h, h'])]
 
 noncomputable def piContent : AddContent (measurableCylinders X) :=
-  kolContent (isProjectiveMeasureFamily_pi μ)
+  projectiveFamilyContent (isProjectiveMeasureFamily_pi μ)
 
 lemma piContent_cylinder {I : Finset ι} {S : Set (Π i : I, X i)} (hS : MeasurableSet S) :
     piContent μ (cylinder I S) = Measure.pi (fun i : I ↦ μ i) S :=
-  kolContent_cylinder _ hS
+  projectiveFamilyContent_cylinder _ hS
 
 theorem piContent_eq_measure_pi [Fintype ι] {s : Set (Π i, X i)} (hs : MeasurableSet s) :
     piContent μ s = Measure.pi μ s := by
@@ -359,7 +359,7 @@ theorem piContent_tendsto_zero {A : ℕ → Set (Π i, X i)} (A_mem : ∀ n, A n
       ⟨0, measure_ne_top _ _⟩
     rw [B_inter, measure_empty]; infer_instance
 
-/-- The `kolContent` associated to a family of probability measures is σ-subadditive. -/
+/-- The `projectiveFamilyContent` associated to a family of probability measures is σ-subadditive. -/
 theorem piContent_sigma_subadditive ⦃f : ℕ → Set (Π i, X i)⦄
     (hf : ∀ n, f n ∈ measurableCylinders X) (hf_Union : (⋃ n, f n) ∈ measurableCylinders X) :
     piContent μ (⋃ n, f n) ≤
@@ -367,7 +367,7 @@ theorem piContent_sigma_subadditive ⦃f : ℕ → Set (Π i, X i)⦄
   refine addContent_iUnion_le_of_addContent_iUnion_eq_tsum
     isSetRing_measurableCylinders (fun f hf hf_Union hf' ↦ ?_) f hf hf_Union
   exact addContent_iUnion_eq_sum_of_tendsto_zero isSetRing_measurableCylinders
-    (piContent μ) (fun s hs ↦ kolContent_ne_top _)
+    (piContent μ) (fun s hs ↦ projectiveFamilyContent_ne_top _)
     (fun _ ↦ piContent_tendsto_zero μ) hf hf_Union hf'
 
 /-- The product measure of an arbitrary family of probability measures. It is defined as the unique

@@ -53,7 +53,7 @@ expectation.
 The kernel `traj κ a` is built using the Carathéodory extension theorem. First we build a projective
 family of measures using `inducedFamily` and `ptraj κ a`. Then we build an
 `MeasureTheory.AddContent` on `MeasureTheory.measurableCylinders` called `trajContent` using
-`kolContent`. Finally we prove `trajContent_tendsto_zero` which implies the `σ`-additivity of the
+`projectiveFamilyContent`. Finally we prove `trajContent_tendsto_zero` which implies the `σ`-additivity of the
 content, allowing to turn it into a measure.
 
 ## References
@@ -208,13 +208,13 @@ lemma isProjectiveMeasureFamily_ptraj {a : ℕ} (x₀ : Π i : Iic a, X i) :
 trajectory up to time `a` we can construct an additive content over cylinders. It corresponds
 to composing the kernels, starting at time `a + 1`. -/
 noncomputable def trajContent {a : ℕ} (x₀ : Π i : Iic a, X i) :
-    AddContent (measurableCylinders X) := kolContent (isProjectiveMeasureFamily_ptraj κ x₀)
+    AddContent (measurableCylinders X) := projectiveFamilyContent (isProjectiveMeasureFamily_ptraj κ x₀)
 
 /-- The `trajContent κ x₀` of a cylinder indexed by first coordinates is given by `ptraj`. -/
 theorem trajContent_cylinder {a b : ℕ} (x₀ : Π i : Iic a, X i)
     {S : Set (Π i : Iic b, X i)} (mS : MeasurableSet S) :
     trajContent κ x₀ (cylinder _ S) = ptraj κ a b x₀ S := by
-  rw [trajContent, kolContent_cylinder _ mS, inducedFamily_Iic]
+  rw [trajContent, projectiveFamilyContent_cylinder _ mS, inducedFamily_Iic]
 
 /-- The `trajContent` of a cylinder is equal to the integral of its indicator function against
 `ptraj`. -/
@@ -245,7 +245,7 @@ theorem cylinders_nat :
 variable {κ} in
 lemma trajContent_ne_top {a : ℕ} {x : Π i : Iic a, X i} {s : Set (Π n, X n)} :
     trajContent κ x s ≠ ∞ :=
-  kolContent_ne_top (isProjectiveMeasureFamily_ptraj κ x)
+  projectiveFamilyContent_ne_top (isProjectiveMeasureFamily_ptraj κ x)
 
 /-- This is an auxiliary result for `trajContent_tendsto_zero`. Consider `f` a sequence of bounded
 measurable functions such that `f n` depends only on the first coordinates up to `a n`.
@@ -473,7 +473,7 @@ theorem isProjectiveLimit_trajFun (a : ℕ) (x₀ : Π i : Iic a, X i) :
   refine isProjectiveLimit_nat_iff (isProjectiveMeasureFamily_ptraj κ x₀) _ |>.2 fun n ↦ ?_
   ext s ms
   rw [Measure.map_apply (measurable_frestrictLe n) ms, trajFun, AddContent.measure_eq, trajContent,
-    kolContent_congr _ (frestrictLe n ⁻¹' s) rfl ms]
+    projectiveFamilyContent_congr _ (frestrictLe n ⁻¹' s) rfl ms]
   · exact generateFrom_measurableCylinders.symm
   · exact cylinder_mem_measurableCylinders _ _ ms
 
@@ -487,7 +487,7 @@ theorem measurable_trajFun (a : ℕ) : Measurable (trajFun κ a) := by
   · obtain ⟨N, S, mS, t_eq⟩ : ∃ N S, MeasurableSet S ∧ t = cylinder (Iic N) S := by
       simpa [cylinders_nat] using ht
     simp_rw [trajFun, AddContent.measure_eq _ _ generateFrom_measurableCylinders.symm _ ht,
-      trajContent, kolContent_congr _ t t_eq mS, inducedFamily]
+      trajContent, projectiveFamilyContent_congr _ t t_eq mS, inducedFamily]
     refine Measure.measurable_measure.1 ?_ _ mS
     exact (Measure.measurable_map _ (measurable_restrict₂ _)).comp (measurable _)
   · have := isProbabilityMeasure_trajFun κ a

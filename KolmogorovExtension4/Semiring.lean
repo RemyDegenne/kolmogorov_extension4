@@ -3,7 +3,6 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
-import KolmogorovExtension4.AuxLemmas
 import Mathlib.MeasureTheory.SetSemiring
 
 /-! # Semirings of sets
@@ -11,13 +10,14 @@ import Mathlib.MeasureTheory.SetSemiring
 A semi-ring of sets `C` is a family of sets containing `∅`, stable by intersection and such that
 for all `s, t ∈ C`, `t \ s` is equal to a disjoint union of finitely many sets in `C`.
 
+THIS FILE IS NOT USED FOR THE MAIN RESULT
+
 -/
 
 
 variable {α : Type*} {C : Set (Set α)} {s t : Set α} {J : Finset (Set α)}
 
 open Finset Set
-open scoped ENNReal
 
 namespace MeasureTheory
 
