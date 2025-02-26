@@ -6,6 +6,12 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.MeasurableSpace.Defs
 
+/-!
+
+THIS FILE IS NOT USED FOR THE MAIN RESULT
+
+-/
+
 open Finset Set Filter
 
 open scoped ENNReal NNReal Topology
