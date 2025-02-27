@@ -59,24 +59,22 @@ finset defining the cylinder for `s n`. -/
 noncomputable def indexProj (hs : ∀ n, s n ∈ closedCompactCylinders α) (i : allProj hs) : ℕ :=
   Nat.find (exists_nat_proj hs i i.2)
 
-open Classical in
 theorem mem_indexProj (hs : ∀ n, s n ∈ closedCompactCylinders α) (i : allProj hs) :
-    (i : ι) ∈ Js (hs (indexProj hs i)) :=
-  Nat.find_spec (exists_nat_proj hs i i.2)
+    (i : ι) ∈ Js (hs (indexProj hs i)) := by
+  classical
+  exact Nat.find_spec (exists_nat_proj hs i i.2)
 
-open Classical in
 theorem indexProj_le (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ) (i : Js (hs n)) :
-    indexProj hs ⟨i, subset_allProj hs n i.2⟩ ≤ n :=
-  Nat.find_le i.2
+    indexProj hs ⟨i, subset_allProj hs n i.2⟩ ≤ n := by
+  classical
+  exact Nat.find_le i.2
 
 lemma surjective_proj_allProj [∀ i, Nonempty (α i)] (hs : ∀ n, s n ∈ closedCompactCylinders α) :
-    Function.Surjective (fun (f : (Π i, α i)) (i : allProj hs) ↦ f (i : ι)) := by
+    Function.Surjective (fun (f : Π i, α i) (i : allProj hs) ↦ f (i : ι)) := by
   intro y
   let x := (inferInstance : Nonempty (Π i, α i)).some
   classical
-  refine ⟨fun i ↦ if hi : i ∈ allProj hs then y ⟨i, hi⟩ else x i, ?_⟩
-  ext i
-  simp only [Subtype.coe_prop, dite_true]
+  exact ⟨fun i ↦ if hi : i ∈ allProj hs then y ⟨i, hi⟩ else x i, by ext; simp⟩
 
 end AllProj
 
@@ -85,16 +83,16 @@ section projCylinder
 /-- Given a countable family of closed cylinders, consider one of them as depending only on
 the countably many coordinates that appear in all of them. -/
 def projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ) :
-    Set (∀ i : allProj hs, α i) :=
-  (fun (f : ∀ i : allProj hs, α i) (i : Js (hs n)) ↦ f ⟨i, subset_allProj hs _ i.2⟩) ⁻¹' (As (hs n))
+    Set (Π i : allProj hs, α i) :=
+  (fun (f : Π i : allProj hs, α i) (i : Js (hs n)) ↦ f ⟨i, subset_allProj hs _ i.2⟩) ⁻¹' (As (hs n))
 
 lemma mem_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ)
-    (x : ∀ i : allProj hs, α i) :
+    (x : Π i : allProj hs, α i) :
     x ∈ projCylinder hs n ↔ (fun (i : Js (hs n)) ↦ x ⟨i, subset_allProj hs _ i.2⟩) ∈ As (hs n) := by
   simp only [projCylinder, mem_preimage]
 
 theorem preimage_projCylinder (hs : ∀ n, s n ∈ closedCompactCylinders α) (n : ℕ) :
-    (fun (f : ∀ i, α i) (i : allProj hs) ↦ f i) ⁻¹' (projCylinder hs n) = s n := by
+    (fun (f : Π i, α i) (i : allProj hs) ↦ f i) ⁻¹' (projCylinder hs n) = s n := by
   conv_rhs => rw [closedCompactCylinders.eq_cylinder (hs n)]
   rfl
 
@@ -133,15 +131,14 @@ open Classical in
 /-- Given countably many closed compact cylinders, the product set which, in each relevant
 coordinate, is the projection of the first cylinder for which this coordinate is relevant. -/
 def piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α) :
-    Set (∀ i : allProj hs, α i) :=
-  {x : ∀ i : allProj hs, α i |
-    ∀ i, x i ∈ (fun a : ∀ j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
+    Set (Π i : allProj hs, α i) :=
+  {x : Π i : allProj hs, α i |
+    ∀ i, x i ∈ (fun a : Π j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
       (As (hs (indexProj hs i)))}
 
-lemma mem_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
-    (x : ∀ i : allProj hs, α i) :
+lemma mem_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α) (x : Π i : allProj hs, α i) :
     x ∈ piCylinderSet hs ↔
-    ∀ i, x i ∈ (fun a : ∀ j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
+    ∀ i, x i ∈ (fun a : Π j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
       (As (hs (indexProj hs i))) := by
   simp only [piCylinderSet, mem_image, Subtype.forall, mem_setOf_eq]
 
@@ -153,7 +150,7 @@ theorem isCompact_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α) 
 theorem piCylinderSet_eq_pi_univ (hs : ∀ n, s n ∈ closedCompactCylinders α) :
     piCylinderSet hs =
       pi univ fun i ↦
-        (fun a : ∀ j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
+        (fun a : Π j : Js (hs (indexProj hs i)), α j ↦ a ⟨i, mem_indexProj hs i⟩) ''
           (As (hs (indexProj hs i))) := by
   ext; simp only [piCylinderSet, mem_univ_pi]; rfl
 
@@ -172,7 +169,7 @@ theorem nonempty_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
     exact nonempty_of_nonempty_preimage hs_nonempty
   let b i := (hs_nonempty' (indexProj hs i)).some
   have hb_mem i : b i ∈ As (hs (indexProj hs i)) := (hs_nonempty' (indexProj hs i)).choose_spec
-  let a : ∀ i : allProj hs, α i := fun i ↦ b i ⟨i, mem_indexProj hs i⟩
+  let a : Π i : allProj hs, α i := fun i ↦ b i ⟨i, mem_indexProj hs i⟩
   refine ⟨a, ?_⟩
   simp only [piCylinderSet, mem_image, SetCoe.forall, mem_setOf_eq]
   exact fun j hj ↦ ⟨b ⟨j, hj⟩, hb_mem _, rfl⟩
@@ -272,7 +269,7 @@ theorem isCompactSystem_closedCompactCylinders : IsCompactSystem (closedCompactC
   swap; · exact ⟨∅, by simpa [not_nonempty_iff] using hα⟩
   have h' : ⋂ n, projCylinder hs n = ∅ := by
     simp_rw [← preimage_projCylinder hs, ← preimage_iInter] at h
-    have h_surj : Function.Surjective (fun (f : (∀ i, α i)) (i : allProj hs) ↦ f (i : ι)) :=
+    have h_surj : Function.Surjective (fun (f : Π i, α i) (i : allProj hs) ↦ f (i : ι)) :=
       surjective_proj_allProj hs
     rwa [← not_nonempty_iff_eq_empty, ← Function.Surjective.nonempty_preimage h_surj,
       not_nonempty_iff_eq_empty]

@@ -6,7 +6,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 import Mathlib.MeasureTheory.Constructions.Cylinders
 
-/-! # π-systems generating `MeasurableSpace.pi`
+/-! # Cylinders with closed compact bases
 
 -/
 
@@ -32,20 +32,17 @@ theorem empty_mem_closedCompactCylinders : ∅ ∈ closedCompactCylinders α := 
 
 variable {α} {t : Set (Π i, α i)}
 
-@[simp]
 theorem mem_closedCompactCylinders (t : Set (Π i, α i)) :
     t ∈ closedCompactCylinders α
       ↔ ∃ (s S : _) (_ : IsClosed S) (_ : IsCompact S), t = cylinder s S := by
   simp_rw [closedCompactCylinders, mem_iUnion, mem_singleton_iff]
 
-/-- Given a closed compact cylinder, choose a finset of variables such that it only depends on
-these variables. -/
+/-- A finset `s` such that `t = cylinder s S`. `S` is given by `closedCompactCylinders.set`. -/
 noncomputable def closedCompactCylinders.finset (ht : t ∈ closedCompactCylinders α) :
     Finset ι :=
   ((mem_closedCompactCylinders t).mp ht).choose
 
-/-- Given a closed compact cylinder, choose a set depending on finitely many variables of which it
-is a lift. -/
+/-- A set `S` such that `t = cylinder s S`. `s` is given by `closedCompactCylinders.finset`. -/
 def closedCompactCylinders.set (ht : t ∈ closedCompactCylinders α) :
     Set (∀ i : closedCompactCylinders.finset ht, α i) :=
   ((mem_closedCompactCylinders t).mp ht).choose_spec.choose
@@ -68,7 +65,7 @@ theorem cylinder_mem_closedCompactCylinders (s : Finset ι) (S : Set (∀ i : s,
   rw [mem_closedCompactCylinders]
   exact ⟨s, S, hS_closed, hS_compact, rfl⟩
 
-theorem mem_cylinder_of_mem_closedCompactCylinders [∀ i, MeasurableSpace (α i)]
+theorem mem_measurableCylinders_of_mem_closedCompactCylinders [∀ i, MeasurableSpace (α i)]
     [∀ i, SecondCountableTopology (α i)] [∀ i, OpensMeasurableSpace (α i)]
     (ht : t ∈ closedCompactCylinders α) :
     t ∈ measurableCylinders α := by

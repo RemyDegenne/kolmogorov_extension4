@@ -72,13 +72,6 @@ lemma innerRegular_projectiveFamilyContent (hP : IsProjectiveMeasureFamily P)
   · have : IsEmpty (Π i, α i) := isEmpty_pi.mpr (by simpa using hα)
     exact ⟨∅, empty_mem_closedCompactCylinders α, empty_subset _, by simp [eq_empty_of_isEmpty s]⟩
 
-end InnerRegular
-
-section InnerRegularAssumption
-
-variable [∀ i, TopologicalSpace (α i)] [∀ i, OpensMeasurableSpace (α i)]
-  [∀ i, SecondCountableTopology (α i)] [∀ I, IsFiniteMeasure (P I)]
-
 theorem projectiveFamilyContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
     ⦃f : ℕ → Set (Π i, α i)⦄ (hf : ∀ i, f i ∈ measurableCylinders α)
@@ -87,7 +80,7 @@ theorem projectiveFamilyContent_sigma_additive_of_innerRegular (hP : IsProjectiv
     projectiveFamilyContent hP (⋃ i, f i) = ∑' i, projectiveFamilyContent hP (f i) :=
   addContent_iUnion_eq_sum_of_regular isSetRing_measurableCylinders (projectiveFamilyContent hP)
     (fun _ _ ↦ projectiveFamilyContent_ne_top hP) isCompactSystem_closedCompactCylinders
-    (fun _ ↦ mem_cylinder_of_mem_closedCompactCylinders)
+    (fun _ ↦ mem_measurableCylinders_of_mem_closedCompactCylinders)
     (fun _ ↦ innerRegular_projectiveFamilyContent hP hP_inner) hf hf_Union h_disj
 
 theorem projectiveFamilyContent_iUnion_le_sum_of_innerRegular (hP : IsProjectiveMeasureFamily P)
@@ -98,7 +91,7 @@ theorem projectiveFamilyContent_iUnion_le_sum_of_innerRegular (hP : IsProjective
   addContent_iUnion_le_of_addContent_iUnion_eq_tsum isSetRing_measurableCylinders
     (projectiveFamilyContent_sigma_additive_of_innerRegular hP hP_inner) f hf hf_Union
 
-end InnerRegularAssumption
+end InnerRegular
 
 /-- Projective limit of a projective measure family. -/
 noncomputable def projectiveLimitWithWeakestHypotheses [∀ i, PseudoEMetricSpace (α i)]
