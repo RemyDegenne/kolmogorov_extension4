@@ -3,7 +3,6 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
-import KolmogorovExtension4.Content
 import KolmogorovExtension4.RegularContent
 import Mathlib.MeasureTheory.Constructions.ProjectiveFamilyContent
 import Mathlib.MeasureTheory.Measure.RegularityCompacts
@@ -88,8 +87,8 @@ theorem projectiveFamilyContent_iUnion_le_sum_of_innerRegular (hP : IsProjective
     ⦃f : ℕ → Set (Π i, α i)⦄ (hf : ∀ i, f i ∈ measurableCylinders α)
     (hf_Union : (⋃ i, f i) ∈ measurableCylinders α) :
     projectiveFamilyContent hP (⋃ i, f i) ≤ ∑' i, projectiveFamilyContent hP (f i) :=
-  addContent_iUnion_le_of_addContent_iUnion_eq_tsum isSetRing_measurableCylinders
-    (projectiveFamilyContent_sigma_additive_of_innerRegular hP hP_inner) f hf hf_Union
+  isSigmaSubadditive_of_addContent_iUnion_eq_tsum isSetRing_measurableCylinders
+    (projectiveFamilyContent_sigma_additive_of_innerRegular hP hP_inner) hf hf_Union
 
 end InnerRegular
 
