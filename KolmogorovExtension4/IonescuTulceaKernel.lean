@@ -335,7 +335,7 @@ theorem dependsOn_cylinder_indicator {ι : Type*} {α : ι → Type*} {I : Finse
 the `trajContent` of a decreasing sequence of cylinders with empty intersection
 converges to `0`.
 
-This implies the `σ`-additivity of `trajContent` (see `sigma_additive_addContent_of_tendsto_zero`),
+This implies the `σ`-additivity of `trajContent` (see `addContent_iUnion_eq_sum_of_tendsto_zero`),
 which allows to extend it to the `σ`-algebra by Carathéodory's theorem. -/
 theorem trajContent_tendsto_zero {A : ℕ → Set (Π n, X n)}
     (A_mem : ∀ n, A n ∈ measurableCylinders X) (A_anti : Antitone A) (A_inter : ⋂ n, A n = ∅)
@@ -555,6 +555,7 @@ theorem traj_comp_ptraj {a b : ℕ} (hab : a ≤ b) : (traj κ b) ∘ₖ (ptraj 
   refine eq_traj _ _ fun n ↦ ?_
   rw [map_comp, traj_map_frestrictLe, ptraj_comp_ptraj' _ hab]
 
+/-- Restricting a dependent function defined on a set to a finset contained in it. -/
 def _root_.restrictf {ι : Type*} {α : ι → Type*} {s : Finset ι} {t : Set ι} (hst : s.toSet ⊆ t)
     (a : Π i : t, α i) (i : s) : α i := a ⟨i.1, hst i.2⟩
 

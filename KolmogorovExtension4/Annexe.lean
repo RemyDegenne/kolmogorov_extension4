@@ -260,7 +260,7 @@ theorem ProbabilityTheory.Kernel.lintegral_id_prod (κ : Kernel X Y) [IsSFiniteK
   rw [lintegral_prod _ _ _ hf, lintegral_id]
   exact hf.lintegral_prod_right'
 
-theorem MeasureTheory.Measure.map_prod (μ : Measure X) [SFinite μ]
+theorem MeasureTheory.Measure.map_prod (μ : Measure X)
     (ν : Measure Y) [SFinite ν] {f : X → Z} (hf : Measurable f)
     {g : Y → T} (hg : Measurable g) :
     (μ.prod ν).map (Prod.map f g) = (μ.map f).prod (ν.map g) := by
