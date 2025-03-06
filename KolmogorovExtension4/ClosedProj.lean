@@ -5,7 +5,7 @@ Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import Mathlib.Topology.Homeomorph
 
-/-! # Projection of a closed compact set in a product space on a set of coordinates
+/-! # Restriction of a closed compact set in a product space to a set of coordinates
 
 We show that the image of a compact closed set `s` in a product `Π i : ι, α i` by
 the restriction to a subset of coordinates `S : Set ι` is a closed set.
@@ -111,8 +111,7 @@ section IsClosed
 
 variable [∀ i, TopologicalSpace (α i)]
 
-/-- The projection of a compact closed set in a product space onto a set of coordinates
-is closed. -/
+/-- The restriction of a compact closed set in a product space to a set of coordinates is closed. -/
 theorem IsCompact.isClosed_image_restrict (S : Set ι)
     (hs_compact : IsCompact s) (hs_closed : IsClosed s) :
     IsClosed (S.restrict '' s) := by
