@@ -157,7 +157,7 @@ theorem piCylinderSet_eq_pi_univ (hs : ∀ n, s n ∈ closedCompactCylinders α)
 theorem isClosed_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α) :
     IsClosed (piCylinderSet hs) := by
   rw [piCylinderSet_eq_pi_univ]
-  exact isClosed_set_pi fun i _ ↦ IsClosed.isClosed_image_restrict_singleton _
+  exact isClosed_set_pi fun i _ ↦ IsClosed.isClosed_image_eval _
     (closedCompactCylinders.isCompact (hs _)) (closedCompactCylinders.isClosed (hs _))
 
 theorem nonempty_piCylinderSet (hs : ∀ n, s n ∈ closedCompactCylinders α)
