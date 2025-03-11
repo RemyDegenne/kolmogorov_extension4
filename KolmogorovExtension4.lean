@@ -1,5 +1,4 @@
 import KolmogorovExtension4.AuxLemmas
-import KolmogorovExtension4.Boxes
 import KolmogorovExtension4.ClosedProj
 import KolmogorovExtension4.CompactSystem
 import KolmogorovExtension4.IndependentFamily
