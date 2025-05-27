@@ -34,7 +34,7 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent R)
   have hS_nonempty : Finset.Nonempty S := by
     by_contra h
     simp only [S, Finset.not_nonempty_iff_eq_empty] at h
-    simp only [h, Finset.not_mem_empty, Set.iInter_of_empty, Set.iInter_univ,
+    simp only [h, Finset.notMem_empty, Set.iInter_of_empty, Set.iInter_univ,
       Set.univ_eq_empty_iff, not_isEmpty_of_nonempty] at hS
   let N := Finset.max' S hS_nonempty
   have ht_empty' : ∀ n, N ≤ n → ⋂ i ≤ n, t i = ∅ := by
