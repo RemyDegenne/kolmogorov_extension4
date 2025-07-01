@@ -152,10 +152,10 @@ theorem Measure.subset_pi_eval_boxI' [DecidableEq ι] (I J : Finset ι) (hJI : J
   let f := fun i ↦ P i (if i ∈ J then t i else (univ : Set (α i)))
   have h1 : ∀ (x : ι), x ∈ J → f x = g x := by
     intros x hx
-    simp only [f, dite_eq_ite, hx, ite_true, g]
+    simp only [f, hx, ite_true, g]
   have h2 : ∀ (x : ι), ¬x ∈ J → f x = 1 := by
     intros x hx
-    simp only [f, dite_eq_ite, hx, ite_false, measure_univ]
+    simp only [f, hx, ite_false, measure_univ]
   exact Finset.prod_mem_not_mem_of_eq_one_if_not_mem hJI h1 h2
 
 /-- A product of probability measures is a probability measure -/
