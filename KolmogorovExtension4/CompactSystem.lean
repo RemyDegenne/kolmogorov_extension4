@@ -256,10 +256,10 @@ lemma exists_finset_iInter_projCylinder_eq_empty [∀ i, Nonempty (α i)]
   refine absurd h (Set.Nonempty.ne_empty ?_)
   refine nonempty_iInter_projCylinder hs (fun i ↦ ?_) (fun n ↦ ?_)
   · specialize h_nonempty {i}
-    simp only [Finset.mem_singleton, iInter_iInter_eq_left, ne_eq] at h_nonempty
+    simp only [Finset.mem_singleton, iInter_iInter_eq_left] at h_nonempty
     rwa [nonempty_projCylinder_iff] at h_nonempty
   · specialize h_nonempty (Finset.range (n + 1))
-    simp only [Finset.mem_range, ne_eq, Nat.lt_succ_iff] at h_nonempty
+    simp only [Finset.mem_range, Nat.lt_succ_iff] at h_nonempty
     exact h_nonempty
 
 /-- The `closedCompactCylinders` are a compact system. -/
