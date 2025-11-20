@@ -1,0 +1,9 @@
+name = "kolmogorov_extension4"
+defaultTargets = ["KolmogorovExtension4"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+
+[[lean_lib]]
+name = "KolmogorovExtension4"
