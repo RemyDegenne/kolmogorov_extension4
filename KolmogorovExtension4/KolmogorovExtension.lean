@@ -113,14 +113,14 @@ theorem projectiveFamilyContent_sigma_additive (hP : IsProjectiveMeasureFamily P
     (h_disj : Pairwise (Function.onFun Disjoint f)) :
     projectiveFamilyContent hP (⋃ i, f i) = ∑' i, projectiveFamilyContent hP (f i) := by
   refine projectiveFamilyContent_sigma_additive_of_innerRegular hP ?_ hf hf_Union h_disj
-  exact fun J ↦ PolishSpace.innerRegular_isCompact_isClosed_measurableSet (P J)
+  exact fun J ↦ MeasureTheory.innerRegular_isCompact_isClosed_measurableSet_of_finite (P J)
 
 theorem projectiveFamilyContent_iUnion_le_sum (hP : IsProjectiveMeasureFamily P)
     ⦃f : ℕ → Set (Π i, α i)⦄
     (hf : ∀ i, f i ∈ measurableCylinders α) (hf_Union : (⋃ i, f i) ∈ measurableCylinders α) :
     projectiveFamilyContent hP (⋃ i, f i) ≤ ∑' i, projectiveFamilyContent hP (f i) := by
   refine projectiveFamilyContent_iUnion_le_sum_of_innerRegular hP ?_ hf hf_Union
-  exact fun J ↦ PolishSpace.innerRegular_isCompact_isClosed_measurableSet (P J)
+  exact fun J ↦ MeasureTheory.innerRegular_isCompact_isClosed_measurableSet_of_finite (P J)
 
 /-- Projective limit of a projective measure family. -/
 noncomputable def projectiveLimit (P : ∀ J : Finset ι, Measure (Π j : J, α j))

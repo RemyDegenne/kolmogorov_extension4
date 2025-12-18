@@ -21,7 +21,7 @@ section Accumulate
 variable {α : Type*}
 
 theorem MeasurableSet.accumulate {_ : MeasurableSpace α} {s : ℕ → Set α}
-    (hs : ∀ n, MeasurableSet (s n)) (n : ℕ) : MeasurableSet (Set.Accumulate s n) :=
+    (hs : ∀ n, MeasurableSet (s n)) (n : ℕ) : MeasurableSet (Set.accumulate s n) :=
   MeasurableSet.biUnion (Set.to_countable _) fun n _ ↦ hs n
 
 end Accumulate
