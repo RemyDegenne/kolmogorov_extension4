@@ -31,19 +31,15 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent ℝ�
   have ht_empty : ⋂ n, t n = ∅ := Set.subset_eq_empty (Set.iInter_mono ht_subset) hs_Inter
   let S := hC.support ht_mem_C ht_empty
   have hS := hC.iInter_eq_empty ht_mem_C ht_empty
-  have hS_nonempty : Finset.Nonempty S := by
-    by_contra h
-    simp only [S, Finset.not_nonempty_iff_eq_empty] at h
-    simp only [h, Finset.notMem_empty, Set.iInter_of_empty, Set.iInter_univ,
-      Set.univ_eq_empty_iff, not_isEmpty_of_nonempty] at hS
-  let N := Finset.max' S hS_nonempty
+  have hS_nonempty : Finset.Nonempty (Finset.Iic S) := by simp
+  let N := Finset.max' (Finset.Iic S) hS_nonempty
   have ht_empty' : ∀ n, N ≤ n → ⋂ i ≤ n, t i = ∅ := by
     intro n hn
     refine Set.subset_eq_empty ?_ hS
     simp only [Set.subset_iInter_iff]
     intro i hi
     refine Set.biInter_subset_of_mem ?_
-    exact (Finset.le_max' S i hi).trans hn
+    exact (Finset.le_max' (Finset.Iic S) i (by simpa using hi)).trans hn
   refine ⟨N, fun n hn ↦ ?_⟩
   calc m (s n) = m (⋂ i ≤ n, s i) := by
         congr

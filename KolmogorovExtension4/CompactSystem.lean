@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
 import Mathlib.MeasureTheory.Constructions.ClosedCompactCylinders
+import Mathlib.Topology.Compactness.CompactSystem
 import Mathlib.Topology.IsClosedRestrict
 
 open Set MeasureTheory
@@ -12,20 +13,15 @@ section definition
 
 variable {α : Type*} {p : Set α → Prop} {C : ℕ → Set α}
 
-/-- A set of sets is a compact system if, whenever a countable subfamily has empty intersection,
-then finitely many of them already have empty intersection. -/
-def IsCompactSystem (p : Set α → Prop) : Prop :=
-  ∀ C : ℕ → Set α, (∀ i, p (C i)) → ⋂ i, C i = ∅ → ∃ (s : Finset ℕ), ⋂ i ∈ s, C i = ∅
-
 /-- In a compact system, given a countable family with empty intersection, we choose a finite
 subfamily with empty intersection-/
 noncomputable
 def IsCompactSystem.support (hp : IsCompactSystem p) (hC : ∀ i, p (C i)) (hC_empty : ⋂ i, C i = ∅) :
-    Finset ℕ := (hp C hC hC_empty).choose
+    ℕ := (hp C hC hC_empty).choose
 
 lemma IsCompactSystem.iInter_eq_empty (hp : IsCompactSystem p) (hC : ∀ i, p (C i))
     (hC_empty : ⋂ i, C i = ∅) :
-    ⋂ i ∈ hp.support hC hC_empty, C i = ∅ :=
+    ⋂ i ≤ hp.support hC hC_empty, C i = ∅ :=
   (hp C hC hC_empty).choose_spec
 
 end definition
@@ -264,17 +260,24 @@ lemma exists_finset_iInter_projCylinder_eq_empty [∀ i, Nonempty (α i)]
 
 /-- The `closedCompactCylinders` are a compact system. -/
 theorem isCompactSystem_closedCompactCylinders : IsCompactSystem (closedCompactCylinders α) := by
-  intro s hs h
   by_cases hα : ∀ i, Nonempty (α i)
-  swap; · exact ⟨∅, by simpa [not_nonempty_iff] using hα⟩
-  have h' : ⋂ n, projCylinder hs n = ∅ := by
-    simp_rw [← preimage_projCylinder hs, ← preimage_iInter] at h
-    have h_surj : Function.Surjective (fun (f : Π i, α i) (i : allProj hs) ↦ f (i : ι)) :=
-      surjective_proj_allProj hs
-    rwa [← not_nonempty_iff_eq_empty, ← Function.Surjective.nonempty_preimage h_surj,
-      not_nonempty_iff_eq_empty]
-  obtain ⟨t, ht⟩ := exists_finset_iInter_projCylinder_eq_empty hs h'
-  refine ⟨t, ?_⟩
-  simp_rw [← preimage_projCylinder hs, ← preimage_iInter₂, ht, preimage_empty]
+  swap
+  · have : IsEmpty (Π i, α i) := isEmpty_pi.mpr (by simpa using hα)
+    refine fun s hs h ↦ ⟨0, ?_⟩
+    simp only [dissipate_zero_nat]
+    refine Set.eq_empty_of_isEmpty _
+  refine IsCompactSystem.of_nonempty_iInter fun s hs h_nonempty ↦ ?_
+  have h' n : (dissipate (projCylinder hs) n).Nonempty := by
+    simp_rw [dissipate, ← preimage_projCylinder hs, ← preimage_iInter] at h_nonempty
+    exact nonempty_of_nonempty_preimage (h_nonempty n)
+  have h_non := nonempty_iInter_projCylinder hs (fun n ↦ ?_) h'
+  swap
+  · specialize h' n
+    contrapose! h'
+    refine Set.eq_empty_of_subset_empty ((dissipate_subset le_rfl).trans_eq ?_)
+    contrapose! h'
+    rwa [nonempty_projCylinder_iff] at h'
+  simp_rw [← preimage_projCylinder hs, ← preimage_iInter]
+  rwa [(surjective_proj_allProj hs).nonempty_preimage]
 
 end ClosedCompactCylinders
