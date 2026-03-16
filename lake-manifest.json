@@ -5,7 +5,7 @@
    "type": "git",
    "subDir": null,
    "scope": "",
-   "rev": "09d467d7872b13e9a0719ad6b63b4cd2585b8411",
+   "rev": "15a45ed1b90207e91ab7f83022a9659677c7da3e",
    "name": "mathlib",
    "manifestFile": "lake-manifest.json",
    "inputRev": null,
