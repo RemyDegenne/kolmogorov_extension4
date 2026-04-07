@@ -3,8 +3,12 @@ Copyright (c) 2023 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Peter Pfaffelhuber
 -/
-import KolmogorovExtension4.CompactSystem
-import Mathlib.MeasureTheory.Measure.AddContent
+module
+
+public import KolmogorovExtension4.CompactSystem
+public import Mathlib.MeasureTheory.Measure.AddContent
+
+@[expose] public section
 
 open scoped ENNReal
 

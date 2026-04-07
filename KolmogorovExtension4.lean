@@ -1,5 +1,7 @@
-import KolmogorovExtension4.AuxLemmas
-import KolmogorovExtension4.CompactSystem
-import KolmogorovExtension4.KolmogorovExtension
-import KolmogorovExtension4.RegularContent
-import KolmogorovExtension4.Semiring
+module
+
+public import KolmogorovExtension4.AuxLemmas
+public import KolmogorovExtension4.CompactSystem
+public import KolmogorovExtension4.KolmogorovExtension
+public import KolmogorovExtension4.RegularContent
+public import KolmogorovExtension4.Semiring
