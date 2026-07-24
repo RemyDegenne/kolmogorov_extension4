@@ -131,6 +131,7 @@ noncomputable def projectiveLimit (P : ∀ J : Finset ι, Measure (Π j : J, α 
       generateFrom_measurableCylinders.symm.le
      (projectiveFamilyContent_iUnion_le_sum hP)
 
+set_option backward.isDefEq.respectTransparency false in
 /-- **Kolmogorov extension theorem**: for any projective measure family `P`, there exists a measure
 on `Π i, α i` which is the projective limit of `P`. That measure is given by
 `projectiveLimit P hP`, where `hP : IsProjectiveMeasureFamily P`.
