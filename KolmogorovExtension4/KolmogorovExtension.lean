@@ -131,7 +131,6 @@ noncomputable def projectiveLimit (P : ∀ J : Finset ι, Measure (Π j : J, α 
       generateFrom_measurableCylinders.symm.le
      (projectiveFamilyContent_iUnion_le_sum hP)
 
-set_option backward.isDefEq.respectTransparency false in
 /-- **Kolmogorov extension theorem**: for any projective measure family `P`, there exists a measure
 on `Π i, α i` which is the projective limit of `P`. That measure is given by
 `projectiveLimit P hP`, where `hP : IsProjectiveMeasureFamily P`.
@@ -144,9 +143,8 @@ theorem isProjectiveLimit_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
   swap; · exact J.measurable_restrict
   have h_mem : J.restrict ⁻¹' s ∈ measurableCylinders α :=
     (mem_measurableCylinders _).mpr ⟨J, s, hs, rfl⟩
-  rw [projectiveLimit, AddContent.measure_eq _ _ _ _ h_mem,
-    projectiveFamilyContent_congr hP (_ ⁻¹' _) rfl hs]
-  exact generateFrom_measurableCylinders.symm
+  rw [← projectiveFamilyContent_congr hP (_ ⁻¹' _) rfl hs]
+  exact AddContent.measure_eq _ _ generateFrom_measurableCylinders.symm _ h_mem
 
 instance isFiniteMeasure_projectiveLimit (hP : IsProjectiveMeasureFamily P) :
     IsFiniteMeasure (projectiveLimit P hP) :=
