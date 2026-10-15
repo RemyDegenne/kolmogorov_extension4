@@ -44,7 +44,8 @@ closed square cylinders. -/
 lemma cylinder_mem_countableInfClosure_supClosure [∀ i, SecondCountableTopology (α i)]
     [∀ i, R1Space (α i)] {J : Finset ι} {K : Set (Π j : J, α j)} (hK_compact : IsCompact K)
     (hK_closed : IsClosed K) :
-    cylinder J K ∈ countableInfClosure (supClosure (insert ∅ (compactClosedSquareCylinders α))) := by
+    cylinder J K ∈
+      countableInfClosure (supClosure (insert ∅ (compactClosedSquareCylinders α))) := by
   classical
   -- `K` is contained in the box with compact closed sides `A j`
   let A : ∀ j : J, Set (α j) := fun j ↦ closure ((fun y ↦ y j) '' K)

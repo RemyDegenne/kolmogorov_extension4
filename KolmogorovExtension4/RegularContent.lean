@@ -8,6 +8,13 @@ module
 public import KolmogorovExtension4.CompactSystem
 public import Mathlib.MeasureTheory.Measure.AddContent
 
+/-!
+# σ-additivity of inner regular contents
+
+An additive content on a set ring which is inner regular with respect to a compact system
+contained in the ring is σ-additive (`addContent_iUnion_eq_sum_of_regular`).
+-/
+
 @[expose] public section
 
 open scoped ENNReal

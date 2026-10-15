@@ -11,6 +11,23 @@ public import Mathlib.MeasureTheory.Measure.RegularityCompacts
 public import Mathlib.MeasureTheory.OuterMeasure.OfAddContent
 public import Mathlib.Topology.MetricSpace.Polish
 
+/-!
+# Kolmogorov extension theorem
+
+Given a projective family of finite measures `P J` on the finite products `Π j : J, α j`, we
+construct its projective limit, a measure on `Π i, α i`.
+
+## Main definitions
+
+* `projectiveLimit P hP`: the projective limit of a projective family of finite measures on products
+  of Polish spaces.
+
+## Main statements
+
+* `isProjectiveLimit_projectiveLimit`: **Kolmogorov extension theorem**, `projectiveLimit P hP` is
+  the projective limit of `P`.
+-/
+
 @[expose] public section
 
 open Set
@@ -76,8 +93,9 @@ lemma innerRegular_projectiveFamilyContent (hP : IsProjectiveMeasureFamily P)
         MeasurableSet.diff (measurableCylinders.measurableSet hs) hK'_closed.measurableSet
       exact projectiveFamilyContent_cylinder _ h_meas
   · have : IsEmpty (Π i, α i) := isEmpty_pi.mpr (by simpa using hα)
-    refine ⟨∅, ⟨empty_mem_measurableCylinders α, ?_⟩, empty_subset _, by simp [eq_empty_of_isEmpty s]⟩
-    exact subset_countableInfClosure (subset_supClosure (mem_insert _ _))
+    refine ⟨∅, ⟨empty_mem_measurableCylinders α,
+      subset_countableInfClosure (subset_supClosure (mem_insert _ _))⟩, empty_subset _, ?_⟩
+    simp [eq_empty_of_isEmpty s]
 
 theorem projectiveFamilyContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
