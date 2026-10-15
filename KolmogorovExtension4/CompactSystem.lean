@@ -8,13 +8,21 @@ module
 public import Mathlib.Topology.Compactness.CompactSystem
 
 /-!
-# Compact systems of square cylinders
+# A compact system of square cylinders
 
-We show that a cylinder with a compact closed base is a countable intersection of finite unions of
-compact closed square cylinders. Since those form a compact system
-(`isCompactSystem_compactClosedSquareCylinders`, `IsCompactSystem.supClosure` and
-`IsCompactSystem.countableInfClosure`), we get a compact system which can be used to approximate
-measurable cylinders from inside.
+Compact closed square cylinders form a compact system
+(`isCompactSystem_compactClosedSquareCylinders`), hence so do the countable intersections of finite
+unions of them. We show that every cylinder with a compact closed base belongs to that compact
+system. This is used in the proof of the Kolmogorov extension theorem, to approximate measurable
+cylinders from inside by sets of a compact system.
+
+## Main statements
+
+* `isCompactSystem_countableInfClosure_supClosure_compactClosedSquareCylinders`: countable
+  intersections of finite unions of compact closed square cylinders form a compact system.
+* `cylinder_mem_countableInfClosure_supClosure`: in a product of second-countable R₁ spaces, a
+  cylinder with a compact closed base is a countable intersection of finite unions of compact
+  closed square cylinders.
 -/
 
 @[expose] public section
@@ -23,12 +31,15 @@ open Set MeasureTheory
 
 variable {ι : Type*} {α : ι → Type*} [∀ i, TopologicalSpace (α i)]
 
+/-- A cylinder whose base is a product of compact closed sets is a compact closed square
+cylinder. -/
 lemma cylinder_univ_pi_mem_compactClosedSquareCylinders {J : Finset ι}
-    {t : ∀ j : J, Set (α j)} (ht : ∀ j, IsCompact (t j) ∧ IsClosed (t j)) :
+    {t : ∀ j : J, Set (α j)} (ht_compact : ∀ j, IsCompact (t j))
+    (ht_closed : ∀ j, IsClosed (t j)) :
     cylinder J (univ.pi t) ∈ compactClosedSquareCylinders α := by
   classical
   refine ⟨J, fun i ↦ if h : i ∈ J then t ⟨i, h⟩ else ∅, fun i _ ↦ ?_, ?_⟩
-  · by_cases h : i ∈ J <;> simp [h, ht]
+  · by_cases h : i ∈ J <;> simp [h, ht_compact, ht_closed]
   · ext x
     simpa [cylinder] using forall₂_congr fun i hi ↦ by simp [hi]
 
@@ -49,8 +60,8 @@ lemma cylinder_mem_countableInfClosure_supClosure [∀ i, SecondCountableTopolog
   classical
   -- `K` is contained in the box with compact closed sides `A j`
   let A : ∀ j : J, Set (α j) := fun j ↦ closure ((fun y ↦ y j) '' K)
-  have hA j : IsCompact (A j) ∧ IsClosed (A j) :=
-    ⟨(hK_compact.image (continuous_apply j)).closure, isClosed_closure⟩
+  have hA_compact j : IsCompact (A j) := (hK_compact.image (continuous_apply j)).closure
+  have hA_closed j : IsClosed (A j) := isClosed_closure
   have hKA : K ⊆ univ.pi A := fun y hy j _ ↦ subset_closure (mem_image_of_mem _ hy)
   -- the complement of `K` is a countable union of open boxes which do not meet `K`
   let 𝒰 : Set (∀ j : J, Set (α j)) := {u | (∀ j, IsOpen (u j)) ∧ Disjoint (univ.pi u) K}
@@ -67,11 +78,14 @@ lemma cylinder_mem_countableInfClosure_supClosure [∀ i, SecondCountableTopolog
   -- replacing the side `A j` by `A j \ u j`
   let B : (∀ j : J, Set (α j)) → J → ∀ k : J, Set (α k) :=
     fun u j k ↦ if k = j then A k \ u k else A k
-  have hB u (hu : u ∈ 𝒰) j k : IsCompact (B u j k) ∧ IsClosed (B u j k) := by
+  have hB_compact u (hu : u ∈ 𝒰) j k : IsCompact (B u j k) := by
     simp only [B]
     split_ifs
-    · exact ⟨(hA k).1.diff (hu.1 k), (hA k).2.sdiff (hu.1 k)⟩
-    · exact hA k
+    exacts [(hA_compact k).diff (hu.1 k), hA_compact k]
+  have hB_closed u (hu : u ∈ 𝒰) j k : IsClosed (B u j k) := by
+    simp only [B]
+    split_ifs
+    exacts [(hA_closed k).sdiff (hu.1 k), hA_closed k]
   have hK_eq : K = univ.pi A ∩ ⋂ u : T, ⋃ j, univ.pi (B u j) := by
     refine Subset.antisymm (fun y hy ↦ ⟨hKA hy, mem_iInter.mpr fun u ↦ ?_⟩)
       fun y ⟨hyA, hy⟩ ↦ ?_
@@ -102,9 +116,9 @@ lemma cylinder_mem_countableInfClosure_supClosure [∀ i, SecondCountableTopolog
   refine iInf_mem_countableInfClosure fun o ↦ ?_
   cases o with
   | none =>
-    exact subset_supClosure
-      (mem_insert_of_mem _ (cylinder_univ_pi_mem_compactClosedSquareCylinders hA))
+    exact subset_supClosure (mem_insert_of_mem _
+      (cylinder_univ_pi_mem_compactClosedSquareCylinders hA_compact hA_closed))
   | some u =>
     exact supClosed_supClosure.iSup_mem (subset_supClosure (mem_insert _ _)) fun j ↦
-      subset_supClosure (mem_insert_of_mem _
-        (cylinder_univ_pi_mem_compactClosedSquareCylinders (hB u (hT𝒰 u.2) j)))
+      subset_supClosure (mem_insert_of_mem _ (cylinder_univ_pi_mem_compactClosedSquareCylinders
+        (hB_compact u (hT𝒰 u.2) j) (hB_closed u (hT𝒰 u.2) j)))
