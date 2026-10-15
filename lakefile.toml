@@ -1,5 +1,13 @@
 name = "kolmogorov_extension4"
 defaultTargets = ["KolmogorovExtension4"]
+lintDriver = "batteries/runLinter"
+
+[leanOptions]
+pp.unicode.fun = true
+autoImplicit = false
+relaxedAutoImplicit = false
+# Enable all mathlib linters: automatically matches what mathlib uses.
+weak.linter.mathlibStandardSet = true
 
 [[require]]
 name = "mathlib"
