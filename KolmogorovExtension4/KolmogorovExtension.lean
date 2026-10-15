@@ -9,6 +9,7 @@ public import KolmogorovExtension4.RegularContent
 public import Mathlib.MeasureTheory.Constructions.ProjectiveFamilyContent
 public import Mathlib.MeasureTheory.Measure.RegularityCompacts
 public import Mathlib.MeasureTheory.OuterMeasure.OfAddContent
+public import Mathlib.Topology.MetricSpace.Polish
 
 @[expose] public section
 
@@ -44,16 +45,20 @@ local notation "Js" => measurableCylinders.finset
 
 local notation "As" => measurableCylinders.set
 
+variable [∀ i, R1Space (α i)]
+
 lemma innerRegular_projectiveFamilyContent (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
     {s : Set (Π i, α i)} (hs : s ∈ measurableCylinders α) (ε : ℝ≥0∞) (hε : 0 < ε) :
-    ∃ (K : Set (Π i, α i)), K ∈ closedCompactCylinders α
-      ∧ K ⊆ s ∧ projectiveFamilyContent hP (s \ K) ≤ ε := by
+    ∃ K ∈ measurableCylinders α ∩
+        countableInfClosure (supClosure (insert ∅ (compactClosedSquareCylinders α))),
+      K ⊆ s ∧ projectiveFamilyContent hP (s \ K) ≤ ε := by
   by_cases hα : ∀ i, Nonempty (α i)
   · obtain ⟨K', hK'_compact, hK'_closed, hK'_subset, hK'⟩ := exists_compact hP_inner
       (Js hs) (As hs) (measurableCylinders.measurableSet hs) ε hε
-    refine ⟨cylinder (Js hs) K', ?_, ?_, ?_⟩
-    · exact cylinder_mem_closedCompactCylinders _ _ hK'_closed hK'_compact
+    refine ⟨cylinder (Js hs) K', ⟨?_, ?_⟩, ?_, ?_⟩
+    · exact cylinder_mem_measurableCylinders _ _ hK'_closed.measurableSet
+    · exact cylinder_mem_countableInfClosure_supClosure hK'_compact hK'_closed
     · conv_rhs => rw [measurableCylinders.eq_cylinder hs]
       simp_rw [cylinder]
       rw [Function.Surjective.preimage_subset_preimage_iff]
@@ -71,7 +76,8 @@ lemma innerRegular_projectiveFamilyContent (hP : IsProjectiveMeasureFamily P)
         MeasurableSet.diff (measurableCylinders.measurableSet hs) hK'_closed.measurableSet
       exact projectiveFamilyContent_cylinder _ h_meas
   · have : IsEmpty (Π i, α i) := isEmpty_pi.mpr (by simpa using hα)
-    exact ⟨∅, empty_mem_closedCompactCylinders α, empty_subset _, by simp [eq_empty_of_isEmpty s]⟩
+    refine ⟨∅, ⟨empty_mem_measurableCylinders α, ?_⟩, empty_subset _, by simp [eq_empty_of_isEmpty s]⟩
+    exact subset_countableInfClosure (subset_supClosure (mem_insert _ _))
 
 theorem projectiveFamilyContent_sigma_additive_of_innerRegular (hP : IsProjectiveMeasureFamily P)
     (hP_inner : ∀ J, (P J).InnerRegularWRT (fun s ↦ IsCompact s ∧ IsClosed s) MeasurableSet)
@@ -80,8 +86,9 @@ theorem projectiveFamilyContent_sigma_additive_of_innerRegular (hP : IsProjectiv
     (h_disj : Pairwise (Function.onFun Disjoint f)) :
     projectiveFamilyContent hP (⋃ i, f i) = ∑' i, projectiveFamilyContent hP (f i) :=
   addContent_iUnion_eq_sum_of_regular isSetRing_measurableCylinders (projectiveFamilyContent hP)
-    (fun _ _ ↦ projectiveFamilyContent_ne_top hP) isCompactSystem_closedCompactCylinders
-    (fun _ ↦ mem_measurableCylinders_of_mem_closedCompactCylinders)
+    (fun _ _ ↦ projectiveFamilyContent_ne_top hP)
+    (isCompactSystem_countableInfClosure_supClosure_compactClosedSquareCylinders.mono
+      inter_subset_right) inter_subset_left
     (fun _ ↦ innerRegular_projectiveFamilyContent hP hP_inner) hf hf_Union h_disj
 
 theorem projectiveFamilyContent_iUnion_le_sum_of_innerRegular (hP : IsProjectiveMeasureFamily P)

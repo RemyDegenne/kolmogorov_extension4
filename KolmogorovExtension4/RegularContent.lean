@@ -33,16 +33,15 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent ℝ�
   choose t ht_mem_C ht_subset ht using h_reg'
   rw [Filter.eventually_atTop]
   have ht_empty : ⋂ n, t n = ∅ := Set.subset_eq_empty (Set.iInter_mono ht_subset) hs_Inter
-  let S := hC.support ht_mem_C ht_empty
-  have hS := hC.iInter_eq_empty ht_mem_C ht_empty
+  obtain ⟨S, hS⟩ := hC t ht_mem_C ht_empty
   have hS_nonempty : Finset.Nonempty (Finset.Iic S) := by simp
   let N := Finset.max' (Finset.Iic S) hS_nonempty
   have ht_empty' : ∀ n, N ≤ n → ⋂ i ≤ n, t i = ∅ := by
     intro n hn
     refine Set.subset_eq_empty ?_ hS
-    simp only [Set.subset_iInter_iff]
+    simp only [Set.dissipate, Set.subset_iInter_iff]
     intro i hi
-    refine Set.biInter_subset_of_mem ?_
+    refine Set.iInter₂_subset i ?_
     exact (Finset.le_max' (Finset.Iic S) i (by simpa using hi)).trans hn
   refine ⟨N, fun n hn ↦ ?_⟩
   calc m (s n) = m (⋂ i ≤ n, s i) := by
@@ -59,7 +58,7 @@ lemma tendsto_zero_of_regular_addContent (hR : IsSetRing R) (m : AddContent ℝ�
           by_cases hin : i ≤ n
           · simp only [hin, Set.iInter_true, Set.iUnion_true]
             refine Set.sdiff_subset_sdiff ?_ subset_rfl
-            exact Set.biInter_subset_of_mem hin
+            exact Set.iInter₂_subset i hin
           · simp only [hin, Set.iInter_of_empty, Set.sdiff_univ, Set.iUnion_of_empty,
               Set.empty_subset]
     _ = m (⋃ i ∈ Finset.range (n + 1), (s i \ t i)) := by simp only [Finset.mem_range_succ_iff]
